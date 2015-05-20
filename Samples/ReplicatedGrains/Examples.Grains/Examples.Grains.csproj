@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DCE9E91E-ADFF-4A01-8868-E42BE859BE81}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Examples.Grains</RootNamespace>
+    <AssemblyName>Examples.Grains</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Orleans">
+      <HintPath>$(OrleansSDK)\Binaries\OrleansClient\Orleans.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AccountGrain.cs" />
+    <Compile Include="CommentsGrain.cs" />
+    <Compile Include="LeaderBoardGrain.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\orleans.codegen.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Examples.Interfaces\Examples.Interfaces.csproj">
+      <Project>{163cce80-c506-468c-9b28-e2ff198097e3}</Project>
+      <Name>Examples.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ReplicatedGrains\ReplicatedGrains.csproj">
+      <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
+      <Name>ReplicatedGrains</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <OrleansProjectType>Server</OrleansProjectType>
+  </PropertyGroup>
+  <Import Project="$(OrleansSDK)\Binaries\OrleansClient\Orleans.SDK.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+      if exist "$(OrleansSDK)\LocalSilo" (
+      if not exist "$(OrleansSDK)\LocalSilo\Applications" (md "$(OrleansSDK)\LocalSilo\Applications")
+      if not exist  "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)" (md "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)")
+      copy /y *.dll  "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)\"
+      copy /y *.pdb  "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)\"
+      )
+      if exist "$(OrleansSDK)\Binaries" (
+      if not exist "$(OrleansSDK)\Binaries\Applications" (md "$(OrleansSDK)\Binaries\Applications")
+      if not exist  "$(OrleansSDK)\Binaries\Applications\$(RootNamespace)" (md "$(OrleansSDK)\Binaries\Applications\$(RootNamespace)")
+      copy /y *.dll "$(OrleansSDK)\Binaries\Applications\$(RootNamespace)\"
+      copy /y *.pdb "$(OrleansSDK)\Binaries\Applications\$(RootNamespace)\"
+      )
+</PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
