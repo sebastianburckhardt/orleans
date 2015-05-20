@@ -464,6 +464,7 @@ namespace Orleans.Serialization
         {
             Write(addr.Endpoint);
             Write(addr.Generation);
+            Write(addr.ClusterId);
         }
 
         /// <summary> Write a <c>ActivationId</c> value to the stream. </summary>

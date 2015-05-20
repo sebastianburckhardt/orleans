@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
+
+using Orleans.Runtime;
 
 namespace Orleans
 {
@@ -44,6 +47,8 @@ namespace Orleans
         bool TryDeliverToProxy(Message msg);
 
         void StopAcceptingClientMessages();
+
+        void SwitchClusterMessaging(bool val);
 
         void BlockApplicationMessages();
 

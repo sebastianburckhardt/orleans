@@ -109,6 +109,11 @@ namespace Orleans
     public interface IMessagingConfiguration
     {
         /// <summary>
+        /// The ClusterId to associate with the silo.
+        /// </summary>
+        int ClusterId { get; set; }
+
+        /// <summary>
         /// The ResponseTimeout attribute specifies the default timeout before a request is assumed to have failed.
         /// </summary>
         TimeSpan ResponseTimeout { get; set; }
@@ -202,6 +207,7 @@ namespace Orleans
     [Serializable]
     public class MessagingConfiguration : IMessagingConfiguration
     {
+        public int ClusterId { get; set; }
         public TimeSpan ResponseTimeout { get; set; }
         public int MaxResendCount { get; set; }
         public bool ResendOnTimeout { get; set; }

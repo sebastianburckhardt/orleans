@@ -29,6 +29,11 @@ namespace Orleans
         public NodeConfiguration Defaults { get; private set; }
 
         /// <summary>
+        ///  
+        /// </summary>
+        public ClusterConfiguration Cluster { get; private set; }
+
+        /// <summary>
         /// The configuration file.
         /// </summary>
         public string SourceFile { get; private set; }
@@ -72,6 +77,7 @@ namespace Orleans
         {
             Globals = new GlobalConfiguration();
             Defaults = new NodeConfiguration();
+            Cluster = new ClusterConfiguration();
             Overrides = new Dictionary<string, NodeConfiguration>();
             overrideXml = new Dictionary<string, string>();
             SourceFile = "";
@@ -99,6 +105,9 @@ namespace Orleans
 
                 switch (child.LocalName)
                 {
+                    case "ClusterGateways":
+                        Cluster.Load(child);
+                        break;
                     case "Deployment":
                         LoadDeployment(child);
                         break;

@@ -2,7 +2,6 @@
 <TestSettings name="Local" id="8a37c363-3fe3-4ab6-a076-e4fcf4d95a30" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
   <Description>These are default test settings for a local test run.</Description>
   <Deployment>
-    <DeploymentItem filename="UnitTests\bin\Debug\TestInput\" />
     <DeploymentItem filename="TestInput\" />
   </Deployment>
   <NamingScheme baseName="BuildResults" appendTimeStamp="false" useDefault="false" />
@@ -28,4 +27,5 @@
     <AgentRule name="LocalMachineDefaultRole">
     </AgentRule>
   </Execution>
+  <Properties />
 </TestSettings>

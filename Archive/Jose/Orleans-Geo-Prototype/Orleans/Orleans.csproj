@@ -133,6 +133,7 @@
     <Compile Include="Providers\AssemblyLoaderPathNameCriterion.cs" />
     <Compile Include="Providers\AssemblyLoaderCriterion.cs" />
     <Compile Include="Providers\AssemblyLoader.cs" />
+    <Compile Include="RuntimeCore\Configuration\ClusterConfiguration.cs" />
     <Compile Include="Runtime\IActivationCollector.cs" />
     <Compile Include="RuntimeCore\Configuration\ApplicationConfiguration.cs" />
     <Compile Include="Runtime\TypeCodeMapper.cs" />

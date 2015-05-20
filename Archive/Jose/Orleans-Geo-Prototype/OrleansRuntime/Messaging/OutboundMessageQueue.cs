@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Threading;
 using Orleans.Counters;
 
@@ -12,11 +14,14 @@ namespace Orleans.Runtime.Messaging
     {
         //private BlockingCollection<Message> queue;
         private readonly Lazy<SiloMessageSender>[] senders;
+        private readonly ClusterMessageSender clusterSender;
         private readonly SiloMessageSender pingSender;
         private readonly SiloMessageSender systemSender;
         private readonly MessageCenter mc;
         private readonly Logger logger;
+        private readonly ClusterConfiguration clusterConfig;
         private bool stopped;
+        private bool clusterMessagingOn;
 
         public int Count
         {
@@ -30,12 +35,13 @@ namespace Orleans.Runtime.Messaging
 
         internal const string QUEUED_TIME_METADATA = "QueuedTime";
 
-        internal OutboundMessageQueue(MessageCenter m, IMessagingConfiguration config)
+        internal OutboundMessageQueue(MessageCenter m, IMessagingConfiguration config, ClusterConfiguration clusterConfig)
         {
             //queue = new BlockingCollection<Message>();
             mc = m;
             pingSender = new SiloMessageSender("PingSender", mc);
             systemSender = new SiloMessageSender("SystemSender", mc);
+            clusterSender = new ClusterMessageSender("ClusterSender", mc, mc.ClusterConfig);
             senders = new Lazy<SiloMessageSender>[config.SiloSenderQueues];
             for (int i = 0; i < senders.Length; i++)
             {
@@ -49,9 +55,16 @@ namespace Orleans.Runtime.Messaging
             }
             logger = Logger.GetLogger("Messaging.OutboundMessageQueue");
             stopped = false;
+            this.clusterConfig = clusterConfig;
+            this.clusterMessagingOn = true;
         }
 
-        public bool SendMessage(Message msg)
+        public void SwitchClusterMessaging(bool val)
+        {
+            clusterMessagingOn = val;
+        }
+
+        public async Task<bool> SendMessage(Message msg)
         {
             if (msg != null)
             {
@@ -111,8 +124,18 @@ namespace Orleans.Runtime.Messaging
                         return true;
                     }
 
-                    // Prioritize system messages
-                    if (msg.Category == Message.Categories.Ping)
+                    // Inter-cluster messages can be either System or Application. Grain directory protocol messages are
+                    // of type System. An activation in this cluster can also call an activation in a remote cluster, these
+                    // correspond to Application messages.
+                    if (!msg.TargetSilo.IsSameCluster(mc.MyAddress))
+                    {
+                        if (clusterMessagingOn)
+                        {
+                            await Task.Delay(clusterConfig.DelayDictionary[mc.MyAddress.ClusterId][msg.TargetSilo.ClusterId]);
+                            clusterSender.QueueRequest(msg);
+                        }
+                    }
+                    else if (msg.Category == Message.Categories.Ping)
                     {
                         pingSender.QueueRequest(msg);
                     }
@@ -134,6 +157,7 @@ namespace Orleans.Runtime.Messaging
         {
             pingSender.Start();
             systemSender.Start();
+            clusterSender.Start();
             //foreach (var sender in senders)
             //{
             //    sender.Value.Start();

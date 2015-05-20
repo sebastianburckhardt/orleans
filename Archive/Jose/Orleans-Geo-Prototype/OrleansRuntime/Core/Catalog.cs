@@ -1023,6 +1023,11 @@ namespace Orleans.Runtime
             return datas;
         }
 
+        public async Task InvalidatePartitionCache(ActivationAddress activationAddress)
+        {
+            await directory.FlushCachedPartitionEntry(activationAddress);
+        }
+
         #endregion
 
         #region Implementation of ISiloStatusListener

@@ -483,7 +483,7 @@ namespace Orleans.Runtime.Messaging
                 return false;
             }
 
-            // Receive the client ID
+            // Receive the client ID\
             var buffer = new byte[16];
             int offset = 0;
 
@@ -739,6 +739,20 @@ namespace Orleans.Runtime.Messaging
         protected virtual void HandleMessage(Message wmsg, Socket receivedOnSocket)
         {
             wmsg.AddTimestamp(Message.LifecycleTag.ReceiveIncoming);
+            
+            if (log.IsVerbose2 && !wmsg.SendingSilo.IsSameCluster(mc.MyAddress))
+            {
+                if (wmsg.Category == Message.Categories.Application)
+                {
+                    log.Verbose2(string.Format("Received an intercluster APPLICATION message from {0}. Target activation: {1}", 
+                        wmsg.SendingSilo, wmsg.TargetActivation));
+                }
+                else if (wmsg.Category == Message.Categories.System)
+                {
+                    log.Verbose2(string.Format("Received an intercluster SYSTEM message from {0}. Target activation: {1}",
+                        wmsg.SendingSilo, wmsg.TargetActivation));
+                }
+            }
 
             // See it's a Ping message, and if so, short-circuit it
             if (wmsg.GetScalarHeader<bool>(PingHeader))
@@ -753,7 +767,7 @@ namespace Orleans.Runtime.Messaging
                     Message rejection = wmsg.CreateRejectionResponse(Message.RejectionTypes.FutureTransient,
                         string.Format("The target silo is no longer active: target was {0}, but this silo is {1}. The rejected ping message is {2}.",
                             wmsg.TargetSilo.ToLongString(), mc.MyAddress.ToLongString(), wmsg.ToString()));
-                    mc.OutboundQueue.SendMessage(rejection);
+                    mc.OutboundQueue.SendMessage(rejection).Ignore();
                 }else
                 {
                     var response = wmsg.CreateResponseMessage();
@@ -825,7 +839,7 @@ namespace Orleans.Runtime.Messaging
                 // If the message is for some other silo altogether, then we need to forward it.
                 if (log.IsVerbose2) log.Verbose2("Forwarding message {0} from {1} to silo {2}", wmsg.Id, wmsg.SendingSilo, wmsg.TargetSilo);
                 wmsg.AddTimestamp(Message.LifecycleTag.EnqueueForForwarding);
-                mc.OutboundQueue.SendMessage(wmsg);
+                mc.OutboundQueue.SendMessage(wmsg).Ignore();
                 return;
             }
 
@@ -837,7 +851,7 @@ namespace Orleans.Runtime.Messaging
                 Message rejection = wmsg.CreateRejectionResponse(Message.RejectionTypes.FutureTransient,
                     string.Format("The target silo is no longer active: target was {0}, but this silo is {1}. The rejected message is {2}.", 
                         wmsg.TargetSilo.ToLongString(), mc.MyAddress.ToLongString(), wmsg.ToString()));
-                mc.OutboundQueue.SendMessage(rejection);
+                mc.OutboundQueue.SendMessage(rejection).Ignore();
                 if (log.IsVerbose) log.Verbose("Rejecting an obsolete request; target was {0}, but this silo is {1}. The rejected message is {2}.",
                     wmsg.TargetSilo.ToLongString(), mc.MyAddress.ToLongString(), wmsg.ToString());
                 return;

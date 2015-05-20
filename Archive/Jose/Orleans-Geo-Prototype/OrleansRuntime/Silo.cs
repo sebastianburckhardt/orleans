@@ -1,5 +1,6 @@
 ﻿//#define PARALLEL_INIT_SYS_GRAINS
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -202,7 +203,7 @@ namespace Orleans.Runtime
             //    scheduler.OnIdle = onIdle.Run;
 
             // Initialize the message center
-            var mc = new MessageCenter(here, generation, globalConfig, siloStatistics.MetricsTable);
+            var mc = new MessageCenter(here, generation, globalConfig, OrleansConfig.Cluster, siloStatistics.MetricsTable);
             if (nodeConfig.IsGatewayNode)
             {
                 mc.InstallGateway(nodeConfig.ProxyGatewayEndpoint);
@@ -211,7 +212,7 @@ namespace Orleans.Runtime
 
             // Now the router/directory service
             // This has to come after the message center //; note that it then gets injected back into the message center.;
-            localGrainDirectory = new LocalGrainDirectory(this); 
+            localGrainDirectory = new LocalGrainDirectory(this, config.Cluster); 
             shutdownParticipants.Add(localGrainDirectory);
 
             // Now the activation directory.
@@ -224,6 +225,9 @@ namespace Orleans.Runtime
             // Now the consistent ring provider
             consistentRingProvider = new ConsistentRingProvider(SiloAddress);
             //shutdownParticipants.Add((ISiloShutdownParticipant)consistentRingProvider); TODO: TMS make the ring shutdown-able?
+
+            // Add a reference to the local grain directory. 
+            mc.InstallLocalGrainDirectory(localGrainDirectory);
 
             Action<Dispatcher> setDispatcher1;//, setDispatcher2;
             catalog = new Catalog(Constants.CatalogId, SiloAddress, Name, LocalGrainDirectory, typeManager, scheduler, activationDirectory, config, out setDispatcher1);
@@ -474,6 +478,11 @@ namespace Orleans.Runtime
                 {
                     mc.StartGateway();
                 }
+
+                ISchedulingContext remoteGrainDirContext =
+                    ((SystemTarget) localGrainDirectory.RemGrainDirectory).SchedulingContext;
+                scheduler.RunOrQueueAsyncCompletion(() => AsyncCompletion.FromTask(localGrainDirectory.RemGrainDirectory.BecomeActive()),
+                    remoteGrainDirContext).Wait(initTimeout);
 
                 SystemStatus.Current = SystemStatus.Running;
             }
@@ -925,6 +934,23 @@ namespace Orleans.Runtime
                 ExecuteFastKillInProcessExit = false;
             }
 
+            internal void SwitchClusterMessaging(bool val)
+            {
+                silo.LocalMessageCenter.SwitchClusterMessaging(val);
+            }
+
+            internal void SetLookupTimeout(TimeSpan newTimeout)
+            {
+                silo.OrleansConfig.Cluster.SetLookupTimeout(newTimeout);
+            }
+
+            internal ActivationAddress ForceAddActivation(GrainId grain, ActivationId act, SiloAddress siloAddress,
+                ActivationStatus status)
+            {
+                return silo.localGrainDirectory.DirectoryPartition.AddSingleActivationTest(grain, act, siloAddress,
+                    status);
+            }
+
             // this is only for white box testing - use GrainClient.Current.SendRequest instead
             internal void SendMessageInternal(Message message)
             {
@@ -935,6 +961,11 @@ namespace Orleans.Runtime
             internal int UnregisterGrainForTesting(GrainId grain)
             {
                 return silo.catalog.UnregisterGrainForTesting(grain);
+            }
+
+            internal Dictionary<GrainId, IGrainInfo> GetDirectory()
+            {
+                return silo.localGrainDirectory.DirectoryPartition.GetItems();
             }
 
             // For white-box testing only

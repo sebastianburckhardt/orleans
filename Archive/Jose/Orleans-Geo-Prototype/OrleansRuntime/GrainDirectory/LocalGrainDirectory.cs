@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 using Orleans.Scheduler;
 using Orleans.Counters;
@@ -11,6 +13,13 @@ using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime.GrainDirectory
 {
+    internal enum InterClusterLookupResult
+    {
+        OWNED,
+        OVERRIDEN,
+        NONE,
+    }
+
     internal class LocalGrainDirectory : MarshalByRefObject, ILocalGrainDirectory, ISiloStatusListener, ISiloShutdownParticipant
     {
         /// <summary>
@@ -18,7 +27,6 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         private readonly List<SiloAddress> membershipRingList;
         private readonly HashSet<SiloAddress> membershipCache;
-
         
         private readonly AsynchAgent maintainer;
 
@@ -49,6 +57,8 @@ namespace Orleans.Runtime.GrainDirectory
         public Task StopPreparationCompletion { get { return stopPreparationResolver.Task; } }
 
         internal OrleansTaskScheduler Scheduler { get; private set; }
+
+        private readonly ClusterConfiguration ClusterConfig;
 
         internal GrainDirectoryReplicationAgent ReplicationAgent { get; private set; }
 
@@ -86,7 +96,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         private readonly IntValueStatistic directoryPartitionCount;
 
-        public LocalGrainDirectory(Silo silo)
+        public LocalGrainDirectory(Silo silo, ClusterConfiguration cc)
         {
             log = Logger.GetLogger("Orleans.GrainDirectory.LocalGrainDirectory");
 
@@ -94,6 +104,7 @@ namespace Orleans.Runtime.GrainDirectory
             Scheduler = silo.LocalScheduler;
             membershipRingList = new List<SiloAddress>();
             membershipCache = new HashSet<SiloAddress>();
+            ClusterConfig = cc;
 
             silo.OrleansConfig.OnConfigChange("Globals/Caching", () =>
                 { lock (membershipCache) { DirectoryCache = GrainDirectoryCacheFactory<List<Tuple<SiloAddress, ActivationId>>>.CreateGrainDirectoryCache(silo.GlobalConfig); } });
@@ -106,7 +117,7 @@ namespace Orleans.Runtime.GrainDirectory
             ReplicationFactor = silo.GlobalConfig.DirectoryReplicationFactor;
 
             stopPreparationResolver = new TaskCompletionSource<bool>();
-            DirectoryPartition = new GrainDirectoryPartition();
+            DirectoryPartition = new GrainDirectoryPartition(MyAddress.ClusterId);
             ReplicationAgent = new GrainDirectoryReplicationAgent(this, silo.GlobalConfig);
 
             RemGrainDirectory = new RemoteGrainDirectory(this, Constants.DirectoryServiceId);
@@ -524,7 +535,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         /// <param name="address">The address of the potential new activation.</param>
         /// <returns>The address registered for the grain's single activation.</returns>
-        public Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
+        public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
         {
             registrationsSingleActIssued.Increment();
             SiloAddress owner = CalculateTargetSilo(address.Grain);
@@ -533,17 +544,33 @@ namespace Orleans.Runtime.GrainDirectory
                 // We don't know about any other silos, and we're stopping, so throw
                 throw new InvalidOperationException("Grain directory is stopping");
             }
-            if (owner.Equals(MyAddress))
+
+            if (owner.Equals(MyAddress) && address.Grain.IsGrain)
             {
-                registrationsSingleActLocal.Increment();
-                // if I am the owner, store the new activation locally
-                return Task.FromResult(DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo));
+                Stopwatch sw = Stopwatch.StartNew();
+                var ret = await RemGrainDirectory.RegisterSingleActivation(address, NUM_RETRIES);
+                sw.Stop();
+                double time = (1000.0*sw.ElapsedTicks)/Stopwatch.Frequency;
+                log.Warn(ErrorCode.Runtime, string.Format("Registration {0} Registration-milliseconds", time));
+                return ret;
             }
-            else
+            else if (owner.Equals(MyAddress) && !address.Grain.IsGrain)
             {
-                registrationsSingleActRemoteSent.Increment();
-                // otherwise, notify the owner
-                return GetDirectoryReference(owner).RegisterSingleActivation(address, NUM_RETRIES);
+                return await RemGrainDirectory.RegisterSingleActivationLocal(address, NUM_RETRIES);
+            }
+            else if (!owner.Equals(MyAddress) && address.Grain.IsGrain)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                if (log.IsVerbose2) log.Verbose2("Calling remote grain directory on silo: {0} to register grain {1}", owner, address.Grain);
+                var ret = await GetDirectoryReference(owner).RegisterSingleActivation(address, NUM_RETRIES);
+                sw.Stop();
+                double time = (1000.0 * sw.ElapsedTicks) / Stopwatch.Frequency;
+                log.Warn(ErrorCode.Runtime, string.Format("Registration {0} Registration-milliseconds", time));
+                return ret;
+            }
+            else// if (!owner.Equals(MyAddress) && !address.Grain.IsGrain)
+            {
+                return await GetDirectoryReference(owner).RegisterSingleActivationLocal(address, NUM_RETRIES);
             }
         }
 
@@ -554,21 +581,9 @@ namespace Orleans.Runtime.GrainDirectory
             if (owner == null)
             {
                 // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
+                throw new InvalidOperationException("Grain directory is stopping.");
             }
-            if (owner.Equals(MyAddress))
-            {
-                registrationsLocal.Increment();
-                // if I am the owner, store the new activation locally
-                DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
-                return TaskDone.Done;
-            }
-            else
-            {
-                 registrationsRemoteSent.Increment();
-                // otherwise, notify the owner
-                 return GetDirectoryReference(owner).Register(address, NUM_RETRIES);
-            }
+            return RemGrainDirectory.Register(address, NUM_RETRIES);
         }
 
         public Task UnregisterAsync(ActivationAddress addr)
@@ -685,9 +700,15 @@ namespace Orleans.Runtime.GrainDirectory
             if (addresses == null)
             {
                 if (log.IsVerbose2) log.Verbose2("TryFullLookup else {0}=null", grain);
+                
+                // Jose: DEBUGGING.
+                // log.Info(string.Format("Local lookup failed. GrainId: {0}", grain));
                 return false;
             }
             if (log.IsVerbose2) log.Verbose2("LocalLookup cache {0}={1}", grain, addresses.ToStrings());
+
+            // Jose: DEBUGGING.
+            // log.Info(string.Format("Local lookup successful. GrainId: {0}. ActivationIds: {1}", grain, addresses.ToString()));
             cacheSuccesses.Increment();
             localSuccesses.Increment();
             return true;
@@ -711,6 +732,174 @@ namespace Orleans.Runtime.GrainDirectory
                 return cached.Select(elem => ActivationAddress.GetAddress(elem.Item1, grain, elem.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList();
             }
             return null;
+        }
+
+        public async Task FlushCachedPartitionEntry(ActivationAddress address)
+        {
+            var owner = CalculateTargetSilo(address.Grain);
+            if (owner.Matches(MyAddress))
+            {
+                await RemGrainDirectory.FlushCachedActivation(address, NUM_RETRIES);
+            }
+            else
+            {
+                await GetDirectoryReference(owner).FlushCachedActivation(address, NUM_RETRIES);
+            }
+        }
+
+        private async Task<List<ActivationAddress>> LocalClusterLookup(SiloAddress silo, GrainId grain)
+        {
+            // We assyme that getting here means the grain was not found locally (i.e., in TryFullLookup()).
+            // We still check if we own the grain locally to avoid races between the time TryFullLookup() and FullLookup() were called.
+            if (silo.Equals(MyAddress))
+            {
+                localDirectoryLookups.Increment();
+                var localResult = DirectoryPartition.LookUpGrain(grain);
+
+                // Only return if the we find the grain in our partition.
+                if (localResult != null)
+                {
+                    var a = localResult.Item1.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList();
+                    if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grain, a.ToStrings());
+                    localDirectorySuccesses.Increment();
+                    return a;
+                }
+            }
+            else
+            {
+                // If we're here, then we're looking up the address of the grain in our local cluster.
+                remoteLookupsSent.Increment();
+                var result = await GetDirectoryReference(silo).LookUp(grain, NUM_RETRIES);
+
+                // update the cache
+                var entries = result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
+                if (entries.Count > 0)
+                {
+                    DirectoryCache.AddOrUpdate(grain, entries, result.Item2);
+                }
+                List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).ToList();
+                if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, addresses.ToStrings());
+
+                // We managed to resolve the GraidId in our local cluster. 
+                if (entries.Count > 0)
+                {
+                    return addresses;
+                }
+            }
+            return null;
+        }
+
+        // This function is called when we need to check whether a remote cluster has already activated a grain. We _all_
+        // clusters in the system about the grain, collect their responses, and finally return a tuple:
+        //
+        // tuple.Item1 is the ActivationAddress of the grain which has already been activated by a remote cluster.
+        //
+        // tuple.Item2 is true if all clusters in the total multi-cluster responded to this cluster's activation request.
+        //
+        // tuple.Item3 is PASS if _all_ clusters that responded responded with PASS. If even a single one responds with FAIL,
+        // then result.Item3 is FAIL.
+        public async Task<Tuple<ActivationAddress, bool, ActivationResponseStatus>> SendActivationRequests(GrainId grain)
+        {
+            if (log.IsVerbose2) log.Verbose2(string.Format("Requesting an intercluster lookup."));
+            var resultList = new List<Task<Tuple<ActivationResponseStatus, ActivationAddress>>>();
+
+            // expectedResults contains the count of the number of responses we expect to receive. If all the responses we receive from
+            // remote clusters are of type PASS, then it means that we can keep our optimistically created activation. If we receive a 
+            // response from every cluster in the total multi-cluster, it the state of our activation is changed to OWNED. If
+            // we receive a response from a subset of clusters in the total multi-cluster, the state of our activation is changed to 
+            // DOUBTFUL.
+            int expectedResults = 0;
+
+            // We send out requests to all remote clusters.
+            foreach (SiloAddress clusterGateway in ClusterConfig.GetAllGateways())
+            {
+                // Verify that all gateway silo addresses are properly specified, ie, they must contain a clusterId >= 0. clusterIds < 0
+                // refer to silos within our cluster.
+                if (clusterGateway.ClusterId == -1)
+                {
+                    throw new OrleansException(String.Format("Got an unspecified gateway from ClusterConfig."));
+                }
+
+                // We ask _remote_ clusters about this activation.
+                if (!clusterGateway.IsSameCluster(MyAddress))
+                {
+                    expectedResults += 1;
+                    if (log.IsVerbose2) log.Verbose2(string.Format("Sending RemoteClusterLookUp to Gateway {0}", clusterGateway));
+
+                    // Call the remote gateway silo's ProcessActivationRequest method. We specify a timeout so that we 
+                    // can make progress despite the remote cluster being partitioned. We set the number of retries to NUM_RETRIESS+1 
+                    // because the gateway silo will forward the message to the appropriate silo in its cluster. However, we will "use up"
+                    // a retry chance because all messages to the cluster are funelled through the gateway.
+                    resultList.Add(GetDirectoryReference(clusterGateway).
+                        ProcessActivationRequest(grain, MyAddress.ClusterId, NUM_RETRIES+1).WithTimeout(ClusterConfig.LookupTimeout));
+                }
+            }
+
+            // Wait for all requests to remote clusters to complete, and keep track of them in the list "results".
+            var results = new List<Tuple<ActivationResponseStatus, ActivationAddress>>();
+            foreach (Task<Tuple<ActivationResponseStatus, ActivationAddress>> res in resultList)
+            {
+                Tuple<ActivationResponseStatus, ActivationAddress> singleResult = null;
+                try
+                {
+                    singleResult = await res;
+                }
+                catch(Exception e)
+                {
+                    // Catch all errors with a remote cluster message at this point. For the moment, we silently ignore these
+                    // errors and let execution continue. 
+                    if (log.IsVerbose2) log.Verbose2("Got an exception: " + e.Message);
+                    continue;
+                }
+                results.Add(singleResult);
+                if (log.IsVerbose2) log.Verbose2(string.Format("Received {0}.", singleResult.Item1));
+            }
+
+            // ret tracks the ActivationAddress that we're going to cache in case the grain has already been activated on a remote cluster.
+            // allPass is true if none of the clusters return FAILED in their ActivationResponseStatus
+            ActivationAddress ret = null;
+            bool allPass = true;
+            foreach (var currentResult in results)
+            {
+                var rcvdStatus = currentResult.Item1;
+                var addr = currentResult.Item2;
+
+                // Track whether all of the received responses are of type "PASS". 
+                allPass &= (rcvdStatus == ActivationResponseStatus.PASS);
+
+                if (addr != null && ret == null)
+                {
+                    // This is the first non-null activation address we've received. Track it.
+                    ret = currentResult.Item2;
+                }
+                else if (addr != null && ret != null)
+                {
+                    // If we have previously processed a non-null activation (indicated by toCache != null), we need to
+                    // decide on which of the non-null activations to return. Use the precedence function to decide which
+                    // of these activations should be cached. The reasoning is that the activation with highest precedence
+                    // has more of a chance of surviving the anti-entropy protocol.
+                    if (GrainDirectoryPartition.ActivationPrecedenceFunc(grain, addr.Silo.ClusterId,
+                        ret.Silo.ClusterId))
+                    {
+                        ret = currentResult.Item2;
+                    }
+                }
+            }
+
+            // If all remote clusters have returned PASS, we can go ahead and create the activation.
+            if (allPass)
+            {
+                // The second field of the tuple is true if our activation's state can be changed to OWNED. This is the case when _all_
+                // clusters in the total multi-cluster respond. Otherwise, we change our activation's state to DOUBTFUL.
+                return Tuple.Create((ActivationAddress)null, expectedResults == results.Count, ActivationResponseStatus.PASS);
+            }
+            else
+            {
+                // One or more clusters returned FAILED. If ret is null, then we raced with the remote cluster and lost. If ret is non-null,
+                // then at least one other cluster has an OWNED/DOUBTFUL activation for the grain. We select the activation that has the
+                // highest chance of surviving the anti-entropy protocol.
+                return Tuple.Create(ret, false, ActivationResponseStatus.FAILED);
+            }
         }
 
         public async Task<List<ActivationAddress>> FullLookup(GrainId grain)
@@ -758,6 +947,8 @@ namespace Orleans.Runtime.GrainDirectory
             }
             List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).ToList();
             if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, addresses.ToStrings());
+
+            log.Info("FullLookup remote {0}={1}", grain, addresses.ToStrings());
             return addresses;
         }
 

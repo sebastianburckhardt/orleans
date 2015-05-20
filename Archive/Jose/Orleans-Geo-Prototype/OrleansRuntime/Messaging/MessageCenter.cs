@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Orleans.Counters;
 
+using Orleans;
 using Orleans.Messaging;
 
 namespace Orleans.Runtime.Messaging
@@ -13,6 +15,8 @@ namespace Orleans.Runtime.Messaging
         internal IOutboundMessageQueue OutboundQueue { get; set; }
         internal IInboundMessageQueue InboundQueue { get; set; }
         internal Gateway Gateway { get; set; }
+        internal ClusterConfiguration ClusterConfig { get; private set;  }
+        internal ILocalGrainDirectory LocalGrainDirectory { get; private set; }
 
         public bool IsProxying { get { return Gateway != null; } }
 
@@ -30,6 +34,8 @@ namespace Orleans.Runtime.Messaging
         private static Logger log = Logger.GetLogger("Orleans.Messaging.MessageCenter");
 
         private Action<Message> rerouteHandler;
+        internal delegate Task DirectoryCacheFlushHandler(ActivationAddress addr);
+        internal DirectoryCacheFlushHandler directoryCacheFlushHandler;
         private Action<List<GrainId>> clientDropHandler;
 
         internal ISiloPerformanceMetrics Metrics { get; private set; }
@@ -44,21 +50,24 @@ namespace Orleans.Runtime.Messaging
 
         public IMessagingConfiguration MessagingConfiguration { get; private set; }
 
-        public MessageCenter(IPEndPoint here, int generation, IMessagingConfiguration config, ISiloPerformanceMetrics metrics = null)
+        public MessageCenter(IPEndPoint here, int generation, IMessagingConfiguration config, ClusterConfiguration clusterConfig, ISiloPerformanceMetrics metrics = null)
         {
-            Initialize(here, generation, config, metrics);
+            Initialize(here, generation, config, clusterConfig, metrics);
         }
 
-        private void Initialize(IPEndPoint here, int generation, IMessagingConfiguration config, ISiloPerformanceMetrics metrics = null)
+        private void Initialize(IPEndPoint here, int generation, IMessagingConfiguration config, ClusterConfiguration clusterConfig, 
+            ISiloPerformanceMetrics metrics = null)           
         {
             if(log.IsVerbose3) log.Verbose3("Starting initialization.");
-
+            
             socketManager = new SocketManager(config);
             ima = new IncomingMessageAcceptor(this, here, SocketDirection.SiloToSilo);
-            MyAddress = SiloAddress.New((IPEndPoint)ima.acceptingSocket.LocalEndPoint, generation);
+            MyAddress = SiloAddress.New((IPEndPoint) ima.acceptingSocket.LocalEndPoint, generation, config.ClusterId);
+            ClusterConfig = clusterConfig;
+            ClusterConfig.LocalHash = MyAddress.GetConsistentHashCode();
             MessagingConfiguration = config;
             InboundQueue = new InboundMessageQueue();
-            OutboundQueue = new OutboundMessageQueue(this, config);
+            OutboundQueue = new OutboundMessageQueue(this, config, clusterConfig);
             Gateway = null;
             Metrics = metrics;
             
@@ -66,6 +75,13 @@ namespace Orleans.Runtime.Messaging
             receiveQueueLengthCounter = IntValueStatistic.FindOrCreate(StatNames.STAT_MESSAGE_CENTER_RECEIVE_QUEUE_LENGTH, () => ReceiveQueueLength);
 
             if (log.IsVerbose3) log.Verbose3("Completed initialization.");
+        }
+
+        
+
+        public void InstallLocalGrainDirectory(ILocalGrainDirectory localGrainDirectory)
+        {
+            this.LocalGrainDirectory = localGrainDirectory;
         }
 
         public void InstallGateway(IPEndPoint gatewayAddress)
@@ -181,15 +197,33 @@ namespace Orleans.Runtime.Messaging
         {
             // Note that if we identify or add other grains that are required for proper stopping, we will need to treat them as we do the membership table grain here.
             if (IsBlockingApplicationMessages && (msg.Category == Message.Categories.Application) && (msg.Result != Message.ResponseTypes.Rejection)
-                && (msg.TargetGrain != Constants.SystemMembershipTableId))
+                && !Constants.SystemMembershipTableId.Equals(msg.TargetGrain))
             {
                 // Drop the message on the floor if it's an application message that isn't a rejection
             }
             else
             {
+                // The underlying assumption here is that we know which cluster a grain resides in apriori. We can identify a 
+                // grain's cluster based on its primary key. This assumption is hard-coded in the lines below. How can we dynamically
+                // allow grains to belong to any cluster? 
+                // 
+                // To allow a grain to belong to any cluster, we need to modify the directory protocol
                 if (msg.SendingSilo == null)
                     msg.SendingSilo = MyAddress;
-                OutboundQueue.SendMessage(msg);
+
+                // Hack: Route a request to a cluster based on the primary key.
+                /*
+                if (msg.TargetGrain.Category == UniqueKey.Category.Grain)
+                {
+                    long primary_key = msg.TargetGrain.GetPrimaryKeyLong();
+                    long datacenterID = primary_key % ClusterConfig.NumClusters;
+                    if (datacenterID != MyAddress.ClusterId)
+                    {
+                        msg.TargetSilo = SiloAddress.NewClusterRef((int)datacenterID);
+                    }
+                }
+                 */
+                OutboundQueue.SendMessage(msg).Ignore();
             }
         }
 
@@ -258,6 +292,11 @@ namespace Orleans.Runtime.Messaging
             IsBlockingApplicationMessages = true;
         }
 
+        public void SwitchClusterMessaging(bool val)
+        {
+            ((OutboundMessageQueue)this.OutboundQueue).SwitchClusterMessaging(val);
+        }
+
         #region Implementation of ISiloShutdownParticipant
 
         public void BeginShutdown(Action tryFinishShutdown)
@@ -302,7 +341,7 @@ namespace Orleans.Runtime.Messaging
         /// For internal use only
         /// </summary>
         /// <param name="message"></param>
-        bool SendMessage(Message message);
+        Task<bool> SendMessage(Message message);
 
         /// <summary>
         /// Current queue length

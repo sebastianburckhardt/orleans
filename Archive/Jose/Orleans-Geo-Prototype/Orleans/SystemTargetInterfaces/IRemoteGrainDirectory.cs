@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
@@ -9,10 +10,32 @@ using Orleans;
 
 namespace Orleans
 {
+    enum ActivationResponseStatus
+    {
+        PASS,
+        FAILED,
+    }
+
+    // An Activation can be in one of three states:
+    // OWNED means that the directory which contains the address is the definitive reference for the activation.
+    // TRY_OWN means that the directory which contains the address is _trying_ to be the definitive reference.
+    // CACHED means that the directory contains a cached copy of the activation address, but that it is not the owner.
+    enum ActivationStatus
+    {
+        OWNED,                      // An activation in state OWNED is definitively owned by a silo.
+        DOUBTFUL,          // Failed to contact one or more clusters while registering, so may be a duplicate.
+        REQUESTED_OWNERSHIP,        // The silo is in the process of trying to create a grain's activation.
+        CACHED,                     // The activation reference is cached.
+        RACE_LOSER,                 // The activation lost a race condition.
+        SYSTEM,                     // System grains
+    }
+
     internal interface IActivationInfo
     {
+        ActivationStatus Status { get; }
         SiloAddress SiloAddress { get; }
         DateTime TimeCreated { get; }
+        void UpdateStatus(ActivationStatus status);
     }
 
     /// <summary>
@@ -23,9 +46,12 @@ namespace Orleans
         Dictionary<ActivationId, IActivationInfo> Instances { get; }
         int VersionTag { get; }
         bool SingleInstance { get; }
-        void AddActivation(ActivationAddress addr);
-        void AddActivation(ActivationId act, SiloAddress silo);
-        ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo);
+        void AddActivation(ActivationId act, SiloAddress silo, ActivationStatus type);
+        bool AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, out ActivationAddress addr);
+        ActivationAddress AddSingleActivationForce(GrainId grain, ActivationId act, SiloAddress silo,
+            ActivationStatus status);
+        void CacheAddress(GrainId grain, ActivationId id, SiloAddress silo, ActivationId originalId);
+        bool RemoveCachedActivation(ActivationAddress addr);
         bool RemoveActivation(ActivationAddress addr);
         bool RemoveActivation(ActivationId act, bool force);
         bool Merge(GrainId grain, IGrainInfo other);
@@ -45,6 +71,8 @@ namespace Orleans
         /// <returns></returns>
         Task Register(ActivationAddress address, int retries = 0);
 
+        Task BecomeActive();
+
         /// <summary>
         /// Records a bunch of new grain activations.
         /// </summary>
@@ -53,6 +81,8 @@ namespace Orleans
         /// <param name="retries">Number of retries to execute the method in case the virtual ring (servers) changes.</param>
         /// <returns></returns>
         Task RegisterMany(List<ActivationAddress> addresses, int retries = 0);
+    
+        Task<ActivationAddress> RegisterSingleActivationLocal(ActivationAddress address, int retries);
 
         /// <summary>
         /// Registers a new activation, in single activation mode, with the directory service.
@@ -66,6 +96,14 @@ namespace Orleans
         /// <param name="retries">Number of retries to execute the method in case the virtual ring (servers) changes.</param>
         /// <returns>The address registered for the grain's single activation.</returns>
         Task<ActivationAddress> RegisterSingleActivation(ActivationAddress address, int retries = 0);
+
+        /// <summary>
+        /// Flush the mapping
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="retries"></param>
+        /// <returns></returns>
+        Task FlushCachedActivation(ActivationAddress address, int retries);
 
         /// <summary>
         /// Registers multiple new activations, in single activation mode, with the directory service.
@@ -106,7 +144,18 @@ namespace Orleans
         /// <param name="grain">The ID of the grain.</param>
         /// <param name="retries">Number of retries to execute the method in case the virtual ring (servers) changes.</param>
         /// <returns></returns>
-        Task<Tuple<List<Tuple<SiloAddress, ActivationId>>, int>> LookUp(GrainId grain, int retries = 0);
+        Task<Tuple<List<Tuple<SiloAddress, ActivationId>>, int>> LookUp(GrainId grain, int retries = 0, bool ownedOnly = false);
+
+        Task<Tuple<ActivationResponseStatus, ActivationAddress>> ProcessActivationRequest(GrainId grain, int requestClusterId, int retries);
+
+        Task<Dictionary<ActivationId, GrainId>> GetDoubtfulActivations();
+
+        Task<Tuple<Dictionary<ActivationId, GrainId>, bool>> ProcessRemoteDoubtfulActivations(
+            Dictionary<ActivationId, GrainId> addrList, int sendingClusterId);
+
+        Task<Dictionary<ActivationId, GrainId>> FindLoserDoubtfulActivations(
+            Dictionary<ActivationId, GrainId> remoteDoubtful, int remoteClusterId);
+        Task ProcessAntiEntropyResults(Dictionary<ActivationId, GrainId> losers, Dictionary<ActivationId, GrainId> winners);
 
         /// <summary>
         /// Fetch the updated information on the given list of grains.

@@ -365,7 +365,7 @@ namespace Orleans.Runtime.GrainDirectory
                                                     source, localDirectory.membership.GetApproximateSiloStatus(source), localDirectory.membership.GetApproximateSiloStatuses(true).Count));
                 }
 
-                replicatedPartitions[source] = new GrainDirectoryPartition();
+                replicatedPartitions[source] = new GrainDirectoryPartition(localDirectory.MyAddress.ClusterId);
             }
 
             if (isFullCopy)

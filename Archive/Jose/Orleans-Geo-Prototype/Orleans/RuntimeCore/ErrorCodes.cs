@@ -641,6 +641,7 @@ namespace Orleans
         Messaging_IMA_ActivationOverloaded      = MessagingBase + 28,
         Messaging_Gateway_SerializationError    = MessagingBase + 29,
         Messaging_UnableToDeserializeBody       = MessagingBase + 30,
+        Messaging_SendingToOwnCluster           = MessagingBase + 31,
 
         DirectoryBase                           = Runtime + 1100,
         DirectoryBothPrimaryAndBackupForGrain   = DirectoryBase + 1,

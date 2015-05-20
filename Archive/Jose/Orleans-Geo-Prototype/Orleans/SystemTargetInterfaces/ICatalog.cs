@@ -43,6 +43,8 @@ namespace Orleans
         /// <returns></returns>
         Task DeleteActivationsLocal(List<ActivationAddress> activationAddresses);
 
+        Task InvalidatePartitionCache(ActivationAddress activationAddress);
+
         #endregion
     }
 }

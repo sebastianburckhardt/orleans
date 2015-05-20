@@ -129,6 +129,8 @@ namespace Orleans.Runtime
         /// It is safe to ignore this result.</returns>
         Task DeleteGrain(GrainId grain);
 
+        Task FlushCachedPartitionEntry(ActivationAddress address);
+
         /// <summary>
         /// Invalidates cache entry for the given grain.
         /// This method is intended to be called whenever a directory client tries to access 

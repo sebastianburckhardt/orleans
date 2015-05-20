@@ -1704,6 +1704,10 @@ namespace Orleans.Serialization
             stream.Write(headers.Count);
             foreach (var header in headers)
             {
+                if (header.Key.Equals("#TS"))
+                {
+                    logger.Verbose("blah");
+                }
                 stream.Write(header.Key);
                 SerializeMessageHeaderValueHelper(header.Value, stream);
             }

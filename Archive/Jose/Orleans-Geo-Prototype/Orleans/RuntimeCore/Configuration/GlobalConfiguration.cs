@@ -249,6 +249,7 @@ namespace Orleans
         internal GlobalConfiguration() : base(true)
         {
             Application = new ApplicationConfiguration();
+            ClusterId = -1;
             SeedNodes = new List<IPEndPoint>();
             LivenessType = DEFAULT_LIVENESS_TYPE;
             LivenessEnabled = true;
@@ -448,6 +449,11 @@ namespace Orleans
                                 "Invalid integer value for the MaxStorageBusyRetries attribute on the Azure element");
                             AzureTableDefaultPolicies.MaxBusyRetries = maxBusyRetries;
                         }
+                        break;
+
+                    case "Cluster":
+                        ClusterId = ConfigUtilities.ParseInt(child.GetAttribute("Id"), 
+                            "Invalid integer value for the ClusterId");
                         break;
 
                     case "SeedNode":

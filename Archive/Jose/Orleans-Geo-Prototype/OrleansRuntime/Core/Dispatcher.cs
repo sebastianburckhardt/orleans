@@ -226,6 +226,13 @@ namespace Orleans.Runtime
         {
             if (rejection.Result == Message.ResponseTypes.Rejection)
             {
+                /*
+                if (rejection.Category == Message.Categories.Application && !rejection.SendingSilo.IsSameCluster(Transport.MyAddress))
+                {
+                    catalog.InvalidatePartitionCache(rejection.TargetAddress);
+                }
+                 * */
+                logger.Info("Rejected message of type " + rejection.Category.ToString());
                 Transport.SendMessage(rejection);
                 rejection.ReleaseBodyAndHeaderBuffers();
             }
@@ -558,7 +565,6 @@ namespace Orleans.Runtime
 
         internal void SendResponse(Message request, OrleansResponse response)
         {
-            // create the response
             var message = request.CreateResponseMessage();
             message.BodyObject = response;
 

@@ -12,12 +12,12 @@ namespace Orleans.Runtime.Messaging
 {
     internal class SiloMessageSender : OutgoingMessageSender
     {
-        private MessageCenter mc;
+        protected MessageCenter mc;
         internal const string RETRY_COUNT_TAG = "RetryCount";
         private const int DEFAULT_MAX_RETRIES = 0;
         public static readonly TimeSpan CONNECTION_RETRY_DELAY = TimeSpan.FromMilliseconds(1000);
 
-        private readonly Dictionary<SiloAddress, DateTime> lastConnectionFailure;
+        protected readonly Dictionary<SiloAddress, DateTime> lastConnectionFailure;
 
         internal SiloMessageSender(string nameSuffix, MessageCenter msgCtr)
             : base(nameSuffix, msgCtr.MessagingConfiguration)
@@ -165,7 +165,7 @@ namespace Orleans.Runtime.Messaging
                 mc.SendRejection(msg, Message.RejectionTypes.FutureTransient, String.Format("Silo {0} is rejecting message: {1}. Reason = {2}", mc.MyAddress, msg, reason));
             }else
             {
-                log.Info(ErrorCode.Messaging_OutgoingMS_DroppingMessage, "Silo {0} is dropping message: {0}. Reason = {1}", mc.MyAddress, msg, reason);
+                if (log.IsVerbose) log.Verbose(ErrorCode.Messaging_OutgoingMS_DroppingMessage, "Silo {0} is dropping message: {0}. Reason = {1}", mc.MyAddress, msg, reason);
                 MessagingStatisticsGroup.OnDroppedSentMessage(msg);
             }
         }
@@ -189,7 +189,7 @@ namespace Orleans.Runtime.Messaging
                 if (retryCount < maxRetries)
                 {
                     msg.SetMetadata(RETRY_COUNT_TAG, retryCount + 1);
-                    mc.OutboundQueue.SendMessage(msg);
+                    mc.OutboundQueue.SendMessage(msg).Ignore();
                 }
                 else
                 {

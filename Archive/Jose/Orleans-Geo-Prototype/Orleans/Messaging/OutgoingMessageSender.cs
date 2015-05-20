@@ -13,7 +13,9 @@ namespace Orleans.Messaging
     {
         SiloToSilo,
         ClientToGW,
-        GWToClient
+        GWToClient,
+        SiloToCluster,
+        ClusterToSilo,
     }
 
     internal abstract class OutgoingMessageSender : AsynchQueueAgent<Message>
@@ -26,6 +28,10 @@ namespace Orleans.Messaging
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         protected override void Process(Message wmsg)
         {
+            /* Jose: Log the following line for debugging.
+             * log.Info("Got a {0} message to send: {1}", wmsg.Direction, wmsg);
+             */
+
             if (log.IsVerbose2) log.Verbose2("Got a {0} message to send: {1}", wmsg.Direction, wmsg);
             bool continueSend = PrepareMessageForSend(wmsg);
             if (!continueSend)

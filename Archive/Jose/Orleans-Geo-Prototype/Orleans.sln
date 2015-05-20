@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{5F16887B-704E-4A77-853A-64308787B327}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -25,7 +25,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{31A0CBF0-EC59-4087-8B66-3A920F20381C}"
 	ProjectSection(ProjectDependencies) = postProject
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7} = {0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}
 		{60498B15-9700-4623-BDA0-365238F2C1AD} = {60498B15-9700-4623-BDA0-365238F2C1AD}
 		{E782DD19-51F7-4F66-8217-BACAC33767E4} = {E782DD19-51F7-4F66-8217-BACAC33767E4}
 		{C19E3F1C-9C4E-46D2-98B4-040845A5F834} = {C19E3F1C-9C4E-46D2-98B4-040845A5F834}
@@ -124,11 +123,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{D8B74A41
 		BuildDefinitions\NuGet\Microsoft.XCG.Orleans.nuspec = BuildDefinitions\NuGet\Microsoft.XCG.Orleans.nuspec
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansWFHost", "OrleansWFHost\OrleansWFHost.csproj", "{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{E782DD19-51F7-4F66-8217-BACAC33767E4} = {E782DD19-51F7-4F66-8217-BACAC33767E4}
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppDomainHost", "AppDomainHost\AppDomainHost.csproj", "{F3629786-AB95-4EC5-8DCE-F9A4C955FA19}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orleans.FSharp", "OrleansFSharpSupport\Orleans.FSharp.csproj", "{82FA518D-43B7-4A45-8077-A373A24B2F54}"
@@ -149,70 +143,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansProviders", "Orleans
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyLoaderTestAssembly", "AssemblyLoaderTestAssembly\AssemblyLoaderTestAssembly.csproj", "{CED96BC5-E8FF-41B1-9E51-77133ACB9490}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGrain", "TestGrain\TestGrain.csproj", "{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGrainConsoleApp", "TestGrainConsoleApp\TestGrainConsoleApp.csproj", "{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGrainInterface", "TestGrainInterface\TestGrainInterface.csproj", "{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}"
+EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 20
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = http://vstfpg03:8080/tfs/pg03
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = UnitTests\\UnitTests.csproj
-		SccProjectName1 = UnitTests
-		SccLocalPath1 = UnitTests
-		SccProjectUniqueName2 = Test\\Test.csproj
-		SccProjectName2 = Test
-		SccLocalPath2 = Test
-		SccProjectUniqueName3 = ClientGenerator\\ClientGenerator.csproj
-		SccProjectName3 = ClientGenerator
-		SccLocalPath3 = ClientGenerator
-		SccProjectUniqueName4 = UnitTestGrains\\UnitTestGrains.csproj
-		SccProjectName4 = UnitTestGrains
-		SccLocalPath4 = UnitTestGrains
-		SccProjectUniqueName5 = Orleans\\Orleans.csproj
-		SccProjectName5 = Orleans
-		SccLocalPath5 = Orleans
-		SccProjectUniqueName6 = OrleansRuntime\\OrleansRuntime.csproj
-		SccProjectName6 = OrleansRuntime
-		SccLocalPath6 = OrleansRuntime
-		SccProjectUniqueName7 = OrleansHost\\OrleansHost.csproj
-		SccProjectName7 = OrleansHost
-		SccLocalPath7 = OrleansHost
-		SccProjectUniqueName8 = UnitTestGrainInterfaces\\UnitTestGrainInterfaces.csproj
-		SccProjectName8 = UnitTestGrainInterfaces
-		SccLocalPath8 = UnitTestGrainInterfaces
-		SccProjectUniqueName9 = OrleansAzure\\OrleansAzureUtils\\OrleansAzureUtils.csproj
-		SccProjectName9 = OrleansAzure/OrleansAzureUtils
-		SccLocalPath9 = OrleansAzure\\OrleansAzureUtils
-		SccProjectUniqueName10 = OrleansManager\\OrleansManager.csproj
-		SccProjectName10 = OrleansManager
-		SccLocalPath10 = OrleansManager
-		SccProjectUniqueName11 = UnsignedUnitTestGrainInterfaces\\UnsignedUnitTestGrainInterfaces.csproj
-		SccProjectName11 = UnsignedUnitTestGrainInterfaces
-		SccLocalPath11 = UnsignedUnitTestGrainInterfaces
-		SccProjectUniqueName12 = UnsignedUnitTestGrains\\UnsignedUnitTestGrains.csproj
-		SccProjectName12 = UnsignedUnitTestGrains
-		SccLocalPath12 = UnsignedUnitTestGrains
-		SccProjectUniqueName13 = CounterControl\\CounterControl.csproj
-		SccProjectName13 = CounterControl
-		SccLocalPath13 = CounterControl
-		SccProjectUniqueName14 = OrleansWFHost\\OrleansWFHost.csproj
-		SccProjectName14 = OrleansWFHost
-		SccLocalPath14 = OrleansWFHost
-		SccProjectUniqueName15 = AppDomainHost\\AppDomainHost.csproj
-		SccProjectName15 = AppDomainHost
-		SccLocalPath15 = AppDomainHost
-		SccProjectUniqueName16 = OrleansProviderInterfaces\\OrleansProviderInterfaces.csproj
-		SccProjectName16 = OrleansProviderInterfaces
-		SccLocalPath16 = OrleansProviderInterfaces
-		SccProjectUniqueName17 = OrleansProviders\\OrleansProviders.csproj
-		SccProjectName17 = OrleansProviders
-		SccLocalPath17 = OrleansProviders
-		SccProjectUniqueName18 = AssemblyLoaderTestAssembly\\AssemblyLoaderTestAssembly.csproj
-		SccProjectName18 = AssemblyLoaderTestAssembly
-		SccLocalPath18 = AssemblyLoaderTestAssembly
-		SccProjectUniqueName19 = OrleansFSharpSupport\\Orleans.FSharp.csproj
-		SccProjectName19 = OrleansFSharpSupport
-		SccLocalPath19 = OrleansFSharpSupport
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -380,20 +317,6 @@ Global
 		{F88449A1-8964-4EB9-9EFC-B913AFEBD7D1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{F88449A1-8964-4EB9-9EFC-B913AFEBD7D1}.Release|Win32.ActiveCfg = Release|Any CPU
 		{F88449A1-8964-4EB9-9EFC-B913AFEBD7D1}.Release|x64.ActiveCfg = Release|Any CPU
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|Any CPU.Build.0 = Debug|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|Mixed Platforms.Build.0 = Debug|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|x64.ActiveCfg = Debug|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Debug|x64.Build.0 = Debug|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|Any CPU.ActiveCfg = Release|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|Any CPU.Build.0 = Release|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|Mixed Platforms.ActiveCfg = Release|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|Mixed Platforms.Build.0 = Release|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|Win32.ActiveCfg = Release|Any CPU
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|x64.ActiveCfg = Release|x64
-		{0932EF0A-F0AB-4A1D-98C1-5AB498A220A7}.Release|x64.Build.0 = Release|x64
 		{F3629786-AB95-4EC5-8DCE-F9A4C955FA19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F3629786-AB95-4EC5-8DCE-F9A4C955FA19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3629786-AB95-4EC5-8DCE-F9A4C955FA19}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -454,14 +377,50 @@ Global
 		{CED96BC5-E8FF-41B1-9E51-77133ACB9490}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{CED96BC5-E8FF-41B1-9E51-77133ACB9490}.Release|Win32.ActiveCfg = Release|Any CPU
 		{CED96BC5-E8FF-41B1-9E51-77133ACB9490}.Release|x64.ActiveCfg = Release|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Release|Win32.ActiveCfg = Release|Any CPU
+		{AF1FD86D-BF8E-4B55-A5FE-99D94FE045BD}.Release|x64.ActiveCfg = Release|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Release|Win32.ActiveCfg = Release|Any CPU
+		{1C9F5163-3296-4DAC-874C-1884E1B1ABD6}.Release|x64.ActiveCfg = Release|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Release|Win32.ActiveCfg = Release|Any CPU
+		{4E7E64BC-F3FC-4258-B8D0-64BB7D3ACC6D}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A0925A42-3D79-4DF7-BE0B-3E9ED8A3E3A6} = {027020BE-0C57-4A69-A74E-AF6BBDB0ED24}
-		{4B2A3F6D-6698-4841-AAFE-C07967A245EA} = {027020BE-0C57-4A69-A74E-AF6BBDB0ED24}
 		{8AB516CC-CA61-449F-AC5C-DADC8FA61AAD} = {A0925A42-3D79-4DF7-BE0B-3E9ED8A3E3A6}
+		{4B2A3F6D-6698-4841-AAFE-C07967A245EA} = {027020BE-0C57-4A69-A74E-AF6BBDB0ED24}
 		{D8B74A41-3F2E-478F-976A-162CD1EF46F6} = {A0925A42-3D79-4DF7-BE0B-3E9ED8A3E3A6}
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution

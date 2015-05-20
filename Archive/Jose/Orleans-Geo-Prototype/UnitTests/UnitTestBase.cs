@@ -355,50 +355,64 @@ namespace UnitTests
             Globals = config.Globals;
             config.IsRunningAsUnitTest = true;
 
-            string domainName;
-            switch (type)
+            string domainName = options.DomainName;
+            if (domainName == null)
             {
-                case Silo.SiloType.Primary:
-                    domainName = "Primary";
-                    break;
-                default:
-                    domainName = "Secondary_" + InstanceCounter.ToString(CultureInfo.InvariantCulture);
-                    break;
+                switch (type)
+                {
+                    case Silo.SiloType.Primary:
+                        domainName = "Primary";
+                        break;
+                    default:
+                        domainName = "Secondary_" + InstanceCounter.ToString(CultureInfo.InvariantCulture);
+                        break;
+                }
             }
 
-            NodeConfiguration nodeConfig = config.GetConfigurationForNode(domainName);
-            nodeConfig.HostNameOrIPAddress = "loopback";
-            int port = options.BasePort < 0 ? BasePort : options.BasePort;
-            nodeConfig.Port = port + InstanceCounter;
-            nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
-            nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
-            nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
-            nodeConfig.MaxActiveThreads = options.MaxActiveThreads;
-            if (options.SiloGenerationNumber > 0)
+            NodeConfiguration nodeConfig = null;
+            if (options.OverrideConfig)
             {
-                nodeConfig.Generation = options.SiloGenerationNumber;
+                nodeConfig = config.GetConfigurationForNode(domainName);
+                nodeConfig.HostNameOrIPAddress = "loopback";
+                int port = options.BasePort < 0 ? BasePort : options.BasePort;
+                nodeConfig.Port = port + InstanceCounter;
+                nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
+                nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
+                nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
+                nodeConfig.MaxActiveThreads = options.MaxActiveThreads;
+                if (options.SiloGenerationNumber > 0)
+                {
+                    nodeConfig.Generation = options.SiloGenerationNumber;
+                }
+                config.Globals.MaxForwardCount = options.MaxForwardCount;
+                if (options.performDeadlockDetection != BooleanEnum.None) // use only if was explicitly specified.
+                    config.Globals.PerformDeadlockDetection = options.PerformDeadlockDetection;
+                SerializationManager.Initialize(config.Globals.UseStandardSerializer);
+
+                if (config.Globals.ExpectedClusterSize_CV.IsDefaultValue) // overwrite only if was not explicitly set.
+                    config.Globals.ExpectedClusterSize = 2;
+
+                config.Globals.CollectionQuantum = options.CollectionQuantum;
+                config.Globals.Application.SetDefaultCollectionAgeLimit(options.DefaultCollectionAgeLimit);
+
+                InstanceCounter++;
+
+                config.Overrides[domainName] = nodeConfig;
+                config.AdjustConfiguration();
             }
-            config.Globals.MaxForwardCount = options.MaxForwardCount;
-            if (options.performDeadlockDetection != BooleanEnum.None) // use only if was explicitly specified.
-                config.Globals.PerformDeadlockDetection = options.PerformDeadlockDetection;
-            SerializationManager.Initialize(config.Globals.UseStandardSerializer);
-
-            if (config.Globals.ExpectedClusterSize_CV.IsDefaultValue) // overwrite only if was not explicitly set.
-                config.Globals.ExpectedClusterSize = 2;
-
-            config.Globals.CollectionQuantum = options.CollectionQuantum;
-            config.Globals.Application.SetDefaultCollectionAgeLimit(options.DefaultCollectionAgeLimit);
-
-            InstanceCounter++;
-
-            config.Overrides[domainName] = nodeConfig;
-            config.AdjustConfiguration();
 
             if (options.StartOutOfProcess)
             {
                 //save the config so that you can pass it can be passed to the OrleansHost process.
                 //launch the process
-                retValue.Endpoint = nodeConfig.Endpoint;
+                if (nodeConfig != null)
+                {
+                    retValue.Endpoint = nodeConfig.Endpoint;
+                }
+                else
+                {
+                    retValue.Endpoint = config.Overrides[domainName].Endpoint;
+                }
                 string fileName = Path.Combine(Path.GetDirectoryName(typeof(UnitTestBase).Assembly.Location), "UnitTestConfig" + DateTime.UtcNow.Ticks);
                 WriteConfigFile(fileName, config);
                 retValue.MachineName = options.MachineName;
@@ -430,6 +444,14 @@ namespace UnitTests
             return retValue;
         }
 
+        protected SiloHandle StartAdditionalOrleans(Options siloOptions, Silo.SiloType type)
+        {
+            SiloHandle instance = StartOrleansRuntime(type, siloOptions);
+            additionalSilos.Add(instance);
+            return instance;
+        }
+
+        
         protected SiloHandle StartAdditionalOrleans()
         {
             SiloHandle instance = StartOrleansRuntime(
@@ -994,6 +1016,8 @@ namespace UnitTests
         public Options()
         {
             // all defaults except:
+            DomainName = null;
+            OverrideConfig = true;
             StartFreshOrleans = true;
             StartPrimary = true;
             StartSecondary = true;
@@ -1028,6 +1052,8 @@ namespace UnitTests
         {
             return new Options
             {
+                DomainName = DomainName,
+                OverrideConfig = OverrideConfig,
                 StartOutOfProcess = StartOutOfProcess,
                 StartFreshOrleans = StartFreshOrleans,
                 StartPrimary = StartPrimary,
@@ -1054,6 +1080,8 @@ namespace UnitTests
                 LivenessType = LivenessType
             };
         }
+        public string DomainName { get; set; }
+        public bool OverrideConfig { get; set; }
         public bool StartOutOfProcess { get; set; }
         public bool StartFreshOrleans { get; set; }
         public bool StartPrimary { get; set; }
