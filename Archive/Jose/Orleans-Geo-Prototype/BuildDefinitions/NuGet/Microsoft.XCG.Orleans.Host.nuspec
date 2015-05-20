@@ -1,0 +1,48 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.XCG.Orleans.Host</id>
+    <version>$version$</version>
+    <title>Orleans Hosting Libraries</title>
+    <authors>orldev</authors>
+    <owners>Microsoft</owners>
+    <projectUrl>http://toolbox/Orleans</projectUrl>
+    <iconUrl>http://public.blu.livefilestore.com/y1pEzu0oYTIq8qBOlRmxMpVOSZM2SWCd71GSH6vdFTlohbzll56CwEMmWW9M-W5ph6IYM5uXSD30iBjCAz8uKVuEQ/orleans-nuget.png?psid=1</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>http://codebox/Legal/TOU.aspx</licenseUrl>
+    <summary>
+      Silo hosting libraries and tools for Orleans Cloud Application Framework.
+    </summary>
+    <description>
+      Silo hosting libraries and tools for Orleans Cloud Application Framework.
+      Orleans is a system for building highly-scalable cloud applications.
+    </description>
+    <copyright>Copyright Microsoft 2013</copyright>
+    <tags>MS Internal Only,Orleans,Cloud Computing,Actor Model,Actors,Distributed Systems</tags>
+    <dependencies>
+      <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="2.0" />
+      <dependency id="WindowsAzure.Storage" version="2.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Binaries\OrleansServer\Orleans.*" exclude="**\Orleans.SDK.targets;**\*.timestamp" target="lib\net45" />
+    <file src="Binaries\OrleansServer\OrleansRuntimeGrainInterfaces.*" target="lib\net45" />
+
+    <file src="Binaries\OrleansServer\OrleansRuntime.*" target="lib\net45" />
+    <file src="Binaries\OrleansServer\OrleansAzureUtils.*" target="lib\net45" />
+
+    <file src="Binaries\OrleansServer\OrleansProviders.*" target="lib\net45" />
+    <file src="Binaries\OrleansServer\OrleansProviderInterfaces.*" target="lib\net45" />
+
+    <file src="Binaries\OrleansServer\CounterControl.*" target="tools\net45" />
+    <file src="Binaries\OrleansServer\OrleansHost.*" target="tools\net45" />
+    <file src="Binaries\OrleansServer\StartOrleans.cmd" target="tools\net45" />
+    <file src="Binaries\OrleansServer\OrleansManager.*" target="tools\net45" />
+    <file src="Binaries\OrleansServer\OrleansConfiguration.xsd" target="tools\net45" />
+
+    <!--<file src="Binaries\OrleansServer\*.ps1" target="tools\net45" />-->
+
+    <file src="Binaries\OrleansServer\OrleansConfiguration.xml" target="content\net45" />
+  </files>
+</package>
+  

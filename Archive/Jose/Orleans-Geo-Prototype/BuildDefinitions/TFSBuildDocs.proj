@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- DO NOT EDIT the project element - the ToolsVersion specified here does not prevent the solutions 
+     and projects in the SolutionToBuild item group from targeting other versions of the .NET framework. 
+     -->
+<Project DefaultTargets="BuildDocs" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <!-- Do not edit this -->
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\TeamBuild\Microsoft.TeamFoundation.Build.targets" />
+
+  <ProjectExtensions>
+
+    <!-- Team Foundation Build Version - DO NOT CHANGE -->
+    <ProjectFileVersion>2</ProjectFileVersion>
+
+  </ProjectExtensions>
+
+  <PropertyGroup>
+
+    <!-- Additional Properties -->
+
+    <!--  WorkItemType
+     The type of the work item created on a build failure. 
+     -->
+    <WorkItemType>Bug</WorkItemType>
+
+    <!--  WorkItemFieldValues
+     Fields and values of the work item created on a build failure.
+     
+     Note: Use reference names for fields if you want the build to be resistant to field name 
+     changes. Reference names are language independent while friendly names are changed depending 
+     on the installed language. For example, "System.Reason" is the reference name for the "Reason" 
+     field.
+     -->
+    <WorkItemFieldValues>System.Reason=Build Failure;System.Description=Build Failure</WorkItemFieldValues>
+
+    <!--  WorkItemTitle
+     Title of the work item created on build failure.
+     -->
+    <WorkItemTitle>Build failure in build:</WorkItemTitle>
+
+    <!--  DescriptionText
+     History comment of the work item created on a build failure. 
+     -->
+    <DescriptionText>This work item was created by Team Build on a build failure.</DescriptionText>
+
+    <!--  BuildLogText
+     Additional comment text for the work item created on a build failure.
+     -->
+    <BuildlogText>The build log file is at:</BuildlogText>
+
+    <!--  ErrorWarningLogText
+     Additional comment text for the work item created on a build failure. 
+     This text will only be added if there were errors or warnings.
+     -->
+    <ErrorWarningLogText>The errors/warnings log file is at:</ErrorWarningLogText>
+
+  </PropertyGroup>
+
+
+  <!-- ****** Begin Sandcastle Build -->
+  <!--<Target Name="BuildDocs" DependsOnTargets="Clean;ValueTest;Chm;APIWebSite" />-->
+  <Target Name="BuildDocs" DependsOnTargets="Clean;ValueTest;Chm" />
+
+  <PropertyGroup>
+    <!-- Project Setup -->
+    <!--Default the configuration to Debug if one is not provided.-->
+    <SetConfiguration>$(Configuration)</SetConfiguration>
+    <SetConfiguration Condition="'$(SetConfiguration)' == ''">Debug</SetConfiguration>
+    <PresentationStyle Condition="'$(PresentationStyle)' == ''">vs2005</PresentationStyle>
+    <PresentationStyle Condition="'$(PresentationStyle)' == ''">Hana</PresentationStyle>
+
+    <!-- Environment -->
+    <Framework>$(WINDIR)\Microsoft.NET\Framework\v4.0.30319</Framework>
+    <SolutionRoot>$(BuildProjectFolderPath)\..</SolutionRoot>
+    <ToolsPath>$(SolutionRoot)\Dependencies</ToolsPath>
+    <SandcastleRoot>$(ToolsPath)\Sandcastle</SandcastleRoot>
+    <ProductionTools>$(SandcastleRoot)\ProductionTools</ProductionTools>
+    <ProductionTransforms>$(SandcastleRoot)\ProductionTransforms</ProductionTransforms>
+    <Presentation>$(SandcastleRoot)\Presentation\$(PresentationStyle)</Presentation>
+    <InDir>$(SolutionRoot)\OrleansHost\bin\$(SetConfiguration)</InDir>
+    <DocDir>$(SolutionRoot)\Documentation</DocDir>
+    <OutputDir>$(DocDir)\OrleansHelp</OutputDir>
+    <ChmDir>$(DocDir)\Help</ChmDir>
+    <WorkingDir>$(OutputDir)\Working</WorkingDir>
+    <!--<WebDir>$(OutputDir)\OrleansAPI-Web</WebDir>-->
+    <Comments>$(InDir)\Orleans.xml</Comments>
+  </PropertyGroup>
+
+  <Target Name="ValueTest">
+    <Message Text="Defined Values:" />
+    <Message Text="    SolutionRoot = $(SolutionRoot)" />
+    <Message Text="    ToolsPath = $(ToolsPath)" />
+    <Message Text="    SandcastleRoot = $(SandcastleRoot)" />
+    <Message Text="    ProductionTools = $(ProductionTools)" />
+    <Message Text="    ProductionTransforms = $(ProductionTransforms)" />
+    <Message Text="    Presentation = $(Presentation)"/>
+    <Message Text="    InDir = $(InDir)"/>
+    <Message Text="    DocDir = $(DocDir)" />
+    <Message Text="    OutputDir = $(OutputDir)" />
+    <Message Text="    OutDir = $(OutDir)"/>
+    <Message Text="    WorkingDir = $(WorkingDir)" />
+    <Message Text="    Comments = $(Comments)" />
+    <Message Text=" " />
+    <Message Text="Other Values:" />
+    <Message Text="    SolutionDir = $(SolutionDir)" />
+    <Message Text="    BinariesRoot = $(BinariesRoot)"/>
+    <Message Text="    BuildProjectFolderPath = $(BuildProjectFolderPath)" />
+    <Message Text="    Configuration = $(Configuration)"/>
+    <Message Text="    OutputAssembly = $(OutputAssembly)" />
+  </Target>
+
+  <Target Name="GenerateDocumentation">
+    <!-- Build source code docs -->
+    <MSBuild Projects="$(SolutionRoot)\OrleansDocs.shfbproj"
+        Properties="Configuration=$(SetConfiguration);Platform=AnyCPU;OutDir=$(OutDir)" />
+  </Target>
+  
+   <Target Name="Clean">
+    <!--<RemoveDir Directories="$(ChmDir)" ContinueOnError="true" />-->
+    <RemoveDir Directories="$(WorkingDir)" ContinueOnError="true" />
+    <RemoveDir Directories="$(OutputDir)" ContinueOnError="true" />
+    <Delete Files="$(OutputAssembly);reflection.xml;ChmProject.hhp" TreatErrorsAsWarnings="true" />
+  </Target>
+
+  <Target Name="WorkingDir">
+     <!--For sandcastle-scbuild.config-->
+    <MakeDir Directories="$(WorkingDir)"                              Condition="!Exists('$(WorkingDir)')" />
+    <MakeDir Directories="$(WorkingDir)\ReflectionData\Framework"     Condition="!Exists('$(WorkingDir)\ReflectionData\Framework')" />
+    <MakeDir Directories="$(WorkingDir)\ReflectionData\Dependencies"  Condition="!Exists('$(WorkingDir)\ReflectionData\Dependencies')" />
+    <MakeDir Directories="$(WorkingDir)\Comments"                     Condition="!Exists('$(WorkingDir)\Comments')" />
+    <MakeDir Directories="$(WorkingDir)\HTML"                       Condition="!Exists('$(WorkingDir)\HTML')" />
+    <MakeDir Directories="$(WorkingDir)\TopicInfo"                    Condition="!Exists('$(WorkingDir)\TopicInfo')" />
+  </Target>
+  
+  <Target Name="Template" Condition="!Exists('$(OutputDir)')" DependsOnTargets="WorkingDir">
+    <Exec Condition="Exists('$(Presentation)\icons')"   Command="xcopy.exe $(Presentation)\Icons\*.* $(WorkingDir)\Icons\ /y /r" />
+    <Exec Condition="Exists('$(Presentation)\scripts')"   Command="xcopy.exe $(Presentation)\scripts\*.* $(WorkingDir)\scripts\ /y /r" />
+    <Exec Condition="Exists('$(Presentation)\styles')"   Command="xcopy.exe $(Presentation)\styles\*.* $(WorkingDir)\styles\ /y /r" />
+  </Target>
+
+  <!-- 
+    <Target Name="UpdateSandcastleConfigFiles">
+    <Attrib Files="@(SandcastleFiles)" ReadOnly="false"/>
+    <FileUpdate Files="@(SandcastleFiles)" Regex="%DXROOT%" ReplacementText="$(SandcastleRoot)" />
+    <Attrib Files="@(PresentationConfig)" ReadOnly="false"/>
+    <FileUpdate Files="@(PresentationConfig)" Regex="%DXROOT%" ReplacementText="$(SandcastleRoot)" />
+  </Target>
+-->
+  
+ <Target Name="ReflectionData" DependsOnTargets="Template;WorkingDir" Inputs="$(InDir)\Orleans.dll;$(Comments)" Outputs="reflection.xml">
+    <Exec Command='SET DXRoot=$(SandcastleRoot) &amp; "$(ProductionTools)\MRefBuilder.exe" "$(InDir)\Orleans.dll" /out:"$(WorkingDir)\reflection_base.xml"' />
+    <Exec Condition="'$(PresentationStyle)' == 'prototype'" Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\ApplyPrototypeDocModel.xsl" /xsl:"$(ProductionTransforms)\AddGuidFilenames.xsl"     "$(WorkingDir)\reflection_base.xml" /out:"$(WorkingDir)\ReflectionData\reflection.xml"' />
+    <Exec Condition="'$(PresentationStyle)' == 'vs2005'"    Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\ApplyVSDocModel.xsl"        /xsl:"$(ProductionTransforms)\AddFriendlyFilenames.xsl" "$(WorkingDir)\reflection_base.xml" /out:"$(WorkingDir)\ReflectionData\reflection.xml" /arg:IncludeAllMembersTopic=true  /arg:IncludeInheritedOverloadTopics=true' />
+    <Exec Condition="'$(PresentationStyle)' == 'hana'"      Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\ApplyVSDocModel.xsl"        /xsl:"$(ProductionTransforms)\AddFriendlyFilenames.xsl" "$(WorkingDir)\reflection_base.xml" /out:"$(WorkingDir)\ReflectionData\reflection.xml" /arg:IncludeAllMembersTopic=false /arg:IncludeInheritedOverloadTopics=true' />
+ </Target>
+  
+  <Target Name="Manifest" DependsOnTargets="ReflectionData" Inputs="reflection.xml" Outputs="$(WorkingDir)\manifest.xml">
+    <Exec Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\ReflectionToManifest.xsl" "$(WorkingDir)\ReflectionData\reflection.xml" /out:"$(WorkingDir)\manifest.xml"' />
+  </Target>
+
+  <!--We have to set the environment variable DXRoot in the Exec element because the Sandcastle build assembler relies on it.-->
+  <Target Name="Html" DependsOnTargets="Manifest" Inputs="$(WorkingDir)\manifest.xml;reflection.xml;$(Comments)" Outputs="$(WorkingDir)\html\*.htm">
+    <!--Copy the XML Files to the working directory -->
+    <Exec Condition="Exists('$(InDir)\Orleans.xml')"   Command="xcopy.exe $(InDir)\Orleans.xml $(WorkingDir)\Comments\ /y /r" />
+
+    <Exec Command='SET DXRoot=$(SandcastleRoot)&amp; SET DxTempDir=$(WorkingDir)&amp; cd "$(WorkingDir)"&amp; "$(ProductionTools)\BuildAssembler.exe" /config:"$(DocDir)\configuration\sandcastle-scbuild.config" "$(WorkingDir)\manifest.xml"' />
+  </Target>
+
+  <Target Name="Chm"
+          Inputs="$(WorkingDir)\html\*.htm;reflection.xml"
+          Outputs="$(OutputDir)\Orleans.chm;$(WorkingDir)\toc.xml"
+          DependsOnTargets="Html">
+
+    <Exec Condition="'$(PresentationStyle)' == 'prototype'" Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\CreatePrototypeToc.xsl" $(WorkingDir)\ReflectionData\reflection.xml /out:"$(WorkingDir)\Toc.xml"' />
+    <Exec Condition="'$(PresentationStyle)' != 'prototype'" Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\CreateVSToc.xsl"        $(WorkingDir)\ReflectionData\reflection.xml /out:"$(WorkingDir)\Toc.xml"' />
+
+    <!--For sandcastle.config-->
+    <MakeDir Directories="$(chmDir)"         Condition="!Exists('$(chmDir)')" />
+    <MakeDir Directories="$(chmDir)\Html"    Condition="!Exists('$(chmDir)\Html')" />
+    <MakeDir Directories="$(chmDir)\Icons"   Condition="!Exists('$(chmDir)\Icons')" />
+    <MakeDir Directories="$(chmDir)\Scripts" Condition="!Exists('$(chmDir)\Scripts')" />
+    <MakeDir Directories="$(chmDir)\Styles"  Condition="!Exists('$(chmDir)\Styles')" />
+    <!--<MakeDir Directories="$(chmDir)\Local"   Condition="!Exists('$(chmDir)\Local')" />-->
+
+    <!--copy directories from hxs-->
+    <Exec Condition="Exists('$(chmDir)\Icons')"   Command="xcopy.exe $(WorkingDir)\Icons\*.* $(chmDir)\Icons\ /y /r" />
+    <Exec Condition="Exists('$(chmDir)\Scripts')" Command="xcopy.exe $(WorkingDir)\Scripts\*.* $(chmDir)\Scripts\ /y /r" />
+    <Exec Condition="Exists('$(chmDir)\Styles')"  Command="xcopy.exe $(WorkingDir)\Styles\*.* $(chmDir)\Styles\ /y /r" />
+    <!--<Exec Condition="Exists('$(chmDir)s\Local')"  Command="xcopy.exe $(chmDir)\Local\*.* $(chmDir)\Local\ /y /r" />-->
+
+    <!--generate CHM-specific HTML and HH* files-->
+    <Exec Command="&quot;$(ProductionTools)\ChmBuilder.exe&quot; /project:Orleans-API /html:$(WorkingDir)\html /lcid:1033 /toc:$(WorkingDir)\Toc.xml /out:$(chmDir)" />
+
+    <Exec Command="&quot;$(ProductionTools)\DBCSFix.exe&quot; /d:$(chmDir) /l:1033" />
+
+    <Exec Command='"$(ToolsPath)\HTML Help Workshop\hhc.exe" "$(chmDir)\Orleans-API.hhp"' IgnoreExitCode="true" />
+
+  </Target>
+
+  <!--Disabled because it does not produce a workable website.-->
+  <Target Name='APIWebSite'>
+    <!--<MakeDir Directories="$(WebDir)"         Condition="!Exists('$(WebDir)')" />
+    <MakeDir Directories="$(WebDir)\Html"    Condition="!Exists('$(WebDir)\Html')" />
+    <MakeDir Directories="$(WebDir)\Icons"   Condition="!Exists('$(WebDir)\Icons')" />
+    <MakeDir Directories="$(WebDir)\Scripts" Condition="!Exists('$(WebDir)\Scripts')" />
+    <MakeDir Directories="$(WebDir)\Styles"  Condition="!Exists('$(WebDir)\Styles')" />
+    <MakeDir Directories="$(WebDir)\TopicInfo"  Condition="!Exists('$(WebDir)\TopicInfo')" />
+
+    --><!--copy directories from hxs--><!--
+    <Exec Condition="Exists('$(WebDir)')"         Command="xcopy.exe $(Presentation)\website\*.* $(WebDir) /y /r" />
+    <Exec Condition="Exists('$(WebDir)\Icons')"   Command="xcopy.exe $(WorkingDir)\Icons\*.* $(WebDir)\Icons\ /y /r" />
+    <Exec Condition="Exists('$(WebDir)\Scripts')" Command="xcopy.exe $(WorkingDir)\Scripts\*.* $(WebDir)\Scripts\ /y /r" />
+    <Exec Condition="Exists('$(WebDir)\Styles')"  Command="xcopy.exe $(WorkingDir)\Styles\*.* $(WebDir)\Styles\ /y /r" />
+    
+    <Exec Command='SET DXRoot=$(SandcastleRoot)&amp; SET DxTempDir=$(WorkingDir)&amp; SET DxWebOutputDir=$(WebDir)&amp; cd "$(WorkingDir)"&amp; "$(ProductionTools)\BuildAssembler.exe" /config:"$(DocDir)\configuration\sandcastle-webRef.config" "$(WorkingDir)\manifest.xml"' />
+    <Exec Condition="'$(PresentationStyle)' == 'vs2005'" Command='"$(ProductionTools)\XslTransform.exe" /xsl:"$(ProductionTransforms)\Vs2005TocToDsToc.xsl" /xsl:"$(ProductionTransforms)\DsTocToSitemap.xsl" "$(WorkingDir)\toc.xml" /out:"$(WebDir)\web.sitemap" /arg:topicInfo="$(WorkingDir)\TopicInfo" ' />-->
+
+  </Target>
+
+  <!-- ****** End Sandcastle Build -->
+</Project>

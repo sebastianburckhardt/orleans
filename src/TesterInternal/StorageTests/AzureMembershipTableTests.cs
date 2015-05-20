@@ -28,7 +28,7 @@ using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.MembershipService;
-using UnitTests.Tester;
+using Orleans.TestingHost;
 
 
 namespace UnitTests.StorageTests
@@ -58,7 +58,6 @@ namespace UnitTests.StorageTests
         public static void ClassInitialize(TestContext testContext)
         {
             TraceLogger.Initialize(new NodeConfiguration());
-            StorageTestConstants.Init();
         }
 
         // Use TestInitialize to run code before running each test 

@@ -1,0 +1,346 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="DiagnosticsConfigSchema"
+    targetNamespace="http://schemas.microsoft.com/ServiceHosting/2010/10/DiagnosticsConfiguration"
+    elementFormDefault="qualified"
+    xmlns="http://schemas.microsoft.com/ServiceHosting/2010/10/DiagnosticsConfiguration"
+    xmlns:mstns="http://tempuri.org/XMLSchema.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="PositiveDuration">
+    <xs:restriction base="xs:duration">
+      <xs:minInclusive value="PT0S" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="LogLevel">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Undefined" />
+      <xs:enumeration value="Verbose" />
+      <xs:enumeration value="Information" />
+      <xs:enumeration value="Warning" />
+      <xs:enumeration value="Error" />
+      <xs:enumeration value="Critical" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ContainerName">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="AbsolutePathWithEnvironmentExpansion">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([a-zA-Z]:\\)?([^&lt;&gt;:&quot;/|?*]+)*(\\)?" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="RelativePathWithEnvironmentExpansion">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([^&lt;&gt;:&quot;/\\|?*]+)(\\([^&lt;&gt;:&quot;/\\|?*]+))*(\\)?" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PerformanceCounterPath">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\\[^\\()/#*]+(\(([^\\()#*]+|[^\\()#*]+/[^\\()#*]+|[^\\()#*]+#[^\\()#*]+|[^\\()#*]+/[^\\()#*]+#[^\\()#*]+|\*)\))?\\[^\\()*]+" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NamedElementNameString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="^[a-zA-Z_][^\\\/\:\*\?\&quot;\&lt;\&gt;\|]*(?&lt;![\.\s])$" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:attributeGroup name="BasicConfiguration">
+    <xs:attribute name="bufferQuotaInMB" type="xs:unsignedInt" use="optional" default="0">
+      <xs:annotation>
+        <xs:documentation>
+          The maximum amount of file system storage allocated for the specified data.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="scheduledTransferPeriod" type="PositiveDuration" use="optional" default="PT0S">
+      <xs:annotation>
+        <xs:documentation>
+          The interval between scheduled transfers for this data, rounded up to the nearest minute.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:attributeGroup>
+
+  <xs:attributeGroup name="LogLevel">
+    <xs:attribute name="scheduledTransferLogLevelFilter" type="LogLevel" use="optional" default="Undefined">
+      <xs:annotation>
+        <xs:documentation>
+          The minimum log severity to transfer.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:attributeGroup>
+
+  <xs:attributeGroup name="DirectoryAttributes">
+    <xs:attribute name="container" type="ContainerName" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The name of the container where the content of the directory is to be transferred.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="directoryQuotaInMB" type="xs:unsignedInt" use="optional" default="0">
+      <xs:annotation>
+        <xs:documentation>
+          The maximum size of the directory in megabytes.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:attributeGroup>
+
+  <xs:complexType name="LogsBase">
+    <xs:attributeGroup ref="BasicConfiguration" />
+  </xs:complexType>
+  
+  <xs:complexType name="DiagnosticInfrastructureLogs">
+    <xs:complexContent>
+      <xs:extension base="LogsBase">
+        <xs:attributeGroup ref="LogLevel" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="DirectoryBase" />
+  
+  <xs:complexType name="DirectoryAbsolute">
+    <xs:complexContent>
+      <xs:extension base="DirectoryBase">
+        <xs:attribute name="path" type="AbsolutePathWithEnvironmentExpansion" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The absolute path to the directory to monitor.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="expandEnvironment" type="xs:boolean" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              If true, then environment variables in the path will be expanded.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="DirectoryLocalResource">
+    <xs:complexContent>
+      <xs:extension base="DirectoryBase">
+        <xs:attribute name="relativePath" type="RelativePathWithEnvironmentExpansion" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The path relative to the local resource to monitor.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="name" type="NamedElementNameString" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The local resource that contains the directory to monitor.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="DirectoryConfiguration">
+    <xs:choice>
+      <xs:element name="Absolute" type="DirectoryAbsolute">
+        <xs:annotation>
+          <xs:documentation>
+            The absolute path to the directory to monitor.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="LocalResource" type="DirectoryLocalResource">
+        <xs:annotation>
+          <xs:documentation>
+            The path relative to a local resource to monitor.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:choice>
+    <xs:attributeGroup ref="DirectoryAttributes" />
+  </xs:complexType>
+
+  <xs:complexType name="SpecialLogDirectory">
+    <xs:attributeGroup ref="DirectoryAttributes" />
+  </xs:complexType>
+
+  <xs:complexType name="DataSources">
+    <xs:sequence maxOccurs="unbounded">
+      <xs:element name="DirectoryConfiguration" type="DirectoryConfiguration" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>
+            The directory of log files to monitor.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="Directories">
+    <xs:complexContent>
+      <xs:extension base="LogsBase">
+        <xs:all>
+          <xs:element name="IISLogs" type="SpecialLogDirectory" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>
+                The IIS log directory.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="FailedRequestLogs" type="SpecialLogDirectory" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>
+                The failed request log directory.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="CrashDumps" type="SpecialLogDirectory" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>
+                The crash dump directory.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="DataSources" type="DataSources" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>
+                Additional log directories.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:all>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Logs">
+    <xs:complexContent>
+      <xs:extension base="LogsBase">
+        <xs:attributeGroup ref="LogLevel" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="PerformanceCounterConfiguration">
+    <xs:attribute name="counterSpecifier" type="PerformanceCounterPath" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The path to the performance counter to collect.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="sampleRate" type="PositiveDuration" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The rate at which the performance counter should be sampled.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  
+  <xs:complexType name="PerformanceCounters">
+    <xs:complexContent>
+      <xs:extension base="LogsBase">
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element name="PerformanceCounterConfiguration" type="PerformanceCounterConfiguration">
+            <xs:annotation>
+              <xs:documentation>
+                The performance counter to collect.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="DataSource">
+    <xs:attribute name="name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          An XPath expression specifying the logs to collect.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  
+  <xs:complexType name="WindowsEventLog">
+    <xs:complexContent>
+      <xs:extension base="LogsBase">
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element name="DataSource" type="DataSource">
+            <xs:annotation>
+              <xs:documentation>
+                The event log to monitor.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+        <xs:attributeGroup ref="LogLevel" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  
+  <xs:complexType name="DiagnosticMonitorConfiguration">
+    <xs:all>
+      <xs:element name="DiagnosticInfrastructureLogs" type="DiagnosticInfrastructureLogs" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Configures the logs generated by the underlying diagnostics infrastructure. The diagnostic infrastructure logs are useful for troubleshooting the diagnostics system itself.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="Directories" type="Directories" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Describes the configuration of a directory to which file-based logs are written.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="Logs" type="Logs" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Configures basic Windows Azure logs.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="PerformanceCounters" type="PerformanceCounters" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Configures performance counter collection.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="WindowsEventLog" type="WindowsEventLog" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Configures Windows event log collection.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:all>
+    <xs:attribute name="configurationChangePollInterval" type="PositiveDuration" use="optional" default="PT1M">
+      <xs:annotation>
+        <xs:documentation>
+          The interval at which the diagnostic monitor polls for configuration changes.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="overallQuotaInMB" type="xs:unsignedInt" use="optional" default="4000">
+      <xs:annotation>
+        <xs:documentation>
+          The total amount of file system storage allocated for all logging buffers.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  
+  <xs:element name="DiagnosticMonitorConfiguration" type="DiagnosticMonitorConfiguration" />
+</xs:schema>

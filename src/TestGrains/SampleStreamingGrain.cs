@@ -21,11 +21,12 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
+using System.Runtime.CompilerServices;
 
 namespace UnitTests.SampleStreaming
 {
@@ -40,7 +41,7 @@ namespace UnitTests.SampleStreaming
 
         public Task OnNextAsync(T item, StreamSequenceToken token = null)
         {
-            hostingGrain.logger.Info("OnNextAsync({0}{1})", item, token != null ? token.ToString() : "null");
+            hostingGrain.logger.Info("OnNextAsync(item={0}, token={1})", item, token != null ? token.ToString() : "null");
             hostingGrain.numConsumedItems++;
             return TaskDone.Done;
         }
@@ -83,14 +84,14 @@ namespace UnitTests.SampleStreaming
 
         public Task StartPeriodicProducing()
         {
-            logger.Info("StartProducing");
+            logger.Info("StartPeriodicProducing");
             producerTimer = base.RegisterTimer(TimerCallback, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(10));
             return TaskDone.Done;
         }
 
         public Task StopPeriodicProducing()
         {
-            logger.Info("StopProducing");
+            logger.Info("StopPeriodicProducing");
             producerTimer.Dispose();
             producerTimer = null;
             return TaskDone.Done;
@@ -98,6 +99,7 @@ namespace UnitTests.SampleStreaming
 
         public Task<int> GetNumberProduced()
         {
+            logger.Info("GetNumberProduced");
             return Task.FromResult(numProducedItems);
         }
 
@@ -107,14 +109,26 @@ namespace UnitTests.SampleStreaming
             return TaskDone.Done;
         }
 
+        public Task Produce()
+        {
+            return Fire();
+        }
+
         private Task TimerCallback(object state)
         {
-            if (producerTimer != null)
-            {
-                numProducedItems++;
-                logger.Info("TimerCallback ({0})", numProducedItems);
-                return producer.OnNextAsync(numProducedItems);
-            }
+            return producerTimer != null? Fire(): TaskDone.Done;
+        }
+
+        private Task Fire([CallerMemberName] string caller = null)
+        {
+            numProducedItems++;
+            logger.Info("{0} (item={1})", caller, numProducedItems);
+            return producer.OnNextAsync(numProducedItems);
+        }
+
+        public override Task OnDeactivateAsync()
+        {
+            logger.Info("OnDeactivateAsync");
             return TaskDone.Done;
         }
     }
@@ -158,6 +172,12 @@ namespace UnitTests.SampleStreaming
         public Task<int> GetNumberConsumed()
         {
             return Task.FromResult(numConsumedItems);
+        }
+
+        public override Task OnDeactivateAsync()
+        {
+            logger.Info("OnDeactivateAsync");
+            return TaskDone.Done;
         }
     }
 
@@ -217,6 +237,12 @@ namespace UnitTests.SampleStreaming
         public Task OnErrorAsync( Exception ex )
         {
             logger.Info( "OnErrorAsync({0})", ex );
+            return TaskDone.Done;
+        }
+
+        public override Task OnDeactivateAsync()
+        {
+            logger.Info("OnDeactivateAsync");
             return TaskDone.Done;
         }
     }

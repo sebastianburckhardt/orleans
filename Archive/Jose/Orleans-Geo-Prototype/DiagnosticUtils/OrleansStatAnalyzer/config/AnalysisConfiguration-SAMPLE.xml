@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<AnalysisConfiguration>
+  <Dataset>
+    <Name>1</Name>
+    <StorageType Name="Log">
+      <Log LogDir="C:\Users\t-anewel\Desktop\Log files\2-14-6" FilePrefix="Silo" LogWriteInterval="60"/>
+    </StorageType>
+    <UserAnalysis>
+      <Actions>
+        <!--<Visualization ChartDir="charts" Visible="False" />
+        <ThresholdAnalysis RuleConfigFile="path_to_rule_config_file" />
+        <CorrelationAnalysis Pearson="True" Spearman="True" HistogramExplanation="False" />
+        <VarianceAnalysis />
+        <PerformanceTuning />-->
+        <PerformanceTuning />
+      </Actions>
+      <!--<Counters>
+        <Name>Directory.Lookups.Cache.HitRatio</Name>
+        <Name>Runtime.CpuUsage</Name>
+        <Name>Runtime.GC.PercentOfTimeInGC</Name>
+        <Name>Messaging.Processing.Dispatcher.Processed.Total.Delta</Name>
+        <Name>Messaging.Processing.Dispatcher.Processed.Ok.Direction.Request.Delta</Name>
+      </Counters>-->
+    </UserAnalysis>
+  </Dataset>
+</AnalysisConfiguration>

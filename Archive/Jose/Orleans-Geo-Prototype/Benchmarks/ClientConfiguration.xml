@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ClientConfiguration xmlns="urn:orleans">
+  <!-- This client configuration is suitable for use with a local Orleans deployment running on the same machine as the client,
+  although only the Gateway address would need to be changed to support a distributed deployment. -->
+  <!-- The Gateway port must be statically known; that is, it can't be zero. It is often convenient for the same node to be the primary
+  node, the seed node, and the gateway node.
+  It is possible to have multiple gateway nodes. -->
+  <Gateway Address="localhost" Port="10000" />
+  <Debug CrashOnUnobservedException="true" ForceConsistency="false" UseChess="false" Validation="false" />
+  <!-- To turn tracing off, set DefaultTraceLevel="Off" and have no overrides.
+    For the trace log file name, {0} is replaced by "Client" and {1} is the current time. -->
+  <Tracing DefaultTraceLevel="Warning" TraceToConsole="true" TraceToFile="{0}-{1}.log" WriteStatistics="false" WriteTraces="false">
+    <TraceLevelOverride LogPrefix="Runtime" TraceLevel="Warning" />
+    <TraceLevelOverride LogPrefix="Grain" TraceLevel="Warning" />
+    <TraceLevelOverride LogPrefix="Application" TraceLevel="Warning" />
+    <TraceLevelOverride LogPrefix="Tetris" TraceLevel="Warning" />
+  </Tracing>
+  <Messaging ResponseTimeout="30" />
+</ClientConfiguration>

@@ -1,0 +1,3876 @@
+MIME-Version: 1.0
+Content-Location: file:///C:/AAF41233/GettingStartedWithOrleans.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="utf-8"
+
+<html xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:dt=3D"uuid:C2F41010-65B3-11d1-A29F-00AA00C14882"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dutf-8">
+<meta name=3DProgId content=3DOneNote.File>
+<meta name=3DGenerator content=3D"Microsoft OneNote 15">
+<link id=3DMain-File rel=3DMain-File href=3DGettingStartedWithOrleans.htm>
+<link rel=3DFile-List href=3D"GettingStartedWithOrleans_files/filelist.xml">
+</head>
+
+<body lang=3Den-US style=3D'font-family:Calibri;font-size:11.0pt;color:blac=
+k'>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.4909in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.9451in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Introd=
+uction</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.725i=
+n'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>11:=
+22 AM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.6805in;margin-left:0in;width:7.4909=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Orleans
+is a framework for building highly-scalable cloud applications. Its program=
+ming
+model and distributed runtime system assume much of the burden involved in
+developing, deploying, and operating a highly scalable distributed applicat=
+ion
+running on potentially unreliable servers. Orleans provides a higher level
+programming model than existing .NET libraries, significantly reducing the
+amount of work that developers need to do while easing the transition from
+desktop or client/server systems to cloud-scale distributed applications.
+Orleans programs can co-exist and communicate with existing applications, b=
+ut
+to obtain the benefits of Orleans an application needs to be written using =
+the
+Orleans programming model. Orleans applications can easily be deployed in A=
+zure
+or on a private cluster.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>This
+document provides an introduction to Orleans for developers planning to wri=
+te
+new applications. It covers the Orleans architecture, describes the key
+concepts in some detail, and provides basic information on how to build,
+deploy, and run an Orleans application. Detailed API and configuration
+information is documented separately in the <a
+href=3D"onenote:API%20Reference.one#section-id=3D{96F95D06-1769-4109-9E2F-A=
+72150766910}&amp;end&amp;base-path=3Dhttp://sharepoint/sites/orleans/Shared=
+%20Documents/OrleansKnowledgeBase">API
+Reference</a> and <a
+href=3D"onenote:Advanced%20Concepts.one#section-id=3D{90B08892-5DA6-4FA6-94=
+95-32336DDA8E6D}&amp;end&amp;base-path=3Dhttp://sharepoint/sites/orleans/Sh=
+ared%20Documents/OrleansKnowledgeBase">Advanced
+Concepts</a> sections of the Orleans OneNote notebook.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The online mas=
+ter
+copy of Orleans documentation is available here: </p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+href=3D"http://sharepoint/sites/orleans/_layouts/OneNote.aspx?id=3D/sites/o=
+rleans/Shared%20Documents/OrleansKnowledgeBase.">OrleansKnowledgeBase
+</a>Live documentation</p>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:13.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>License</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt;
+color:red'>The Orleans SDK release is <span style=3D'font-weight:bold'>Micr=
+osoft
+Confidential</span>.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6006in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.6548in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Before=
+ You
+Begin…</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+41 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.6805in;margin-left:0in;width:7.6006=
+in'>
+
+<p style=3D'margin-top:24pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:16.0pt;
+color:#365F91'><span style=3D'font-weight:bold'>Orleans Setup for Developer=
+s</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Installi=
+ng
+     the Orleans SDK</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+Orleans SDK is shipped as a single zip file that should be unzipped on your=
+ the
+local hard drive.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>The recommended installation location for the
+Orleans SDK is </span><span style=3D'font-family:"Courier New"'>C:\Orleans-=
+SDK</span><span
+style=3D'font-family:Calibri'>. We will refer to the actual directory where=
+ the
+SDK contents are located as [ORLEANS-SDK] throughout the rest of this docum=
+ent.</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Install =
+the
+     Orleans project templates into Visual Studio 2012/2013</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+Orleans SDK contains a VSIX package with Visual Studio project and item
+templates for use with Orleans.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>If you previously installed the Orleans proje=
+ct
+templates, you need to uninstall them by running the</span><span
+style=3D'font-family:"Courier New"'>[ORLEANS-SDK]\</span><span style=3D'fon=
+t-family:
+Calibri'> </span><span style=3D'font-family:Consolas'>UninstallOrleansVSToo=
+ls.cmd
+script file.</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>To install the project templates, run the </s=
+pan><span
+style=3D'font-family:"Courier New"'>[ORLEANS-SDK]\</span><span style=3D'fon=
+t-family:
+Consolas'>InstallOrleansVSTools.cmd </span><span style=3D'font-family:Calib=
+ri'>script
+file to install the templates into Visual Studio 2012/2013 and set up the
+required environment variable settings.</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Naturally,
+this step is only required on developer machines that are used for developi=
+ng
+Orleans applications, and is not required on Orleans runtime host machines.=
+</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>To later uninstall the Visual Studio template=
+s for
+Orleans, just run the </span><span style=3D'font-family:"Courier New"'>[ORL=
+EANS-SDK]\Uni</span><span
+style=3D'font-family:Consolas'>nstallOrleansVSTools.cmd </span><span
+style=3D'font-family:Calibri'>script file.</span></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D4 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     font-weight:bold;color:#4F81BD'><span style=3D'font-family:Cambria;
+     font-size:13.0pt;font-weight:bold;font-style:normal;font-weight:bold;
+     font-family:Cambria;font-size:13.0pt'>Running the Local Orleans
+     Development Silo</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+Orleans SDK includes a local development silo which is pre-configured to ru=
+n on
+localhost.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>This
+local silo will allow initial development and testing of Orleans samples and
+applications, and can also be used as an initial verification step before
+deployment of changes into a larger cluster of machines.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+Orleans local development silo can be started in a console window using the
+command script:</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:"Courier New"'>[ORLEANS-SDK]\</span><span style=3D'fon=
+t-weight:
+bold;font-family:"Courier New"'>StartLocalSilo.cmd</span><span
+style=3D'font-family:Calibri'> </span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Once
+started, the silo can be stopped using <span style=3D'font-weight:bold'>Ctr=
+l-C</span>
+or closing the console window.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+the current release, an Orleans silo must be stopped and restarted in order=
+ to
+pick up any application changes (no dynamic [re]deployment of grains).</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6041in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.1777in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Core
+Concepts</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+40 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.6041=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Orleans
+is based on an asynchronous, single-threaded actor model. The units of
+distribution, actors, encapsulating data and computation, are called <span
+style=3D'font-weight:bold'>grains</span>. Grains interact by passing asynch=
+ronous
+messages, whose return values are represented in the code as <span
+style=3D'font-weight:bold'>promises</span>.</p>
+
+<p style=3D'margin-top:24pt;margin-bottom:6pt;font-family:Cambria;font-size=
+:14.0pt;
+color:#365F91'><span style=3D'font-weight:bold'>Overview of the Orleans
+Architecture</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Orleans
+has two primary architectural goals:</p>
+
+<ul type=3Ddisc style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embe=
+d;
+ margin-top:0in;margin-bottom:0in'>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Make it easy for develo=
+pers
+     with no experience in distributed systems to build cloud-scale
+     applications.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-top=
+:0pt;
+     margin-bottom:10pt'><span style=3D'font-family:Calibri;font-size:11.0p=
+t'>Ensure
+     that those systems scale across multiple orders of magnitude of load
+     without requiring extensive re-design or re-architecture.</span></li>
+</ul>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>To
+meet these goals, we have constrained the programming model in order to gui=
+de
+developers down a path of best practices leading to scalable applications. =
+In
+some cases, such as persistence, we have removed an entire aspect from the
+explicit programming model and left the functionality to the runtime, to en=
+sure
+a scalable approach.</p>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:13.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>Actors</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Orleans
+starts with a basic model of actors that interact through asynchronous mess=
+age
+passing. Actors are isolated single-threaded components that encapsulate bo=
+th
+state and behavior. They are similar to objects, and therefore should be
+natural to any developer. Asynchronous messaging differs greatly from
+synchronous method calls, but experience has shown that purely synchronous
+systems do not scale well; in this case we have traded familiarity for
+scalability.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>To
+avoid confusion with other systems, actors in Orleans are called <span
+style=3D'font-weight:bold;font-style:italic'>grains</span>. Messages are
+represented by special methods on the .NET interface for a grain type. The
+methods are regular .NET functions, except that they must return a <span
+style=3D'font-weight:bold;font-style:italic'>promise</span>, a construct th=
+at
+represents a value that will become available at some future time. Grains a=
+re
+single-threaded and process messages one at a time, so that developers do n=
+ot
+need to deal with locking or other concurrency issues.</p>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:13.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>Virtual Actors</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Unlike
+actors in other systems such as Erlang or Akka, Orleans grains are <span
+style=3D'font-weight:bold;font-style:italic'>virtual actors</span>. The Orl=
+eans
+runtime manages the location and activation of grains similarly to the way =
+that
+the virtual memory manager of an operating system manages memory pages: it
+activates a grain by creating an in-memory copy (an<span style=3D'font-weig=
+ht:
+bold;font-style:italic'> activation</span>)<span style=3D'font-weight:bold;
+font-style:italic'> </span>on a server, and later it may deactivate that
+activation if it hasn't been used for some time. If a message is sent to the
+grain and there is no activation on any server, then the runtime will pick a
+location and create a new activation there.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Because
+grains are virtual, they never fail, even if the server that currently hosts
+all of their activations fails. This eliminates the need to test to see if a
+grain exists, as well as the need to track failures and recreate grains as
+needed; the Orleans runtime does all this automatically. Application code c=
+an
+create a reference to a grain.</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:6.1965in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.0875in;width:3.0006=
+in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Asynch=
+rony
+and Tasks</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.0875in;width:2.=
+7166in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+40 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:6.1965=
+in'>
+
+<ul style=3D'margin-left:.0868in;direction:ltr;unicode-bidi:embed;margin-to=
+p:
+ 0in;margin-bottom:0in'>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Asynchrony</span></=
+p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Grains interact by invoking asynchronous method calls. Asynchronous
+ methods are built on top the <a
+ href=3D"http://msdn.microsoft.com/en-us/library/dd460717(v=3Dvs.110).aspx"=
+>Task
+ Parallel Library</a> and return either a Task (for void methods) or a
+ Task&lt;T&gt; (for methods returning values of type T and properties of ty=
+pe
+ T).</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>The primary way of using a Task (also referred to as a promise) is=
+ to
+ await it with the <span style=3D'font-style:italic'>await</span> keyword o=
+f <a
+ href=3D"http://blogs.msdn.com/b/pfxteam/archive/2011/09/17/10212961.aspx">=
+C# 5.0
+ (.NET 4.5)</a>.</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle=
+'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;font-weight:norma=
+l;
+      font-style:normal;font-family:"Courier New";font-size:10.0pt;color:#1=
+F497D;
+      background:#DBE5F1'>Guid playerId =3D new
+      Guid(&quot;{2349992C-860A-4EDA-9590-000000000006}&quot;);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>IPlayerGrain player =3D
+      PlayerGrainFactory.GetGrain(playerId)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>await player.JoinGame(this);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>players.Add(playerId);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>return;</span></li>
+ </ol>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>&nbsp;</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>The <a
+ href=3D"http://msdn.microsoft.com/en-us/library/vstudio/hh156528.aspx">awa=
+it
+ keyword</a> effectively turns the remainder of the method into a closure t=
+hat
+ will asynchronously execute upon completion of the Task being awaited with=
+out
+ blocking the executing thread. In the above example, lines 4 and 5 will be
+ turned into a closure by the C# compiler.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>It is also possible to join two or more Tasks; the join creates a =
+new
+ Task that is resolved when all of its constituent Tasks are completed. Thi=
+s is
+ a useful pattern when a grain needs to start multiple computations and wait
+ for all of them to complete before proceeding. For example, a front-end gr=
+ain
+ that generates a web page made of many parts might make multiple back-end
+ calls, one for each part, and receive a Task for each result. The grain wo=
+uld
+ then wait for the join of all of these Tasks; when the join is resolved, t=
+he
+ individual Tasks have been completed, and all the data required to format =
+the
+ web page has been received.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Example:</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle=
+'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;font-weight:norma=
+l;
+      font-style:normal;font-family:"Courier New";font-size:10.0pt;color:#1=
+F497D;
+      background:#DBE5F1'>List&lt;Task&gt; tasks =3D new List&lt;Task&gt;()=
+;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>ChirperMessage chirp =3D CreateNewChirpMessage(te=
+xt);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>&nbsp;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>foreach (IChirperSubscriber subscriber in
+      Followers.Values)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'> 
+      </span>tasks.Add(subscriber.NewChirpAsync(chirp));</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>&nbsp;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>Task joinedTask =3D Task.WhenAll(tasks);</span></=
+li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>await joinedTask;</span></li>
+ </ol>
+ <p style=3D'margin-left:.375in;margin-top:0pt;margin-bottom:10pt;font-fami=
+ly:
+ "Courier New";font-size:10.0pt;color:#1F497D'>&nbsp;</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Turns: Units of Exe=
+cution</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>A grain activation performs work in chunks and finishes each chunk
+ before it moves on to the next. Chunks of work include method invocations =
+in
+ response to requests from other grains or external clients, and closures
+ scheduled on completion of a Task. The basic unit of execution correspondi=
+ng
+ to a chunk of work is known as a <span style=3D'font-weight:bold'>turn</sp=
+an>.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>While Orleans may execute many turns belonging to different
+ activations in parallel, each activation will always execute its turns one=
+ at
+ a time. This means that there is no need to use locks or other synchroniza=
+tion
+ methods to guard against data races and other multithreading hazards. As
+ mentioned above, however, the unpredictable interleaving of turns for
+ scheduled closures can cause the state of the grain to be different than w=
+hen
+ the closure was scheduled, so developers must still watch out for interlea=
+ving
+ bugs.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>By default, the Orleans scheduler requires an
+ activation to completely finish processing one request before invoking the
+ next request. An activation cannot receive a new request until all of the
+ Tasks created (directly or indirectly) in the processing of the current
+ request have been resolved and all of their associated closures executed.
+ Grain implementation classes may be marked with the [</span><span
+ style=3D'font-family:"Courier New";color:#0F243E'>Reentrant]</span><span
+ style=3D'font-family:Calibri'> attribute to indicate that turns belonging =
+to
+ different requests may be freely interleaved. In other words, a reentrant
+ activation may start executing another request while a previous request has
+ not finished processing and has pending closures. Execution of turns of bo=
+th
+ requests are still limited to a single thread. So the activation is still
+ executing one turn at a time, and each turn is executing on behalf of only=
+ one
+ of the activation’s requests.</span></p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>TaskDone.Done Utili=
+ty
+ Property</span></p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:#4F81BD'=
+>&nbsp;</p>
+ <p style=3D'margin:0in;font-size:11.0pt'><span style=3D'font-family:Calibr=
+i'>There
+ is no “standard” way to return a “void” Task (aka completion promi=
+se), so
+ Orleans sample<span style=3D'mso-spacerun:yes'>  </span>code still uses <=
+/span><span
+ style=3D'font-family:Consolas'>TaskDone.Done</span><span style=3D'font-fam=
+ily:
+ Calibri'> for that purposes, although other people use </span><span
+ style=3D'font-family:Consolas'>Task&lt;int&gt;.FromResult(0)</span><span
+ style=3D'font-family:Calibri'> to do same thing.</span></p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.75in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.0902in;width:2.209i=
+n'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Grains
+(Actors)</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.0902in;width:2.=
+7166in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+40 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.75in=
+'>
+
+<ul style=3D'margin-left:.0895in;direction:ltr;unicode-bidi:embed;margin-to=
+p:
+ 0in;margin-bottom:0in'>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Grains (Actors): Un=
+its of
+ Distribution</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Grains are building blocks of an Orleans application. Grains are t=
+he
+ atomic units of isolation, distribution, and persistence. A grain encapsul=
+ates
+ state and behavior, like any .NET object. A grain is a logical entity that=
+ at
+ any point in time may have zero or more (usually not more than one) in-mem=
+ory
+ replicas called <span style=3D'font-weight:bold'>activations</span>. A gra=
+in may
+ exist only in the persistent store with no in-memory replicas if there are=
+ no
+ requests pending for the grain. When there is work for the grain, the run-=
+time
+ will create an activation of the grain by picking a server and instantiati=
+ng
+ there the .NET class that implements the behavior of the grain. </p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Orleans controls the process of activating and deactivating grains.
+ This process is transparent to the developer: when coding a grain, a devel=
+oper
+ should assume that any other grains that the current grain will interact w=
+ith
+ are activated.<span style=3D'mso-spacerun:yes'>  </span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Grains are isolated; the only way for two grains to interact is by
+ sending messages. They have no shared memory or other shared state. Each
+ activation of a grain executes at most one logical unit of work, known as =
+a <span
+ style=3D'font-weight:bold'>turn</span>, at a time. This means that there i=
+s no
+ need to use locks or other local synchronization mechanisms in grain code.=
+</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>In this release, Orleans supports two modes: <span style=3D'font-s=
+tyle:
+ italic'>single activation </span>mode (default), in which only one
+ simultaneous activation of every grain is created, and <span style=3D'font=
+-style:
+ italic'>stateless</span> <span style=3D'font-style:italic'>worker </span>m=
+ode,
+ in which independent activations of a grain are created to increase the
+ throughput. “Independent” implies that there is no state reconciliation
+ between different activations of the same grain. So this mode is appropria=
+te
+ for grains that hold no local state, or grains whose local state is static,
+ such as a grain that acts as a cache of persistent state</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Grain Interfaces</s=
+pan></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Grains interact with each other by invoking methods and properties
+ declared as part of the respective grain interfaces. A grain implements on=
+e or
+ more previously declared grain interfaces. All methods and properties of a
+ grain interface are required to be asynchronous. That is, their return typ=
+es
+ have to be Tasks (see <a
+ href=3D"onenote:#Asynchrony%20and%20Tasks&amp;section-id=3D{C23D1643-CAC9-=
+4FEE-89F0-7F492EFD7D04}&amp;page-id=3D{113ED4B6-DDB9-4CE5-95D3-FAB29FA2C6D1=
+}&amp;end&amp;base-path=3Dhttps://microsoft.sharepoint.com/teams/orleans/Sh=
+ared%20Documents/OrleansKnowledgeBase/Getting%20Started%20with%20Orleans.on=
+e">Asynchrony
+ and Tasks</a> for more details). </p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Example:</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:"Courier New";font-size:10.0=
+pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      color:#1F497D'><span style=3D'font-family:"Courier New";font-size:10.=
+0pt;
+      font-weight:normal;font-style:normal;font-family:"Courier New";
+      font-size:10.0pt;background:#DBE5F1'>public interface IChirperPublish=
+er :
+      IGrain</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>  </span>Task&lt;long&gt; UserId { get; }=
+</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>  </span>Task&lt;string&gt; UserAlias { g=
+et; }</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>  </span>Task&lt;string&gt; DisplayName {=
+ get; }</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>  </span>Task&lt;List&lt;ChirperMessage&g=
+t;&gt;
+      GetPublishedMessages(int n =3D 10, int start =3D 0);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>  </span>Task AddFollower(string userAlia=
+s,
+      IChirperSubscriber follower);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>  </span>Task RemoveFollower(string userA=
+lias,
+      IChirperSubscriber follower);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-to=
+p:
+      0pt;margin-bottom:10pt;color:#1F497D'><span style=3D'font-family:"Cou=
+rier New";
+      font-size:10.0pt;background:#DBE5F1'>}</span></li>
+ </ol>
+ <p style=3D'margin:0in;font-family:Cambria;font-size:13.0pt;color:#4F81BD'=
+><span
+ style=3D'font-weight:bold'>Grain Reference</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>A grain reference is a logical endpoint that allows other grains, =
+as
+ well as non-grain client code, to invoke methods and properties of a
+ particular grain interface implemented by a grain. A grain reference is a
+ proxy object that implements the corresponding grain interface. A grain
+ reference be constructed by passing identity of the grain to the GetGrain()
+ method of the factory class auto-generated at compile time for the
+ corresponding grain interface, or receiving the return value of a method or
+ property. A grain reference can be passed as an argument to a method call.=
+</p>
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6041in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.3041in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Client=
+s</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+41 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.6041=
+in'>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:13.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>Orleans and Client Code</sp=
+an></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>An
+Orleans application consists of two distinct parts: the Orleans (grain base=
+d)
+part, and the client part. </p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The Orleans pa=
+rt is
+comprised of application grains hosted by Orleans Runtime servers called si=
+los.
+<br>
+Grain code is executed by the runtime under scheduling restrictions and
+guarantees inherent in the Orleans programming model, detailed previously. =
+</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The client par=
+t,
+usually a web frontend, connects to the Orleans part via a thin layer of
+Orleans Client library that enables communication of the client code with
+grains hosted by the Orleans part via grain references. The client part in =
+this
+context means a client to the Orleans part, but it can run as part of a cli=
+ent
+or server applications. <br>
+For example, an ASP.NET application running on a web server can be a client
+part of an Orleans application. The client part executes on top of the .NET=
+ thread
+pool, and is not subject to scheduling restrictions and guarantees of the
+Orleans Runtime.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:6.952in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.6812in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Observ=
+ers</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+41 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:6.952i=
+n'>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:13.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>Observers</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Because
+the standard .NET event facility is explicitly synchronous<a
+href=3D"file:///C:\CCF\Orleans\Code\Main\OrleansV4\Documentation\Programmer=
+'s%20Guide%20to%20Orleans.docx#_ftn1"><span
+style=3D'vertical-align:super'>[1]</span></a>, it doesn’t fit into an
+asynchronous framework such as Orleans. Instead, Orleans uses the Observer
+pattern.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>A grain type that allows observation will def=
+ine an
+observer interface that inherits from the </span><span style=3D'font-family=
+:"Courier New";
+color:#0F243E'>IGrainObserver</span><span style=3D'font-family:Calibri'>
+interface. Methods on an observer interface correspond to events that the
+observed grain type makes available. An observer would implement this inter=
+face
+and then subscribe to notifications from a particular grain. The observed g=
+rain
+would call back to the observer through the observer interface methods when=
+ an
+event has occurred.</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>Methods on observer interfaces must be </span=
+><span
+style=3D'font-family:"Courier New";color:#0F243E'>void</span><span
+style=3D'font-family:Calibri'> since event messages are one-way. If the obs=
+erver
+needs to interact with the observed grain as a result of a notification, it
+must do so by invoking normal methods on the observed grain.</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>The observed grain type must expose a method =
+to
+allow observers to subscribe to event notifications from a grain. In additi=
+on,
+it is usually convenient to expose a method that allows an existing
+subscription to be cancelled. Grain developers may use the Orleans </span><=
+span
+style=3D'font-family:"Courier New";color:#0F243E'>ObserverSubscriptionManag=
+er&lt;T&gt;</span><span
+style=3D'font-family:Calibri'> generic class to simplify development of obs=
+erved
+grain types.</span></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri'><a
+href=3D"file:///C:\CCF\Orleans\Code\Main\OrleansV4\Documentation\Programmer=
+'s%20Guide%20to%20Orleans.docx#_ftnref1"><span
+style=3D'vertical-align:super;font-size:10.0pt'>[1]</span></a><span
+style=3D'font-size:10.0pt'> Neither subscription (+=3D) nor un-subscription=
+ (-=3D)
+provide a way for an asynchronous result to be returned,</span></p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:6.8576in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.0527in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Silos<=
+/p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+40 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:6.8576=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>An Orleans sil=
+o is a
+runtime container managing grain hosting and execution.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Typically, one=
+ silo
+will be run per machine.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>A number of si=
+los
+can work together to form an Orleans cluster.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>More silos can=
+ be
+added to a cluster dynamically in order to scale-out that cluster.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The Orleans ru=
+ntime
+managed resilience in case of a silo being removed from the cluster due to
+machine crash or similar failure mode.</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:4.3847in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:4.3847in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Develo=
+ping
+an Orleans Application</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+42 PM</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:8.0826in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.0333in;width:2.6666=
+in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Develo=
+ping a
+Grain</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.0333in;width:2.=
+7166in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+41 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.1805in;margin-left:0in;width:8.0826=
+in'>
+
+<ul style=3D'margin-left:.0326in;direction:ltr;unicode-bidi:embed;margin-to=
+p:
+ 0in;margin-bottom:0in'>
+ <p style=3D'margin-top:24pt;margin-bottom:6pt;font-family:Cambria;font-siz=
+e:
+ 14.0pt;color:#365F91'><span style=3D'font-weight:bold'>Developing a Grain<=
+/span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt;color:black'>In this section we walk through the steps involved in
+ defining and using a new Player grain type as used in the Presence sample
+ application in the Orleans SDK. The grain type we define will have one
+ property that returns a reference to the game the player is currently in, =
+and
+ two methods for joining and leaving a game.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt;color:black'>We will create three separate pieces of code: the grain
+ interface definition, the grain implementation, and a standard C# class th=
+at
+ uses the grain. Each of these belongs in a different project, built into a
+ different DLL: the interface needs to be available on both the “client�=
+� and
+ “server” sides, while the implementation class should be hidden from t=
+he
+ client, and the client class from the server. The interface project should=
+ be
+ created using the Visual Studio “Orleans Grain Interface Project” temp=
+late
+ that is included in the Orleans SDK, and the grain implementation project
+ should be created using the Visual Studio “Orleans Grain Implementation =
+Class
+ Project” template. The grain client project can use any standard .NET co=
+de
+ project template, such as the standard Console Application or Class Library
+ templates.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri;color:black'>A grain cannot be explicitly cre=
+ated
+ or deleted. It always exists “virtually” and is activated automaticall=
+y when a
+ request is sent to it. A grain has either a GUID or a long integer key wit=
+hin
+ the grain type. Application code creates a reference to a grain by calling=
+ the
+ </span><span style=3D'font-family:"Courier New";color:#0F243E'>GetGrain(Gu=
+id id)
+ </span><span style=3D'font-family:"Courier New";color:black'>or </span><sp=
+an
+ style=3D'font-family:"Courier New";color:#0F243E'>GetGrain(long id) </span=
+><span
+ style=3D'font-family:Calibri;color:black'>static factory methods for a spe=
+cific
+ grain identity. </span><span style=3D'font-family:"Courier New";color:#0F2=
+43E'>GetGrain()
+ </span><span style=3D'font-family:Calibri;color:black'>call is a purely lo=
+cal
+ operation to create a grain reference. It does not trigger creation of a g=
+rain
+ activation and has not impact on its lifecycle.<span
+ style=3D'mso-spacerun:yes'>  </span>A grain activation is automatically c=
+reated
+ by the Orleans runtime upon a first request sent to the grain.</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri;color:black'><span
+ style=3D'mso-spacerun:yes'> </span>A grain interface must inherit from </=
+span><span
+ style=3D'font-family:"Courier New";color:#0F243E'>IGrain</span><span
+ style=3D'font-family:Calibri;color:black'>. The GUID or long integer key o=
+f a
+ grain can later be retrieved via the </span><span style=3D'font-family:"Co=
+urier New";
+ color:#0F243E'>IGrain.GetPrimaryKey()IGrain.GetPrimaryKeyLong()</span><span
+ style=3D'font-family:Calibri;color:black'> extension methods respectively.=
+</span></p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Defining the Grain
+ Interface</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri;color:black'>A grain type is defined by an
+ interface that inherits from the </span><span style=3D'font-family:"Courie=
+r New";
+ color:#0F243E'>IGrain </span><span style=3D'font-family:Calibri;color:blac=
+k'>marker
+ interface.</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri;color:black'>All of the methods in the grain
+ interface must return a </span><span style=3D'font-family:"Courier New";
+ color:black'>Task or a Task&lt;T&gt;</span><span style=3D'font-family:Cali=
+bri;
+ color:black'> for .NET 4.5. The underlying type </span><span style=3D'font=
+-family:
+ "Courier New";color:#0F243E'>T</span><span style=3D'font-family:Calibri;
+ color:black'> for value Task must be serializable.</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'><span style=3D'color:black'>Grain interfaces may define properties=
+, but
+ may not define property setters because the .NET property setting notation=
+ is
+ synchronous</span><a
+ href=3D"file:///C:\CCF\Orleans\Code\Main\OrleansV4\Documentation\Programme=
+r's%20Guide%20to%20Orleans.docx#_ftn1"><span
+ style=3D'vertical-align:super'>[1]</span></a><span style=3D'color:black'>.=
+ A
+ property type must be a Task and its underlying type must be serializable.=
+</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt;color:black'>Example:</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle=
+'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;font-weight:norma=
+l;
+      font-style:normal;font-family:"Courier New";font-size:10.0pt;color:#1=
+F497D;
+      background:#DBE5F1'>public interface IPlayerGrain : IGrain</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>   
+      </span>Task&lt;IGameGrain&gt; CurrentGame { get; }</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>Ta=
+sk
+      JoinGame(IGameGrain game);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>Ta=
+sk
+      LeaveGame(IGameGrain game);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>}</span></li>
+ </ol>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Cambria;font-size:13.0pt;color:#4F81BD'=
+><span
+ style=3D'font-weight:bold'>Generating the Class Factory</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt;color:black'>After the grain interface has been defined, building t=
+he
+ project originally created with the Orleans Visual Studio project template
+ will use the Orleans-specific MSBuild targets to generate client proxy and
+ factory classes corresponding to the user-defined grain interfaces, and to
+ merge this additional code back into the interface DLL. The code generation
+ tool, ClientGenerator.exe, can also be invoked directly as a part of
+ post-build processing. However this should be used with caution and is
+ generally not recommended.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt;color:black=
+'><span
+ style=3D'font-family:Calibri'>The most important class in the generated pr=
+oxy
+ code is the grain factory class, which is named after the grain interface =
+by
+ stripping off the initial “I” and appending “Factory”. For instanc=
+e, if your
+ grain interface is </span><span style=3D'font-family:"Courier New"'>IPlaye=
+rGrain</span><span
+ style=3D'font-family:Calibri'>, then your grain factory class will be call=
+ed </span><span
+ style=3D'font-family:"Courier New"'>IPlayerGrain</span><span style=3D'font=
+-weight:
+ bold;font-family:"Courier New"'>Factory</span><span style=3D'font-family:C=
+alibri'>.
+ The namespace for this factory class is the same as that of the grain
+ interface.</span></p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>The Implementation =
+Class</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri;color:black'>A grain type is materialized by a
+ class that implements the grain type’s interface and inherits directly or
+ indirectly from </span><span style=3D'font-family:"Courier New";color:#0F2=
+43E'>Orleans.GrainBase</span><span
+ style=3D'font-family:Calibri;color:black'>. </span></p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 11.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Grain Class</span><=
+/p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri;color:black'>The </span><span style=3D'font-f=
+amily:
+ "Courier New";color:#0F243E'>PlayerGrain</span><span style=3D'font-family:=
+Calibri;
+ color:black'> grain class implements </span><span style=3D'font-family:"Co=
+urier New";
+ color:#0F243E'>IPlayerGrain</span><span style=3D'font-family:Calibri;color=
+:black'>
+ interface. </span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt;color:black'>.NET 4.5<span style=3D'mso-spacerun:yes'>  </span>for=
+m:</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle=
+'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;font-weight:norma=
+l;
+      font-style:normal;font-family:"Courier New";font-size:10.0pt;color:#1=
+F497D;
+      background:#DBE5F1'>public class PlayerGrain : GrainBase, IPlayerGrai=
+n</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>pr=
+ivate
+      IGameGrain currentGame;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'>&nbsp;</=
+li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>//=
+ Game the
+      player is currently in. May be null.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>pu=
+blic
+      Task&lt;IGameGrain&gt; CurrentGame</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>{<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>        <=
+/span>get {
+      return TaskDone&lt;IGameGrain&gt;.Finished(currentGame); }</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>}<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'>&nbsp;</=
+li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>//=
+ Game
+      grain calls this method to notify that the player has joined the game=
+.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>pu=
+blic Task
+      JoinGame(IGameGrain game)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>{<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>       
+      </span>currentGame =3D game;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>       
+      </span>Console.WriteLine(&quot;Player {0} joined game {1}&quot;,
+      this.GetPrimaryKey(), game.GetPrimaryKey());</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>        <=
+/span>return
+      TaskDone.Done;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>}<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'>&nbsp;</=
+li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>//=
+ Game
+      grain calls this method to notify that the player has left the game.<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>pu=
+blic Task
+      LeaveGame(IGameGrain game)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>{<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>       
+      </span>currentGame =3D null;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>       
+      </span>Console.WriteLine(&quot;Player {0} left game {1}&quot;,
+      this.GetPrimaryKey(), game.GetPrimaryKey());</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>        <=
+/span>return
+      TaskDone.Done;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'><span style=3D'mso-spacerun:yes'>    </span>}<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;color:#1F497D;
+      background:#DBE5F1'>}</span></li>
+ </ol>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>&=
+nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri'><a
+ href=3D"file:///C:\CCF\Orleans\Code\Main\OrleansV4\Documentation\Programme=
+r's%20Guide%20to%20Orleans.docx#_ftnref1"><span
+ style=3D'vertical-align:super;font-size:10.0pt'>[1]</span></a><span
+ style=3D'font-size:10.0pt;color:black'> There’s no mechanism to return a=
+ Task
+ from an assignment.</span></p>
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:6.4395in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.3312in;width:3.0277=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:17.0pt'>Persistence of=
+ Grain
+State</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.3312in;width:2.=
+6208in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Tue=
+sday,
+September 03, 2013</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>1:3=
+3 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4812in;margin-left:0in;width:6.4395=
+in'>
+
+<ul style=3D'margin-left:.3305in;direction:ltr;unicode-bidi:embed;margin-to=
+p:
+ 0in;margin-bottom:0in'>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>This
+ section provides details on the Orleans runtime mechanisms available to
+ support “Grain Persistence”.</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:13.0pt;color:#366092'=
+><span
+ style=3D'font-weight:bold'>Goals</span></p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      margin-top:3pt;margin-bottom:0pt'><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'>Allow different grain types to use different types =
+of
+      storage providers (e.g., one uses Azure table, and one uses SQL Azure=
+) or
+      the same type of storage provider but with different configurations
+      (e.g., both use Azure table, but one uses storage account #1 and one =
+uses
+      storage account #2)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>Allow configuration of=
+ a
+      storage provider instance to be swapped [e.g., Dev-Test-Prod] with ju=
+st
+      config file changes, and no code changes required.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>Provide a framework to=
+ allow
+      additional storage providers to be written later, either by the Orlea=
+ns
+      team or others.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>Provide a minimal set =
+of
+      production-grade storage providers, both to demonstrate viability of =
+the
+      storage provider framework, and cover common storage types that will =
+be
+      used by a majority of users. <br>
+            Phase 1 will ship with a non-persistent in-memory store for
+      developer testing scenarios, and a persistent unsharded Azure table
+      storage provider.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-to=
+p:
+      0pt;margin-bottom:3pt'><span style=3D'font-family:Calibri;font-size:1=
+1.0pt'>Storage
+      providers have complete control over how they store grain state data =
+in
+      persistent backing store. Corollary: Orleans is not providing a
+      comprehensive ORM storage solution, but allows custom storage provide=
+rs
+      to support specific ORM requirements as and when required. </span></l=
+i>
+ </ol>
+ <p style=3D'margin-top:24pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 16.0pt;color:#17365D'><span style=3D'font-weight:bold'>Grain Persistence A=
+PI</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>Grain
+ types can be declared in one of two ways:</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      margin-top:3pt;margin-bottom:0pt'><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'>Extend </span><span style=3D'font-family:Consolas;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Con=
+solas;
+      font-size:11.0pt'>GrainBase</span><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'> if they do not have any persistent state, or if th=
+ey
+      will handle all persistent state themselves, or</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-to=
+p:
+      0pt;margin-bottom:3pt'><span style=3D'font-family:Calibri;font-size:1=
+1.0pt'>Extend
+      </span><span style=3D'font-family:Consolas;font-size:11.0pt'>GrainBas=
+e&lt;T&gt;</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt'> if they have some
+      persistent state that they want the Orleans Runtime to handle.</span>=
+</li>
+ </ol>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>Stated another way, by extending </span><span
+ style=3D'font-family:Consolas'>GrainBase&lt;T&gt;</span><span style=3D'fon=
+t-family:
+ Calibri'> a grain type is automatically opted-in to the Orleans system man=
+aged
+ persistence framework.</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>For
+ the remainder of this section, we will only be considering Option #2 /
+ GrainBase&lt;T&gt; because Option #1 grains will continue to run as now
+ without any behavior changes.</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>Grain State Stores<=
+/span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>Grain
+ classes that inherit from GrainBase&lt;T&gt; [where T is an
+ application-specific state data type derived from IGrainState] will have t=
+heir
+ state loaded automatically from a specified storage. </p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>Grains will be marked with a </span><span
+ style=3D'font-family:Consolas'>[Storage]</span><span style=3D'font-family:=
+Calibri'>
+ attribute that specifies a named instance of a storage provider to use for
+ reading / writing the state data for this grain. </span></p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>[StorageProvider(ProviderName=3D”<span
+ style=3D'font-weight:bold'>store1</span>”)]</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>public class MyGrain&lt;IMyGrainState&gt; ...</=
+p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>...<=
+/p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>}</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The Orleans
+ Provider Manager framework provides a mechanism to specify &amp; register
+ different storage providers and storage options in the silo config file.</=
+p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'>&lt;StorageProviders&gt;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'><span
+ style=3D'mso-spacerun:yes'>    </span>&lt;Provider
+ Type=3D&quot;Orleans.Storage.DevStorage&quot; Name=3D&quot;DevStore&quot; =
+/&gt;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'><span
+ style=3D'mso-spacerun:yes'>    </span>&lt;Provider
+ Type=3D&quot;Orleans.Storage.AzureTableStorage&quot; Name=3D&quot;store1&q=
+uot;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'>DataConnectionString=3D&quot;DefaultEndpointsProtocol=3Dhttps;Accoun=
+tName=3Ddata1;AccountKey=3DSOMETHING1&quot;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'><span
+ style=3D'mso-spacerun:yes'>    </span>/&gt;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>   
+ </span>&lt;Provider Type=3D”Orleans.Storage.AzureTableStorage” Name=3D=
+&quot;<span
+ style=3D'font-weight:bold'>store2</span>&quot;
+ DataConnectionString=3D&quot;DefaultEndpointsProtocol=3Dhttps;AccountName=
+=3Ddata2;AccountKey=3DSOMETHING2&quot;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'><span
+ style=3D'mso-spacerun:yes'>    </span>/&gt;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:1=
+0.0pt'>&lt;/StorageProviders&gt;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Note: storage
+ provider Type=3D &quot;Orleans.Storage.AzureTableStorage&quot; and
+ &quot;Orleans.Storage.DevStorage&quot; are two standard storage providers
+ built in to the Orleans runtime</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>If there is no
+ [Storage] attribute specified for a GrainBase&lt;T&gt; grain class, then a
+ provider named “<span style=3D'font-weight:bold'>Default</span>” will =
+be
+ searched for instead. If not found then this is treated as a missing stora=
+ge
+ provider.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>If there is o=
+nly
+ one provider in the silo config file, it will be considered to be the “<=
+span
+ style=3D'font-weight:bold'>Default</span>” provider for this silo.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>A grain that =
+uses a
+ storage provider which is not present &amp; defined in the silo configurat=
+ion
+ when the silo loads will fail to load, but the rest of the grains in that =
+silo
+ can still load and run. Any later calls to that grain type will fail with =
+an <span
+ style=3D'font-weight:bold'>Orleans.Storage.BadProviderConfigException</spa=
+n>
+ error specifying that the grain type is not loaded.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The storage
+ provider instance to use for a given grain type is determined by the
+ combination of the storage provider name defined in the [Storage] attribut=
+e on
+ that grain type, plus the provider type &amp; configuration options for th=
+at
+ provider defined in the silo config.</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Different gra=
+in
+ types can use different configured storage providers, even if both are the
+ same type: for example, two different <span style=3D'font-style:italic'>Az=
+ure
+ table</span> storage provider instances, connected to different Azure stor=
+age
+ accounts [see config file example above].</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>For the Phase=
+ 1
+ implementation, all configuration details for storage providers will be
+ defined <span style=3D'font-weight:bold'>statically</span> in the silo
+ configuration that is read at silo startup. There will be NO mechanisms
+ provided at this time to dynamically update or change the list of storage
+ providers used by a silo. However, this is a prioritization / workload
+ constraint rather than a fundamental design constraint.</p>
+ <p style=3D'margin-top:24pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 16.0pt;color:#17365D'><span style=3D'font-weight:bold'>State Storage APIs<=
+/span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>There
+ are two main parts to the grain state / persistence APIs: Grain-to-Runtime=
+ and
+ Runtime-to-Storage-Provider.</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 16.0pt;color:#17365D'><span style=3D'font-weight:bold'>Grain State Storage=
+ API
+ [Called from grain code]</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>The
+ grain state storage functionality in the Orleans Runtime will provide Read=
+ and
+ Write operations to automatically populate / save the IGrainState data obj=
+ect
+ for that grain. Under the covers, these functions will be connected (within
+ the code generated by Orleans client-gen tool) through to the appropriate
+ persistence provider configured for that grain.</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>public interface <span style=3D'font-weight:bol=
+d'>IGrainState</span></p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>stri=
+ng <span
+ style=3D'font-weight:bold'>Etag </span>{ get; }</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Task=
+ <span
+ style=3D'font-weight:bold'>WriteStateAsync</span>();</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Task=
+ <span
+ style=3D'font-weight:bold'>ReadStateAsync</span>();</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>}</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>Grain State Read / =
+Write
+ Functions</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>Grain
+ state will <span style=3D'font-style:italic'>automatically</span> be READ =
+when
+ the grain is <span style=3D'font-weight:bold'>activated</span>, but grains=
+ are
+ responsible for explicitly triggering the WRITE for any changed grain stat=
+e as
+ and when necessary.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'><span
+ style=3D'font-style:italic'>See the Failure Modes section below for detail=
+s of
+ error handling mechanisms.</span></p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      margin-top:3pt;margin-bottom:0pt'><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'>GrainState will be READ automatically (using the
+      equivalent of IGrainState.ReadStateAsync) BEFORE the Activate method =
+is
+      called for that activation.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>GrainState will NOT be
+      refreshed before any method calls to that grain [unless the grain was
+      Activated for this call]</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>During any grain method
+      call, a grain can request the Orleans runtime to WRITE the current gr=
+ain
+      state data for that activation to the designated storage provider by
+      calling IGrainState.WriteStateAsync. <br>
+            The grain is responsible for explicitly performing WRITE operat=
+ions
+      when they make significant updates to their state data. Most commonly,
+      the grain method will return the IGrainState.WriteStateAsync Task as =
+the
+      final result Task returned from that grain method, but it is not requ=
+ired
+      to follow this pattern.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>The runtime will NOT <=
+/span><span
+      style=3D'font-style:italic;font-family:Calibri;font-size:11.0pt'>auto=
+matically</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt'> update stored grain s=
+tate
+      after ANY grain methods. </span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>During any grain metho=
+d or
+      timer callback handler in the grain, the grain can request the Orleans
+      runtime to REREAD the current grain state data for that activation fr=
+om
+      the designated storage provider by calling IGrainState.ReadStateAsync.
+      This will completely overwrite any current state data currently store=
+d in
+      the grain state object with the latest values read from persistent st=
+ore.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>An opaque provider-spe=
+cific
+      “Etag” value (String) MAY be set by a storage provider as part of=
+ the
+      grain state metadata populated when state was read. Some providers MAY
+      choose to leave this as Null if they do not use Etag’s.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-to=
+p:
+      0pt;margin-bottom:3pt'><span style=3D'font-family:Calibri;font-size:1=
+1.0pt'>Conceptually,
+      the Orleans Runtime will take a DEEP COPY of the grain state data obj=
+ect
+      for its own use during any WRITE operations. Under the covers, the
+      runtime MAY use optimization rules and heuristics to avoid performing
+      some or all of the deep copy in some circumstances, provided that the
+      expected logical isolation semantics are preserved.</span></li>
+ </ol>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin-top:24pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 16.0pt;color:#17365D'><span style=3D'font-weight:bold'>Sample Code for Gra=
+in
+ State Read / Write Operations</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>Grains
+ must extend the <span style=3D'font-weight:bold'>GrainBase&lt;T&gt;</span>=
+ class
+ in order to participate in the Orleans grain state persistence mechanisms.=
+ The
+ ‘T’ in the above definition will be replaced by an application-specifi=
+c grain <span
+ style=3D'font-weight:bold;font-style:italic'>state</span> interface type f=
+or
+ this grain; see the example below.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>The
+ grain class will also implement its specific grain interface, as with any
+ other Orleans grain.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>The
+ grain class should also be annotated with a <span style=3D'font-weight:bol=
+d'>[Storage]</span>
+ attribute that tells the runtime which storage provider (instance) to use =
+with
+ grains of this type.</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'color:blue'>public</span><span
+ style=3D'color:black'> </span><span style=3D'color:blue'>interface</span><=
+span
+ style=3D'color:black'> IMyGrainState : IGrainState</span></p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt;color:black'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'color:black'><span
+ style=3D'mso-spacerun:yes'>  </span></span><span style=3D'color:blue'>int=
+</span><span
+ style=3D'color:black'> Field1 { </span><span style=3D'color:blue'>get</spa=
+n><span
+ style=3D'color:black'>; </span><span style=3D'color:blue'>set</span><span
+ style=3D'color:black'>; }</span></p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'color:black'><span
+ style=3D'mso-spacerun:yes'>  </span></span><span style=3D'color:blue'>str=
+ing</span><span
+ style=3D'color:black'> Field2 { </span><span style=3D'color:blue'>get</spa=
+n><span
+ style=3D'color:black'>; </span><span style=3D'color:blue'>set</span><span
+ style=3D'color:black'>; }</span></p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt;color:black'>}</p>
+ <p style=3D'margin-top:3pt;margin-bottom:0pt;font-family:Consolas;font-siz=
+e:
+ 10.0pt;color:black'>&nbsp;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'font-weight:bold;color:black'>[S=
+torage(ProviderName=3D</span><span
+ style=3D'font-weight:bold;color:#A31515'>&quot;store1&quot;</span><span
+ style=3D'font-weight:bold;color:black'>)]</span></p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'color:blue'>public</span><span
+ style=3D'color:black'> </span><span style=3D'color:blue'>class</span><span
+ style=3D'color:black'> MyPersistenceGrain : GrainBase&lt;IMyGrainState&gt;=
+, IMyPersistenceGrain</span></p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt;color:black'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt;color:black'><span style=3D'mso-spacerun:yes'> 
+ </span>...</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt;color:black'>}</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>Grain State Read</s=
+pan></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>The
+ initial read of the grain state will occur automatically by the Orleans
+ runtime before the grain’s ActivateAsync method is called; no applicatio=
+n code
+ is required to make this happen. From that point forward, the grain’s st=
+ate
+ will be available through the <span style=3D'font-weight:bold'>GrainBase&l=
+t;T&gt;.State</span>
+ property inside the grain class.</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>Grain State Write</=
+span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>After
+ making any appropriate changes to the grain’s in-memory state, the grain
+ should call the <span style=3D'font-weight:bold'>GrainBase&lt;T&gt;.State.=
+WriteStateAsync()</span>
+ method to write the changes to the persistent store via the defined storage
+ provider for this grain type. This method is asynchronous and returns a Ta=
+sk
+ that will typically be returned by the grain method as its own completion
+ Task.</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'color:blue'>public</span> <span
+ style=3D'color:#2B91AF'>Task</span> DoWrite(<span style=3D'color:blue'>int=
+</span>
+ val)</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'> 
+ </span>State.Field1 =3D val;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span><span
+ style=3D'color:blue'>return</span> State.WriteStateAsync();</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>}</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>Grain State Refresh=
+</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>If
+ a grain wishes to explicitly re-read the latest state for this grain from
+ backing store, the grain should call the <span style=3D'font-weight:bold'>=
+GrainBase&lt;T&gt;.State.ReadStateAsync()</span>
+ method. This will reload the grain state from persistent store, via the
+ defined storage provider for this grain type, and any previous in-memory c=
+opy
+ of the grain state will be overwritten and replaced when the <span
+ style=3D'font-weight:bold'>ReadStateAsync</span> Task completes.</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'color:blue'>public</span> <span
+ style=3D'color:blue'>async</span> <span style=3D'color:#2B91AF'>Task</span=
+>&lt;<span
+ style=3D'color:blue'>int</span>&gt; DoRead()</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span><span
+ style=3D'color:blue'>await</span> State.ReadStateAsync();</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span><span
+ style=3D'color:blue'>return</span> State.Field1;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>}</p>
+ <p style=3D'margin-top:24pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 16.0pt;color:#17365D'><span style=3D'font-weight:bold'>Failure Modes for G=
+rain
+ State Persistence Operations</span></p>
+ <p style=3D'margin-left:.375in;margin-top:24pt;margin-bottom:0pt;font-fami=
+ly:
+ Calibri;font-size:13.0pt;color:#366092'><span style=3D'font-weight:bold'>F=
+ailure
+ Modes for Grain State Read Operations</span></p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      margin-top:3pt;margin-bottom:0pt'><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'>Failures returned by the storage provider during th=
+e </span><span
+      style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;
+      font-style:italic;font-style:italic;font-family:Calibri;font-size:11.=
+0pt'>initial</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;
+      font-style:normal;font-family:Calibri;font-size:11.0pt'> READ of state
+      data for that particular grain will result in the Activate operation =
+for
+      that grain to be failed; in this case, there will NOT be any call to =
+that
+      grain’s ActivateAsync lifecycle callback method. The original reque=
+st to
+      that grain which caused the activation will be faulted back to the ca=
+ller
+      the same way as any other failure during grain activation.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>Failures encountered b=
+y the
+      storage provider to READ state data for a particular grain will resul=
+t in
+      the ReadStateAsync Task to be broken / faulted. The grain can choose =
+to
+      handle or ignore that broken Task, just like any other Task in Orlean=
+s.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-to=
+p:
+      0pt;margin-bottom:3pt'><span style=3D'font-family:Calibri;font-size:1=
+1.0pt'>Any
+      attempt to send a message to a grain which failed to load at silo sta=
+rtup
+      time due to a missing / bad storage provider config will return the <=
+/span><span
+      style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>Perma=
+nent</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt'> error </span><span
+      style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>Orlea=
+ns.BadProviderConfigException.</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt'> </span></li>
+ </ol>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11=
+.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:13=
+.0pt;
+ color:#366092'><span style=3D'font-weight:bold'>Failure Modes for Grain St=
+ate
+ Write Operations</span></p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D4 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle=
+'><span
+      style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;
+      font-style:normal;font-family:Calibri;font-size:11.0pt'>Failures
+      encountered by the storage provider to WRITE state data for a particu=
+lar
+      grain will result in the WriteStateAsync Task to be faulted. <br>
+            Usually, this will mean the grain call will be faulted back to =
+the
+      client caller [provided the WriteAsync Task is correctly chained in to
+      the final return Task for this grain method].<br>
+            However, it will be possible for certain advanced scenarios to
+      write grain code to specifically handle such Write errors, just like =
+they
+      can handle any other faulted Task.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:Calibri;font-size:11.0pt'>Grains that execute
+      error-handling / recovery code MUST catch exceptions / faulted
+      WriteStateAsync Tasks and not [re]throw to signify that they have
+      successfully handled the write error. </span></li>
+ </ol>
+ <p style=3D'margin-top:24pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 16.0pt;color:#17365D'><span style=3D'font-weight:bold'>Storage Provider
+ Framework [Called from Orleans runtime]</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>There
+ is a service provider API for writing additional persistence providers –
+ IStorageProvider.</p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>Persistence
+ Provider API covers Read and Write operations for GrainState data.</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>public interface IStorageProvider</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Logg=
+er Log
+ { get; }</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Task
+ Init();</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Task
+ Close();</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Task
+ ReadStateAsync(string grainType, GrainId grainId, IGrainState grainState);=
+</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>Task
+ WriteStateAsync(string grainType, GrainId grainId, IGrainState grainState)=
+;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>}</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 13.0pt;color:#366092'><span style=3D'font-weight:bold'>Storage Provider
+ Semantics</span></p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <ol type=3D1 style=3D'margin-left:0in;direction:ltr;unicode-bidi:embed;mar=
+gin-top:
+  0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;font-weight:no=
+rmal;
+  font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      margin-top:0pt;margin-bottom:3pt'><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'>Any attempt to perform a WRITE operation when the
+      storage provider detects an Etag constraint violation SHOULD cause the
+      Write Task to be faulted with </span><span style=3D'font-family:Calib=
+ri;
+      font-size:11.0pt;font-weight:bold;font-style:normal;font-weight:bold;
+      font-family:Calibri;font-size:11.0pt'>Transient</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;
+      font-style:normal;font-family:Calibri;font-size:11.0pt'> error </span=
+><span
+      style=3D'font-family:Calibri;font-size:11.0pt;font-weight:bold;font-s=
+tyle:
+      normal;font-weight:bold;font-family:Calibri;font-size:11.0pt'>Orleans=
+.InconsistentStateException</span><span
+      style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;
+      font-style:normal;font-family:Calibri;font-size:11.0pt'> and wrapping=
+ the
+      underlying storage exception. <br>
+            </span>&nbsp;</li>
+ </ol>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>public class <span style=3D'font-weight:bold'>I=
+nconsistentStateException</span>
+ : AggregateException</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>///
+ &lt;summary&gt;The Etag value currently held in persistent
+ storage.&lt;/summary&gt;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>publ=
+ic
+ string <span style=3D'font-weight:bold'>StoredEtag</span> { get; private s=
+et; }</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>///
+ &lt;summary&gt;The Etag value currently held in memory, and attempting to =
+be
+ updated.&lt;/summary&gt;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>publ=
+ic
+ string <span style=3D'font-weight:bold'>CurrentEtag</span> { get; private =
+set; }</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>&nbsp;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>publ=
+ic
+ InconsistentStateException(</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>    </span>=
+string
+ errorMsg, </p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>    </span>=
+string
+ storedEtag, </p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>    </span>=
+string
+ currentEtag, </p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>    </span>=
+Exception
+ storageException</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>) :
+ base(errorMsg, storageException)</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>{</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>   
+ </span>this.StoredEtag =3D storedEtag;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>   
+ </span>this.CurrentEtag =3D currentEtag;</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>}</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>publ=
+ic
+ InconsistentStateException(string storedEtag, string currentEtag, Exception
+ storageException)</p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>:
+ this(storageException.Message, storedEtag, currentEtag, storageException)<=
+/p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'><span style=3D'mso-spacerun:yes'>  </span>{ }<=
+/p>
+ <p style=3D'margin-left:.375in;margin-top:3pt;margin-bottom:0pt;font-famil=
+y:
+ Consolas;font-size:10.0pt'>}</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D2 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      margin-top:3pt;margin-bottom:0pt'><span style=3D'font-family:Calibri;
+      font-size:11.0pt;font-weight:normal;font-style:normal;font-family:Cal=
+ibri;
+      font-size:11.0pt'>Any other failure conditions from a Write operation
+      SHOULD cause the Write Task to be broken with an exception containing=
+ the
+      underlying storage exception. </span></li>
+ </ol>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:13.0pt;color:#366092'=
+><span
+ style=3D'font-weight:bold'>Data Mapping</span></p>
+ <p style=3D'margin-top:3pt;margin-bottom:3pt;font-family:Calibri;font-size=
+:11.0pt'>Individual
+ storage providers should decide how best to store grain state – blob [va=
+rious
+ formats / serialized forms] or column-per-field are obvious choices.</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The basic sto=
+rage
+ provider for Azure Table encodes state data fields into a single table col=
+umn
+ using Orleans binary serialization.</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt;color:#4F81BD'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+ <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:9.3395in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.5479in;width:2.7048=
+in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Develo=
+ping a
+Client</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.5479in;width:2.=
+7166in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+43 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:9.3395=
+in'>
+
+<ul style=3D'margin-left:.5479in;direction:ltr;unicode-bidi:embed;margin-to=
+p:
+ 0in;margin-bottom:0in'>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Using the Grain</sp=
+an></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Once we have our grain type implemented, we can write a client
+ application that uses the type. </p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>The following Orleans DLL's from either the =
+</span><span
+ style=3D'font-family:"Courier New";color:#0F243E'>[SDK-ROOT]\Binaries\Pres=
+enceClient</span><span
+ style=3D'font-family:Calibri'> or </span><span style=3D'font-family:"Couri=
+er New";
+ color:#0F243E'>[SDK-ROOT]\Samples\References</span><span style=3D'font-fam=
+ily:
+ Calibri'> directories need to be referenced in the client application proj=
+ect:</span></p>
+ <ul type=3Ddisc style=3D'margin-left:.375in;direction:ltr;unicode-bidi:emb=
+ed;
+  margin-top:0in;margin-bottom:0in'>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-to=
+p:
+      0pt;margin-bottom:10pt'><span style=3D'font-family:"Courier New";
+      font-size:11.0pt'>Orleans.dll</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+      style=3D'font-family:"Courier New";font-size:11.0pt'>OrleansRuntimeIn=
+terfaces.dll</span></li>
+ </ul>
+ <p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11=
+.0pt'>&nbsp;</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>Almost any client will involve use of the gr=
+ain
+ factory class. The </span><span style=3D'font-family:"Courier New";color:#=
+0F243E'>GetGrain</span><span
+ style=3D'font-family:Calibri'> method is used for getting a grain referenc=
+e for
+ a particular ID. As was already mentioned, grains cannot be explicitly cre=
+ated
+ or deleted.</span></p>
+ <ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+  margin-top:0in;margin-bottom:0in;font-family:"Courier New";font-size:10.0=
+pt;
+  font-weight:normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      color:#1F497D'><span style=3D'font-family:"Courier New";font-size:10.=
+0pt;
+      font-weight:normal;font-style:normal;font-family:"Courier New";
+      font-size:10.0pt;background:#DBE5F1'>OrleansClient.Initialize();</spa=
+n></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>//
+      Hardcoded player ID</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>Guid
+      playerId =3D new Guid(&quot;{2349992C-860A-4EDA-9590-000000000006}&qu=
+ot;);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>IPlayerGrain
+      player =3D PlayerGrainFactory.GetGrain(playerId);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>IGameGrain
+      game =3D player.CurrentGame.Result;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>var
+      watcher =3D new GameObserver();</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>var
+      observer =3D GameObserverFactory.CreateObjectReference(watcher);</spa=
+n></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>await
+      game.SubscribeForGameUpdates();</span></li>
+ </ol>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>&nbsp;</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>If this code is used from the main thread of=
+ a
+ simple client application, you have to call </span><span style=3D'font-fam=
+ily:
+ "Courier New"'>Wait()</span><span style=3D'font-family:Calibri'> on the ta=
+sk
+ returned by </span><span style=3D'font-family:"Courier New"'>game.Subscrib=
+eForGameUpdates()
+ </span><span style=3D'font-family:Calibri'>because await does not prevent =
+the
+ Main function from returning, which will cause the client process to exit.=
+</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>See the Key Concepts section for more details on the various ways =
+to
+ use Tasks for execution scheduling and exception flow.</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Find or create grai=
+ns</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>After establishing a connection by calling <=
+/span><span
+ style=3D'font-family:"Courier New"'>OrleansClient.Initialize()</span><span
+ style=3D'font-family:Calibri'>, static methods in the generated factory cl=
+asses
+ may be used to get a reference to a grain, such as</span><span
+ style=3D'font-family:"Courier New"'> PlayerGrainFactory.GetGrain</span><sp=
+an
+ style=3D'font-family:"Courier New";color:#0F243E'>()</span><span
+ style=3D'font-family:Calibri;color:#0F243E'> </span><span style=3D'font-fa=
+mily:
+ Calibri'>for the </span><span style=3D'font-family:"Courier New";color:#0F=
+243E'>PlayerGrain</span><span
+ style=3D'font-family:Calibri'>. </span></p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Sending messages to
+ grains</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>The programming model for communicating with
+ grains from a client is almost the same as from a grain. The client holds
+ grain references which implement a grain interface like </span><span
+ style=3D'font-family:"Courier New";color:#0F243E'>IPlayerGrain</span><span
+ style=3D'font-family:Calibri'>. It invokes methods on that grain reference=
+, and
+ these return asynchronous values: </span><span style=3D'font-family:"Couri=
+er New";
+ color:#0F243E'>Task/Task&lt;T&gt;</span><span style=3D'font-family:Calibri=
+'>, or
+ another grain interface inheriting from </span><span style=3D'font-family:=
+"Courier New";
+ color:#0F243E'>IGrain</span><span style=3D'font-family:Calibri'>. The clie=
+nt can
+ use </span><span style=3D'font-family:"Courier New";color:#0F243E'>await <=
+/span><span
+ style=3D'font-family:Calibri;color:#0F243E'>keyword or</span><span
+ style=3D'font-family:"Courier New";color:#0F243E'> ContinueWith() </span><=
+span
+ style=3D'font-family:Calibri;color:#0F243E'>method</span><span style=3D'fo=
+nt-family:
+ "Courier New";color:#0F243E'> </span><span style=3D'font-family:Calibri'>to
+ queue continuations to be executed when these asynchronous values resolve,=
+ or </span><span
+ style=3D'font-family:"Courier New";color:#0F243E'>Wait()</span><span
+ style=3D'font-family:Calibri'> method to block the current thread. </span>=
+</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>The one key difference between communicating with a grain from wit=
+hin
+ a client or from within another grain is the single-threaded execution mod=
+el.
+ Grains are constrained to be single-threaded by the Orleans scheduler, whi=
+le
+ clients may be multi-threaded. The client library uses the TPL thread pool=
+ to
+ manage continuations and callbacks, and so it is up to the client to manage
+ its own concurrency using whatever synchronization constructs are appropri=
+ate
+ for its environment – locks, events, TPL tasks, etc.</p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Receiving notificat=
+ions</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>There are situations in which a simple message/response pattern is=
+ not
+ enough, and the client needs to receive asynchronous notifications. For
+ example, a user might want to be notified when a new message has been
+ published by someone that she is following.</p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>An observer is a one-way asynchronous interf=
+ace
+ that inherits from </span><span style=3D'font-family:"Courier New";color:#=
+0F243E'>IGrainObserver</span><span
+ style=3D'font-family:Calibri'>, and all its methods must be </span><span
+ style=3D'font-family:"Courier New";color:#0F243E'>void</span><span
+ style=3D'font-family:Calibri'>. The grain sends a notification to the obse=
+rver
+ by invoking it like a grain interface method, except that it has no return
+ value, and so the grain need not depend on the result. The Orleans runtime
+ will ensure one-way delivery of the notifications. A grain that publishes =
+such
+ notifications should provide an API to add or remove observers.</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>To subscribe to a notification, the client m=
+ust
+ first create a local C# object that implements the observer interface. It =
+then
+ calls a static method on the observer factory, </span><span style=3D'font-=
+family:
+ "Courier New";color:#0F243E'>CreateObjectReference()</span><span
+ style=3D'font-family:Calibri'>, to turn the C# object into a grain referen=
+ce,
+ which can then be passed to the subscription method on the notifying grain=
+.</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+ style=3D'font-family:Calibri'>This model can also be used by other grains =
+to
+ receive asynchronous notifications. Unlike in the client subscription case,
+ the subscribing grain simply implements the observer interface as a facet,=
+ and
+ passes in a reference to itself (e.g. </span><span style=3D'font-family:"C=
+ourier New";
+ color:#0F243E'>ChirperViewerFactory.Cast(this</span><span style=3D'font-fa=
+mily:
+ Calibri'>).</span></p>
+ <p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-siz=
+e:
+ 13.0pt;color:#4F81BD'><span style=3D'font-weight:bold'>Example</span></p>
+ <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-siz=
+e:
+ 11.0pt'>Here is an extended version of the example given above of a client
+ application that connects to Orleans, finds the player account, subscribes=
+ for
+ updates to the game session the player is part of, and prints out
+ notifications until the program is manually terminated.</p>
+ <ol type=3D1 style=3D'margin-left:0in;direction:ltr;unicode-bidi:embed;mar=
+gin-top:
+  0in;margin-bottom:0in;font-family:"Courier New";font-size:10.0pt;font-wei=
+ght:
+  normal;font-style:normal'>
+  <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+      color:#1F497D'><span style=3D'font-family:"Courier New";font-size:10.=
+0pt;
+      font-weight:normal;font-style:normal;font-family:"Courier New";
+      font-size:10.0pt;background:#DBE5F1'>namespace PlayerWatcher</span></=
+li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>    </span>class Program</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>    </span>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// &lt;summary&gt;<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// Simulates a comp=
+anion
+      application that connects to the game </span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// that a particula=
+r player is
+      currently part of, and subscribes </span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// to receive live =
+notifications
+      about its progress.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// &lt;/summary&gt;=
+</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>static void Main(str=
+ing[] args)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>try</span></=
+li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>               
+      </span>OrleansClient.Initialize();</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>// H=
+ardcoded player ID</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>Guid=
+ playerId =3D new
+      Guid(&quot;{2349992C-860A-4EDA-9590-000000000006}&quot;);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>IPla=
+yerGrain player =3D
+      PlayerGrainFactory.GetGrain(playerId);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>IGam=
+eGrain game =3D null;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>whil=
+e (game =3D=3D null)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>{</s=
+pan></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                   
+      </span>Console.WriteLine(&quot;Getting current game for player
+      {0}...&quot;, playerId);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                    </s=
+pan>try</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                    </s=
+pan>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                     =
+   </span>game =3D
+      player.CurrentGame.Result;</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                     =
+   </span>if (game =3D=3D null)
+      // Wait until the player joins a game</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                     =
+      
+      </span>Thread.Sleep(5000);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                    </s=
+pan>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                    </s=
+pan>catch (Exception exc)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                    </s=
+pan>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                     =
+  
+      </span>Console.WriteLine(&quot;Exception: &quot;,
+      exc.GetBaseException());</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                    </s=
+pan>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>}</s=
+pan></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>               
+      </span>Console.WriteLine(&quot;Subscribing to updates for game
+      {0}...&quot;, game.GetPrimaryKey());</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>// S=
+ubscribe for updates</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>var =
+watcher =3D new
+      GameObserver();</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>               
+      </span>game.SubscribeForGameUpdates(GameObserverFactory.CreateObjectR=
+eference(watcher)).Wait();</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>// .=
+Wait will block main
+      thread so that the process doesn't exit. </span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>// U=
+pdates arrive on
+      thread pool threads.</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>               
+      </span>Console.WriteLine(&quot;Subscribed successfully. Press
+      &lt;Enter&gt; to stop.&quot;);</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>                </span>Cons=
+ole.ReadLine();</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>catch (Excep=
+tion exc)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>               
+      </span>Console.WriteLine(&quot;Unexpected Error: {0}&quot;,
+      exc.GetBaseException());</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'>&nbsp;</li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// &lt;summary&gt;<=
+/span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// Observer class t=
+hat
+      implements the observer interface. </span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// Need to pass a g=
+rain
+      reference to an instance of this class to subscribe for updates.</spa=
+n></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>/// &lt;/summary&gt;=
+</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>private class GameOb=
+server :
+      IGameObserver</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>// Receive u=
+pdates</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>public void
+      UpdateGameScore(string score)</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>{</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>               
+      </span>Console.WriteLine(&quot;New game score: {0}&quot;, score);</sp=
+an></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>            </span>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>        </span>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'><span
+      style=3D'mso-spacerun:yes'>    </span>}</span></li>
+  <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;color:#1F=
+497D'><span
+      style=3D'font-family:"Courier New";font-size:10.0pt;background:#DBE5F=
+1'>}</span></li>
+ </ol>
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6041in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:3.2256in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Runnin=
+g the
+Application</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+43 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.6041=
+in'>
+
+<p style=3D'margin-top:24pt;margin-bottom:6pt;font-family:Cambria;font-size=
+:14.0pt;
+color:#365F91'><span style=3D'font-weight:bold'>Configuring Connections to
+Orleans</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>To
+allow applications to communicate with grains from outside Orleans, the
+framework includes a <span style=3D'font-weight:bold'>client library</span>=
+. This
+client library might be used by a desktop or mobile application, or by a
+frontend server that renders interactive web pages or exposes a web services
+API.<span style=3D'mso-spacerun:yes'>  </span>The client library provides a
+subset of the Orleans programming model for writing asynchronous clients th=
+at
+can find, create, and communicate with Orleans grains. This requires a few
+simple steps:</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+ font-weight:normal;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'=
+><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;font-=
+style:
+     normal;font-family:Calibri;font-size:11.0pt'>Connect to an Orleans gat=
+eway</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Find existing grains or
+     create new ones</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Send messages to grains=
+ and
+     receive responses</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-top=
+:0pt;
+     margin-bottom:10pt'><span style=3D'font-family:Calibri;font-size:11.0p=
+t'>Receive
+     asynchronous notifications from grains via observers</span></li>
+</ol>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:13.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>Connecting to a gateway</sp=
+an></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>To establish a connection, a client calls </s=
+pan><span
+style=3D'font-family:"Courier New";color:#0F243E'>OrleansClient.Initialize(=
+)</span><span
+style=3D'font-family:Calibri'>.<span style=3D'mso-spacerun:yes'>  </span>T=
+his will
+connect to the gateway silo at the IP address and port specified in the </s=
+pan><span
+style=3D'font-family:"Courier New";color:#0F243E'>ClientConfiguration.xml</=
+span><span
+style=3D'font-family:Calibri'> file. This file must be placed in the same
+directory as the </span><span style=3D'font-family:"Courier New";color:#0F2=
+43E'>Orleans.dll</span><span
+style=3D'font-family:Calibri'> library used by the client. As an alternativ=
+e, a
+configuration object can be passed to </span><span style=3D'font-family:"Co=
+urier New";
+color:#0F243E'>OrleansClient.Initialize</span><span style=3D'font-family:Ca=
+libri'>
+programmatically instead of loading it from a file.</span></p>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:11.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold'>Configuring the Client</spa=
+n></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>In
+ClientConfiguration.xml, the Gateway element specifies the address and port=
+ of
+the gateway endpoint that need to match those in OrleansConfiguration.xml on
+the silo side:</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:9.5pt'><span
+style=3D'color:blue'>&lt;</span><span style=3D'color:#A31515'>ClientConfigu=
+ration</span><span
+style=3D'color:blue'> </span><span style=3D'color:red'>xmlns</span><span
+style=3D'color:blue'>=3D</span>&quot;<span style=3D'color:blue'>urn:orleans=
+</span>&quot;<span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:9.5pt'><span
+style=3D'color:blue'>&nbsp; &lt;</span><span style=3D'color:#A31515'>Gatewa=
+y</span><span
+style=3D'color:blue'> </span><span style=3D'color:red'>Address</span><span
+style=3D'color:blue'>=3D&quot;&lt;IP address or host name of silo&gt;&quot;=
+ </span><span
+style=3D'color:red'>Port</span><span style=3D'color:blue'>=3D&quot;30000&qu=
+ot; /&gt;</span></p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:9.5pt'><span
+style=3D'color:blue'>&lt;/</span><span style=3D'color:#A31515'>ClientConfig=
+uration</span><span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>If
+an Orleans-based application runs in Windows Azure, the client automatically
+discovers silo gateways and shouldn't be statically configure. Refer to the
+Azure application sample for an example of how to configure the client.</p>
+
+<p style=3D'margin-top:10pt;margin-bottom:0pt;font-family:Cambria;font-size=
+:11.0pt;
+color:#4F81BD'><span style=3D'font-weight:bold;font-style:italic'>Configuri=
+ng
+Silos</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>In
+OrleansConfiguration.xml, the ProxyingGateway element specifies the gateway
+endpoint of the silo, which is separate from the inter-silo endpoint define=
+d by
+the Networking element and must have a different port number:</p>
+
+<p style=3D'margin:0in'><span style=3D'font-family:Calibri;font-size:11.0pt=
+'>&nbsp;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'>&lt;?</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:#A31515'>xml</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'> </span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:red'>version</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'>=3D</span><span
+style=3D'font-family:Consolas;font-size:9.5pt'>&quot;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'>1.0</span><span
+style=3D'font-family:Consolas;font-size:9.5pt'>&quot;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'> </span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:red'>encoding</span><sp=
+an
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'>=3D</span><span
+style=3D'font-family:Consolas;font-size:9.5pt'>&quot;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'>utf-8</span><span
+style=3D'font-family:Consolas;font-size:9.5pt'>&quot;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'>?&gt;</span></p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:9.5pt'><span
+style=3D'color:blue'>&lt;</span><span style=3D'color:#A31515'>OrleansConfig=
+uration</span><span
+style=3D'color:blue'> </span><span style=3D'color:red'>xmlns</span><span
+style=3D'color:blue'>=3D</span>&quot;<span style=3D'color:blue'>urn:orleans=
+</span>&quot;<span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:9.=
+5pt'><span
+style=3D'color:blue'>&lt;</span><span style=3D'color:#A31515'>Defaults</spa=
+n><span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Consolas;font-size:9.5=
+pt'><span
+style=3D'color:blue'>&lt;</span><span style=3D'color:#A31515'>Networking</s=
+pan><span
+style=3D'color:blue'> </span><span style=3D'color:red'>Address</span><span
+style=3D'color:blue'>=3D</span>&quot;&quot;<span style=3D'color:blue'> </sp=
+an><span
+style=3D'color:red'>Port</span><span style=3D'color:blue'>=3D</span>&quot;<=
+span
+style=3D'color:blue'>11111</span>&quot;<span style=3D'color:blue'> /&gt;</s=
+pan></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Consolas;font-size:9.5=
+pt'><span
+style=3D'color:blue'>&lt;</span><span style=3D'color:#A31515'>ProxyingGatew=
+ay</span><span
+style=3D'color:blue'> </span><span style=3D'color:red'>Address</span><span
+style=3D'color:blue'>=3D</span>&quot;&quot;<span style=3D'color:blue'> </sp=
+an><span
+style=3D'color:red'>Port</span><span style=3D'color:blue'>=3D</span>&quot;<=
+span
+style=3D'color:blue'>30000</span>&quot;<span style=3D'color:blue'> /&gt;</s=
+pan></p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Consolas;font-size:9.=
+5pt'><span
+style=3D'color:blue'>&lt;/</span><span style=3D'color:#A31515'>Defaults</sp=
+an><span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&lt;/<span
+style=3D'color:#A31515'>OrleansConfiguration</span>&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.7416in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.075in;width:1.4791i=
+n'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Sample=
+s</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.075in;width:2.7=
+166in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+41 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.7416=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>The Orleans SDK
+includes four &quot;official&quot; samples:</p>
+
+<div style=3D'direction:ltr'>
+
+<table border=3D1 cellpadding=3D0 cellspacing=3D0 valign=3Dtop style=3D'dir=
+ection:ltr;
+ border-collapse:collapse;border-style:solid;border-color:#A3A3A3;border-wi=
+dth:
+ 1pt'>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Hello Orlean=
+s</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:6.3611in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-si=
+ze:
+  11.0pt'>A very simple application that just implements the classic “Hel=
+lo
+  World” program using an Orleans grain.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Presence</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:6.3611in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-si=
+ze:
+  11.0pt'>Presence is a simplified example of a typical presence service th=
+at
+  is used by many online games. Among other things it demonstrates the usag=
+e of
+  StatelessWorker grains.<span style=3D'mso-spacerun:yes'>  </span>The Pre=
+sence
+  sample forms the basis for much of the discussion of Orleans features in =
+the
+  Orleans Programmer’s Guide. </p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Chirper</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:6.3611in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-si=
+ze:
+  11.0pt'>A Twitter-like social application.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>AzureWebSamp=
+le</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:6.3611in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>An example
+  application that shown how to run Orleans silos and a web UI client in
+  Windows Azure.</p>
+  </td>
+ </tr>
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.4229in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.843in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:17.0pt'>Hello Orleans<=
+/p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.5826=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Mon=
+day,
+December 03, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>3:2=
+4 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4812in;margin-left:0in;width:7.4229=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>This
+is a very simple application that just implements the classic “Hello Worl=
+d”
+program using an Orleans grain.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>Source code location<span
+style=3D'mso-spacerun:yes'>     </span>=3D </span><span style=3D'font-f=
+amily:"Courier New"'>[ORLEANS-SDK]\Samples\Hello2012\</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>VS
+solution file<span style=3D'mso-spacerun:yes'>        </span>=3D
+[ORLEANS-SDK]\Samples\Hello2012\Hello2012sln</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Client
+binaries location (after compilation)<span style=3D'mso-spacerun:yes'>   
+</span>=3D Build Client.ConsoleApp project in Visual Studio</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>Grain binaries location<span
+style=3D'mso-spacerun:yes'>     </span>=3D </span><span style=3D'font-f=
+amily:"Courier New"'>[ORLEANS-SDK]\LocalSilo\Applications\Hello2012\</span>=
+</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Steps
+to run the sample:</p>
+
+<ol type=3D1 style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+ font-weight:normal;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'=
+><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;font-=
+style:
+     normal;font-family:Calibri;font-size:11.0pt'>Open
+     [ORLEANS-SDK]\Samples\Hello2012\</span><span style=3D'font-family:Cali=
+bri;
+     font-size:11.0pt;font-weight:bold;font-style:normal;font-weight:bold;
+     font-family:Calibri;font-size:11.0pt'>Hello2012.sln</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;font-=
+style:
+     normal;font-family:Calibri;font-size:11.0pt'> in Visual Studio and bui=
+ld
+     it </span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Start local Orleans sil=
+o</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Select </span><span
+     style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>Client=
+.ConsoleApp</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> project as the Visual =
+Studio
+     startup-project if it is not already</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Press ‘F5’ to build=
+ and run
+     Client.ConsoleApp</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-top=
+:0pt;
+     margin-bottom:10pt'><span style=3D'font-family:Calibri;font-size:11.0p=
+t'>Note
+     the message returned back from Orleans in the console window</span></l=
+i>
+</ol>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.5in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.5708in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Presen=
+ce</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+43 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.5in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Presence
+is a simplified example of a typical presence service that is used by many
+online games. It implements the scenario where several players participate =
+in a
+session of a game; the game posts periodic updates of the status of the gam=
+e;
+and an external observer subscribes to monitor progress of the game in near
+real-time. Among other things, Presence demonstrates the usage of
+StatelessWorker grains.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Source
+code location<span style=3D'mso-spacerun:yes'>     </span>=3D
+[ORLEANS-SDK]\Samples\Presence\</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>VS
+solution file<span style=3D'mso-spacerun:yes'>        </span>=3D
+[ORLEANS-SDK]\Samples\Presence\Presence.sln</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Grain
+binaries location (after compilation) =3D
+[ORLEANS-SDK]\LocalSilo\Applications\Presence\</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Steps
+to run the sample:</p>
+
+<ol type=3D1 style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+ font-weight:normal;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'=
+><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;font-=
+style:
+     normal;font-family:Calibri;font-size:11.0pt'>Open and build<span
+     style=3D'mso-spacerun:yes'> 
+     </span>[ORLEANS-SDK]\Samples\Presence\Presence.sln in Visual Studio.</=
+span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Start local Orleans sil=
+o.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Run </span><span
+     style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>Presen=
+cePlayerWatcher.exe</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> to start the player wa=
+tcher
+     app and see it trying to get updates of the game score</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Run </span><span
+     style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>Presen=
+ceLoadGenerator.exe</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> to start the load gene=
+rator
+     app.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-top=
+:0pt;
+     margin-bottom:10pt'><span style=3D'font-family:Calibri;font-size:11.0p=
+t'>Watch
+     that player watcher starts receiving updates to the game score.</span>=
+</li>
+</ol>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.9236in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:1.3798in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Chirpe=
+r</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+44 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.9236=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>This is a vers=
+ion of
+the Chirper sample rewritten for Visual Studio 2012 / .NET 4.5 / await
+functionality</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Source
+code location<span style=3D'mso-spacerun:yes'>     </span>=3D
+[ORLEANS-SDK]\Samples\Chirper2012\</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>VS
+solution file<span style=3D'mso-spacerun:yes'>        </span>=3D
+[ORLEANS-SDK]\Samples\Chirper2012\Chirper2012.sln</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Grain
+binaries location (after compilation) =3D
+[ORLEANS-SDK]\LocalSilo\Applications\Chirper2012\</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Steps
+to run the sample:</p>
+
+<ol type=3D1 style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+ font-weight:normal;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'=
+><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;font-=
+style:
+     normal;font-family:Calibri;font-size:11.0pt'>Open and build<span
+     style=3D'mso-spacerun:yes'> 
+     </span>[ORLEANS-SDK]\Samples\Chirper2012\Chirper2012.sln in Visual Stu=
+dio.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Start local Orleans sil=
+o.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Run the
+     [ORLEANS-SDK]\Samples\Chirper2012\</span><span style=3D'font-weight:bo=
+ld;
+     font-family:Calibri;font-size:11.0pt'>2.Demo Loader.cmd</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> script to run the Chir=
+per
+     loader app and create some sample data for this application.</span></l=
+i>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Run the
+     [ORLEANS-SDK]\Samples\Chirper2012\</span><span style=3D'font-weight:bo=
+ld;
+     font-family:Calibri;font-size:11.0pt'>3.Demo UI.cmd</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> script to run the Chir=
+per UI
+     client app.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Run the
+     [ORLEANS-SDK]\Samples\Chirper2012\</span><span style=3D'font-weight:bo=
+ld;
+     font-family:Calibri;font-size:11.0pt'>4.Demo Console.cmd</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> script to run the Chir=
+per
+     console client app.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Log in to the Chirper UI
+     client app using the default username prompted (no password required)<=
+/span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Type a chirp message in=
+to the
+     status test box on the Chirper UI.</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-top=
+:0pt;
+     margin-bottom:10pt'><span style=3D'font-family:Calibri;font-size:11.0p=
+t'>Note
+     the message echoed in the UI client app windows and in the Console cli=
+ent
+     app window.</span></li>
+</ol>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:6.7243in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.2638in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:17.0pt'>AzureWebSample=
+</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.5826=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Mon=
+day,
+December 03, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>3:2=
+5 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.7312in;margin-left:0in;width:6.7243=
+in'>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Orleans
+     Azure Web Sample</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>This
+is an example application that shown how to run Orleans silos and a web UI
+client in Windows Azure.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>Source code location<span
+style=3D'mso-spacerun:yes'>     </span>=3D </span><span style=3D'font-f=
+amily:"Courier New"'>[ORLEANS-SDK]\Samples\AzureWebSample\</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>VS
+solution file<span style=3D'mso-spacerun:yes'>        </span>=3D
+[ORLEANS-SDK]\Samples\AzureWebSample\AzureWebSample.sln</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Client
+binaries location<span style=3D'mso-spacerun:yes'>     </span>=3D Build=
+ sample in
+Visual Studio and run in Azure Developer Fabric<a
+href=3D"file:///C:\CCF\Orleans\Code\Main\OrleansV4\Documentation\Orleans-SD=
+K-Quick-Start.docx#_ftn1"><span
+style=3D'vertical-align:super'>[1]</span></a></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>Grain binaries location (after compilation) =
+=3D </span><span
+style=3D'font-family:"Courier New"'>[ORLEANS-SDK]\LocalSilo\Applications\He=
+lloOrleans\</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Steps
+to run the sample:</p>
+
+<ol type=3D1 style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Calibri;font-size:11.0pt;
+ font-weight:normal;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'=
+><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:normal;font-=
+style:
+     normal;font-family:Calibri;font-size:11.0pt'>Ensure you have the Windo=
+ws
+     Azure SDK 2.0 installed</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Run Visual Studio 2012 =
+with </span><span
+     style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>elevat=
+ed</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> Administrator permissi=
+ons
+     [so that Azure developer environment will work]</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Open
+     [ORLEANS-SDK]\Samples\AzureWebSample\</span><span style=3D'font-weight=
+:bold;
+     font-family:Calibri;font-size:11.0pt'>AzureWebSample.sln</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> in Visual Studio</span=
+></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Select </span><span
+     style=3D'font-weight:bold;font-family:Calibri;font-size:11.0pt'>Orlean=
+sAzureSample</span><span
+     style=3D'font-family:Calibri;font-size:11.0pt'> project as the Visual =
+Studio
+     startup-project if it is not already</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Press ‘F5’ to build=
+ and run
+     the sample in the local Azure compute emulator</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>When the web browser wi=
+ndow
+     opens, press the “Say Hello to Orleans” button</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;margin-top=
+:0pt;
+     margin-bottom:10pt'><span style=3D'font-family:Calibri;font-size:11.0p=
+t'>Note
+     the message returned back from Orleans in the web browser window</span=
+></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>See
+the section “<a
+href=3D"onenote:Advanced%20Concepts.one#Running%20Orleans%20in%20Azure%20Cl=
+oud&amp;section-id=3D{B480C6AA-A5FB-4C39-A9B0-361BA13C3EC1}&amp;page-id=3D{=
+23BBB937-1C58-4A3B-84D4-47F005486358}&amp;end&amp;base-path=3Dhttp://sharep=
+oint/sites/orleans/Shared%20Documents/OrleansKnowledgeBase">Running
+Orleans on Windows Azure</a>” for more background information on using Az=
+ure
+with Orleans.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>This sample al=
+so
+illustrates a technique for running Azure startup task scripts to perform
+system configuration / initialization work which requires elevated Admin
+permissions. In this case, the CounterControl.exe program is run to create =
+and
+register some Orleans runtime and grain specific custom perf counters with
+Windows.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri'><a
+href=3D"file:///C:\CCF\Orleans\Code\Main\OrleansV4\Documentation\Orleans-SD=
+K-Quick-Start.docx#_ftnref1"><span
+style=3D'vertical-align:super;font-size:10.0pt'>[1]</span></a><span
+style=3D'font-size:10.0pt'> See the “</span><a
+href=3D"onenote:Advanced%20Concepts.one#Running%20Orleans%20in%20Azure%20Cl=
+oud&amp;section-id=3D{B480C6AA-A5FB-4C39-A9B0-361BA13C3EC1}&amp;page-id=3D{=
+23BBB937-1C58-4A3B-84D4-47F005486358}&amp;end&amp;base-path=3Dhttp://sharep=
+oint/sites/orleans/Shared%20Documents/OrleansKnowledgeBase"><span
+style=3D'font-size:10.0pt'>Running Orleans on Windows Azure</span></a><span
+style=3D'font-size:10.0pt'>” document for more background on how this sam=
+ple app
+is configured.</span></p>
+
+</div>
+
+</div>
+
+</div>
+
+<div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'text-align:left;margin:0in;font-family:Arial;font-size:9pt;
+color:#969696;direction:ltr'>Created with Microsoft OneNote 2013.</p>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,318 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- DO NOT EDIT the project element - the ToolsVersion specified here does not prevent the solutions 
+     and projects in the SolutionToBuild item group from targeting other versions of the .NET framework. 
+     -->
+<Project DefaultTargets="DesktopBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+
+  <!-- Do not edit this - core TFS build -->
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\TeamBuild\Microsoft.TeamFoundation.Build.targets" />
+
+  <!-- Import MSBuild Community Tasks - From http://msbuildtasks.tigris.org/ -->
+  <PropertyGroup>
+    <MSBuildCommunityTasksPath Condition="'$(MSBuildCommunityTasksPath)' == ''">$(SolutionRoot)/OrleansV4/Dependencies/MSBuildCommunityTasks</MSBuildCommunityTasksPath>
+    <BinariesRoot>$(SolutionRoot)\Bin</BinariesRoot>
+    <OutDir>$(SolutionRoot)\Binaries\$(Flavor)</OutDir>
+  </PropertyGroup>
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.Targets"/>
+  
+  <ProjectExtensions>
+
+    <!-- Team Foundation Build Version - DO NOT CHANGE -->
+    <ProjectFileVersion>2</ProjectFileVersion>
+
+  </ProjectExtensions>
+
+  <PropertyGroup>
+
+    <BuildNumber>1</BuildNumber>
+
+    <!--  TESTING
+     Set this flag to enable/disable running tests as a post-compilation build step.
+    -->
+    <RunTest>false</RunTest>
+
+    <!--  CODE ANALYSIS
+     Set this property to enable/disable running code analysis. Valid values for this property are 
+     Default, Always and Never.
+
+         Default - Perform code analysis as per the individual project settings
+         Always  - Always perform code analysis irrespective of project settings
+         Never   - Never perform code analysis irrespective of project settings
+     -->
+    <RunCodeAnalysis>Default</RunCodeAnalysis>
+
+    <!-- Additional Properties -->
+
+    <!--  WorkItemType
+     The type of the work item created on a build failure. 
+     -->
+    <WorkItemType>Bug</WorkItemType>
+
+    <!--  WorkItemFieldValues
+     Fields and values of the work item created on a build failure.
+     
+     Note: Use reference names for fields if you want the build to be resistant to field name 
+     changes. Reference names are language independent while friendly names are changed depending 
+     on the installed language. For example, "System.Reason" is the reference name for the "Reason" 
+     field.
+     -->
+    <WorkItemFieldValues>System.Reason=Build Failure;System.Description=Build Failure</WorkItemFieldValues>
+
+    <!--  WorkItemTitle
+     Title of the work item created on build failure.
+     -->
+    <WorkItemTitle>Build failure in build:</WorkItemTitle>
+
+    <!--  DescriptionText
+     History comment of the work item created on a build failure. 
+     -->
+    <DescriptionText>This work item was created by Team Build on a build failure.</DescriptionText>
+
+    <!--  BuildLogText
+     Additional comment text for the work item created on a build failure.
+     -->
+    <BuildlogText>The build log file is at:</BuildlogText>
+
+    <!--  ErrorWarningLogText
+     Additional comment text for the work item created on a build failure. 
+     This text will only be added if there were errors or warnings.
+     -->
+    <ErrorWarningLogText>The errors/warnings log file is at:</ErrorWarningLogText>
+
+    <!--  UpdateAssociatedWorkItems
+     Set this flag to enable/disable updating associated workitems on a successful build.
+     -->
+    <UpdateAssociatedWorkItems>true</UpdateAssociatedWorkItems>
+
+    <!--  AdditionalVCOverrides
+     Additional text for the VCOverrides file generated for VC++ projects.
+     -->
+    <AdditionalVCOverrides></AdditionalVCOverrides>
+
+    <!--  CustomPropertiesForClean
+     Custom properties to pass to the MSBuild task while calling the "Clean" target for all solutions.
+     The format should be: PropertyName1=value1;PropertyName2=value2;...
+     -->
+    <CustomPropertiesForClean></CustomPropertiesForClean>
+
+    <!--  CustomPropertiesForBuild
+     Custom properties to pass to the MSBuild task while calling the default targets for all solutions.
+     The format should be: Property1=value1;Property2=value2;...  To pass custom properties to
+     individual solutions, use the Properties metadata item of the SolutionToBuild ItemGroup.
+     -->
+    <CustomPropertiesForBuild>OverwriteReadOnlyFiles=true</CustomPropertiesForBuild>
+    <!-- 
+    OverwriteReadOnlyFiles to try to prevent "Access to the path '<output location>' is denied" errors
+    See http://blogs.msdn.com/aaronhallberg/archive/2007/10/22/error-msb3021-and-team-build.aspx 
+    -->
+    <!-- 
+    Whether to do an incremental get => workaround for continuing file access problems:
+    http://www.traceofthought.net/2008/03/21/TeamBuildAccessDeniedErrors.aspx
+    -->
+    <IncrementalGet>false</IncrementalGet>
+    <GetOverwrite>true</GetOverwrite>
+
+    <!-- The FileSpec to be used by the Get task.  When empty, all top-level folders in the workspace are used. -->
+    <!-- In this case, we are only interested in our part of the source tree -->
+    <GetFileSpec></GetFileSpec>
+
+    <RunConfigFile>$(SolutionRoot)\OrleansV4\Local.testsettings</RunConfigFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--  SOLUTIONS
+     The paths of the solutions to build. Paths can be server paths or local paths, but server paths
+     relative to the location of this file are highly recommended.  To add/delete solutions, edit this 
+     ItemGroup. For example, to add a solution MySolution.sln, add the following line:
+         
+         <SolutionToBuild Include="$(BuildProjectFolderPath)/path/MySolution.sln" />
+
+     To change the order in which the solutions are built, modify the order in which the solutions 
+     appear below.
+     
+     To call a target (or targets) other than the default, add a metadata item named Targets.  To pass 
+     custom properties to the solution, add a metadata item named Properties.  For example, to call 
+     the targets MyCustomTarget1 and MyCustomTarget2, passing in properties Property1 and Property2, 
+     add the following:
+         
+         <SolutionToBuild Include="$(BuildProjectFolderPath)/path/MySolution.sln">
+             <Targets>MyCustomTarget1;MyCustomTarget2</Targets>
+             <Properties>Property1=Value1;Property2=Value2</Properties>
+         </SolutionToBuild>
+    -->
+
+    <!-- Runtime -->
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../Orleans.sln" />
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Graphs/DistributedGraph-Orleans-V2/DistributedGraph-Orleans-V2.sln" />
+    <!-- SolutionToBuild Include="$(BuildProjectFolderPath)/../../Knit/Knit.sln" / -->
+    <!-- Sample Apps -->
+    
+    <!-- .NET 4.5 Sample Apps -->
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Samples/Hello2012/Hello2012.sln" />
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Samples/Chirper2012/Chirper2012.sln" />
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Samples/Presence/Presence.sln" />
+    
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Test/HaloPresence/ReachPresenceTest.sln" />
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Test/LoadTests/LoadTests.sln" />
+    
+    <SolutionToBuild Include="$(BuildProjectFolderPath)/../../Samples/AzureWebSample/AzureWebSample.sln" />
+    <!-- SolutionToBuild Include="$(BuildProjectFolderPath)/../../IMOrleansV4/IMOrleansV4.sln" / -->
+    
+    <!-- Demos -->
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--  CONFIGURATIONS
+     The list of configurations to build. To add/delete configurations, edit this value. For example, 
+     to add a new configuration, add the following lines:
+         
+         <ConfigurationToBuild Include="Debug|x86">
+             <FlavorToBuild>Debug</FlavorToBuild>
+             <PlatformToBuild>x86</PlatformToBuild>
+         </ConfigurationToBuild>
+
+     The Include attribute value should be unique for each ConfigurationToBuild node.
+    -->
+<!--    
+    <ConfigurationToBuild Include="Release|Any CPU">
+      <FlavorToBuild>Release</FlavorToBuild>
+      <PlatformToBuild>Any CPU</PlatformToBuild>
+    </ConfigurationToBuild>
+-->
+    <ConfigurationToBuild Include="Debug|Any CPU">
+      <FlavorToBuild>Debug</FlavorToBuild>
+      <PlatformToBuild>Any CPU</PlatformToBuild>
+    </ConfigurationToBuild>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--  TEST ARGUMENTS
+     If the RunTest property is set to true then the following test arguments will be used to run 
+     tests. Tests can be run by specifying one or more test lists and/or one or more test containers.
+     
+     To run tests using test lists, add MetaDataFile items and associated TestLists here.  Paths can 
+     be server paths or local paths, but server paths relative to the location of this file are highly 
+     recommended: -->
+
+        <MetaDataFile Include="$(SolutionRoot)\OrleansV4\Orleans1.vsmdi">
+          <TestList>AsynchronyPrimitives;Cast;General;Liveness;Messaging;Performance;Scheduler;Sync;Tasks;Serialization;</TestList>
+          <TestRunConfig>$(SolutionRoot)\OrleansV4\Local.testsettings</TestRunConfig>
+        </MetaDataFile>
+    <!--
+     To run tests using test containers, add TestContainer items here:
+     
+        <TestContainer Include="$(OutDir)\HelloWorldTests.dll" />
+        <TestContainer Include="$(SolutionRoot)\TestProject\WebTest1.webtest" />
+        <TestContainer Include="$(SolutionRoot)\TestProject\LoadTest1.loadtest" />
+
+     Use %2a instead of * and %3f instead of ? to prevent expansion before test assemblies are built
+    -->
+    <TestContainer Include="$(OutDir)\GraphUnitTests.dll" />
+    <!--<TestContainer Include="$(OutDir)\ManagementUnitTests.dll" />-->
+    <!-- MetaDataFile Include="$(SolutionRoot)\Graphs\DistributedGraph-Orleans-V2\DistributedGraph-Orleans-V2.vsmdi">
+          <TestList>All</TestList>
+          <TestRunConfig>$(SolutionRoot)\Graphs\DistributedGraph-Orleans-V2\Local.testsettings</TestRunConfig>
+        </MetaDataFile -->
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- TEST ARGUMENTS
+     If the RunTest property is set to true, then particular tests within a
+     metadata file or test container may be specified here.  This is
+     equivalent to the /test switch on mstest.exe.
+
+     <TestNames>BVT;HighPriority</TestNames>
+    -->
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--  ADDITIONAL REFERENCE PATH
+     The list of additional reference paths to use while resolving references. For example:
+     
+         <AdditionalReferencePath Include="C:\MyFolder\" />
+         <AdditionalReferencePath Include="C:\MyFolder2\" />
+    -->
+  </ItemGroup>
+
+  <Target Name="BeforeCompile" Condition="'$(BuildNumber)' != ''" >
+    <!-- Show values of some useful properties -->
+    <Message Text="TeamProject=$(TeamProject)" />
+    <Message Text="SolutionRoot=$(SolutionRoot)" />
+    <Message Text="BinariesRoot=$(BinariesRoot)" />
+    <Message Text="BuildDirectory=$(BuildDirectory)" />
+    <Message Text="BuildProjectFolderPath=$(BuildProjectFolderPath)" /> <!-- Note: This is a TFS path, not a filestore path  -->
+    <Message Text="MSBuildProjectDirectory=$(MSBuildProjectDirectory)" />
+    <Message Text="OutDir=$(OutDir)" />
+    <Message Text="DropLocation=$(DropLocation)" />
+    <Message Text="BuildNumber=$(BuildNumber)" />
+    <Message Text="builduri=$(builduri)" />
+    <Message Text="MSBuildForwardPropertiesFromChild=$(MSBuildForwardPropertiesFromChild)" />
+    <Message Text="BuildingInsideVisualStudio=$(BuildingInsideVisualStudio)" />
+    <Message Text="IsDesktopBuild=$(IsDesktopBuild)" />
+
+    <!-- Run TFSVersioning tool -->
+    <Exec Command=".\Dependencies\TFSVersioning\TFSVersioning.exe Build-Number.txt Version.txt GlobalAssemblyInfo.cs $(BuildNumber)" WorkingDirectory="$(SolutionRoot)\OrleansV4" />
+  </Target>
+
+  <Target Name="BeforeTestConfiguration">
+    <!-- Only run unit tests against Release build -->
+    <ItemGroup Condition=" '$(Configuration)' != 'Release' ">
+      <MetadataFile Remove="@(MetadataFile)" />
+      <TestContainer Remove="@(TestContainer)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="BeforeTest" Condition="'$(BuildNumber)' != ''" >
+    <!-- Show values of some useful properties -->
+    <Message Text="TeamProject=$(TeamProject)" />
+    <Message Text="SolutionRoot=$(SolutionRoot)" />
+    <Message Text="BinariesRoot=$(BinariesRoot)" />
+    <Message Text="BuildDirectory=$(BuildDirectory)" />
+    <Message Text="BuildProjectFolderPath=$(BuildProjectFolderPath)" />  <!-- Note: This is a TFS depot path, not a filestore path  -->
+    <Message Text="MSBuildProjectDirectory=$(MSBuildProjectDirectory)" />
+    <Message Text="OutDir=$(OutDir)" />
+    <Message Text="DropLocation=$(DropLocation)" />
+    <Message Text="BuildNumber=$(BuildNumber)" />
+    <Message Text="builduri=$(builduri)" />
+    <Message Text="Version: $(Major).$(Minor).$(Build).$(Revision)"/>
+
+    <!-- Build API docs -->
+    <!--
+    <MSBuild Projects="$(SolutionRoot)/OrleansV4/BuildDefinitions/TFSBuildDocs.proj" 
+             Properties="Configuration=$(Configuration);Platform=AnyCPU;OutDir=$(OutDir)" />
+    <MSBuild Projects="$(SolutionRoot)/Graphs/DistributedGraph-Orleans-V2/TFSBuildDocs.proj"
+             Properties="Configuration=$(Configuration);Platform=AnyCPU;OutDir=$(OutDir)" />
+    -->
+    <!-- Copy latest chm docs to SDK staging directory -->
+    <!--
+    <ItemGroup>
+      <ChmFiles Include="$(BuildProjectFolderPath)\..\..\**\HelpFile\*.chm" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ChmFiles)" DestinationFolder="$(BinariesRoot)\Deployment\Orleans-SDK\" ContinueOnError="true" />
+    -->
+  </Target>
+  
+  <Target Name="AfterTest" Condition="'$(BuildNumber)' != ''" >
+    <!-- Copy test performance logs -->
+    <!-- Exec Command="copy /y $(BuildProjectFolderPath)\..\..\..\TestResults\BuildResults\Out\performanceLog.* $(BinariesRoot)\" />
+    <Exec Command="rmdir /s /q $(BuildProjectFolderPath)\..\..\..\TestResults\BuildResults" />
+    <Exec Command="del /q $(BuildProjectFolderPath)\..\..\..\TestResults\BuildResults.trx" / -->
+
+    <!-- Create SDK drop from this latest build -->
+    <Exec Command=".\Orleans-SDK\BuildSDK.cmd ..\SDK-DROP" WorkingDirectory="$(BinariesRoot)\Deployment" />
+    
+    <!-- Create Zip of SDK drop files -->
+    <ItemGroup>
+      <SdkDropFiles Include="$(BinariesRoot)\SDK-DROP\**\*.*" Exclude="*.vspscc" />
+    </ItemGroup>
+    <Zip ZipFileName="$(BinariesRoot)\Orleans-SDK-drop-$(BuildNumber).zip" 
+         WorkingDirectory="$(BinariesRoot)\SDK-DROP" 
+         Files="@(SdkDropFiles)" />
+
+    <MSBuild Projects="$(BuildProjectFolderPath)/../Setup/OrleansSetup.wixproj"
+             Properties="Configuration=$(Configuration);Platform=AnyCPU;OutDir=$(OutDir);BinariesRoot=$(BinariesRoot)" />
+
+  </Target>
+</Project>

@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
@@ -304,11 +304,6 @@ namespace Orleans.CodeGeneration
             return Utils.CalculateIdHash(strMethodId.ToString());
         }
 
-        public static bool UsesPrimaryKeyExtension(Type grainIfaceType)
-        {
-            return HasAttribute<ExtendedPrimaryKeyAttribute>(grainIfaceType, inherit: false);
-        }
-
         public bool IsSystemTarget
         {
             get { return IsSystemTargetType(Type); }
@@ -555,27 +550,6 @@ namespace Orleans.CodeGeneration
             }
         }
 
-        private static int CountAttributes<T>(Type grainIfaceType, bool inherit)
-        {
-            return grainIfaceType.GetCustomAttributes(typeof (T), inherit).Length;
-        }
-
-        private static bool HasAttribute<T>(Type grainIfaceType, bool inherit)
-        {
-            switch (CountAttributes<T>(grainIfaceType, inherit))
-            {
-                case 0:
-                    return false;
-                case 1:
-                    return true;
-                default:
-                    throw new InvalidOperationException(string.Format(
-                        "More than one {0} cannot be specified for grain interface {1}",
-                        typeof (T).Name,
-                        grainIfaceType.Name));
-            }
-        }
-        
         private static int GetTypeCode(Type grainInterfaceOrClass)
         {
             var attrs = grainInterfaceOrClass.GetCustomAttributes(typeof(TypeCodeOverrideAttribute), false);

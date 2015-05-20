@@ -445,6 +445,8 @@ namespace Orleans
         Catalog_ShutdownActivations_2                   = CatalogBase + 40,
         Catalog_ShutdownActivations_3                   = CatalogBase + 41,
         Catalog_DeactivateStreamResources_Exception     = CatalogBase + 42,
+        Catalog_FinishDeactivateActivation_Exception    = CatalogBase + 43,
+        Catalog_FinishGrainDeactivateAndCleanupStreams_Exception = CatalogBase + 44,
 
         MembershipBase                         = Runtime + 600,
         MembershipCantWriteLivenessDisabled    = Runtime_Error_100225, // Backward compatability
@@ -1004,6 +1006,8 @@ namespace Orleans
         PersistentStreamPullingAgent_20 = PersistentStreamPullingAgentBase + 20,
         PersistentStreamPullingAgent_21 = PersistentStreamPullingAgentBase + 21,
         PersistentStreamPullingAgent_22 = PersistentStreamPullingAgentBase + 22,
+        PersistentStreamPullingAgent_23 = PersistentStreamPullingAgentBase + 23,
+        PersistentStreamPullingAgent_24 = PersistentStreamPullingAgentBase + 24,
 
         StreamProviderManagerBase = Runtime +3400,
         StreamProvider_FailedToDispose              = StreamProviderManagerBase + 1,

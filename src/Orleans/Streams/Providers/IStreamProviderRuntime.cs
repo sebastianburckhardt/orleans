@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.Runtime;
@@ -103,6 +103,7 @@ namespace Orleans.Streams
         /// </summary>
         /// <param name="streamProviderName"></param>
         /// <param name="balancerType"></param>
+        /// <param name="adapterFactory"></param>
         /// <param name="queueAdapter"></param>
         /// <param name="getQueueMsgsTimerPeriod"></param>
         /// <param name="initQueueTimeout"></param>
@@ -110,6 +111,7 @@ namespace Orleans.Streams
         Task StartPullingAgents(
             string streamProviderName,
             StreamQueueBalancerType balancerType,
+            IQueueAdapterFactory adapterFactory,
             IQueueAdapter queueAdapter,
             TimeSpan getQueueMsgsTimerPeriod,
             TimeSpan initQueueTimeout);

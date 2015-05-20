@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 using Orleans.Runtime;
@@ -38,6 +38,7 @@ namespace Orleans.Providers.Streams.Common
         where TAdapterFactory : IQueueAdapterFactory, new()
     {
         private Logger                  logger;
+        private IQueueAdapterFactory    adapterFactory;
         private IStreamProviderRuntime  providerRuntime;
         private IQueueAdapter           queueAdapter;
         private TimeSpan                getQueueMsgsTimerPeriod;
@@ -63,9 +64,9 @@ namespace Orleans.Providers.Streams.Common
             Name = name;
             providerRuntime = (IStreamProviderRuntime)providerUtilitiesManager;
             logger = providerRuntime.GetLogger(this.GetType().Name);
-            IQueueAdapterFactory factory = new TAdapterFactory();
-            factory.Init(config, Name, logger);
-            queueAdapter = await factory.CreateAdapter();
+            adapterFactory = new TAdapterFactory();
+            adapterFactory.Init(config, Name, logger);
+            queueAdapter = await adapterFactory.CreateAdapter();
 
             string timePeriod;
             if (!config.Properties.TryGetValue(GET_QUEUE_MESSAGES_TIMER_PERIOD, out timePeriod))
@@ -98,7 +99,7 @@ namespace Orleans.Providers.Streams.Common
             if (queueAdapter.Direction.Equals(StreamProviderDirection.ReadOnly) ||
                 queueAdapter.Direction.Equals(StreamProviderDirection.ReadWrite))
             {
-                await providerRuntime.StartPullingAgents(Name, balancerType, queueAdapter, getQueueMsgsTimerPeriod, initQueueTimeout);
+                await providerRuntime.StartPullingAgents(Name, balancerType, adapterFactory, queueAdapter, getQueueMsgsTimerPeriod, initQueueTimeout);
             }
         }
 

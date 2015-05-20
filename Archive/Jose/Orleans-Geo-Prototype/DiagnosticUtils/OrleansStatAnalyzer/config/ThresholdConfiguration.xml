@@ -1,0 +1,39 @@
+﻿<!--<?xml version="1.0" encoding="utf-8" ?>
+<ThresholdAnalysis xmlns="urn:orleans">
+
+// The Perfromance counter can be specified either of two ways.
+
+  <PerformanceCounter Names="All">
+  <PerformanceCounter Names="counter1,counter2,counter3">
+    
+    <Rules>
+      <Rule AppliesTo="Global">
+        <Name>1</Name>
+        
+        // Statistic can be any of one from the following comma seperated list.
+        
+        <Statistic>Any,Zscore, Average, Min, Max, Sdev, Variance</Statistic>
+        
+        // Expected value can be specified in either of following ways
+        
+        <ExpectedValue>3.0</ExpectedValue>
+        <ExpectedPercentageValue>50.0</ExpectedPercentageValue>
+        
+        // Comparison operator can be specified by using any value from comma seperated list.
+        <ComparisonOperator>LessThan, GreaterThan, EqualsTo</ComparisonOperator>
+      </Rule>
+      <Rule AppliesTo="Silo">
+        <Name>2</Name>
+        <Statistic>Zscore</Statistic>
+        <ExpectedValue>3.0</ExpectedValue>
+        <ComparisonOperator>LessThan</ComparisonOperator>
+      </Rule>
+      <Rule AppliesTo="Time">
+        <Name>3</Name>
+        <Statistic>Zscore</Statistic>
+        <ExpectedValue>3.0</ExpectedValue>
+        <ComparisonOperator>LessThan</ComparisonOperator>
+      </Rule>
+    </Rules>
+  </PerformanceCounter>
+</ThresholdAnalysis>-->

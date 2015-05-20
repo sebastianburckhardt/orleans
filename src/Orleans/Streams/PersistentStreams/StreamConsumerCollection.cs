@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Orleans.Runtime;
@@ -50,7 +50,12 @@ namespace Orleans.Streams
             StreamConsumerData consumer;
             if (!queueData.TryGetValue(subscriptionId, out consumer)) return false;
 
-            consumer.Cursor = null; // kill cursor activity and ensure it does not start again on this consumer data.
+            if (consumer.Cursor != null)
+            {
+                // kill cursor activity and ensure it does not start again on this consumer data.
+                consumer.Cursor.Dispose();
+                consumer.Cursor = null; 
+            }
             return queueData.Remove(subscriptionId);
         }
 

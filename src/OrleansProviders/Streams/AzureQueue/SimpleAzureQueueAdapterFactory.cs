@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 using Orleans.Streams;
@@ -53,6 +53,16 @@ namespace Orleans.Providers.Streams.AzureQueue
         {
             var adapter = new SimpleAzureQueueAdapter(dataConnectionString, providerName, queueName);
             return Task.FromResult<IQueueAdapter>(adapter);
+        }
+
+        public virtual IQueueAdapterCache GetQueueAdapterCache()
+        {
+            throw new OrleansException("SimpleAzureQueueAdapter is a write-only adapter, it does not support reading from the queue and thus does not need cache.");
+        }
+
+        public IStreamQueueMapper GetStreamQueueMapper()
+        {
+            throw new OrleansException("SimpleAzureQueueAdapter does not support multiple queues, it only writes to one queue.");
         }
     }
 }

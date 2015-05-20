@@ -25,11 +25,13 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Orleans;
+using Orleans.TestingHost;
 using UnitTests.Tester;
 
 namespace Tester.StreamingTests
 {
-    [DeploymentItem("OrleansConfigurationForUnitTests.xml")]
+    [DeploymentItem("OrleansConfigurationForStreamingUnitTests.xml")]
     [DeploymentItem("OrleansProviders.dll")]
     [TestClass]
     public class SMSSubscriptionMultiplicityTests : UnitTestSiloHost
@@ -39,13 +41,13 @@ namespace Tester.StreamingTests
         private readonly SubscriptionMultiplicityTestRunner runner;
 
         public SMSSubscriptionMultiplicityTests()
-            : base(new UnitTestSiloOptions
+            : base(new TestingSiloOptions
             {
                 StartFreshOrleans = true,
-                SiloConfigFile = new FileInfo("OrleansConfigurationForUnitTests.xml"),
+                SiloConfigFile = new FileInfo("OrleansConfigurationForStreamingUnitTests.xml"),
             })
         {
-            runner = new SubscriptionMultiplicityTestRunner(SMSStreamProviderName);
+            runner = new SubscriptionMultiplicityTestRunner(SMSStreamProviderName, GrainClient.Logger);
         }
 
         // Use ClassCleanup to run code after all tests in a class have run

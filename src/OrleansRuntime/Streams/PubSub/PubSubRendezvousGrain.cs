@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -64,15 +64,28 @@ namespace Orleans.Streams
             logger = GetLogger(this.GetType().Name + "-" + RuntimeIdentity + "-" + IdentityString);
             LogPubSubCounts("OnActivateAsync");
 
-            int numRemoved = RemoveDeadProducers();
-            if (numRemoved > 0)
-                await State.WriteStateAsync();
             if (State.Consumers == null)
                 State.Consumers = new HashSet<PubSubSubscriptionState>();
             if (State.Producers == null)
                 State.Producers = new HashSet<PubSubPublisherState>();
+
+            int numRemoved = RemoveDeadProducers();
+            if (numRemoved > 0)
+            {
+                if (State.Producers.Count > 0 || State.Consumers.Count > 0)
+                    await State.WriteStateAsync();
+                else
+                    await State.ClearStateAsync(); //State contains no producers or consumers, remove it from storage
+            }
+
             if (logger.IsVerbose)
                 logger.Info("OnActivateAsync-Done");
+        }
+
+        public override Task OnDeactivateAsync()
+        {
+            LogPubSubCounts("OnDeactivateAsync");
+            return TaskDone.Done;
         }
 
         private int RemoveDeadProducers()
@@ -137,7 +150,10 @@ namespace Orleans.Streams
                 await State.WriteStateAsync();
             
             if (State.Producers.Count == 0 && State.Consumers.Count == 0)
+            {
+                await State.ClearStateAsync(); //State contains no producers or consumers, remove it from storage
                 DeactivateOnIdle(); // No producers or consumers left now, so flag ourselves to expedite Deactivation
+            }
         }
 
         public async Task RegisterConsumer(
@@ -256,6 +272,7 @@ namespace Orleans.Streams
             }
             else if (State.Consumers.Count == 0) // + we already know that numProducers == 0 from previous if-clause
             {
+                await State.ClearStateAsync(); //State contains no producers or consumers, remove it from storage
                 // No producers or consumers left now, so flag ourselves to expedite Deactivation
                 DeactivateOnIdle();
             }
@@ -283,7 +300,7 @@ namespace Orleans.Streams
 
         private void LogPubSubCounts(string fmt, params object[] args)
         {
-            if (logger.IsVerbose)
+            if (logger.IsVerbose || DEBUG_PUB_SUB)
             {
                 int numProducers = 0;
                 int numConsumers = 0;

@@ -96,6 +96,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Async\AsyncBatchedContinuationQueue.cs" />
+    <Compile Include="Async\MultiTaskCompletionSource.cs" />
     <Compile Include="Async\AsyncSerialExecutor.cs" />
     <Compile Include="Async\AsyncExecutorWithRetries.cs" />
     <Compile Include="Async\AsyncLock.cs" />
@@ -173,10 +175,13 @@
     <Compile Include="Streams\Providers\IStreamProviderImpl.cs" />
     <Compile Include="Streams\Providers\IStreamProviderManager.cs" />
     <Compile Include="Streams\Providers\IStreamProviderRuntime.cs" />
-    <Compile Include="Streams\PersistentAdapter\HashRingBasedStreamQueueMapper.cs" />
-    <Compile Include="Streams\PersistentAdapter\DataNotAvailableException.cs" />
-    <Compile Include="Streams\PersistentAdapter\IQueueAdapterReceiver.cs" />
-    <Compile Include="Streams\PersistentAdapter\IQueueAdapterCacheCursor.cs" />
+    <Compile Include="Streams\QueueAdapters\HashRingBasedStreamQueueMapper.cs" />
+    <Compile Include="Streams\QueueAdapters\DataNotAvailableException.cs" />
+    <Compile Include="Streams\QueueAdapters\QueueAdapterConstants.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueCache.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueAdapterCache.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueAdapterReceiver.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueCacheCursor.cs" />
     <Compile Include="Streams\Predicates\OrFilter.cs" />
     <Compile Include="Streams\PubSub\ImplicitStreamSubscriberTable.cs" />
     <Compile Include="Streams\PubSub\PubSubPublisherState.cs" />
@@ -187,11 +192,12 @@
     <Compile Include="Providers\IProviderRuntime.cs" />
     <Compile Include="Statistics\ThreadCycleStopWatch.cs" />
     <Compile Include="Streams\PubSub\PubSubSubscriptionState.cs" />
+    <Compile Include="Streams\QueueAdapters\QueueCacheMissException.cs" />
     <Compile Include="Streams\PubSub\SubscriptionMarker.cs" />
     <Compile Include="Streams\SimpleMessageStream\SimpleMessageStreamProducer.cs" />
-    <Compile Include="Streams\PersistentAdapter\IBatchContainer.cs" />
-    <Compile Include="Streams\PersistentAdapter\IQueueAdapter.cs" />
-    <Compile Include="Streams\PersistentAdapter\IQueueAdapterFactory.cs" />
+    <Compile Include="Streams\QueueAdapters\IBatchContainer.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueAdapter.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueAdapterFactory.cs" />
     <Compile Include="Streams\SimpleMessageStream\SimpleMessageStreamProvider.cs" />
     <Compile Include="Streams\Internal\StreamConsumer.cs" />
     <Compile Include="Streams\Internal\StreamConsumerExtension.cs" />
@@ -200,7 +206,7 @@
     <Compile Include="Streams\SimpleMessageStream\SimpleMessageStreamProducerExtension.cs" />
     <Compile Include="Streams\PersistentStreams\IPersistentStreamPullingAgent.cs" />
     <Compile Include="Streams\PersistentStreams\PersistentStreamProducer.cs" />
-    <Compile Include="Streams\PersistentAdapter\IStreamQueueMapper.cs" />
+    <Compile Include="Streams\QueueAdapters\IStreamQueueMapper.cs" />
     <Compile Include="Streams\PersistentStreams\QueueStreamDataStructures.cs" />
     <Compile Include="IDs\QueueId.cs" />
     <Compile Include="IDs\StreamId.cs" />

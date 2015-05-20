@@ -21,20 +21,20 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
+using Orleans.AzureUtils;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.MembershipService;
-﻿using UnitTests.Tester;
+using Orleans.TestingHost;
 
 namespace UnitTests.LivenessTests
 {
     [TestClass]
-    [DeploymentItem("OrleansConfigurationForUnitTests.xml")]
     [DeploymentItem(@"Data\TestDb.mdf")]
     public class MembershipTablePluginTests
     {
@@ -46,16 +46,23 @@ namespace UnitTests.LivenessTests
         public static void ClassInitialize(TestContext testContext)
         {
             hostName = Dns.GetHostName();
-            TraceLogger.GetLogger("MembershipTablePluginTests", TraceLogger.LoggerType.Application);
 
-            var cfg = new ClusterConfiguration();
-            cfg.LoadFromFile("OrleansConfigurationForUnitTests.xml");
-            TraceLogger.Initialize(cfg.GetConfigurationForNode("Primary"));
-            StorageTestConstants.Init();
+            var cfg = new NodeConfiguration();
+            TraceLogger.Initialize(cfg);
 
             TraceLogger.AddTraceLevelOverride("AzureTableDataManager", Logger.Severity.Verbose3);
             TraceLogger.AddTraceLevelOverride("OrleansSiloInstanceManager", Logger.Severity.Verbose3);
             TraceLogger.AddTraceLevelOverride("Storage", Logger.Severity.Verbose3);
+
+            // Set shorter init timeout for these tests
+            OrleansSiloInstanceManager.initTimeout = TimeSpan.FromSeconds(20);
+        }
+
+        [ClassCleanup]
+        public static void ClassCleanup()
+        {
+            // Reset init timeout after tests
+            OrleansSiloInstanceManager.initTimeout = AzureTableDefaultPolicies.TableCreationTimeout;
         }
 
         [TestCleanup]
@@ -180,7 +187,7 @@ namespace UnitTests.LivenessTests
                     break;
 
                 case GlobalConfiguration.LivenessProviderType.SqlServer:
-                    config.DataConnectionString = StorageTestConstants.GetSqlConnectionString(TestContext);
+                    config.DataConnectionString = StorageTestConstants.GetSqlConnectionString(TestContext.DeploymentDirectory);
                     membership = await SqlMembershipTable.GetMembershipTable(config, true);
                     break;
 

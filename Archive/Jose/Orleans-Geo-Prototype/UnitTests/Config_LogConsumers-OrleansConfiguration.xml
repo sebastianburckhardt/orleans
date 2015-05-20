@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OrleansConfiguration xmlns="urn:orleans">
+  <Deployment>
+    <Silo Name="Primary" HostName="localhost" />
+    <Silo Name="Node2" HostName="localhost" />
+    <Silo Name="Node3" HostName="localhost" />
+  </Deployment>
+  <Globals>
+    <Persistence Type="None" Path=".\OrleansData"/>
+    <!--
+    Choose one of the following for Azure, SQL, SQL Compact Edition, or a system grain:
+    <Index ConnectionString="Data Source=<db>.database.windows.net;Initial Catalog=Orleans;User=orltf11@<db>.database.windows.net;Password=<password>" ClearOnStartup="true" />
+    <Index ConnectionString="Data Source=.\SQLEXPRESS;Initial Catalog=Orleans;Integrated Security=SSPI" ClearOnStartup="true" />
+    <Index ConnectionString="Data Source=.\OrleansIndex.sdf;Persist Security Info=False;" ClearOnStartup="true" />
+    <Index ConnectionString="DomainIndexGrain" ClearOnStartup="true"/>
+    -->
+    <Index ConnectionString="DomainIndexGrain" ClearOnStartup="true"/>
+    <SeedNode Address="localhost" Port="11111" />
+    <Tasks Disabled="true"/>
+    <Messaging ResponseTimeout="30" MaxResendCount="0"/>
+    <Liveness LivenessType ="MembershipTableGrain" LivenessEnabled="true" ProbeTimeout = "5" TableRefreshTimeout ="10" DeathVoteExpirationTimeout ="80"
+              NumMissedProbesLimit = "3" NumProbedSilos="3" NumVotesForDeathDeclaration="2" UseLivenessGossip="false" LivenessFileDirectory="."/>
+
+  </Globals>
+  <Defaults>
+    <Networking Address="localhost" Port="0" />
+    <Scheduler MaxActiveThreads="0" />
+    <Tracing DefaultTraceLevel="Info" TraceToConsole="true" TraceToFile="" WriteMessagingTraces="false">
+      <LogConsumer>UnitTests.DummyLogConsumer, UnitTests</LogConsumer>
+      <!--
+      <TraceLevelOverride LogPrefix="Runtime.MembershipOracle" TraceLevel="Verbose" />
+      <TraceLevelOverride LogPrefix="Runtime.Dispatcher" TraceLevel="Verbose2" />
+      <TraceLevelOverride LogPrefix="Runtime.Message" TraceLevel="Verbose" />
+      <TraceLevelOverride LogPrefix="Runtime.Catalog" TraceLevel="Verbose" />
+      -->
+    </Tracing>
+    <Limits>
+      <Limit Name="Limit1" SoftLimit="1" HardLimit="2" />
+      <Limit Name="Limit2" SoftLimit="2" HardLimit="4" />
+      <Limit Name="Limit3" SoftLimit="3" HardLimit="6" />
+      <Limit Name="NoHardLimit" SoftLimit="4" />
+    </Limits>
+  </Defaults>
+  <Override Node="Primary">
+    <Networking Port="11111" />
+    <ProxyingGateway Address="localhost" Port="30000" />
+  </Override>
+  <Override Node="Secondary_1">
+    <Networking Port="11112" />
+    <ProxyingGateway Address="localhost" Port="30001" />
+  </Override>
+  <Override Node="Node2">
+    <Networking Port="11113" />
+  </Override>
+  <Override Node="Node3">
+    <Networking Port="11114" />
+  </Override>
+</OrleansConfiguration>

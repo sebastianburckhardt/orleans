@@ -1,0 +1,38 @@
++1) Migration of event handlers - either treat them as part of grain state (should be persisted and /or lost whenever grain state is lost), or treat them as channels and let the client reference re-establish them.
+
++2) Stop/Start Orleans instances and Cloud pipe connection failures. Evaluate and compare with WCF.
+
+-3) Retry logic - should or should not retry the same operation with possibly externally observable effects
+
+-4) Suspent/Resume Orleans instances - add full implementation. Unload grains. Low priortoty functionality.
+
+-5) Regression tests (reflaction based implementation).
+
+•   Per-grain queuing of requests (1) knowing the grain state, 2) optional re-ordering of read/write requests, 3) client does not need to resend in case of migration, 4) Perf Counters)
+Open issues:
+a) in case of migration - need to cancel resolvers and not to SendErrorResponse from EntryPoint
+b) too heavy implementation? Better use queues instead of resolvers.
+
+•	Guaranteed message ordering	
+a) Grain reference assign invocation numbers inorder
+b) inboundChannel in GrainData keeps track of last executed request and allows next invocation inorder
+c) I assume Channels persist during migration (both Guid and channel state, wccih now holds last execution number), inboundChannel will migrate with GrainData as well.
+d) on the client side, grain reference renews the reference but keeps the same channel.
+
+•   Propagation of TTL
+•	Lazy initialization of grain references
+•	Refresh of the design docs
+•	Convert TODOs in code into TFS bugs/workitems for tracking/prioritization
+•	Run FxCop/StyleCop and fix issues.
+
+1)	In DS implementation, if we lost ownership due to rebalance but did not really move grain to other ORT, the grain should not be lost in the source ORT.
+2)	If soft grain state is lost, should we propagate exception to the client?
+
+DirectoryService robustness:
+- if we call RegisterRuntimeInstance when the previous instance did not unregsiter properly (or its migration did not finish properly), we hit assert. Needs to be fixed.
+
+BUG:
+ + we do not set NonSerialized fields in Grains (and GrainBase) upon migration (both soft and hard).
+
+
+

@@ -21,7 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Services.Common;
 using System.Linq;
@@ -111,15 +111,20 @@ namespace Orleans.Runtime.ReminderService
             try
             {
                 singleton.Logger.Info("Creating RemindersTableManager for service id {0} and deploymentId {1}.", serviceId, deploymentId);
-                await singleton.InitTableAsync().WithTimeout(initTimeout);
+                await singleton.InitTableAsync()
+                    .WithTimeout(initTimeout);
             }
-            catch (TimeoutException)
+            catch (TimeoutException te)
             {
-                singleton.Logger.Fail(ErrorCode.AzureTable_38, String.Format("Unable to create or connect to the Azure table in {0}", initTimeout));
+                string errorMsg = String.Format("Unable to create or connect to the Azure table in {0}", initTimeout);
+                singleton.Logger.Error(ErrorCode.AzureTable_38, errorMsg, te);
+                throw new OrleansException(errorMsg, te);
             }
             catch (Exception ex)
             {
-                singleton.Logger.Fail(ErrorCode.AzureTable_39, String.Format("Exception trying to create or connect to the Azure table: {0}", ex));
+                string errorMsg = String.Format("Exception trying to create or connect to the Azure table: {0}", ex.Message);
+                singleton.Logger.Error(ErrorCode.AzureTable_39, errorMsg, ex);
+                throw new OrleansException(errorMsg, ex);
             }
             return singleton;
         }
