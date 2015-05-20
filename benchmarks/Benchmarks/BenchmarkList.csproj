@@ -48,6 +48,10 @@
     <Compile Include="Server.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Applications\Hello\Benchmark\Hello.Benchmark.csproj">
+      <Project>{139e86e5-0fd6-4ab2-855a-fd30ea5c1021}</Project>
+      <Name>Hello.Benchmark</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Common\Common.csproj">
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>
