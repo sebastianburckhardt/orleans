@@ -1,0 +1,2334 @@
+MIME-Version: 1.0
+Content-Location: file:///C:/CEAC30E5/ConfigurationGuide.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="utf-8"
+
+<html xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:dt=3D"uuid:C2F41010-65B3-11d1-A29F-00AA00C14882"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dutf-8">
+<meta name=3DProgId content=3DOneNote.File>
+<meta name=3DGenerator content=3D"Microsoft OneNote 15">
+<link id=3DMain-File rel=3DMain-File href=3DConfigurationGuide.htm>
+<link rel=3DFile-List href=3D"ConfigurationGuide_files/filelist.xml">
+</head>
+
+<body lang=3Den-US style=3D'font-family:Calibri;font-size:11.0pt;color:blac=
+k'>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6041in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.077in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Config=
+uration</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+48 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.6041=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:15pt;font-family:Cambria;font-size=
+:26.0pt;
+color:#17365D'>Orleans Configuration Guide</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>This
+Configuration Guide explains the key configuration parameters and how they
+should be used for several most typical usage scenarios. </p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:16.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:24pt;margin-bottom:0pt;font-weight:bold;color:#365F91'><span
+     style=3D'font-family:Cambria;font-size:16.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:16.0pt'>Introduc=
+tion</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Orleans
+can be used in a variety of configurations that fit different usage scenari=
+os,
+such as local single node deployment for development and testing, cluster of
+servers, multi-instance Azure worker role, etc. All the different target
+scenarios are achieved by specifying particular values in the Orleans
+configuration XML files. This guide provides instructions for the key
+configurations parameters that are necessary to make Orleans run in one of =
+the
+target scenarios. There are also other configuration parameters that primar=
+ily
+help fine tune Orleans for better performance. They are documented in the X=
+SD
+schema and in general are not required even for running the system in
+production.</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:16.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D2 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:24pt;margin-bottom:0pt;font-weight:bold;color:#365F91'><span
+     style=3D'font-family:Cambria;font-size:16.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:16.0pt'>Server a=
+nd
+     Client</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Orleans
+is a framework for building and running high scale services. A typical
+deployment of an Orleans application spans a cluster of servers. The instan=
+ces
+of the Orleans runtime, called silos, running on each of the servers need t=
+o be
+configured to connect to each other. In addition to that, there is always a
+client component that connects to the Orleans deployment, most typically a =
+web
+frontend, that needs to be configured to connect to the silos. The Server
+Configuration and Client Configuration sections of the guide cover those
+aspects respectively.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6041in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.5333in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Silo
+Configuration</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+48 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:7.6041=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>There
+are two key aspects of silo configuration: </p>
+
+<ul type=3Ddisc style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in'>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Connectivity: silo’s
+     endpoints for other silos and clients</span></li>
+ <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+     style=3D'font-family:Calibri;font-size:11.0pt'>Cluster membership and
+     reliability: how silos discover each other in a deployment and detect =
+node
+     failures</span></li>
+</ul>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Depending
+on the environment you want to run Orleans in some of these parameters may =
+or
+may not be important. For example, for a single silo development environment
+one usually doesn’t need reliability, and all the endpoints can be localh=
+ost.
+Or if you only use self-managed grains in your application, you don’t nee=
+d to
+configure grain index.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+following sections detail the configuration setting for the four mentioned =
+key
+aspects. Then in the scenarios section you can find the recommended
+combinations of the settings for the most typical deployment scenarios.</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Connecti=
+vity</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+connectivity settings define two TCP/IP endpoints: one for inter-silo
+communication and one for client connections, also referred to as client
+gateway or simply gateway.</p>
+
+<ol type=3D1 style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:11.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:6pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:11.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:11.0pt'>Inter-si=
+lo
+     Endpoint</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&lt;<span
+style=3D'color:#A31515'>Networking</span> <span style=3D'color:red'>Address=
+</span>=3D&quot;
+&quot; <span style=3D'color:red'>Port</span>=3D&quot;11111&quot; /&gt;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Address:
+IP address or host name to use. If left empty, silo will pick the first
+available IPv4 address. Orleans supports IPv6 as well as IPv4.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Port:
+TCP port to use. If left empty, silo will pick a random available port. If
+there is only one silo running on the machine, it is advisable to specify a
+port for consistency and for easy configuration of the firewall. For running
+multiple silos on the same machine, you can either provide each of the silos
+with different configuration files or leave the Port attribute empty for a
+random port assignment.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+machines that have more than one IP address assigned to them, if you need to
+choose an address from a specific subnet or an IPv6 address, you can do tha=
+t by
+adding a Subnet and PreferredFamily attributes respectively (refer to the X=
+SD
+schema for exact syntax of those attributes).</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+local development environment, you can simply use localhost as the host nam=
+e:</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&lt;<span
+style=3D'color:#A31515'>Networking</span> <span style=3D'color:red'>Address=
+</span>=3D&quot;localhost&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;11111&quot; /&gt;</p>
+
+<ol type=3D1 style=3D'margin-left:.75in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:11.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D2 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:6pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:11.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:11.0pt'>Client
+     Gateway Endpoint</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+setting for client gateway endpoint is identical to the inter-silo endpoint
+except for the XML element name:</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&lt;<span
+style=3D'color:#A31515'>ProxyingGateway</span> <span style=3D'color:red'>Ad=
+dress</span>=3D&quot;localhost&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;30000&quot; /&gt;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>You
+have to specify a port number different from the one used for the inter-silo
+endpoint.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>It
+is possible to configure clients to connect to the inter-silo endpoint inst=
+ead
+of the gateway, but that requires opening a listening socket on the client
+(thus requires enabling incoming connections on the client machine firewall=
+),
+and in general is not advisable other than for a very limited set of scenar=
+ios.</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D2 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Cluster
+     Membership and Reliability</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Usually,
+a service built on Orleans is deployed on a cluster of nodes, either on
+dedicated hardware or in Azure. For development and basic testing, Orleans =
+can
+be deployed in a single node configuration. When deployed to a cluster of
+nodes, Orleans internally implements a set of protocols to discover and
+maintain membership of Orleans silos in the cluster, including detection of
+node failures and automatic reconfiguration.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+reliable management of cluster membership, Orleans uses the Azure Table sto=
+rage
+for synchronization of nodes. The reliable membership setup requires two
+settings in the silo configuration file: Liveness and Azure nodes.</p>
+
+<p style=3D'margin:0in'><span style=3D'font-family:Calibri;font-size:11.0pt=
+'>&lt;</span><span
+style=3D'font-family:Calibri;font-size:11.0pt;color:#A31515'>Liveness</span=
+><span
+style=3D'font-family:Calibri;font-size:11.0pt'> </span><span style=3D'font-=
+family:
+Calibri;font-size:11.0pt;color:red'>LivenessType</span><span style=3D'font-=
+family:
+Calibri;font-size:11.0pt'> =3D&quot;AzureTable&quot;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'> /&gt;</span></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&lt;<span
+style=3D'color:#A31515'>Azure</span> <span style=3D'color:red'>DeploymentId=
+</span>=3D&quot;&lt;your
+deployment ID&gt;&quot; <span style=3D'color:red'>DataConnectionString</spa=
+n>=3D&quot;DefaultEndpointsProtocol=3Dhttps;AccountName=3D&lt;Azure
+storage account&gt;;AccountKey=3D&lt;Azure table storage account
+key&gt;&quot;/&gt;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>AccountName
+and AccountKey parts of the DataConnectioString setting are the storage acc=
+ount
+and key for your Azure Table store. DeploymentId is a unique string that
+defines a particular deployment. When deploying an Orleans based service to
+Azure it makes most sense to use the Azure deployment ID of the worker role=
+.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+development or if it’s not possible to use Azure Table, silos can be conf=
+igured
+to use the membership grain instead. Such a configuration is unreliable as =
+it
+will not survive a failure of the primary silo that hosts the membership gr=
+ain.
+“MembershipTableGrain” is the default value of LivenessType.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt'><span style=3D'font-family:C=
+alibri;
+font-size:11.0pt'>&lt;</span><span style=3D'font-family:Calibri;font-size:1=
+1.0pt;
+color:#A31515'>Liveness</span><span style=3D'font-family:Calibri;font-size:=
+11.0pt'>
+</span><span style=3D'font-family:Calibri;font-size:11.0pt;color:red'>Liven=
+essType</span><span
+style=3D'font-family:Calibri;font-size:11.0pt'> =3D&quot;MembershipTableGra=
+in&quot;</span><span
+style=3D'font-family:Consolas;font-size:9.5pt;color:blue'> /&gt;</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D3 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:0pt;margin-bottom:10pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Primary =
+Silo</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>In
+a reliable deployment, one that is configured with membership using Azure
+Table, all silos are created equal, with no notion of primary or secondary
+silos. That is the configuration that is recommended for production that wi=
+ll
+survive a failure of any individual node or a combination of nodes. For
+example, Azure periodically rolls out OS patches and that causes all of the
+role instances to reboot eventually.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+development or a non-reliable deployment when MembershipTableGrain is used,=
+ one
+of the silos has to be designated as Primary and has to start and initialize
+before other, Secondary, silos that wait for Primary to initialize before
+joining the cluster. In case of a failure of the Primary node, the whole
+deployment stops working properly and has to be restarted. </p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>In
+a non-Azure environment, Primary is designated in the configuration file wi=
+th
+the following setting within the Globals section.</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&lt;<span
+style=3D'color:#A31515'>SeedNode</span> <span style=3D'color:red'>Address</=
+span>=3D&quot;&lt;host
+name or IP address of the primary node&gt;&quot; <span style=3D'color:red'>=
+Port</span>=3D&quot;11111&quot;
+/&gt;</p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:5.8895in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.784in'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>Client
+Configuration</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.7166=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+November 29, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>12:=
+49 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:5.8895=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>The
+key parameter that has to be configured for a client is the silo’s client
+gateway endpoint(s) to connect to. There are two ways to do that: manually
+configure one or more gateway endpoints or point the client to the Azure Ta=
+ble
+used by silos’ cluster membership. In the latter case the client automati=
+cally
+discovers what silos with client gateways enabled are available within the
+deployment, and adjusts its connections to the gateways as they join or lea=
+ve
+the cluster. This option is reliable and recommended for production deploym=
+ent.</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Fixed
+     Gateway Configuration</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>A
+fixed set of gateways is specified in the ClientConfiguration.xml with one =
+or
+more Gateway nodes:</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'>&lt;ClientCon=
+figuration<span
+style=3D'color:blue'> </span><span style=3D'color:red'>xmlns</span><span
+style=3D'color:blue'>=3D</span>&quot;urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;gateway1&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;gateway2&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;gateway3&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'>&lt;/ClientCo=
+nfiguration<span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'><span
+style=3D'mso-spacerun:yes'> </span>One gateway is generally enough. Multip=
+le
+gateway connections help increase throughput and reliability of the system.=
+</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D2 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Gateway
+     Configuration Based on Cluster Membership</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>To
+configure the client to automatically find gateways from the silo cluster
+membership table, you need to specify the Azure Table connection string and=
+ the
+target deployment ID.</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>ClientConfiguration<span style=3D'color:blu=
+e'> </span><span
+style=3D'color:red'>xmlns</span><span style=3D'color:blue'>=3D</span>&quot;=
+<span
+style=3D'color:blue'>urn:orleans</span>&quot;<span style=3D'color:blue'>&gt=
+;</span></p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>    </span>&lt;Azure <span style=3D'color:red=
+'>DeploymentId</span>=3D&quot;target
+deployment ID&quot; <span style=3D'color:red'>DataConnectionString</span>=
+=3D&quot;Azure
+Table connection string&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>ClientConfiguration<span style=3D'color:bl=
+ue'>&gt;</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D3 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Local Si=
+lo</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+the local development/test configuration that uses a local silo, client gat=
+eway
+should be configured to localhost.</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>ClientConfiguration<span style=3D'color:blu=
+e'> </span><span
+style=3D'color:red'>xmlns</span><span style=3D'color:blue'>=3D</span>&quot;=
+urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;localhost&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>ClientConfiguration<span style=3D'color:bl=
+ue'>&gt;</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D4 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Calibri;font-size:11.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Calibri;font-size:11.0pt'>Web Role
+     Client in Azure</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-size:11.0pt'><span
+style=3D'font-family:Calibri'>When the client is a web role running inside =
+the
+same Azure deployment as the silo worker roles, all gateway address informa=
+tion
+is read from the OrleansSiloInstances table when </span><span style=3D'font=
+-family:
+Consolas'>OrleansAzureClient.Initialize()</span><span style=3D'font-family:=
+Calibri'>
+is called. The Azure storage connection string used to find the correct </s=
+pan><span
+style=3D'font-family:Consolas'>OrleansSiloInstances</span><span style=3D'fo=
+nt-family:
+Calibri'> table is specified in the &quot;DataConnectionString&quot; setting
+defined in the service configuration for the deployment &amp; role. </span>=
+</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'>&lt;ServiceCo=
+nfiguration<span
+style=3D'mso-spacerun:yes'>  </span>...&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>  </span>&lt;Role name=3D&quot;WebRole&quot;&gt=
+; ...</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>    </span>&lt;ConfigurationSettings&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Setting name=3D&quot;<span
+style=3D'background:yellow;mso-highlight:yellow'>DataConnectionString</span=
+>&quot;
+value=3D&quot;DefaultEndpointsProtocol=3Dhttps;AccountName=3DMYACCOUNTNAME;=
+AccountKey=3DMYACCOUNTKEY&quot;
+/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>    </span>&lt;/ConfigurationSettings&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>  </span>&lt;/Role&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>   </span>... </p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'>&lt;/ServiceC=
+onfiguration&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Both the silo =
+worker
+roles and web client roles need to be use the same Azure storage account in
+order to successfully discover each other successfully.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-size:11.0pt'><span style=3D'font-family:Calibri=
+'>When
+using </span><span style=3D'font-family:Consolas'>OrleansAzureClient.Initia=
+lize()</span><span
+style=3D'font-family:Calibri'> and </span><span style=3D'font-family:Consol=
+as'>OrleansSiloInstances</span><span
+style=3D'font-family:Calibri'> table for gateway address discovery, no addi=
+tional
+gateway address info in required in the client config file. Typically the
+ClientConfiguration.xml file will only contain some minimal debug / tracing
+configuration settings, although even that is not required.</span></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>ClientConfiguration<span style=3D'color:blu=
+e'> </span><span
+style=3D'color:red'>xmlns</span><span style=3D'color:blue'>=3D</span>&quot;=
+urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>    </span>&lt;Tracing
+DefaultTraceLevel=3D&quot;Info&quot; &gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>        </span>&lt;TraceLevelOverride
+LogPrefix=3D&quot;Application&quot; TraceLevel=3D&quot;Info&quot; /&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>    </span>&lt;/Tracing&gt;</p>
+
+<p style=3D'margin:0in;font-family:Consolas;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>ClientConfiguration<span style=3D'color:bl=
+ue'>&gt;</span></p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.6625in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:2.7305in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:17.0pt;color:#365F91'>=
+<span
+style=3D'font-weight:bold'>Typical Configurations</span></p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:0in;width:2.634i=
+n'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+December 06, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>2:1=
+2 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4812in;margin-left:0in;width:7.6625=
+in'>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Below
+are examples of typical configurations that can be used for development and
+production deployments.</p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D1 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Local
+     Development</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+local development, where there is only one silo running locally on the
+programmer’s machine, the configuration is already included in the SDK. T=
+he
+local silo that can be started with the [SDK-Root]\ StartLocalSilo.cmd scri=
+pt
+is configured as follows.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>OrleansConfiguration<span style=3D'color:bl=
+ue'> </span><span
+style=3D'color:red'>xmlns</span>=3D&quot;urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;</span>Globals<span style=3D'color:blue'>&gt;</spa=
+n></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>            </span>&lt;SeedNode <span
+style=3D'color:red'>Address</span>=3D&quot;localhost&quot; <span style=3D'c=
+olor:red'>Port</span>=3D&quot;11111&quot;
+/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Index
+<span style=3D'color:red'>ConnectionString</span>=3D&quot;DomainIndexGrain&=
+quot;/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;/</span>Globals<span style=3D'color:blue'>&gt;</sp=
+an></p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;</span>Defaults<span style=3D'color:blue'>&gt;</sp=
+an></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Networking
+<span style=3D'color:red'>Address</span>=3D&quot;localhost&quot; <span
+style=3D'color:red'>Port</span>=3D&quot;11111&quot; /&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;ProxyingGateway
+<span style=3D'color:red'>Address</span>=3D&quot;localhost&quot; <span
+style=3D'color:red'>Port</span>=3D&quot;30000&quot; /&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;/</span>Defaults<span style=3D'color:blue'>&gt;</s=
+pan></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>OrleansConfiguration<span style=3D'color:b=
+lue'>&gt;</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'><span
+style=3D'mso-spacerun:yes'> </span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>To
+connect to the local silo, the client needs to be configured to localhost a=
+nd
+can only connect from the same machine.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>ClientConfiguration<span style=3D'color:blu=
+e'> </span><span
+style=3D'color:red'>xmlns</span><span style=3D'color:blue'>=3D</span>&quot;=
+urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;localhost&quot;
+<span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>ClientConfiguration<span style=3D'color:bl=
+ue'>&gt;</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D2 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Reliable
+     Production Deployment</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+a reliable production deployment, you need to use the Azure Table option for
+cluster membership, and, if you are using any Orleans-managed grains (not
+self-managed), use SQL for grain index.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>OrleansConfiguration<span style=3D'color:bl=
+ue'> </span><span
+style=3D'color:red'>xmlns</span>=3D&quot;urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'><span style=3D'mso-spacerun:yes'>           =
+</span>&lt;</span>Globals<span
+style=3D'color:blue'>&gt;</span></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Liveness
+<span style=3D'color:red'>LivenessType</span> =3D&quot;AzureTable&quot;<span
+style=3D'color:blue'> /&gt;</span></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Azure
+<span style=3D'color:red'>DeploymentId</span>=3D&quot;&lt;your deployment
+ID&gt;&quot; <span style=3D'color:red'>DataConnectionString</span>=3D&quot;=
+DefaultEndpointsProtocol=3Dhttps;AccountName=3D&lt;Azure
+storage account&gt;;AccountKey=3D&lt;Azure table storage account
+key&gt;&quot;/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;/</span>Globals<span style=3D'color:blue'>&gt;</sp=
+an></p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;</span>Defaults<span style=3D'color:blue'>&gt;</sp=
+an></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Networking
+<span style=3D'color:red'>Address</span>=3D&quot;&quot; <span style=3D'colo=
+r:red'>Port</span>=3D&quot;11111&quot;
+/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;ProxyingGateway
+<span style=3D'color:red'>Address</span>=3D&quot;&quot; <span style=3D'colo=
+r:red'>Port</span>=3D&quot;30000&quot;
+/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;/</span>Defaults<span style=3D'color:blue'>&gt;</s=
+pan></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>OrleansConfiguration<span style=3D'color:b=
+lue'>&gt;</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>Clients
+need to be configured to use Azure Table for discovering the gateways.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>ClientConfiguration<span style=3D'color:blu=
+e'> </span><span
+style=3D'color:red'>xmlns</span><span style=3D'color:blue'>=3D</span>&quot;=
+<span
+style=3D'color:blue'>urn:orleans</span>&quot;<span style=3D'color:blue'>&gt=
+;</span></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>    </span>&lt;Azure <span style=3D'color:red=
+'>DeploymentId</span>=3D&quot;target
+deployment ID&quot; <span style=3D'color:red'>DataConnectionString</span>=
+=3D&quot;Azure
+Table connection string&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>ClientConfiguration<span style=3D'color:bl=
+ue'>&gt;</span></p>
+
+<ol type=3D1 style=3D'margin-left:.375in;direction:ltr;unicode-bidi:embed;
+ margin-top:0in;margin-bottom:0in;font-family:Cambria;font-size:13.0pt;
+ font-weight:bold;font-style:normal'>
+ <li value=3D3 style=3D'margin-top:0;margin-bottom:0;vertical-align:middle;
+     margin-top:10pt;margin-bottom:0pt;font-weight:bold;color:#4F81BD'><span
+     style=3D'font-family:Cambria;font-size:13.0pt;font-weight:bold;font-st=
+yle:
+     normal;font-weight:bold;font-family:Cambria;font-size:13.0pt'>Unreliab=
+le
+     Deployment on a Cluster of Dedicated Servers</span></li>
+</ol>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>For
+testing on a cluster of dedicated servers when reliability isn’t a concer=
+n you
+can leverage MembershipTableGrain and DomainIndexGrain and avoid dependency=
+ on
+Azure Table or SQL. You just need to designate one of the nodes as a Primar=
+y.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;</span>OrleansConfiguration<span style=3D'color:bl=
+ue'> </span><span
+style=3D'color:red'>xmlns</span>=3D&quot;urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;</span>Globals<span style=3D'color:blue'>&gt;</spa=
+n></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>                      </spa=
+n>&lt;SeedNode <span
+style=3D'color:red'>Address</span>=3D&quot;&lt;primary node&gt;&quot; <span
+style=3D'color:red'>Port</span>=3D&quot;11111&quot; /&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Liveness
+<span style=3D'color:red'>LivenessType</span> =3D&quot;MembershipTableGrain=
+&quot;<span
+style=3D'color:blue'> /&gt;</span></p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;/</span>Globals<span style=3D'color:blue'>&gt;</sp=
+an></p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;</span>Defaults<span style=3D'color:blue'>&gt;</sp=
+an></p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;Networking
+<span style=3D'color:red'>Address</span>=3D&quot; &quot; <span style=3D'col=
+or:red'>Port</span>=3D&quot;11111&quot;
+/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.75in;font-family:Calibri;font-size:11.0=
+pt'>&lt;ProxyingGateway
+<span style=3D'color:red'>Address</span>=3D&quot; &quot; <span style=3D'col=
+or:red'>Port</span>=3D&quot;30000&quot;
+/&gt;</p>
+
+<p style=3D'margin:0in;margin-left:.375in;font-family:Calibri;font-size:11.=
+0pt'><span
+style=3D'color:blue'>&lt;/</span>Defaults<span style=3D'color:blue'>&gt;</s=
+pan></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'color:blue'>&lt;/</span>OrleansConfiguration<span style=3D'color:b=
+lue'>&gt;</span></p>
+
+<p style=3D'margin-top:0pt;margin-bottom:10pt;font-family:Calibri;font-size=
+:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&lt;ClientConf=
+iguration<span
+style=3D'color:blue'> </span><span style=3D'color:red'>xmlns</span><span
+style=3D'color:blue'>=3D</span>&quot;urn:orleans&quot;&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;node
+1&quot; <span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;
+node 2&quot; <span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;=
+</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+style=3D'mso-spacerun:yes'>      </span>&lt;Gateway <span style=3D'col=
+or:red'>Address</span>=3D&quot;
+node 3&quot; <span style=3D'color:red'>Port</span>=3D&quot;30000&quot;/&gt;=
+</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&lt;/ClientCon=
+figuration<span
+style=3D'color:blue'>&gt;</span></p>
+
+</div>
+
+</div>
+
+</div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:7.9201in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.075in;width:3.5701i=
+n'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:17.0pt'>Runtime Perfor=
+mance
+Statistics</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.075in;width:2.6=
+34in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>Thu=
+rsday,
+December 06, 2012</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:gray'>2:0=
+2 PM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4812in;margin-left:0in;width:7.9201=
+in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Orleans writes=
+ a
+collection of performance statistics to the silo log every five minutes. Ma=
+ny
+of these statistics are only useful to the Orleans development team, but so=
+me
+can help you analyze your application's performance.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Note that we m=
+ay add
+new statistics as we go along, or remove existing internal statistics. This
+list is based on the source code as of October 18, 2012.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:13.0pt;color:#366092'>=
+<span
+style=3D'font-weight:bold'>Current vs. Delta</span></p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Some statistic=
+s may
+show up with two suffixes, &quot;.Current&quot; and &quot;.Delta&quot;. Such
+statistics are event counters; the &quot;.Current&quot; instance is the tot=
+al
+count since the silo started, and the &quot;.Delta&quot; instance is the ch=
+ange
+since the last time that statistics were recorded. </p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-size:11.0pt'><span style=3D'font-family:Calibri=
+'>If</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>the</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>change</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>is</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>zero</span><span
+style=3D'font-family:"Cambria Math"'>, </span><span style=3D'font-family:Ca=
+libri'>then</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>the</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>&quot;</span><span
+style=3D'font-family:"Cambria Math"'>.</span><span style=3D'font-family:Cal=
+ibri'>Delta&quot;</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>instance</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>will</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>not</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>be</span><span
+style=3D'font-family:"Cambria Math"'> </span><span style=3D'font-family:Cal=
+ibri'>recorded</span><span
+style=3D'font-family:"Cambria Math"'>.</span></p>
+
+<p style=3D'margin:0in;font-family:"Cambria Math";font-size:11.0pt'>&nbsp;<=
+/p>
+
+<p style=3D'margin:0in;font-family:"Cambria Math";font-size:11.0pt'>Only the
+&quot;.Current&quot; instance is listed in the table below.</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:16.0pt;color:#17365D'>=
+<span
+style=3D'font-weight:bold'>Table of Statistics</span></p>
+
+<div style=3D'direction:ltr'>
+
+<table border=3D1 cellpadding=3D0 cellspacing=3D0 valign=3Dtop style=3D'dir=
+ection:ltr;
+ border-collapse:collapse;border-style:solid;border-color:#A3A3A3;border-wi=
+dth:
+ 1pt'>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#DADAC4;vertical-align:top;width:4.6694in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'font-weight:bold'>Statistic</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#DADAC4;vertical-align:top;width:3.2493in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'font-weight:bold'>Description</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Body.DeepCopy.MillisPerMessage</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Body.Deserialization.MillisPerMessage</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Body.Serialization.MillisPerMessage</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Body.Serialization.NumBodyBytesPerMsg</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Header.Deserialization.MillisPerMessage</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Header.Serialization.MillisPerMessage</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Header.Serialization</p>
+  <p style=3D'margin:0in;margin-left:.375in;font-size:11.0pt;color:black'><=
+span
+  style=3D'font-family:"Cambria Math"'>.</span><span style=3D'font-family:C=
+alibri'>NumHeaderBytesPerMsg</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+AutoGenerated.Serialization.Header.Serialization.NumHeadersPerMsg</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Catalog.ActivationCount</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  total number of grain activations currently in the silo.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Catalog.DuplicateActivations.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Catalog.NonExistentActivations.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.CacheSize</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.FullLookups.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.LocalLookups.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.LocalLookupSuccesses.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.PartitionSize</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.RemoteLookups.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.Ring</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.Ring.MyPortionSize</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.Ring.Predecessors</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Directory.Ring.Successors</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Gateway.ConnectedClients.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of clients connected to this silo. Note that this number is not al=
+ways
+  accurate, since the silo does not always get notified when a socket is
+  closed.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Gateway.LoadShedding.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of client requests that have been rejected due to load shedding.</=
+p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Gateway.Received.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of client requests that have been received.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Gateway.Sent.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of messages that have been sent to clients, including both respons=
+es
+  and notifications.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Grain.*.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of grain activations of the given type currently in the silo. This
+  counter will be repeated for each grain class with at least one activatio=
+n.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Membership.ActiveCluster</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  list of silos that this silo thinks are alive and part of the running
+  deployment.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Membership.ActiveClusterSize</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of silos in the active cluster.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+MessageCenter.ReceiveQueueLength</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+MessageCenter.SendQueueLength</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Forwarded.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Processed.Errors.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Processed.OK.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'font-weight:bold'>Messaging.QueuedMessages.Application</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  current number of application requests, including one-way notifications, =
+that
+  are pending or in process in the silo.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'font-weight:bold'>Messaging.QueuedMessages.System</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  current number of system requests, including one-way notifications, that =
+are
+  pending or in process in the silo.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Receive.MessageSizeHistogram</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>A
+  histogram of the sizes of received messages, in bytes. This includes both
+  headers and message bodies, after serialization.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Direction.OneWay.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Direction.Request.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Direction.Response.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.HeaderBytes.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Messages.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.TotalBytes.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Type.Application.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Type.Ping.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Type.Routing.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Type.System.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Received.Type.Task.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Resent.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Sent.HeaderBytes.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Sent.LocalMessages.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Sent.Messages.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Sent.MessageSizeHistogram</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>A
+  histogram of the sizes of sent messages, in bytes. This includes both hea=
+ders
+  and message bodies, after serialization.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Messaging.Sent.TotalBytes.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Networking.Sockets.GWToClient.Broken.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Networking.Sockets.Receiving.Closed.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Networking.Sockets.Sending.SiloToSilo.Broken.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+NewPlacement.Type1.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+NewPlacement.Type2.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.CpuUsage</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>A
+  decaying average of CPU usage, sampled every 5 seconds, from the &quot;%
+  Processor Time&quot; system performance counter.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.AllocatedBytesInKbPerSec</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of kilobytes allocated per second, from the .NET &quot;Allocated
+  Bytes/sec&quot; performance counter.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.GenCollectionCount</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of garbage collection for each GC generation since the silo was
+  started.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.GenSizesKb</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of kilobytes in each GC generation heap, from the .NET &quot;Gen <=
+span
+  style=3D'font-style:italic'>n</span> heap size&quot; performance counter.=
+</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.LargeObjectHeapSizeKb</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of kilobytes in the large object heap, from the .NET &quot;Large
+  Object Heap size&quot; performance counter.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.NumberOfInducedGCs</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  number of induced garbage collections since the silo was started, from the
+  .NET &quot;# Induced GC&quot; performance counter.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.PercentOfTimeInGC</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'color:black'>The percentage of CPU time that was spent in the ga=
+rbage
+  collector in the past second, from the .NET &quot;% Time in GC&quot;
+  performance counter.</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.PromotedFinalizationMemoryFromGen0Kb</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'color:black'>The number of kilobytes promoted from generation 0 =
+to
+  generation 1, from the .NET &quot;Promoted Finalization-Memory from Gen 0=
+&quot;
+  performance counter.</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.PromotedMemoryFromGen1Kb</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'color:black'>The number of kilobytes promoted from generation 1 =
+to
+  generation 2, from the .NET &quot;Promoted Memory from Gen 1&quot;
+  performance counter.</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.GC.TotalMemoryKb</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+The
+  total size of the managed heap, in kilobytes.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.IsOverloaded</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+&quot;true&quot;
+  if the silo is currently shedding load (rejecting client requests), or
+  &quot;false&quot; if not.</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Runtime.Threads.AsynchAgent.Messaging.*.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Scheduler.RunQueueLength</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Scheduler.WorkItemGroupCount</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Body.DeepCopies.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Body.DeepCopy.Milliseconds.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Body.Deserialization.Milliseconds.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Body.Deserializations.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Body.Serialization.Milliseconds.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Body.Serializations.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.AllocatedBuffers.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.BuffersInPool</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.CheckedInBuffers.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.CheckedInDroppedBuffers.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.CheckedOutBuffers.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.InUse.AllocatedAndNotInPool_Buffers</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.GlobalBufferPool.InUse</p>
+  <p style=3D'margin:0in;margin-left:.375in;font-size:11.0pt;color:black'><=
+span
+  style=3D'font-family:"Cambria Math"'>.</span><span style=3D'font-family:C=
+alibri'>CheckedOutAndNotCheckedIn</span><span
+  style=3D'font-family:"Cambria Math"'>_</span><span style=3D'font-family:C=
+alibri'>Buffers</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Header.Deserialization.Milliseconds.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Header.Deserialization.NumHeaders.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Header.Deserializations.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Header.Serialization.Milliseconds.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Header.Serialization.NumHeaders.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.6694in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Serialization.Header.Serializations.Current</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.2493in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+Internal</p>
+  </td>
+ </tr>
+</table>
+
+</div>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'text-align:left;margin:0in;font-family:Arial;font-size:9pt;
+color:#969696;direction:ltr'>Created with Microsoft OneNote 2013.</p>
+
+</div>
+
+</body>
+
+</html>

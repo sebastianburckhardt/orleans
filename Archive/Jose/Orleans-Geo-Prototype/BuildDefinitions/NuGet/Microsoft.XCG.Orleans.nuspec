@@ -1,0 +1,38 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.XCG.Orleans</id>
+    <version>$version$</version>
+    <title>Orleans Developer Libraries</title>
+    <authors>orldev</authors>
+    <owners>Microsoft</owners>
+    <projectUrl>http://toolbox/Orleans</projectUrl>
+    <iconUrl>http://public.blu.livefilestore.com/y1pEzu0oYTIq8qBOlRmxMpVOSZM2SWCd71GSH6vdFTlohbzll56CwEMmWW9M-W5ph6IYM5uXSD30iBjCAz8uKVuEQ/orleans-nuget.png?psid=1</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>http://codebox/Legal/TOU.aspx</licenseUrl>
+    <summary>
+      Developer libraries for Orleans Cloud Application Framework.
+    </summary>
+    <description>
+      Developer libraries for Orleans Cloud Application Framework.
+      Orleans is a system for building highly-scalable cloud applications.
+    </description>
+    <copyright>Copyright Microsoft 2013</copyright>
+    <tags>MS Internal Only,Orleans,Cloud Computing,Actor Model,Actors,Distributed Systems</tags>
+  </metadata>
+  <files>
+    <file src="Binaries\OrleansClient\Orleans.*" exclude="**\Orleans.SDK.targets;**\*.timestamp" target="lib\net45" />
+    <file src="Binaries\OrleansClient\OrleansRuntimeGrainInterfaces.*" target="lib\net45" />
+    <file src="Binaries\OrleansClient\OrleansProviders.*" target="lib\net45" />
+    <file src="Binaries\OrleansClient\OrleansProviderInterfaces.*" target="lib\net45" />
+    
+    <file src="Binaries\OrleansClient\ClientGenerator.*" target="tools\net45" />
+    <file src="Binaries\OrleansClient\ClientGen.cmd" target="tools\net45" />
+    <file src="Binaries\OrleansClient\ILMerge.*" target="tools\net45" />
+    <file src="Binaries\OrleansClient\Orleans.SDK.targets" target="tools\net45" />
+    <file src="Binaries\OrleansClient\OrleansMsBuildTask.*" target="tools\net45" />
+    <!-- TODO: Investigate auto-import of MSBuild targets and props files into target project.
+    http://docs.nuget.org/docs/creating-packages/creating-and-publishing-a-package#Import_MSBuild_targets_and_props_files_into_project_(Requires_NuGet_2.5_or_above)
+    -->
+  </files>
+</package>

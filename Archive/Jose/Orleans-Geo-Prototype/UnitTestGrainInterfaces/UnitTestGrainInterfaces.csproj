@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{86F6F267-417A-405C-BC91-8E9EFBC40488}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>UnitTestGrainInterfaces</RootNamespace>
+    <AssemblyName>UnitTestGrainInterfaces</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\Orleans.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.WindowsAzure.Configuration">
+      <HintPath>..\Dependencies\Windows-Azure-SDK\v$(AzureSdkVersion)\ref\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.StorageClient">
+      <HintPath>..\Dependencies\Windows-Azure-SDK\v$(AzureSdkVersion)\ref\Microsoft.WindowsAzure.StorageClient.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Services.Client">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ActivationGCTestGrainInterfaces.cs" />
+    <Compile Include="GetGrainInterfaces.cs" />
+    <Compile Include="ISampleStreamingGrain.cs" />
+    <Compile Include="IClientAddressableTestClientObject.cs" />
+    <Compile Include="IClientAddressableTestConsumer.cs" />
+    <Compile Include="IClientAddressableTestProducer.cs" />
+    <Compile Include="IClientAddressableTestRendezvousGrain.cs" />
+    <Compile Include="IClientAddressableTestGrain.cs" />
+    <Compile Include="Halo\Streaming\IConsumerEventCountingGrain.cs" />
+    <Compile Include="Halo\Streaming\IProducerEventCountingGrain.cs" />
+    <Compile Include="IStreamingGrain.cs" />
+    <Compile Include="IActivateDeactivateTestGrain.cs" />
+    <Compile Include="IAppDomainTestGrain.cs" />
+    <Compile Include="IAzureStorageAccessSMGrain.cs" />
+    <Compile Include="GetPropertiesTestInterfaces.cs" />
+    <Compile Include="ICachedPropertiesGrain.cs" />
+    <Compile Include="ICollectionTestGrain.cs" />
+    <Compile Include="IDeadlockGrain.cs" />
+    <Compile Include="IDeploymentGrain.cs" />
+    <Compile Include="IEchoTaskGrain.cs" />
+    <Compile Include="IExtensionTestGrain.cs" />
+    <Compile Include="IKeyExtensionTestGrain.cs" />
+    <Compile Include="INewReminderTestGrain.cs" />
+    <Compile Include="IPlacementTestGrain.cs" />
+    <Compile Include="IGenericInterfaces.cs" />
+    <Compile Include="AppFabricSampleInterfaces.cs" />
+    <Compile Include="IMasterWorkers.cs" />
+    <Compile Include="IBenchmarkGrain.cs" />
+    <Compile Include="IConcurrentGrain.cs" />
+    <Compile Include="IAsyncGrain.cs" />
+    <Compile Include="IChainedGrain.cs" />
+    <Compile Include="IDirectoryServiceTestGrain.cs" />
+    <Compile Include="IErrorGrain.cs" />
+    <Compile Include="IErrorGrainWithAsyncMethods.cs" />
+    <Compile Include="IErrorPersistentGrain.cs" />
+    <Compile Include="IGeneratorTestDerivedDerivedGrain.cs" />
+    <Compile Include="IGeneratorTestDerivedGrain1.cs" />
+    <Compile Include="IGeneratorTestDerivedGrain2.cs" />
+    <Compile Include="IGeneratorTestGrain.cs" />
+    <Compile Include="IGrainContextTestGrain.cs" />
+    <Compile Include="IMultifacetFactoryTestGrain.cs" />
+    <Compile Include="IMultifacetTestGrain.cs" />
+    <Compile Include="IObserverGrain.cs" />
+    <Compile Include="IOrderTestGrain.cs" />
+    <Compile Include="IPersistenceTestGrains.cs" />
+    <Compile Include="IPolymorphicTestGrain.cs" />
+    <Compile Include="IPromiseForwardGrain.cs" />
+    <Compile Include="IProxyErrorGrain.cs" />
+    <Compile Include="IReentrancyGrain.cs" />
+    <Compile Include="IReliabilityTestGrain.cs" />
+    <Compile Include="IReminderTestGrain.cs" />
+    <Compile Include="IRequestContextTestGrain.cs" />
+    <Compile Include="IResultIsolationGrain.cs" />
+    <Compile Include="IResultIsolationGrain2.cs" />
+    <Compile Include="ISerializationGeneratorTests.cs" />
+    <Compile Include="ISiloGrain.cs" />
+    <Compile Include="ISimpleGrain.cs" />
+    <Compile Include="ISimpleSelfManagedGrain.cs" />
+    <Compile Include="IStatelessWorkerGrain.cs" />
+    <Compile Include="IStreamReliabilityTestGrains.cs" />
+    <Compile Include="ITestDeploymentGrain.cs" />
+    <Compile Include="ITestExtension.cs" />
+    <Compile Include="ITestSiloGrain.cs" />
+    <Compile Include="ITestSystemTargetProxyGrain.cs" />
+    <Compile Include="ITweeterTestAccountGrain.cs" />
+    <Compile Include="IValueTypeTestGrain.cs" />
+    <Compile Include="Namespaces.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ISimpleGrainWithAsyncMethods.cs" />
+    <Compile Include="ISimpleMainGrain.cs" />
+    <Compile Include="ITimerGrain.cs" />
+    <Compile Include="ResultHandle.cs" />
+    <Compile Include="UnitTestGrainInterfaces.cs" />
+    <Compile Include="Properties\orleans.codegen.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OrleansRuntime\OrleansRuntime.csproj">
+      <Project>{6FF2004C-CDF8-479C-BF27-C6BFE8EF93E0}</Project>
+      <Name>OrleansRuntime</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Orleans\Orleans.csproj">
+      <Project>{BC1BD60C-E7D8-4452-A21C-290AEC8E2E74}</Project>
+      <Name>Orleans</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Orleans.snk">
+      <Link>Orleans.snk</Link>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- Begin Orleans: Without these lines the project won't build properly -->
+  <PropertyGroup>
+    <OrleansProjectType>Client</OrleansProjectType>
+    <SnkFile>$(ProjectDir)..\Orleans.snk</SnkFile>
+  </PropertyGroup>
+  <!-- Set path to ClientGenerator.exe -->
+  <Choose>
+    <When Condition="$(BuildingInsideVisualStudio)=='true'">
+      <PropertyGroup>
+        <OrleansReferencesBase>$(ProjectDir)..\ClientGenerator\$(OutDir)</OrleansReferencesBase>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <OrleansReferencesBase>$(TargetDir)</OrleansReferencesBase>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(ProjectDir)..\Orleans.SDK.targets" />
+  <!--End Orleans -->
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target> 
+  -->
+</Project>

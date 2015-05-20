@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--
+This file contains all the possible configuration options for the Stat analyzer tool. Please uncomment appropriate 
+sections for desired functionality. The doc folder contains a documentation about variaous configuration options.
+
+In this file sample two datasets have being shown. There can be any number of datasets.
+-->
+<AnalysisConfiguration>
+  <!--
+  <Dataset Reference="True">
+    <Name>Rack17</Name>
+    <StorageType Name="Log">
+      <Log LogDir="logs\Rack17" FilePrefix="Silo" LogWriteInterval="300" Iterations="150" />
+    </StorageType>
+    <StorageType Name="Azure">
+      <Azure ConnectionString="put_the_con_string_here" TableName="put_the_table_name_here" PartitionKey="put_the_partition_key_here" LogWriteInterval="60" />
+    </StorageType>
+    <UserAnalysis>
+      <Actions>
+        <Visualization ChartDir="charts\user\" Visible="False" />
+        <ThresholdAnalysis RuleConfigFile="path_to_rule_config_file" />
+        <CorrelationAnalysis Pearson="True" Spearman="True" HistogramExplanation="False" />
+        <VarianceAnalysis />
+        <PerformanceTuning />
+      </Actions>  
+      <Counters>
+        <Name>counter1</Name>
+        <Name>counter2</Name>
+        <Name>counter3</Name>
+      </Counters>
+    </UserAnalysis>
+    <AnomalyDetection>
+      <Actions>
+        <Visualization ChartDir="charts\user\" Visible="False" />
+        <ThresholdAnalysis RuleConfigFile="path_to_rule_config_file" />
+        <CorrelationAnalysis Pearson="True" Spearman="True" HistogramExplanation="False" />
+        <VarianceAnalysis />
+        <PerformanceTuning />
+      </Actions>
+    </AnomalyDetection>
+  </Dataset>
+  <Dataset>
+    <Name>Rack16</Name>
+    <StorageType Name="Log">
+      <Log LogDir="logs\Rack16\" FilePrefix="Silo" LogWriteInterval="300" Iterations="150" />
+    </StorageType>
+    <StorageType Name="Azure">
+      <Azure ConnectionString="put_the_con_string_here" TableName="put_the_table_name_here" PartitionKey="put_the_partition_key_here" LogWriteInterval="60" />
+    </StorageType>
+    <UserAnalysis>
+      <Actions>
+        <Visualization ChartDir="charts\user\" Visible="False" />
+        <ThresholdAnalysis RuleConfigFile="path_to_rule_config_file" />
+        <CorrelationAnalysis Pearson="True" Spearman="True" HistogramExplanation="False" />
+        <VarianceAnalysis />
+        <PerformanceTuning />
+      </Actions>
+      <Counters>
+        <Name>counter1</Name>
+        <Name>counter2</Name>
+        <Name>counter3</Name>
+      </Counters>
+    </UserAnalysis>
+    <DataAnalysis>
+      <Actions>
+        <Visualization ChartDir="charts\user\" Visible="False" />
+        <CorrelationAnalysis Pearson="True" Spearman="True" HistogramExplanation="False" />
+        <VarianceAnalysis />
+        <PerformanceTuning />
+      </Actions>
+    </DataAnalysis>
+  </Dataset>
+  <ComparativeAnalysis Enable="True" Silo="False" Time="False">
+    <Actions>
+      <Visualization ChartDir="charts\user\" Visible="False" />
+      <CorrelationAnalysis Pearson="True" Spearman="True" HistogramExplanation="False" />
+      <VarianceAnalysis />
+      <PerformanceTuning />
+    </Actions>
+  </ComparativeAnalysis>
+-->
+</AnalysisConfiguration>

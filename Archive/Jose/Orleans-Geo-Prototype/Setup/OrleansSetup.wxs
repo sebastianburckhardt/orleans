@@ -1,0 +1,261 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension" xmlns:vs="http://schemas.microsoft.com/wix/VSExtension">
+
+  <Product Name='Microsoft Codename Orleans SDK v$(var.ProductVersion)'
+           Id='2655596e-bb56-4a57-a1d6-68ef491feb6c' UpgradeCode='e7493d62-c643-4b75-9ff0-a2063e1d010d'
+           Language='1033' Codepage='1252' Version='$(var.ProductVersion)' Manufacturer='Microsoft Corporation'>
+
+    <Package Id='*' Keywords='Installer' Description="Microsoft Codename Orleans SDK Installer" Manufacturer='Microsoft Corporation'
+      InstallerVersion='300' Languages='1033' Compressed='yes' SummaryCodepage='1252'/>
+
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+    <!-- By default we install for all users, users can change this -->
+    <!-- Property Id="ALLUSERS" Value="0"/ -->
+
+    <Property Id="INSTALLLEVEL" Value="1"/>
+    <Property Id="ApplicationFolderName" Value="Microsoft Codename Orleans SDK v$(var.ProductVersion)" />
+
+    <?define SDK_docs_src = "$(var.DocsDir)" ?>
+    <?define SDK_binaries_clnt_src = "$(var.BinariesDir)" ?>
+    <?define SDK_binaries_server_src = "$(var.BinariesDir)" ?>
+    <?define SDK_remotedepl_src = "$(var.RemoteDeploymentScriptsDir)" ?>
+    <?define SDK_remotedepl_cfg = "$(var.RemoteDeploymentConfigDir)" ?>
+    <?define SDK_templates_src = "$(var.SDKDir)" ?>
+    <?define SDK_src = "$(var.SDKDir)" ?>
+    <?define Orleans_src = "$(var.OrleansDir)" ?>
+    <?define SDK_unzip_src = "$(var.SetupDir)\Unzip" ?>
+
+
+    <!-- Find the best VSIX installer path. If VS 2013 is installed, we want to use that -->
+
+    <Property Id="VSIX_PATH">
+      <RegistrySearch Id="VS_vsix_path"
+                      Root="HKCU"
+                      Key="Software\Microsoft\VisualStudio\11.0_Config"
+               Name="VSIXInstallerLocation" Type="raw" />
+    </Property>
+
+    <Property Id="VSIX12_PATH">
+      <RegistrySearch Id="VS12_vsix_path"
+                      Root="HKCU"
+                      Key="Software\Microsoft\VisualStudio\12.0_Config"
+               Name="VSIXInstallerLocation" Type="raw" />
+    </Property>
+
+    <SetProperty Id="VSIX_PATH" After="AppSearch" Value="[VSIX12_PATH]">
+      VSIX12_PATH  
+    </SetProperty>
+
+    <!-- Conditions for install -->
+
+    <Condition Message="Orleans SDK requires Vista or later.">
+      <![CDATA[Installed OR (VersionNT >= 600)]]>
+    </Condition>
+
+    <!-- Folder structure -->
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+
+      <Component Id="RegistryEntries" Guid="d974d313-73a2-42cd-b7e0-e68417101f5d">
+        <RegistryKey Root="HKLM"
+                     Key="Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK">
+          <RegistryValue Type="string" Name="InstallDir" Value="[APPLICATIONFOLDER]" KeyPath="yes"/>
+        </RegistryKey>
+      </Component>
+
+      <Directory Id="APPLICATIONFOLDER" Name="Microsoft Codename Orleans SDK v$(var.ProductVersion)">
+
+        <Component Id="Comp_InstallDirItems" DiskId="1" Guid="3e5f8a76-3c79-4643-9225-8ac2629d78f9">
+          <File Id="File_License.rtf" Name="license.rtf" Source="$(var.SetupDir)\License.rtf" />
+          <File Id="Azure_SDK_License.rtf" Name="Azure SDK License.rtf" Source="$(var.SetupDir)\Azure SDK License.rtf" />              
+          <RemoveFolder Id='Comp_InstallDirItems' On='uninstall'/>
+          <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+        </Component>
+
+        <Directory Id="SDK" Name="SDK">
+          <Directory Id="SDK_Binaries" Name="Binaries">
+            <Directory Id="SDK_Binaries_OrleansClient" Name="OrleansClient">
+              <Component Id="Comp_ClientBinaries" DiskId="1" Guid="efe6460b-05ad-4028-88fe-6de444ff1117">
+                <Environment Id="Env_OrleansSDK" Action="set" Part="all" Name="OrleansSDK" Permanent="no" System="yes" Value="[APPLICATIONFOLDER]SDK" />
+                <File Id="File_CL_ClientConfiguration.xml" Name="ClientConfiguration.xml" Source="$(var.SDK_binaries_clnt_src)\ClientConfiguration.xml" />
+                <File Id="File_CL_ClientGenerator.exe" Name="ClientGenerator.exe" Source="$(var.SDK_binaries_clnt_src)\ClientGenerator.exe" />
+                <File Id="File_CL_ClientGenerator.exe.config" Name="ClientGenerator.exe.config" Source="$(var.SDK_binaries_clnt_src)\ClientGenerator.exe.config" />
+                <File Id="File_CL_ILMerge.exe" Name="ILMerge.exe" Source="$(var.OrleansDir)\Dependencies\ILMerge\ILMerge.exe" />
+                <File Id="File_CL_ILMerge.exe.config" Name="ILMerge.exe.config" Source="$(var.OrleansDir)\Dependencies\ILMerge\ILMerge.exe.config" />
+                <File Id="File_CL_Microsoft.WindowsAzure.Configuration.dll" Name="Microsoft.WindowsAzure.Configuration.dll" Source="$(var.SDK_binaries_clnt_src)\Microsoft.WindowsAzure.Configuration.dll" />
+                <File Id="File_CL_Microsoft.WindowsAzure.StorageClient.dll" Name="Microsoft.WindowsAzure.StorageClient.dll" Source="$(var.SDK_binaries_clnt_src)\Microsoft.WindowsAzure.StorageClient.dll" />
+                <File Id="File_CL_Orleans.dll" Name="Orleans.dll" Source="$(var.SDK_binaries_clnt_src)\Orleans.dll" />
+                <File Id="File_CL_Orleans.FSharp.dll" Name="Orleans.FSharp.dll" Source="$(var.SDK_binaries_clnt_src)\Orleans.FSharp.dll" />
+                <File Id="File_CL_Orleans.SDK.targets" Name="Orleans.SDK.targets" Source="$(var.SDK_binaries_clnt_src)\Orleans.SDK.targets" />
+                <File Id="File_CL_Orleans.XML" Name="Orleans.XM" Source="$(var.SDK_binaries_clnt_src)\Orleans.XML" />
+                <File Id="File_CL_OrleansAzureUtils.dll" Name="OrleansAzureUtils.dll" Source="$(var.SDK_binaries_clnt_src)\OrleansAzureUtils.dll" />
+                <File Id="File_CL_OrleansAzureUtils.XML" Name="OrleansAzureUtils.XML" Source="$(var.SDK_binaries_clnt_src)\OrleansAzureUtils.XML" />
+                <File Id="File_CL_OrleansManager.exe" Name="OrleansManager.exe" Source="$(var.SDK_binaries_clnt_src)\OrleansManager.exe" />
+                <File Id="File_CL_OrleansManager.exe.config" Name="OrleansManager.exe.config" Source="$(var.SDK_binaries_clnt_src)\OrleansManager.exe.config" />
+                <File Id="File_CL_OrleansMsBuildTask.dll" Name="OrleansMsBuildTask.dll" Source="$(var.SDK_binaries_clnt_src)\OrleansMsBuildTask.dll" />
+                <File Id="File_CL_OrleansProviderInterfaces.dll" Name="OrleansProviderInterfaces.dll" Source="$(var.SDK_binaries_clnt_src)\OrleansProviderInterfaces.dll" />
+                <File Id="File_CL_OrleansProviders.dll" Name="OrleansProviders.dll" Source="$(var.SDK_binaries_clnt_src)\OrleansProviders.dll" />
+                <RemoveFolder Id='SDK_Binaries_OrleansClient' On='uninstall'/>
+                <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+              </Component>
+            </Directory>
+            <Directory Id="SDK_Binaries_OrleansServer" Name="OrleansServer">
+              <Component Id="Comp_ServerBinaries" DiskId="1" Guid="9d84d4e7-6ac7-4757-8f39-c18ac473336a">
+                <File Id="File_SE_ClientGenerator.exe" Name="ClientGenerator.exe" Source="$(var.SDK_binaries_server_src)\ClientGenerator.exe" />
+                <File Id="File_SE_ClientGenerator.exe.config" Name="ClientGenerator.exe.config" Source="$(var.SDK_binaries_server_src)\ClientGenerator.exe.config" />
+                <File Id="File_SE_CounterControl.exe" Name="CounterControl.exe" Source="$(var.SDK_binaries_server_src)\CounterControl.exe" />
+                <File Id="File_SE_CounterControl.exe.config" Name="CounterControl.exe.config" Source="$(var.SDK_binaries_server_src)\CounterControl.exe.config" />
+                <File Id="File_SE_ILMerge.exe" Name="ILMerge.exe" Source="$(var.OrleansDir)\Dependencies\ILMerge\ILMerge.exe" />
+                <File Id="File_SE_ILMerge.exe.config" Name="ILMerge.exe.config" Source="$(var.OrleansDir)\Dependencies\ILMerge\ILMerge.exe.config" />
+                <File Id="File_SE_Microsoft.WindowsAzure.Configuration.dll" Name="Microsoft.WindowsAzure.Configuration.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.Configuration.dll" />
+                <File Id="File_SE_Microsoft.WindowsAzure.Diagnostics.dll" Name="Microsoft.WindowsAzure.Diagnostics.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.Diagnostics.dll" />
+                <File Id="File_SE_Microsoft.WindowsAzure.Diagnostics.StorageUtility.dll" Name="Microsoft.WindowsAzure.Diagnostics.StorageUtility.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.Diagnostics.StorageUtility.dll" />
+                <File Id="File_SE_Microsoft.WindowsAzure.ServiceRuntime.dll" Name="Microsoft.WindowsAzure.ServiceRuntime.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.ServiceRuntime.dll" />
+                <File Id="File_SE_Microsoft.WindowsAzure.StorageClient.dll" Name="Microsoft.WindowsAzure.StorageClient.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.StorageClient.dll" />
+                <File Id="File_SE_msshrtmi.dll" Name="msshrtmi.dll" Source="$(var.OrleansDir)\Dependencies\Windows-Azure-SDK\v2.2\bin\runtimes\base\x64\msshrtmi.dll" />
+                <File Id="File_SE_Orleans.dll" Name="Orleans.dll" Source="$(var.SDK_binaries_server_src)\Orleans.dll" />
+                <File Id="File_SE_Orleans.FSharp.dll" Name="Orleans.FSharp.dll" Source="$(var.SDK_binaries_server_src)\Orleans.FSharp.dll" />
+                <File Id="File_SE_Orleans.SDK.targets" Name="Orleans.SDK.targets" Source="$(var.SDK_binaries_server_src)\Orleans.SDK.targets" />
+                <File Id="File_SE_Orleans.XML" Name="Orleans.XML" Source="$(var.SDK_binaries_server_src)\Orleans.XML" />
+                <File Id="File_SE_OrleansAzureUtils.dll" Name="OrleansAzureUtils.dll" Source="$(var.SDK_binaries_server_src)\OrleansAzureUtils.dll" />
+                <File Id="File_SE_OrleansAzureUtils.XML" Name="OrleansAzureUtils.XML" Source="$(var.SDK_binaries_server_src)\OrleansAzureUtils.XML" />
+                <File Id="File_SE_OrleansConfiguration.xml" Name="OrleansConfiguration.xml" Source="$(var.SDK_binaries_server_src)\OrleansConfiguration.xml" />
+                <File Id="File_SE_OrleansConfiguration.xsd" Name="OrleansConfiguration.xsd" Source="$(var.OrleansDir)\Orleans\RuntimeCore\Configuration\OrleansConfiguration.xsd" />
+                <File Id="File_SE_OrleansHost.exe" Name="OrleansHost.exe" Source="$(var.SDK_binaries_server_src)\OrleansHost.exe" />
+                <File Id="File_SE_OrleansHost.exe.config" Name="OrleansHost.exe.config" Source="$(var.SDK_binaries_server_src)\OrleansHost.exe.config" />
+                <File Id="File_SE_OrleansManager.exe" Name="OrleansManager.exe" Source="$(var.SDK_binaries_server_src)\OrleansManager.exe" />
+                <File Id="File_SE_OrleansManager.exe.config" Name="OrleansManager.exe.config" Source="$(var.SDK_binaries_server_src)\OrleansManager.exe.config" />
+                <File Id="File_SE_OrleansMsBuildTask.dll" Name="OrleansMsBuildTask.dll" Source="$(var.SDK_binaries_server_src)\OrleansMsBuildTask.dll" />
+                <File Id="File_SE_OrleansProviderInterfaces.dll" Name="OrleansProviderInterfaces.dll" Source="$(var.SDK_binaries_server_src)\OrleansProviderInterfaces.dll" />
+                <File Id="File_SE_OrleansProviders.dll" Name="OrleansProviders.dll" Source="$(var.SDK_binaries_server_src)\OrleansProviders.dll" />
+                <File Id="File_SE_OrleansRuntime.dll" Name="OrleansRuntime.dll" Source="$(var.SDK_binaries_server_src)\OrleansRuntime.dll" />
+                <File Id="File_SE_StartOrleans.cmd" Name="StartOrleans.cmd" Source="$(var.SDK_binaries_server_src)\StartOrleans.cmd" />
+                <RemoveFolder Id='SDK_Binaries_OrleansServer' On='uninstall'/>
+                <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+              </Component>
+            </Directory>
+            <Component Id="Comp_Binaries" DiskId="1" Guid="a76cab7b-8194-47d3-b9b2-8c1d156f48f2">
+              <RemoveFolder Id='SDK_Binaries' On='uninstall'/>
+              <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+            </Component>
+          </Directory>
+          <Directory Id="SDK_RemoteDeployment" Name="RemoteDeployment">
+            <Component Id="Comp_RemoteDeployment" DiskId="1" Guid="8540eceb-e5fd-4a5a-ae34-7f36cdb611fa">
+              <File Id="File_RD_ClientConfiguration.xml" Name="ClientConfiguration.xml" Source="$(var.SDK_remotedepl_cfg)\ClientConfiguration.xml" />
+              <File Id="File_RD_Deployment.xml" Name="Deployment.xml" Source="$(var.SDK_remotedepl_cfg)\Deployment.xml" />
+              <File Id="File_RD_DeployOrleansSilos.ps1" Name="DeployOrleansSilos.ps1" Source="$(var.SDK_remotedepl_src)\DeployOrleansSilos.ps1" />
+              <File Id="File_RD_GatherOrleansSiloLogs.ps1" Name="GatherOrleansSiloLogs.ps1" Source="$(var.SDK_remotedepl_src)\GatherOrleansSiloLogs.ps1" />
+              <File Id="File_RD_MonitorOrleansSilos.ps1" Name="MonitorOrleansSilos.ps1" Source="$(var.SDK_remotedepl_src)\MonitorOrleansSilos.ps1" />
+              <File Id="File_RD_OrleansConfiguration.xml" Name="OrleansConfiguration.xml" Source="$(var.SDK_remotedepl_cfg)\OrleansConfiguration.xml" />
+              <File Id="File_RD_ShowOrleansSilos.ps1" Name="ShowOrleansSilos.ps1" Source="$(var.SDK_remotedepl_src)\ShowOrleansSilos.ps1" />
+              <File Id="File_RD_StartOrleansSilos.ps1" Name="StartOrleansSilos.ps1" Source="$(var.SDK_remotedepl_src)\StartOrleansSilos.ps1" />
+              <File Id="File_RD_StopOrleansSilos.ps1" Name="StopOrleansSilos.ps1" Source="$(var.SDK_remotedepl_src)\StopOrleansSilos.ps1" />
+              <File Id="File_RD_UndeployOrleansSilos.ps1" Name="UndeployOrleansSilos.ps1" Source="$(var.SDK_remotedepl_src)\UndeployOrleansSilos.ps1" />
+              <File Id="File_RD_UtilityFunctions.ps1" Name="UtilityFunctions.ps1" Source="$(var.SDK_remotedepl_src)\UtilityFunctions.ps1" />
+              <RemoveFolder Id='SDK_RemoteDeployment' On='uninstall'/>
+              <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+            </Component>
+          </Directory>
+          <Directory Id="SDK_Docs" Name="Docs">
+            <Component Id="Comp_Docs" DiskId="1" Guid="c0fcc057-4dba-4a2d-b4a2-b37cb966c36d">
+              <File Id="File_DC_Orleans_Documentation.url" Name="Orleans Documentation.url" Source="$(var.SDK_docs_src)\Orleans Documentation.url" />
+              <File Id="File_DC_Orleans_API.chm" Name="Orleans-API.chm" Source="$(var.SDK_docs_src)\OrleansHelp\Orleans-API.chm" />
+              <File Id="README.txt" Name="README.txt" Source="$(var.SDK_docs_src)\README.txt" />
+              <RemoveFolder Id='SDK_Docs' On='uninstall'/>
+              <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+            </Component>
+          </Directory>
+          <Directory Id="SDK_Samples" Name="Samples">
+            <Component Id="Comp_Samples" DiskId="1" Guid="F7C9CA5B-02D4-43B0-8B25-7CABB52FB3F6">
+              <File Id="File_Samples.url" Name="Orleans Samples.url" Source="$(var.SDK_docs_src)\Orleans Samples.url" />
+              <RemoveFolder Id='Comp_Samples' On='uninstall'/>
+            </Component>
+          </Directory>
+          <Directory Id="SDK_LocalSilo" Name="LocalSilo">
+            <Component Id="Comp_LocalSilo" DiskId="1" Guid="3a1adaef-360a-4dfa-9924-3451201688c6">
+              <File Id="File_LS_Microsoft.WindowsAzure.Configuration.dll" Name="Microsoft.WindowsAzure.Configuration.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.Configuration.dll" />
+              <File Id="File_LS_Microsoft.WindowsAzure.Diagnostics.dll" Name="Microsoft.WindowsAzure.Diagnostics.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.Diagnostics.dll" />
+              <File Id="File_LS_Microsoft.WindowsAzure.Diagnostics.StorageUtility.dll" Name="Microsoft.WindowsAzure.Diagnostics.StorageUtility.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.Diagnostics.StorageUtility.dll" />
+              <File Id="File_LS_Microsoft.WindowsAzure.ServiceRuntime.dll" Name="Microsoft.WindowsAzure.ServiceRuntime.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.ServiceRuntime.dll" />
+              <File Id="File_LS_Microsoft.WindowsAzure.StorageClient.dll" Name="Microsoft.WindowsAzure.StorageClient.dll" Source="$(var.SDK_binaries_server_src)\Microsoft.WindowsAzure.StorageClient.dll" />
+              <File Id="File_LS_Orleans.dll" Name="Orleans.dll" Source="$(var.SDK_binaries_server_src)\Orleans.dll" />
+              <File Id="File_LS_Orleans.FSharp.dll" Name="Orleans.FSharp.dll" Source="$(var.SDK_binaries_server_src)\Orleans.FSharp.dll" />
+              <File Id="File_LS_Orleans.SDK.targets" Name="Orleans.SDK.targets" Source="$(var.SDK_binaries_server_src)\Orleans.SDK.targets" />
+              <File Id="File_LS_Orleans.XML" Name="Orleans.XM" Source="$(var.SDK_binaries_server_src)\Orleans.XML" />
+              <File Id="File_LS_OrleansAzureUtils.dll" Name="OrleansAzureUtils.dll" Source="$(var.SDK_binaries_server_src)\OrleansAzureUtils.dll" />
+              <File Id="File_LS_OrleansAzureUtils.XML" Name="OrleansAzureUtils.XML" Source="$(var.SDK_binaries_server_src)\OrleansAzureUtils.XML" />
+              <File Id="File_LS_OrleansManager.exe" Name="OrleansManager.exe" Source="$(var.SDK_binaries_server_src)\OrleansManager.exe" />
+              <File Id="File_LS_OrleansManager.exe.config" Name="OrleansManager.exe.config" Source="$(var.SDK_binaries_server_src)\OrleansManager.exe.config" />
+              <File Id="File_LS_OrleansMsBuildTask.dll" Name="OrleansMsBuildTask.dll" Source="$(var.SDK_binaries_server_src)\OrleansMsBuildTask.dll" />
+              <File Id="File_LS_OrleansProviderInterfaces.dll" Name="OrleansProviderInterfaces.dll" Source="$(var.SDK_binaries_server_src)\OrleansProviderInterfaces.dll" />
+              <File Id="File_LS_OrleansProviders.dll" Name="OrleansProviders.dll" Source="$(var.SDK_binaries_server_src)\OrleansProviders.dll" />
+              <File Id="File_LS_CounterControl.exe" Name="CounterControl.exe" Source="$(var.SDK_binaries_server_src)\CounterControl.exe" />
+              <File Id="File_LS_CounterControl.exe.config" Name="CounterControl.exe.config" Source="$(var.SDK_binaries_server_src)\CounterControl.exe.config" />
+              <File Id="File_LS_msshrtmi.dll" Name="msshrtmi.dll" Source="$(var.OrleansDir)\Dependencies\Windows-Azure-SDK\v2.2\bin\runtimes\base\x64\msshrtmi.dll" />
+              <File Id="File_LS_OrleansConfiguration.xml" Name="OrleansConfiguration.xml" Source="$(var.SDK_binaries_server_src)\OrleansConfiguration.xml" />
+              <File Id="File_LS_OrleansConfiguration.xsd" Name="OrleansConfiguration.xsd" Source="$(var.OrleansDir)\Orleans\RuntimeCore\Configuration\OrleansConfiguration.xsd" />
+              <File Id="File_LS_OrleansHost.exe" Name="OrleansHost.exe" Source="$(var.SDK_binaries_server_src)\OrleansHost.exe" />
+              <File Id="File_LS_OrleansHost.exe.config" Name="OrleansHost.exe.config" Source="$(var.SDK_binaries_server_src)\OrleansHost.exe.config" />
+              <File Id="File_LS_OrleansRuntime.dll" Name="OrleansRuntime.dll" Source="$(var.SDK_binaries_server_src)\OrleansRuntime.dll" />
+              <File Id="File_LS_StartOrleans.cmd" Name="StartOrleans.cmd" Source="$(var.SDK_binaries_server_src)\StartOrleans.cmd" />
+              <RemoveFolder Id='SDK_LocalSilo' On='uninstall'/>
+              <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+            </Component>
+          </Directory>
+          <Component Id="Comp_SDK" DiskId="1" Guid="7ea5add9-2bf7-4996-8732-49f310746bda">
+            <File Id="File_README.TXT" Name="README.TXT" Source="$(var.SDK_docs_src)\README.TXT" />
+            <File Id="File_OrleansVSTools.vsix" Name="OrleansVSTools.vsix" Source="$(var.SDKDir)\OrleansVSTools.vsix">
+              <vs:VsixPackage PackageId="462db41f-31a4-48f0-834c-1bdcc0578511" VsixInstallerPathProperty="VSIX_PATH" Vital="no"/>
+            </File>
+            <File Id="File_StartLocalSilo.cmd" Name="StartLocalSilo.cmd" Source="$(var.SDKDir)\StartLocalSilo.cmd" />
+            <File Id="File_UninstallOrleansVSTools.cmd" Name="UninstallOrleansVSTools.cmd" Source="$(var.SDKDir)\UninstallOrleansVSTools.cmd" />
+            <File Id="File_InstallOrleansVSTools.cmd" Name="InstallOrleansVSTools.cmd" Source="$(var.SDKDir)\InstallOrleansVSTools.cmd" />
+            <RemoveFolder Id='SDK' On='uninstall'/>
+            <RegistryValue Root='HKLM' Key='Software\Microsoft\OrleansSDK\Preview\v$(var.ProductVersion)\SDK' Type='string' Value='' KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+
+    </Directory>
+
+    <!-- Features to install -->
+
+    <Feature Id="ProductFeature1" Title="Orleans SDK" Description="Microsoft Orleans SDK" Display="expand" Level="1" AllowAdvertise="no" Absent="disallow"  >
+      <ComponentRef Id="Comp_InstallDirItems" Primary="yes" />
+      <ComponentRef Id="Comp_ClientBinaries" Primary="yes" />
+      <ComponentRef Id="Comp_ServerBinaries" Primary="yes" />
+      <ComponentRef Id="Comp_Binaries" Primary="yes" />
+      <ComponentRef Id="Comp_Docs" Primary="yes" />
+      <ComponentRef Id="Comp_LocalSilo" Primary="yes" />
+      <ComponentRef Id="Comp_SDK" Primary="yes" />
+      <ComponentRef Id="Comp_RemoteDeployment" Primary="yes" />
+      <ComponentRef Id="RegistryEntries" Primary="yes" />
+      <ComponentRef Id="Comp_Samples" Primary="yes" />
+    </Feature>
+    
+    <CustomAction Id="UninstallVSIX" ExeCommand="/uninstall:462db41f-31a4-48f0-834c-1bdcc0578511 /q" Property="VSIX_PATH" Execute="deferred" Return="ignore"/>
+    <!-- CustomAction Id="InstallVSIX" ExeCommand="&quot;[#File_OrleansVSTools.vsix]&quot; /q" Property="VSIX_PATH" Execute="deferred"/ -->
+
+    <InstallExecuteSequence>
+      <Custom Action="UninstallVSIX" After="InstallInitialize"><!--NOT Installed--></Custom>
+      <!-- Custom Action="InstallVSIX" Before="InstallFinalize">NOT Installed</-->
+    </InstallExecuteSequence>
+
+    <!-- User interface elements -->
+    <WixVariable Id="WixUISupportPerUser" Value="1" Overridable="yes" />
+    <WixVariable Id="WixUISupportPerMachine" Value="1" Overridable="yes" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.SetupDir)\Bitmaps\bannrbmp.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.SetupDir)\Bitmaps\UIDlg.bmp" />
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Thank you for installing the Orleans SDK! The best place to go for the latest information and documentation is http://orleans.codeplex.com." />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="APPLICATIONFOLDER" />
+    <Property Id="EasyInstall" Value="0" />
+    <UIRef Id="WixUI_InstallDir" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.SetupDir)\license.rtf" />
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+    
+  </Product>
+</Wix>

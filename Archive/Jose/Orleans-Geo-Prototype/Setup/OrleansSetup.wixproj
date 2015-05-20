@@ -1,0 +1,90 @@
+<Project DefaultTargets="CheckVSTargetVersion;Build;Report" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+      <OutputName>orleans_setup</OutputName>
+      <VSTargetVersion>12</VSTargetVersion>
+    </PropertyGroup>
+  
+    <Target Name="CheckVSTargetVersion">
+        <Message Text="Checking VSTargetVersion..."/>
+        <Error
+            Text="Error: you must set the VSTargetVersion property. Either build with '/p:VSTargetVersion=XX' command line option (where XX is either 11, or 12) or use other project files"
+            Condition="(('$(VSTargetVersion)' != '11') AND ('$(VSTargetVersion)' != '12'))" />
+    </Target>
+
+    <PropertyGroup>
+      <BuildRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), build.root))</BuildRoot>
+      <BuildRootParent>$([System.IO.Directory]::GetParent($(BuildRoot)).FullName)</BuildRootParent>
+      <SetupDir>$(BuildRoot)\OrleansV4\Setup</SetupDir>
+      <!-- BinariesDir>$(BuildRootParent)\Binaries\$(Configuration)</-->
+      <BinariesDir Condition="'$(BinariesRoot)'==''">$(BuildRootParent)\Binaries\$(Configuration)</BinariesDir>
+      <BinariesDir Condition="'$(BinariesRoot)'!=''">$(BinariesRoot)\$(Configuration)</BinariesDir>
+      <DeploymentDir Condition="'$(BinariesRoot)'!=''">$(BinariesRoot)\Deployment</DeploymentDir>
+      <DeploymentDir Condition="'$(BinariesRoot)'==''">$(BuildRootParent)\Binaries\Deployment</DeploymentDir>
+      <SDKDir>$(BuildRoot)\OrleansV4\SDK</SDKDir>
+      <DocsDir>$(BuildRoot)\OrleansV4\Documentation</DocsDir>
+      <SamplesDir>$(BuildRoot)\Samples</SamplesDir>
+      <RemoteDeploymentConfigDir>$(BuildRoot)\OrleansV4\SDK\RemoteDeployment</RemoteDeploymentConfigDir>
+      <RemoteDeploymentScriptsDir>$(BuildRoot)\OrleansV4\Scripts\Deployment</RemoteDeploymentScriptsDir>
+      <OrleansDir>$(BuildRoot)\OrleansV4</OrleansDir>
+      <ProductVersion>0.9</ProductVersion>
+      <SchemaVersion>2.0</SchemaVersion>
+      <OutputType>Package</OutputType>
+      <DefineSolutionProperties>false</DefineSolutionProperties>
+      <WixToolPath Condition=" '$(WixToolPath)' == '' ">$(BuildRoot)\BuildTools\Wix\3.6\</WixToolPath>
+      <WixExtDir Condition="'$(WixExtDir)'==''">$(WixToolPath)</WixExtDir>
+      <WixTargetsPath>$(WixToolPath)Wix.targets</WixTargetsPath>
+      <WixTasksPath >$(WixToolPath)WixTasks.dll</WixTasksPath>
+      <LuxTargetsPath>$(WixToolPath)Lux.targets</LuxTargetsPath>
+      <LuxTasksPath >$(WixToolPath)LuxTasks.dll</LuxTasksPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <DefineConstants>
+        $(DefineConstants);
+        VSTargetVersion=$(VSTargetVersion);
+        SetupDir=$(SetupDir);
+        SDKDir=$(SDKDir);
+        ProductVersion=$(ProductVersion);
+        BinariesDir=$(BinariesDir);
+        DeploymentDir=$(DeploymentDir);
+        DocsDir=$(DocsDir);
+        SamplesDir=$(SamplesDir);
+        RemoteDeploymentConfigDir=$(RemoteDeploymentConfigDir);
+        RemoteDeploymentScriptsDir=$(RemoteDeploymentScriptsDir);
+        OrleansDir=$(OrleansDir);
+      </DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <SuppressValidation>true</SuppressValidation>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Include="$(SetupDir)\OrleansSetup.wxs" />
+    </ItemGroup>
+
+    <Target Name="Report">
+        <Message Text="*************************************************************************************" Importance="High"/>
+        <Message Text="Produced file $(OutDir)$(OutputName).msi" Importance="High"/>
+        <Message Text="*************************************************************************************" Importance="High"/>
+        <Message Text="BinariesDir=$(BinariesDir)" Importance="High"/>
+    </Target>
+
+    <!-- WixUIExtension -->
+    <ItemGroup>
+      <WixExtension Include="WixUIExtension">
+        <HintPath>$(WixToolPath)\WixUIExtension.dll</HintPath>
+        <Name>WixUIExtension</Name>
+      </WixExtension>
+      <WixExtension Include="WixUtilExtension">
+        <HintPath>$(WixToolPath)\WixUtilExtension.dll</HintPath>
+        <Name>WixUtilExtension</Name>
+      </WixExtension>
+      <WixExtension Include="WixVSExtension">
+        <HintPath>$(WixToolPath)\WixVSExtension.dll</HintPath>
+        <Name>WixUtilExtension</Name>
+      </WixExtension>
+    </ItemGroup>
+    <Import Project="$(WixTargetsPath)" />
+</Project>

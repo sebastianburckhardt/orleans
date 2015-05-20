@@ -1,0 +1,17 @@
+ClientGenerator.exe
+ClientGen.cmd
+CounterControl.exe
+Orleans.dll
+OrleansMsBuildTask.dll
+OrleansRuntime.dll
+OrleansAzureUtils.dll
+OrleansProviders.dll
+OrleansProviderInterfaces.dll
+ClientConfiguration.xml
+XCGControls.dll
+ILMerge.exe
+Orleans.SDK.targets
+Microsoft.WindowsAzure.Configuration.dll
+Microsoft.WindowsAzure.StorageClient.dll
+Microsoft.WindowsAzure.ServiceRuntime.dll
+Microsoft.WindowsAzure.Diagnostics.dll

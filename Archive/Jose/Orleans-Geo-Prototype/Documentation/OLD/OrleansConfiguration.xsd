@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:orleans" xmlns:tns="urn:orleans">
+	<xs:simpleType name="TraceLevel">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Off" />
+			<xs:enumeration value="Error" />
+			<xs:enumeration value="Warning" />
+			<xs:enumeration value="Info" />
+			<xs:enumeration value="Verbose" />
+			<xs:enumeration value="Verbose2" />
+			<xs:enumeration value="Verbose3" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="MessageEncoding">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Binary" />
+			<xs:enumeration value="Mixed" />
+			<xs:enumeration value="Text" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="AddressFamily">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="InterNetwork" />
+			<xs:enumeration value="InterNetworkV6" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="IPEndPoint">
+		<xs:annotation>
+			<xs:documentation>
+				The IPEndPoint type is used to define an IP endpoint, which consists of an IP address and an associated port number.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="Address" type="xs:NMTOKEN" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The Address attribute holds either the endpoint's hostname or its IP address in dotted-quad (IPv4) or colon-hex (IPv6) notation.
+					In addition, either of the special strings "loopback" or "localhost" may be used to specify the IP loopback address, 127.0.0.1.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Port" type="xs:unsignedInt" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The Port attribute holds the TCP port for the endpoint.
+					This must be an addressable port; that is, it cannot be 0.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Subnet" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The Subnet attribute affects the selection of IP address that the node's message center will bind to.
+					If no explicit address is specified, either as an IP address or as a hostname, then the system will
+					iterate through all of the IPv4 addresses associated with the system and pick the one whose top-order byte
+					(first quad in dotted-quad notation) matches the Subnet specified in this attribute.
+					For instance, if the node is available at 10.54.13.174 and at 157.13.88.27, and Subnet="10", then the 10.54.13.174 address
+					will be used.
+					If no Subnet attribute is provided, then the one with the lowest address, comparing byte-by-byte in reverse order, is selected.
+					Thus, in our example, if no Subnet is specified, then the 157.13.88.27 address will be selected because 27 is less than 174.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="PreferredFamily" type="tns:AddressFamily" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The PreferredFamily attribute specifies whether IPv4 or IPv6 addressing should be preferred
+					if a hostname is provided for the Address attribute.
+					The default is to prefer IPv4.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+  </xs:complexType>
+	<xs:complexType name="Tasks">
+		<xs:annotation>
+			<xs:documentation>
+				The Tasks type is used to define configuration for the task system.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="Disabled" type="xs:boolean" use="required">
+			<xs:annotation>
+				<xs:documentation>
+					Set to true or 1 to disable the task system; false or 0 to leave it enabled.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="MessagingConfiguration">
+		<xs:annotation>
+			<xs:documentation>
+				Specifies global messaging configuration.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="ResponseTimeout" type="xs:unsignedShort" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The ResponseTimeout attribute specifies the default timeout, in seconds, before a request is assumed to have failed.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+    <xs:attribute name="MaxResendCount" type="xs:unsignedShort" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+          Specifies how many times to resend a request before considering it a failure.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="SenderQueues" type="xs:int" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The SenderQueues attribute specifies the number of parallel queues and attendant threads used by the silo to send outbound
+					messages (requests, responses, and notifications).
+					If this attribute is not specified, then one queue is used.
+					Using a value of 0 will look at System.Environment.ProcessorCount / 4 [min = 1] to decide the number instead.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="UseStandardSerializer" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The UseStandardSerializer attribute, if provided and set to "true", forces the use of the standard .NET serializer instead
+					of the custom Orleans serializer.
+					This parameter is intended for use only for testing and troubleshooting.
+					In production, the custom Orleans serializer should always be used because it performs significantly better.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="MessageEncoding" type="tns:MessageEncoding" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The MessageEncoding attribute controls whether standard text JSON serialization or Orleans-custom binary JSON is used for messages.
+					The default is Binary, which indicates that the custom binary serialization is used for both message headers and message bodies.
+					If the value of this attribute is Text, then standard JSON text serialization is used for both message headers and message bodies.
+					If the value of this attribute is Mixed, then standard JSON text serialization is used for message headers and
+					the custom binary serialization is used for message bodies.
+					While the custom binary serialization is somewhat faster and more compact, the JSON serialization results in human-readable messages being transmitted.
+					In some cases, this may assist troubleshooting problems.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+    <xs:attribute name="AlwaysRouteViaGateway" type="xs:boolean" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+          The AlwaysRouteViaGateway attribute controls whether direct routing to silos is allowed, or whether all routing is via the gateway.
+          The default (false) is to allow messages to be sent direct to silos once connection is established.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+	<xs:complexType name="DeploymentConfiguration">
+		<xs:annotation>
+			<xs:documentation>
+				The DeploymentConfiguration type is used to specify deployment information, specifically the list of silos and host names.
+				The configuration system does not require silos to be listed here unless they have node configuration overrides to be specified.
+				The deployment system may require all silos to be listed here, however.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Silo" minOccurs="1" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>
+						A Silo element is used to declare a run-time silo instance.
+						At least one Silo element must occur.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="Name" type="xs:ID" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								The silo name. Silo names must be unique within the deployment.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="HostName" type="xs:NMTOKEN" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The host name should be the machine name or IP address of the host on which the silo is to be run.
+								If it does not appear, the silo name is taken as the machine name.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DebugConfiguration">
+		<xs:annotation>
+			<xs:documentation>
+				The DebugConfiguration type contains various debugging-related configuration parameters.
+				For production use, the default value of these parameters should be fine.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="CrashOnUnobservedException" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The CrashOnUnobservedException attribute specifies whether the silo should terminate when an unobserved promise is broken.
+					The default is to not crash.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="ForceConsistency" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The ForceConsistency attribute specifies whether all tasks should be committed pessimisticly.
+					The default is to not force consistency.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="UseChess" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The UseChess attribute specifies whether task subsystem should use Chess for automated interleave testing or run normally.
+					The default is to not use Chess.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Validation" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The Validation attribute specifies whether the task subsystem should verify its internal state on each message.
+					The default is to not verify.
+					This option is only effective on debug builds.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="TracingConfiguration">
+		<xs:annotation>
+			<xs:documentation>
+				The TracingConfiguration type contains various tracing-related configuration parameters.
+				For production use, the default value of these parameters should be fine.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="TraceLevelOverride" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>
+						The TraceLevelOverride element provides a mechanism to allow the tracing level to be set differently for different
+						parts of the Orleans system.
+						The tracing level for a logger is set based on a prefix match on the logger's name.
+						TraceLevelOverrides are applied in length order; that is, the override with the longest matching
+						LogPrefix takes precedence and specifies the tracing level for all matching loggers.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="LogPrefix" type ="xs:string" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								The LogPrefix attribute specifies a string prefix that is used to match against logger names.
+								Logger names begin with one of "Runtime", "Grain", or "Application", followed by a period, followed by
+								an application-dependent name (usually the name of the class writing the log entries).
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="TraceLevel" use="required" type="tns:TraceLevel">
+						<xs:annotation>
+							<xs:documentation>
+								The TraceLevel attribute specifies the tracing level to use for use with loggers that match the associated LogPrefix.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="DefaultTraceLevel" use="optional" type="tns:TraceLevel">
+			<xs:annotation>
+				<xs:documentation>
+					The DefaultTraceLevel attribute specifies the default tracing level for all Orleans loggers, unless overridden by
+					a specific TraceLevelOverride element.
+					The default level is Info if this attribute does not appear.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="TraceToConsole" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The TraceToConsole attribute specifies whether trace output should be written to the console.
+					The default is not to write trace data to the console.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="TraceToFile" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The TraceToFile attribute specifies the name of a file that trace output should be written to.
+					The silo Name may be embedded in the file name by including the sequence {0}.
+					The current timestamp in "round trip" format may be embedded by including the sequence {1}.
+					If the value is an empty string, "", then trace output is not written to a file at all.
+					The default is to write to a file in the local directory named "{0}-{1}.log".
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="WriteStatistics" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The WriteStatistics attribute specifies whether or not run-time statistics should be included in trace output.
+					Statistics are written at Info TraceLevel, so they will not be written if the TraceLevel is Warning or higher, no matter how this attribute is set.
+					The default is to include statistics.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="MetricWritePeriod" type="xs:int" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The MetricWritePeriod attribute specifies how frequently metric data should be written to the console.
+					If this attribute does not appear, or if the value is zero or negative, then no metrics will be written.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="WriteTraces" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					The WriteTraces attribute specifies whether or not message traces will be collected and reported.
+					Message traces are written when the message is completed (that is, when the response promise is resolved).
+					Traces are written at Verbose level.
+					The default is to not collect and write message traces, as trace collection is moderately expensive.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="GlobalConfiguration">
+		<xs:annotation>
+			<xs:documentation>
+				This type is used to specify global configuration information; that is, configuration which is not silo-specific.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Persistence">
+				<xs:annotation>
+					<xs:documentation>
+						The required Persistence element contains information relating to grain persistence.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="Type" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								The type attribute specifies the persistence method used for this deployment:
+								None indicates that there is no persistence. This is generally only useful for unit tests.
+								InMemory indicates that grain state is kept in memory at the primary node. This is generally only useful for testing.
+								File indicates that grain state is written to the file system, one file per grain. This is suitable for production use
+								if high availability is not a requirement.
+							</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:enumeration value="None" />
+								<xs:enumeration value="InMemory" />
+								<xs:enumeration value="File" />
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="Path" type="xs:string" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								If File persistence is used, the Path attribute must hold the pathname of the directory where grain state files are stored.
+								Best practice is for this to be a UNC path to a file share, so that the file store may be accessed from any silo, although
+								only the store grain (which runs on the primary node) will ever access this directory.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Index">
+				<xs:annotation>
+					<xs:documentation>
+						The required Index element contains information relating to grain indexing.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="ConnectionString" type="xs:string" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								If provided, this will be used as a SQL connection string to a database for holding the grain index.
+                                If absent, grain indexing will not be supported.
+                                The special value "DomainIndexGrain" uses a single system grain for the index, for non-reliable development deployments.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="ClearOnStartup" type="xs:boolean" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								If true, and if ConnectionString is also provided, Orleans will clear the index database upon startup.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="SingleActivationDomain" type="xs:boolean" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								If true, only a single activation of the DomainGrain will be created.
+                                This is necessary when using a SQL CE index in a network cluster, since the database cannot be on a network share.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+            <xs:element minOccurs="0" maxOccurs="1" name="Activation">
+				<xs:annotation>
+					<xs:documentation>
+						The optional Activation element describes the garbage collection policy for activations.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+                    <xs:attribute name="CollectionInterval" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The CollectionInterval specifies how many seconds to wait between checking if activations should be collected.
+                                If this attribute does not appear, or if the value is zero or negative, then no metrics will be written.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="MaxCollectionBucketSize" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The MaxCollectionBucketSize specifies the maximum numer of activations in a collection bucket.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="MaxCollectionBucketAge" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The MaxCollectionBucketSize specifies the maximum numer of seconds to wait before starting a new bucket.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="CollectionAmount" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The CollectionAmount specifies the number of activations to collect if a collection is required.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="CollectionTotalMemoryLimit" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The CollectionTotalMemoryLimit specifies the maximum number of megabytes of allocated data that are allowed before a collection will be initiated.
+                                If this attribute does not appear, or if the value is zero or negative, then collection will not be initiated based on memory usage.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="CollectionAgeLimit" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The CollectionAgeLimit specifies the maximum age of the oldest activation in seconds before a collection will be initiated.
+                                If this attribute does not appear, or if the value is zero or negative, then collection will not be initiated based on activation age.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="CollectionActivationLimit" type="xs:int" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The CollectionActivationLimit specifies the maximum number of live activations before a collection will be initiated.
+                                If this attribute does not appear, or if the value is zero or negative, then collection will not be initiated based on activation count.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="1" maxOccurs="unbounded" name="SeedNode" type="tns:IPEndPoint">
+				<xs:annotation>
+					<xs:documentation>
+						Each SeedNode element specifies a directory seed node.
+						The current Orleans directory implementation requires at least one seed node.
+						Note that the first seed node must be started before any other silo is started.
+						The first seed node is also used as the "primary" node; that is, the controller and domain grains are created there when it starts up.
+						Additional seed nodes may be specified if desired, and will add some (limited) failure resilience and scalability.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element minOccurs="0" maxOccurs="1" name="Tasks" type="tns:Tasks">
+				<xs:annotation>
+					<xs:documentation>
+						Specifies configuration for the task system
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element minOccurs="0" maxOccurs="1" name="Networking">
+				<xs:annotation>
+					<xs:documentation>
+						Specifies global networking configuration.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="Subnet" type="xs:string" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The Subnet attribute affects the selection of IP address that the node's message center will bind to.
+								If no explicit address is specified, eiuther as an IP address or as a hostname, then the message center will
+								iterate through all of the IPv4 addresses associated with the system and pick the one whose top-order byte
+								(first quad in dotted-quad notation) matches the Subnet specified in this attribute.
+								For instance, if the node is available at 10.54.13.174 and at 157.13.88.27, and Subnet="10", then the 10.54.13.174 address
+								will be used.
+								If no Subnet attribute is provided, then the one with the lowest address, comparing byte-by-byte in reverse order, is selected.
+								Thus, in our example, if no Subnet is specified, then the 157.13.88.27 address will be selected because 27 is less than 174.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="0" maxOccurs="1" name="Messaging" type="tns:MessagingConfiguration" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NodeConfiguration">
+		<xs:annotation>
+			<xs:documentation>
+				The NodeConfiguration element is used to specify node-specific configuration data.
+				It is used in two contexts: to specify default data for all nodes, and to specify node-specific overrides.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Networking" minOccurs="0" type="tns:IPEndPoint">
+				<xs:annotation>
+					<xs:documentation>
+						The Networking element specifies the address that the node's message center will listen on.
+						Typically the Port is filled in for the default configuration, and the Address is filled in for nodes with multiple NICs.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Scheduler" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						The Scheduler element holds configuration related to the Orleans turn-scheduling mechanism.
+						In most cases, the default values for these parameters will lead to acceptable behavior.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="MaxActiveThreads" type="xs:unsignedShort" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The MaxActiveThreads attribute specifies the maximum number of simultaneous active threads the scheduler will allow.
+								Generally this number should be roughly equal to the number of cores on the node.
+								Using a value of 0 will look at System.Environment.ProcessorCount to decide the number instead.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="DelayWarningThreshold" type="xs:double" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The DelayWarningThreshold attribute specifies the work item queuing delay threshold, in milliseconds, at which a warning log message is written.
+								That is, if the delay between enqueuing the work item and executing the work item is greater than DelayWarningThreshold, a warning log is written.
+								The default value is 100 milliseconds.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Placement" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						The Placement element holds configuration related to resource allocation and activation placement.
+						In most cases, the default values for these parameters will lead to acceptable behavior.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="SingleActivationMode" type="xs:boolean" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								If the SingleActivationMode attribute is set to true, then the system will never create a second activation of a user grain.
+								In the current build, this is true by default.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="MaxRequestQueueLength" type="xs:short" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The MaxRequestQueueLength attribute specifies the maximum desired length of the per-activation message queue.
+								If the request queue is this long or longer, the system will prefer to use a different activation.
+								Note that this is an advisory limit, not a hard limit.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="MaxRunQueueLength" type="xs:short" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The MaxRunQueueLength attribute specifies the maximum desired length of the silo-wide scheduler run queue.
+								If the run queue is this long or longer, the system will prefer to use an activation on another silo even if there is an activation
+								of the same grain on the local silo.
+								Note that this is an advisory limit, not a hard limit.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="NewActivationRate" type="xs:double" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The NewActivationRate attribute specifies the fraction of requests that should randomly create a new activation rather than reusing an existing one.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="LocalPlacementRate" type="xs:double" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								The LocalPlacementRate attribute specifies the fraction of new activations that should randomly be placed on the local silo,
+								rather than on a remote silo.
+								Note that the MaxRunQueueLength check is performed first and takes precedence over this selection.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Tracing" minOccurs="0" type="tns:TracingConfiguration">
+				<xs:annotation>
+					<xs:documentation>
+						The Tracing element contains various tracing-related configuration parameters.
+						For production use, the default value of these parameters should be fine.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Debug" minOccurs="0" type="tns:DebugConfiguration">
+				<xs:annotation>
+					<xs:documentation>
+						The Debug element contains various debugging-related configuration parameters.
+						For production use, the default value of these parameters should be fine.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="OrleansConfiguration">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Deployment" type="tns:DeploymentConfiguration" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>
+							The Deployment element contains the list of nodes (silos) in this deployment.
+							See the description of the DeploymentConfiguration type, above, for details.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="Globals" type="tns:GlobalConfiguration">
+					<xs:annotation>
+						<xs:documentation>
+							The Globals element contains global configuration information that is not silo-specific.
+							See the description of the GlobalConfiguration type, above, for details.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="Defaults" type="tns:NodeConfiguration">
+					<xs:annotation>
+						<xs:documentation>
+							The Defaults element contains the default node configuration for this deployment.
+							See the description of the NodeConfiguration type, above, for details.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element minOccurs="0" maxOccurs="unbounded" name="Override">
+					<xs:annotation>
+						<xs:documentation>
+							The Override element contains node-specific configuration overrides.
+							See the description of the DeploymentConfiguration type, above, for details.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:complexContent>
+							<xs:extension base="tns:NodeConfiguration">
+								<xs:attribute name="Node" type="xs:IDREF" use="required">
+									<xs:annotation>
+										<xs:documentation>
+											The Node attribute specifies the node (silo) that these overrides apply to.
+											It must match the Name attribute (not HostNames) of one of the Silo elements in the Deployment element.
+										</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:complexContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ClientConfiguration">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element minOccurs="1" maxOccurs="unbounded" name="Gateway" type="tns:IPEndPoint">
+					<xs:annotation>
+						<xs:documentation>
+							Each GatewayNode element specifies an outside grain client gateway node.
+							If outside (non-Orleans) clients are to connect to the Orleans system, then at least one gateway node must be specified.
+							Additional gateway nodes may be specified if desired, and will add some failure resilience and scalability.
+							If multiple gateways are specified, then each client will select one from the list at random.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="Debug" minOccurs="0" type="tns:DebugConfiguration" />
+				<xs:element name="Tracing" minOccurs="0" type="tns:TracingConfiguration" />
+				<xs:element name="Messaging" minOccurs="0" type="tns:MessagingConfiguration" />
+				<xs:element name="LocalAddress" minOccurs="0">
+					<xs:complexType>
+						<xs:annotation>
+							<xs:documentation>
+								This element allows the preferred address family for the client to be specified.
+								If it does not appear, then the InterNetwork (IPv4) family is used.
+								The client always listens at the first recorded address for the local machine in the preferred family,
+								on a port assigned randomly by the local operating system.
+							</xs:documentation>
+						</xs:annotation>
+						<xs:attribute name="PreferredFamily" type="tns:AddressFamily" use="required" />
+            <xs:attribute name="Interface" type="xs:string" use="optional">
+              <xs:annotation>
+                <xs:documentation>
+                  The Interface attribute specifies the name of the network interface to use to work out an IP address for this machine.
+                </xs:documentation>
+              </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Port" type="xs:unsignedInt" use="optional">
+              <xs:annotation>
+                <xs:documentation>
+                  The Port attribute specifies the specific listen port for this client machine.
+                  If value is zero, then a random machine-assigned port number will be used.
+                </xs:documentation>
+              </xs:annotation>
+            </xs:attribute>
+          </xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

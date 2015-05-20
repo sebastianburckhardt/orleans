@@ -1,0 +1,9 @@
+As per the Microsoft Windows Azure SDK EULA, the following assemblies can be redistributed:
+
+Microsoft.ApplicationServer.Caching.Client.dll
+Microsoft.ApplicationServer.Caching.Core.dll
+Microsoft.Web.DistributedCache.dll
+Microsoft.WindowsFabric.Common.dll
+Microsoft.WindowsFabric.Data.Common.dll
+Microsoft.WindowsAzure.Storage.dll
+Microsoft.ServiceBus.dll
