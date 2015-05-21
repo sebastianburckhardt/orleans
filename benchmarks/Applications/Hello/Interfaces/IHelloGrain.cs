@@ -1,12 +1,13 @@
 ﻿using Orleans;
+using System.Threading.Tasks;
 
-namespace Interfaces
+namespace Hello.Interfaces
 {
     /// <summary>
     /// Grain interface IGrain1
     /// </summary>
     public interface IHelloGrain : IGrain
     {
-        public Task Hello(string s);
+        Task<string> Hello(string s);
     }
 }

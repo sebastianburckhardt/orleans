@@ -89,7 +89,7 @@ namespace LoadGenerator.WorkerRole
                             Trace.TraceInformation("Connected.");
 
                             //  LoadGenerator ->  Conductor   :  READY instanceid
-                            var message = "READY " + deployment + "." + instance + "." + connectioncount++.ToString();
+                            var message = "READY " + instance + "." + connectioncount++.ToString();
                             ArraySegment<byte> outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
                             await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
 

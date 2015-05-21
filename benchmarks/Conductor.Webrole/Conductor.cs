@@ -121,13 +121,21 @@ namespace Conductor.Webrole
             foreach (RobotInfo r in robots)
                 if (r.instance == instance && r.promise != null)
                     r.promise.TrySetResult("ERROR: Lost Connection");
-            Broadcast("Connected Generators:", string.Join(" ", LoadGenerators.Keys));
+            ShowGenerators();
         }
 
         public void OnConnect(string instance, WebSocket ws)
         {
             LoadGenerators[instance] = ws;
-            Broadcast("Connected Generators:", string.Join(" ", LoadGenerators.Keys));
+            ShowGenerators();
+        }
+
+        public void ShowGenerators()
+        {
+            if (LoadGenerators.Count == 0)
+                Broadcast("Connected Generators", "None");
+            else
+                Broadcast("Connected Generators (" + LoadGenerators.Count.ToString() + ")", string.Join(" ", LoadGenerators.Keys));
         }
 
         public async Task<string> RunScenario()
