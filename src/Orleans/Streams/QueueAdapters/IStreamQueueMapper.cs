@@ -21,20 +21,20 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
-using Orleans.Runtime;
 
 
 namespace Orleans.Streams
 {
     /// <summary>
-    /// The stream queue mapper is responsible for mapping ring ranges from the load balancing ring provider to stream queues.
+    /// The stream queue mapper returns a list of all queues and is also responsible for mapping streams to queues.
     /// Implementation must be thread safe.
     /// </summary>
     public interface IStreamQueueMapper
     {
-        IEnumerable<QueueId> GetQueuesForRange(IRingRange range);
-
         IEnumerable<QueueId> GetAllQueues();
+
+        QueueId GetQueueForStream(Guid streamGuid, String streamNamespace);
     }
 }

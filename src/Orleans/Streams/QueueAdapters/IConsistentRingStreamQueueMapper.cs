@@ -1,4 +1,4 @@
-﻿/*
+/*
 Project Orleans Cloud Service SDK ver. 1.0
  
 Copyright (c) Microsoft Corporation
@@ -21,24 +21,18 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-﻿
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Orleans;
+using Orleans.Runtime;
 
-namespace UnitTests.GrainInterfaces
+
+namespace Orleans.Streams
 {
-    public interface ISimpleGenericGrain<T> : IGrainWithIntegerKey
+    /// <summary>
+    /// The stream queue mapper is responsible for mapping ring ranges from the load balancing ring provider to stream queues.
+    /// Implementation must be thread safe.
+    /// </summary>
+    public interface IConsistentRingStreamQueueMapper : IStreamQueueMapper
     {
-        Task Set(T t);
-
-        Task Transform();
-
-        Task<T> Get();
-
-        Task CompareGrainReferences();
+        IEnumerable<QueueId> GetQueuesForRange(IRingRange range);
     }
 }
