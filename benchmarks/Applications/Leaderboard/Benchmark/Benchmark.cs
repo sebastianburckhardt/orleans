@@ -1,11 +1,12 @@
-﻿using Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Common;
+using Leaderboard.Interfaces; 
 
 #pragma warning disable 1998
 
@@ -47,14 +48,47 @@ namespace Leaderboard.Benchmark
         // parsing of http requests
         public IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body)
         {
-            if (verb == "GET" && string.Join("/", urlpath) == "leaderboard")
-                return new GetRequest(int.Parse(arguments["nr"]));
 
             if (verb == "WS" && string.Join("/", urlpath) == "leaderboard")
-                return new SocketRequest(int.Parse(arguments["numreqs"]));
+            {
+                LeaderboardRequestT requestType = (LeaderboardRequestT) int.Parse(arguments["reqtype"]) ;
+                int numReq =  int.Parse(arguments["numreq"]);
+                SocketRequest request=null;
+                if (requestType == LeaderboardRequestT.GET) { 
+                    // GET type
+                    request = new SocketRequest(numReq);
+                } else {
+                    Util.Assert(requestType == LeaderboardRequestT.POST);
+                    //TODO unnecessary conversion to "SCORE" type, keep as string?
+                    request = new SocketRequest(numReq, Score.fromString(arguments["score"]));
+                }
+                return request;
+            }
+
+            if (verb == "GET" && string.Join("/", urlpath) == "leaderboard")
+            {
+                LeaderboardRequestT requestType = (LeaderboardRequestT)int.Parse(arguments["reqtype"]);
+                int numReq = int.Parse(arguments["numreq"]);
+                HttpRequest request = null;
+                if (requestType == LeaderboardRequestT.GET)
+                {
+                    // GetTop10 type
+                    request = new HttpRequest(numReq);
+                }
+                else
+                {
+                    // New score type
+                    Util.Assert(requestType == LeaderboardRequestT.POST);
+                    request = new HttpRequest(numReq, Score.fromString(arguments["score"]));
+                }
+                return request;
+            }
+
 
             return null; // URL not recognized
         }
 
     }
+
+
 }

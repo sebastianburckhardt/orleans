@@ -6,7 +6,7 @@ Copyright (c) Microsoft Corporation
 All rights reserved.
  
 MIT License
-
+Orleans.
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
 associated documentation files (the ""Software""), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
@@ -28,11 +28,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Leaderboard.Benchmark")]
+[assembly: AssemblyTitle("Benchmarks")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Leaderboard.Benchmark")]
+[assembly: AssemblyProduct("Benchmarks")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -43,7 +43,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("9159f72c-e191-4ea3-ba40-76c3be19d493")]
+[assembly: Guid("a2dc0b7a-83d6-4ca3-8fcb-a976fcf4e820")]
 
 // Version information for an assembly consists of the following four values:
 //
