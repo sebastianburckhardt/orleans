@@ -91,6 +91,8 @@ namespace LocalSimulation
                Console.WriteLine(result);
 
                Console.WriteLine();
+
+               Console.WriteLine(simulator.PrintStats());
            }
 
 #if USE_INPROC_SILO

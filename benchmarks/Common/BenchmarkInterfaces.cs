@@ -39,6 +39,9 @@ namespace Common
 
         Task<string> RunRobot(int robotnumber, string parameters);
 
+        //identifies this test instance. Can be used to name test-specific files and directories.
+        string TestName { get; }
+
     }
 
  
@@ -51,6 +54,11 @@ namespace Common
         //send an socket request to the service. The task finishes after the socket close has been processed.
         Task ServiceConnection(ISocketRequest request);
 
+        //identifies this test instance. Can be used to name test-specific files and directories.
+        string TestName { get; }
+
+        // the number of this robot
+        int RobotNumber { get; }
     }
  
  

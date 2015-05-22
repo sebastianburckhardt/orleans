@@ -86,6 +86,9 @@ namespace Benchmarks
                     var urlpath = url.AbsolutePath.Split('/').Select(s => HttpUtility.UrlDecode(s)).Skip(2).ToArray();
                     var arguments = HttpUtility.ParseQueryString(url.Query);
 
+                    var testname = arguments["testname"];
+                    arguments.Remove("testname");
+
                     tracer(string.Format("-> {0} {1}", verb, request.RawUrl));
 
                     var handler = benchmarks.ParseRequest(verb, urlpath, arguments, body);
@@ -101,8 +104,8 @@ namespace Benchmarks
                         }
             
                     var bgtask = request.IsWebSocketRequest ?
-                      ProcessWebsocketRequest((ISocketRequest) handler, urlpath, arguments, listenerContext)
-                      : ProcessHttpRequest((IHttpRequest) handler, urlpath, arguments, verb, body, listenerContext);
+                      ProcessWebsocketRequest((ISocketRequest) handler, urlpath, arguments, testname, listenerContext)
+                      : ProcessHttpRequest((IHttpRequest) handler, urlpath, arguments, testname, verb, body, listenerContext);
                 }
             }
             catch (HttpListenerException e)
@@ -144,7 +147,7 @@ namespace Benchmarks
         }
 
         private async Task ProcessHttpRequest(IHttpRequest handler,
-                IEnumerable<string> urlpath, NameValueCollection arguments, string verb, string body,
+                IEnumerable<string> urlpath, NameValueCollection arguments, string testname, string verb, string body,
                 HttpListenerContext listenerContext)
         {
 
@@ -223,7 +226,7 @@ namespace Benchmarks
         private static System.Security.Cryptography.RandomNumberGenerator rng;
 
 
-         private async Task ProcessWebsocketRequest(ISocketRequest handler, IEnumerable<string> urlpath, NameValueCollection arguments, HttpListenerContext listenerContext)
+         private async Task ProcessWebsocketRequest(ISocketRequest handler, IEnumerable<string> urlpath, NameValueCollection arguments, string testname, HttpListenerContext listenerContext)
         {
 
             WebSocketContext webSocketContext = null;

@@ -13,17 +13,19 @@ namespace LocalSimulation
 
         public Simulator(IEnumerable<string> servers, int numrobots, IBenchmark benchmark, IScenario scenario)
         {
-            // assign servers to robots round-robin
-            while (numrobots > 0)
-                foreach (var server in servers)
-                {
-                    if (numrobots-- == 0)
-                        break;
-                    robotclients.Add(new Benchmarks.Client(server));
-                }
-
             this.benchmark = benchmark;
             this.scenario = scenario;
+            this.testname = string.Format("{0:o}.{1}.{2}", DateTime.UtcNow, benchmark.Name, scenario.Name);
+
+            // assign servers to robots round-robin
+            int robotnum = 0;
+            while (robotnum < numrobots)
+                foreach (var server in servers)
+                {
+                    robotclients.Add(new Benchmarks.Client(server, testname, robotnum++));
+                    if (robotnum == numrobots)
+                        break;
+                }
         }
 
         public async Task<string> Run()
@@ -45,19 +47,48 @@ namespace LocalSimulation
         }
 
         List<Benchmarks.Client> robotclients = new List<Benchmarks.Client>();
+        Dictionary<string, LatencyDistribution> Stats = new Dictionary<string, LatencyDistribution>();
         IBenchmark benchmark;
         IScenario scenario;
+        string testname;
+
+        public string TestName { get { return testname; } }
 
         public int NumRobots
         {
             get { return robotclients.Count(); }
         }
 
-        public Task<string> RunRobot(int robotnumber, string parameters)
+        public async Task<string> RunRobot(int robotnumber, string parameters)
         {
-            return scenario.RobotScript(robotclients[robotnumber], robotnumber, parameters);
+            // run the scenario
+            var result = await scenario.RobotScript(robotclients[robotnumber], robotnumber, parameters);
+
+            // collect stats from robot
+            foreach (var kvp in robotclients[robotnumber].Stats)
+            {
+                if (!Stats.ContainsKey(kvp.Key))
+                    Stats.Add(kvp.Key, new LatencyDistribution());
+                Stats[kvp.Key].MergeDistribution(kvp.Value);
+            }
+
+
+            return result;
         }
 
+        public string PrintStats()
+        {
+            var b = new StringBuilder();
+            if (Stats != null)
+                foreach (var kvp in Stats)
+                {
+                    b.AppendLine(kvp.Key);
+                    b.Append("      ");
+                    b.AppendLine(string.Join(" ", kvp.Value.GetStats()));
+                }
+            return b.ToString();
+        }
 
+       
     }
 }
