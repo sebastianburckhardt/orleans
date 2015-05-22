@@ -1,9 +1,9 @@
 ﻿using Leaderboard.Interfaces;
-using Orleans;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
-using System; 
+using System;
+using Orleans;
 
 #pragma warning disable 1998
 

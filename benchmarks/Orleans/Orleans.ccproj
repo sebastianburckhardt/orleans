@@ -45,14 +45,6 @@
       <RoleName>Orleans.Frontend</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
-    <ProjectReference Include="..\Orleans.Silos\Orleans.Silos.csproj">
-      <Name>Orleans.Silos</Name>
-      <Project>{6b7e7c7d-fcb5-415c-a361-e653cb9ead72}</Project>
-      <Private>True</Private>
-      <RoleType>Worker</RoleType>
-      <RoleName>Orleans.Silos</RoleName>
-      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Orleans.FrontendContent\" />

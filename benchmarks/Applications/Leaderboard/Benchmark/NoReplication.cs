@@ -1,11 +1,11 @@
-﻿using Common;
+﻿using Orleans;
+using Common;
 using Leaderboard.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 
 
 #pragma warning disable 1998
@@ -44,12 +44,9 @@ namespace Leaderboard.Benchmark
         {
             var robotrequests = new Task<string>[numrobots];
 
-            // repeat numreqs times
-            for (int k = 0; k < numreqs; k++)
-            {
                 // start each robot
                 for (int i = 0; i < numrobots; i++)
-                    robotrequests[i] = context.RunRobot(i, k.ToString()+"-"+percentread);
+                    robotrequests[i] = context.RunRobot(i, numreqs.ToString()+"-"+percentread);
 
                 // wait for all robots
                 await Task.WhenAll(robotrequests);
@@ -59,8 +56,7 @@ namespace Leaderboard.Benchmark
                     Console.Write("Finished: {0} \n", robotrequests[i].Result );
   //                  Util.Assert(robotrequests[i].Result == "ok", "Incorrect reply");
                 }
-            }
-
+         
             return "ok";
         }
 
@@ -158,9 +154,9 @@ namespace Leaderboard.Benchmark
 
         public async Task<string> ProcessRequestOnServer()
         {
-            Console.Write("ProcessRequestOnServer {0}  {1} {2} ", numReq, requestType);
-        /*    var leaderboard = LeaderBoardGrainFactory.GetGrain(0);
-   
+            Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
+            var leaderboard = LeaderBoardGrainFactory.GetGrain(0);
+  
             if (requestType == LeaderboardRequestT.GET)
             {
                 Score[] scores = await leaderboard.GetTopTen();
@@ -170,10 +166,10 @@ namespace Leaderboard.Benchmark
             }
             else
             {
-                Console.Write("Post " + score.ToString());
+                Console.Write("Post{0} \n ", score.ToString());
                 await leaderboard.Post(score);
                 return "ok";
-            } */
+            } 
 
             return "todo";
          

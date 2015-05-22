@@ -42,15 +42,6 @@
   <ItemGroup>
     <DiagnosticsConfiguration Include="Conductor.WebRoleContent\diagnostics.wadcfgx" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Conductor.Webrole\Conductor.WebRole.csproj">
-      <Name>Conductor.WebRole</Name>
-      <Project>{a37d6739-c131-4976-9e49-5bcc7bb8a877}</Project>
-      <Private>True</Private>
-      <RoleType>Web</RoleType>
-      <RoleName>Conductor.WebRole</RoleName>
-    </ProjectReference>
-  </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
