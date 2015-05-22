@@ -159,8 +159,8 @@ namespace Leaderboard.Benchmark
         public async Task<string> ProcessRequestOnServer()
         {
             Console.Write("ProcessRequestOnServer {0}  {1} {2} ", numReq, requestType);
-            var leaderboard = LeaderBoardGrainFactory.GetGrain(0);
-
+        /*    var leaderboard = LeaderBoardGrainFactory.GetGrain(0);
+   
             if (requestType == LeaderboardRequestT.GET)
             {
                 Score[] scores = await leaderboard.GetTopTen();
@@ -173,7 +173,9 @@ namespace Leaderboard.Benchmark
                 Console.Write("Post " + score.ToString());
                 await leaderboard.Post(score);
                 return "ok";
-            }
+            } */
+
+            return "todo";
          
         }
 
