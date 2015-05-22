@@ -22,6 +22,10 @@ namespace Conductor.Webrole
 
         public Benchmarks.Console console;
 
+        private string testname;
+
+        public string TestName{  get { return testname; } }
+
         public Dictionary<string, WebSocket> LoadGenerators = new Dictionary<string, WebSocket>();
 
         IBenchmark benchmark;
@@ -59,6 +63,7 @@ namespace Conductor.Webrole
 
                 this.benchmark = kvp.Value.Key;
                 this.scenario = kvp.Value.Value;
+                this.testname = string.Format("{0:o}.{1}.{2}", DateTime.UtcNow, benchmark.Name, scenario.Name);
                 this.robots = new List<RobotInfo>();
 
                 if (LoadGenerators.Count == 0)
@@ -99,7 +104,7 @@ namespace Conductor.Webrole
             Util.Assert(robot.promise == null);
             robot.promise = new TaskCompletionSource<string>();
 
-            var message = "START " + robotnumber + " " + parameters;
+            var message = "START " + testname + " " + robotnumber + " " + parameters;
             var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
             await LoadGenerators[robot.instance].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
 

@@ -145,12 +145,15 @@ namespace LoadGenerator.WorkerRole
 
                                 Trace.TraceInformation("Received " + content);
 
-                                //  Conductor -> LoadGenerator : START robotnr args
+                                //  Conductor -> LoadGenerator : START testname robotnr args
 
                                 content = content.Substring(content.IndexOf(' ') + 1);
-                                var pos = content.IndexOf(' ');
-                                var robotnr = int.Parse(content.Substring(0, pos));
-                                var args = content.Substring(pos + 1);
+                                var pos1 = content.IndexOf(' ');
+                                var pos2 = content.IndexOf(' ', pos1+1);
+                                var pos3 = content.IndexOf(' ', pos2+1);
+                                var testname = content.Substring(pos1 + 1, pos2 - pos1);
+                                var robotnr = int.Parse(content.Substring(pos2 + 1, pos3 - pos2));
+                                var args = content.Substring(pos3 + 1);
 
                                 //  LoadGenerator -> Conductor : DONE robotnr result
 

@@ -1,6 +1,7 @@
 ﻿using Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.WebSockets;
@@ -15,43 +16,82 @@ namespace Benchmarks
     /// </summary>
     public class Client : IRobotContext
     {
-        public Client(string urlpath)
+        public Client(string urlpath, string testname, int robotnumber)
         {
             this.urlpath = urlpath;
+            this.testname = testname;
+            this.robotnumber = robotnumber;
         }
 
         string urlpath;
+        string testname;
+        int robotnumber;
+        public Dictionary<string, LatencyDistribution> Stats = new Dictionary<string, LatencyDistribution>();
+
+        public string TestName { get { return testname; } }
+
+        public int RobotNumber { get { return robotnumber;  } }
 
         public async Task ServiceRequest(IHttpRequest request)
         {
             var sig = request.Signature.Split(' ');
             Util.Assert(sig.Length == 2);
             Util.Assert(sig[0] == "GET" || sig[0] == "PUT" || sig[0] == "POST");
+            var urlparams = (sig[1].Length == 0 ? "?" : (sig[1] + "&")) + "testname=" + testname;
 
-            var req = (HttpWebRequest) WebRequest.Create("http://" + urlpath + sig[1]);
+            var req = (HttpWebRequest)WebRequest.Create("http://" + urlpath + urlparams);
             //var req = (HttpWebRequest)WebRequest.Create("http://localhost:843/simserver/test");
             req.Method = sig[0];
-        
+
 
             if (request.Body != null)
             {
                 req.ContentType = "application/text";
-                byte [] bytes = System.Text.Encoding.ASCII.GetBytes(request.Body);
+                byte[] bytes = System.Text.Encoding.ASCII.GetBytes(request.Body);
                 req.ContentLength = bytes.Length;
-                System.IO.Stream os = await req.GetRequestStreamAsync ();
-                await os.WriteAsync (bytes, 0, bytes.Length); 
+                System.IO.Stream os = await req.GetRequestStreamAsync();
+                await os.WriteAsync(bytes, 0, bytes.Length);
                 os.Close();
             }
 
-            var resp = await req.GetResponseAsync();
-            if (resp != null)
+            var sw = new Stopwatch();
+            string responsecategory = "none";
+
+            try
             {
-                System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream());
-                await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
-            }  
+                sw.Start();
+                var resp = (HttpWebResponse)await req.GetResponseAsync();
+                sw.Stop();
+
+                if (resp != null)
+                {
+                    responsecategory = ((int) resp.StatusCode).ToString() + " " + resp.StatusCode.ToString();
+                    System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream());
+                    await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
+                }
+            }
+
+            finally
+            {
+                sw.Stop();
+
+                // request category is signature minus parameters
+                var requestcategory = request.Signature;
+                var pos = requestcategory.IndexOf('?');
+                if (pos != -1)
+                    requestcategory = requestcategory.Substring(0, pos);
+
+                // statistics are collected per request and response category
+                var key = requestcategory + " (" + responsecategory + ")";
+                LatencyDistribution distribution;
+                if (!Stats.TryGetValue(key, out distribution))
+                    distribution = Stats[key] = new LatencyDistribution();
+                distribution.AddDataPoint(sw.ElapsedMilliseconds);
+            }
+
+
         }
 
-       
         public class SocketWrapper : ISocket
         {
             public SocketWrapper(ClientWebSocket ws)
@@ -79,7 +119,8 @@ namespace Benchmarks
             var sig = request.Signature.Split(' ');
             Util.Assert(sig.Length == 2);
             Util.Assert(sig[0] == "WS");
-            var uri = new Uri("ws://" + urlpath + sig[1]);
+            var urlparams = (sig[1].Length == 0 ? "?" : (sig[1] + "&")) + "testname=" + testname;
+            var uri = new Uri("ws://" + urlpath + urlparams);
 
             using (var ws = new ClientWebSocket())
             {
