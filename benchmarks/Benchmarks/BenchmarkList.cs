@@ -19,7 +19,7 @@ namespace Benchmarks
             // - add a project reference for the interface dll and the implementation dll to this project
 
             Register(new Hello.Benchmark.Benchmark());
-
+     //       Register(new Leaderboard.Benchmark.Benchmark());
 
             //----------------------------------------------------------------------------------
         }

@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using Hello.Interfaces;
 using System.Threading.Tasks;
+#pragma warning disable 1998
 
 namespace Hello.Grains
 {
