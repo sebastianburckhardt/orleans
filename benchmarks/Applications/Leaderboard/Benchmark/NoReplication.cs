@@ -66,28 +66,109 @@ namespace Leaderboard.Benchmark
             Console.Write("PARAMETERS {0} \n", parameters);
      
             int percentread = Convert.ToInt32(parameters.Split('-')[1]);
+            int percentwrite = 100 - percentread;
+            int reads;
+            int writes;
+            Random rnd;
+            string[] names;
+            int nameLength;
+            int nextRandom;
+            bool executed;
+            Score nextScore;
 
+            rnd = new Random();
+            names = new string[] { "Jack","John","Jim","Ted","Tid","Tad"};
+            nameLength = names.Length;
+            reads = percentread;
+            writes = percentwrite;
+            executed = false;
+
+            nextScore = new Score
+            {
+                Name = names[rnd.Next(0, nameLength - 1)],
+                Points = numreqs * robotnumber + 1
+            };
+            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextScore));
+            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
+
+            nextScore = new Score
+            {
+                Name = names[rnd.Next(0, nameLength - 1)],
+                Points = numreqs * robotnumber + 1
+            };
+
+            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextScore));
+            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
+
+
+            /* 
+            //TODO: refactor
             for (int i = 0; i < numreqs; i++)
-                await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i));
+            {
+                nextRandom = rnd.Next(0, 1);
+                if (nextRandom == 0)
+                {
+                    if (reads > 0)
+                    {
+                        // do read
+                        await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i));
+                        reads--;
+                        executed = true;
+                    }
+                    else
+                    {
+                        if (writes > 0)
+                        {
+                            //do write    
+                            nextScore = new Score { Name = names[rnd.Next(0, nameLength - 1)], 
+                                                    Points = numreqs * robotnumber + 1 
+                                                  };
+                            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i, nextScore));
+                            writes--;
+                            executed = true;
+                        }
+                    }
+                }
+                else
+                {
+                    if (writes > 0)
+                    {
+                        //do write 
+                        nextScore = new Score
+                        {
+                            Name = names[rnd.Next(0, nameLength - 1)],
+                            Points = numreqs * robotnumber + 1
+                        };
+                        await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i, nextScore));
+                        writes--;
+                        executed = true;
+                    }
+                    else
+                    {
+                        if (reads > 0)
+                        {
+                            // do read
+                            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i));
+                            reads--;
+                            executed = true;
+                        }
+                    }
+                }
 
+                if (!executed)
+                {
+                    // all reads and writes have been execute, reinitialise
+                    reads = percentread;
+                    writes = percentwrite;
+                }
+            }
+                
+            */
             return parameters;
         }
 
 
-        /// <summary>
-        /// Utility method to print out current post list
-        /// </summary>
-        /// <param name="s"></param>
-        public static string PrintPosts(Score[] pScores)
-        {
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < pScores.Length; i++)
-            {
-                builder.Append(pScores[i]);
-                builder.Append("/");
-            }
-            return builder.ToString();
-        }
+   
 
     }
 
@@ -141,7 +222,7 @@ namespace Leaderboard.Benchmark
                 }
                 else
                 {
-                 return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "score=" + score.ToString();
+                 return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString();
                 }
             }
         }
@@ -155,12 +236,17 @@ namespace Leaderboard.Benchmark
         public async Task<string> ProcessRequestOnServer()
         {
             Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
+
             var leaderboard = LeaderBoardGrainFactory.GetGrain(0);
-  
-            if (requestType == LeaderboardRequestT.GET)
+            string posts;
+            Score[] scores;
+
+           if (requestType == LeaderboardRequestT.GET)
             {
-                Score[] scores = await leaderboard.GetTopTen();
-                string posts = Leaderboard.Benchmark.NoReplicationLeaderboard.PrintPosts(scores);
+                Console.Write("Get \n");
+                // string posts = leaderboard.SayHello("Hello").Result;
+                scores =  leaderboard.GetTopTen("hello").Result;
+                 posts = Leaderboard.Interfaces.Score.PrintScores(scores);
                 Console.Write("{0}\n", posts);
                 return posts;
             }
@@ -169,16 +255,14 @@ namespace Leaderboard.Benchmark
                 Console.Write("Post{0} \n ", score.ToString());
                 await leaderboard.Post(score);
                 return "ok";
-            } 
+            }  
 
-            return "todo";
          
         }
 
         public async Task ProcessResponseOnClient(string response)
         {
-            Console.Write("{0} {1} \n ", response, numReq );
-            Util.Assert(response == "ok # " + numReq, "incorrect response");
+            Console.Write("{0} Req # {1} \n ", response, numReq );
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)
@@ -239,7 +323,7 @@ namespace Leaderboard.Benchmark
                 }
                 else
                 {
-                    return "WS leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "score=" + score.ToString();
+                    return "WS leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString();
                 }
             }
         }

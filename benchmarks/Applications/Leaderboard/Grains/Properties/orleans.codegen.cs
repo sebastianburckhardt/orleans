@@ -18,12 +18,78 @@
 
 namespace Leaderboard.Grains
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
     using Orleans.CodeGeneration;
     using Orleans;
-    using System;
+    using ReplicatedGrains;
     using System.Runtime.InteropServices;
     using System.Runtime.Serialization;
     
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [SerializableAttribute()]
+    [global::Orleans.CodeGeneration.GrainStateAttribute("Leaderboard.Grains.Leaderboard.Grains.LeaderBoardGrain")]
+    public class LeaderBoardGrainState : global::Orleans.CodeGeneration.GrainState, IGlobalState
+    {
+        
+
+            public Byte[] @Raw { get; set; }
+
+            public override void SetAll(System.Collections.Generic.IDictionary<string,object> values)
+            {   
+                object value;
+                if (values == null) { InitStateFields(); return; }
+                if (values.TryGetValue("Raw", out value)) @Raw = (Byte[]) value;
+            }
+
+            public override System.String ToString()
+            {
+                return System.String.Format("LeaderBoardGrainState( Raw={0} )", @Raw);
+            }
+        
+        public LeaderBoardGrainState() : 
+                base("Leaderboard.Grains.LeaderBoardGrain")
+        {
+            this.InitStateFields();
+        }
+        
+        public override System.Collections.Generic.IDictionary<string, object> AsDictionary()
+        {
+            System.Collections.Generic.Dictionary<string, object> result = new System.Collections.Generic.Dictionary<string, object>();
+            result["Raw"] = this.Raw;
+            return result;
+        }
+        
+        private void InitStateFields()
+        {
+            this.Raw = default(Byte[]);
+        }
+        
+        [global::Orleans.CodeGeneration.CopierMethodAttribute()]
+        public static object _Copier(object original)
+        {
+            LeaderBoardGrainState input = ((LeaderBoardGrainState)(original));
+            return input.DeepCopy();
+        }
+        
+        [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
+        public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            LeaderBoardGrainState input = ((LeaderBoardGrainState)(original));
+            input.SerializeTo(stream);
+        }
+        
+        [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
+        public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            LeaderBoardGrainState result = new LeaderBoardGrainState();
+            result.DeserializeFrom(stream);
+            return result;
+        }
+    }
 }
 #pragma warning restore 162
 #pragma warning restore 219

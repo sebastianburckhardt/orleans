@@ -140,10 +140,10 @@ namespace Leaderboard.Interfaces
                 return base.InvokeMethodAsync<object>(-763693036, new object[] {@score} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ILeaderBoardGrain.GetTopTen()
+            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ILeaderBoardGrain.GetTopTen(string @reqId)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(-796999213, null );
+                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1207813380, new object[] {@reqId} );
             }
         }
     }
@@ -174,8 +174,8 @@ namespace Leaderboard.Interfaces
                         {
                             case -763693036: 
                                 return ((ILeaderBoardGrain)grain).Post((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
-                            case -796999213: 
-                                return ((ILeaderBoardGrain)grain).GetTopTen().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            case 1207813380: 
+                                return ((ILeaderBoardGrain)grain).GetTopTen((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
                             default: 
                             throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
                         }
@@ -202,7 +202,7 @@ namespace Leaderboard.Interfaces
                     {
                         case -763693036:
                             return "Post";
-                    case -796999213:
+                    case 1207813380:
                             return "GetTopTen";
                     
                         default: 
@@ -228,7 +228,12 @@ namespace Leaderboard.Interfaces
         
         public static object DeepCopier(object original)
         {
-            return original;
+            Leaderboard.Interfaces.Score input = ((Leaderboard.Interfaces.Score)(original));
+            Leaderboard.Interfaces.Score result = new Leaderboard.Interfaces.Score();
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            result.Name = input.Name;
+            result.Points = input.Points;
+            return result;
         }
         
         public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
@@ -240,7 +245,7 @@ namespace Leaderboard.Interfaces
         
         public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
         {
-            Leaderboard.Interfaces.Score result = default(Leaderboard.Interfaces.Score);
+            Leaderboard.Interfaces.Score result = new Leaderboard.Interfaces.Score();
             result.Name = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
             result.Points = ((long)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(long), stream)));
             return result;

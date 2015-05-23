@@ -67,6 +67,7 @@ namespace Leaderboard.Benchmark
 
             if (verb == "GET" && string.Join("/", urlpath) == "leaderboard")
             {
+                Console.Write("{0}", arguments);
                 LeaderboardRequestT requestType = (LeaderboardRequestT)int.Parse(arguments["reqtype"]);
                 int numReq = int.Parse(arguments["numreq"]);
                 HttpRequest request = null;

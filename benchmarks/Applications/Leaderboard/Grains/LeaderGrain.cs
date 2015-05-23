@@ -16,26 +16,30 @@ namespace Leaderboard.Grains
     public class LeaderGrain : Orleans.Grain, Leaderboard.Interfaces.ILeaderBoardGrain
 
     {
-       
-         List<Score> topTenScores_ { get; set; }
+
+        private List<Score> topTenScores_ = new List<Score>();
 
 
         #region Queries
 
-        public async Task<Score[]> GetTopTen()
+       // public Task<Score[]> GetTopTen()
+        public Task<Score[]> GetTopTen(string post)
         {
-           return (topTenScores_.ToArray());
+           return Task.FromResult(topTenScores_.ToArray());
+
         }
 
         #endregion
 
-        #region Updates
+       #region Updates
 
-        public async Task Post(Leaderboard.Interfaces.Score score)
+        public Task Post(Leaderboard.Interfaces.Score score)
         {
             topTenScores_.Add(score);
             topTenScores_ = topTenScores_.OrderBy((Score s) => s.Points).Take(10).ToList();
+            return TaskDone.Done;
         }
+
 
     #endregion
           

@@ -25,6 +25,7 @@ namespace ReplicatedGrains
     {
         #region Interface
 
+        
         /// Returns the current global state of this grain. May require global coordination.
         protected async Task<StateObject> GetGlobalStateAsync()
         {
@@ -39,8 +40,16 @@ namespace ReplicatedGrains
         /// <returns>the grain state object</returns>
         protected async Task<StateObject> GetLocalStateAsync()  
         {
-            await RefreshLocalStateAsync();
-            return LocalState;
+            if (!isSynchronous)
+            {
+                await RefreshLocalStateAsync();
+                return LocalState;
+            }
+            else
+            {
+                // When isSynchronous flag set, actually call GetGlobalStateAsync
+                return GetGlobalStateAsync().Result;
+            }
         }
 
         /// <summary>
@@ -48,6 +57,20 @@ namespace ReplicatedGrains
         /// The default setting is long.MaxValue (no staleness bound).
         /// </summary>
         protected long StalenessBound { get; set; }
+
+        private bool isSynchronous = false;
+
+        /// <summary>
+        /// UTILITY method only. If synchronous flag is set,
+        /// all operations will be "synchronous",
+        /// ak: GetLocalState will call GetGlobalState
+        ///     updateLocally will call UpdateGlobally
+        /// </summary>
+        /// <param name="pSynchronous"></param>
+        public void setSynchronous(bool pSynchronous)
+        {
+            this.isSynchronous = pSynchronous;
+        }
 
         private async Task RefreshLocalStateAsync(bool force = false)
         {
@@ -68,29 +91,36 @@ namespace ReplicatedGrains
         /// </summary>
         public async Task UpdateLocallyAsync(IAppliesTo<StateObject> update, bool save = true)
         {
-            Exception ee = null;
+            if (!isSynchronous)
+            {
+               Exception ee = null;
 
-            try
-            {
-                update.Update(LocalState);
-            }
-            catch (Exception e)
-            {
-                ee = e;
-            }
+               try
+               {
+                   update.Update(LocalState);
+               }
+               catch (Exception e)
+               {
+                   ee = e;
+               }
 
-            if (ee != null)
-            {
+              if (ee != null)
+              {
                 // need to reload local state since it may have been corrupted
                 await RefreshLocalStateAsync(true);
                 throw ee;
+              }
+
+              pending.Add(update);
+              worker.Notify();
+
+              if (save)
+                 await SaveLocallyAsync();
+
+            } else {
+                // Actually update globally if isSynchronous flag is set
+                 await UpdateGloballyAsync(update);
             }
-
-            pending.Add(update);
-            worker.Notify();
-
-            if (save)
-                await SaveLocallyAsync();
         }
       
         private Task SaveLocallyAsync()
