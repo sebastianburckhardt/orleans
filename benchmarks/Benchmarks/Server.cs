@@ -89,7 +89,7 @@ namespace Benchmarks
                     var testname = arguments["testname"];
                     arguments.Remove("testname");
 
-                    tracer(string.Format("-> {0} {1}", verb, request.RawUrl));
+                    tracer(string.Format("---> {0} {1}", verb, request.RawUrl));
 
                     var handler = benchmarks.ParseRequest(verb, urlpath, arguments, body);
                     System.Console.Write("Body {0} ", body);

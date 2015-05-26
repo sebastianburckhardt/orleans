@@ -13,7 +13,7 @@ namespace Leaderboard.Grains
     /// An implementation of a non-persistent, non-sequenced leaderboard grain
     /// To be used for reference performance
     /// </summary>
-    public class LeaderGrain : Orleans.Grain, Leaderboard.Interfaces.ILeaderBoardGrain
+    public class LeaderGrain : Orleans.Grain, Leaderboard.Interfaces.ILeaderboardGrain
 
     {
 

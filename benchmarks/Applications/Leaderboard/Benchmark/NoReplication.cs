@@ -19,42 +19,49 @@ namespace Leaderboard.Benchmark
         // scenario parameters
         // read operations = get top 10
         // write operations = post 
-        public NoReplicationLeaderboard(int numrobots, int numreqs, int percentread)
+        public NoReplicationLeaderboard(int pNumRobots, int pNumReqs, int pPercentRead)
         {
-            this.numrobots = numrobots;
-            this.numreqs = numreqs;
-            this.percentread = percentread;
-            this.percentwrite = 100 - percentread;
+            this.numRobots = pNumRobots;
+            this.numReqs = pNumReqs;
+            this.percentRead = pPercentRead;
+            this.percentWrite = 100 - percentRead;
         }
 
-        private int numrobots;
-        private int numreqs;
-        private int percentread;
-        private int percentwrite;
+        private int numRobots;
+        private int numReqs;
+        private int percentRead;
+        private int percentWrite;
 
-        public string Name { get { return string.Format("robots{0}x{1}x{2}", numrobots, numreqs, percentread); } }
+        enum OperationType
+        {
+            READ_SYNC,
+            READ_ASYNC,
+            WRITE_SYNC,
+            WRITE_ASYNC
+        };
 
-        public int NumRobots { get { return numrobots; } }
+        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}", numRobots, numReqs, percentRead); } }
 
-        public int PercentRead { get { return percentread; } }
+        public int NumRobots { get { return numRobots; } }
 
-        public int PercentWrite { get { return percentwrite; } }
+        public int PercentRead { get { return percentRead; } }
+
+        public int PercentWrite { get { return percentWrite; } }
         // 
         public async Task<string> ConductorScript(IConductorContext context)
         {
-            var robotrequests = new Task<string>[numrobots];
+            var robotrequests = new Task<string>[numRobots];
 
                 // start each robot
-                for (int i = 0; i < numrobots; i++)
-                    robotrequests[i] = context.RunRobot(i, numreqs.ToString()+"-"+percentread);
+                for (int i = 0; i < numRobots; i++)
+                    robotrequests[i] = context.RunRobot(i, numReqs.ToString()+"-"+percentRead);
 
                 // wait for all robots
                 await Task.WhenAll(robotrequests);
 
                 // check robot responses
-                for (int i = 0; i < numrobots; i++) {
+                for (int i = 0; i < numRobots; i++) {
                     Console.Write("Finished: {0} \n", robotrequests[i].Result );
-  //                  Util.Assert(robotrequests[i].Result == "ok", "Incorrect reply");
                 }
          
             return "ok";
@@ -65,24 +72,33 @@ namespace Leaderboard.Benchmark
         {
             Console.Write("PARAMETERS {0} \n", parameters);
      
-            int percentread = Convert.ToInt32(parameters.Split('-')[1]);
-            int percentwrite = 100 - percentread;
             int reads;
             int writes;
             Random rnd;
             string[] names;
             int nameLength;
             int nextRandom;
-            bool executed;
+            OperationType nextOp;
             Score nextScore;
+            Boolean executed;
+
+            /* Debug */
+            int totReads;
+            int totWrites;
 
             rnd = new Random();
             names = new string[] { "Jack","John","Jim","Ted","Tid","Tad"};
             nameLength = names.Length;
-            reads = percentread;
-            writes = percentwrite;
+            reads = percentRead;
+            writes = percentWrite;
             executed = false;
+            nextOp = OperationType.READ_SYNC;
 
+            /* Debug */
+            totReads = 0;
+            totWrites = 0; 
+           
+           /*
             nextScore = new Score
             {
                 Name = names[rnd.Next(0, nameLength - 1)],
@@ -99,71 +115,78 @@ namespace Leaderboard.Benchmark
 
             await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextScore));
             await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
-
-
-            /* 
+             */
+           
             //TODO: refactor
-            for (int i = 0; i < numreqs; i++)
+            for (int i = 0; i < numReqs; i++)
             {
-                nextRandom = rnd.Next(0, 1);
-                if (nextRandom == 0)
+                while (!executed)
                 {
-                    if (reads > 0)
+                    nextRandom = rnd.Next(0, 1);
+                    if (nextRandom == 0)
                     {
-                        // do read
-                        await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i));
-                        reads--;
-                        executed = true;
-                    }
-                    else
-                    {
-                        if (writes > 0)
+                        if (reads > 0)
                         {
-                            //do write    
-                            nextScore = new Score { Name = names[rnd.Next(0, nameLength - 1)], 
-                                                    Points = numreqs * robotnumber + 1 
-                                                  };
-                            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i, nextScore));
+                            nextOp = OperationType.READ_SYNC;
+                            reads--;
+                            executed = true;
+                        }
+                        else if (writes > 0)
+                        {
+                            nextOp = OperationType.WRITE_SYNC;
                             writes--;
                             executed = true;
                         }
                     }
-                }
-                else
-                {
-                    if (writes > 0)
+                    else if (writes > 0)
                     {
-                        //do write 
-                        nextScore = new Score
-                        {
-                            Name = names[rnd.Next(0, nameLength - 1)],
-                            Points = numreqs * robotnumber + 1
-                        };
-                        await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i, nextScore));
+                        nextOp = OperationType.WRITE_SYNC;
                         writes--;
                         executed = true;
                     }
-                    else
+                    else if (reads > 0)
                     {
-                        if (reads > 0)
-                        {
-                            // do read
-                            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber + i));
-                            reads--;
-                            executed = true;
-                        }
+                        nextOp = OperationType.READ_SYNC;
+                        reads--;
+                        executed = true;
                     }
-                }
 
-                if (!executed)
-                {
-                    // all reads and writes have been execute, reinitialise
-                    reads = percentread;
-                    writes = percentwrite;
-                }
-            }
-                
-            */
+                    if (!executed)
+                    {
+                        // all reads and writes have been executed, reinitialise
+                        reads = percentRead;
+                        writes = percentWrite;
+                    }
+
+                } // !executed 
+
+                switch (nextOp) {
+                    case OperationType.READ_SYNC:
+                        await context.ServiceRequest(new HttpRequestLeaderboard(numReqs * robotnumber + i));
+                        totReads++;
+                        break;
+                    case OperationType.WRITE_SYNC:
+                          nextScore = new Score
+                        {
+                            Name = names[rnd.Next(0, nameLength - 1)],
+                            Points = numReqs * robotnumber + i
+                        };
+                        await context.ServiceRequest(new HttpRequestLeaderboard(numReqs * robotnumber + i, nextScore));
+                        totWrites++;
+                        break;
+                    case OperationType.READ_ASYNC:
+                        throw new NotImplementedException();
+                    case OperationType.WRITE_ASYNC:
+                        throw new NotImplementedException();
+                } // end switch
+                executed = false;
+
+            } // end for loop
+
+            Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads "+ totReads);
+            Util.Assert(totWrites == (percentWrite * numReqs / 100), "Incorrect Number Writes " + totWrites);
+
+            Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
             return parameters;
         }
 
@@ -172,23 +195,17 @@ namespace Leaderboard.Benchmark
 
     }
 
-    enum LeaderboardRequestT
-    {
-        GET,
-        POST
-    }
 
-
-    public class HttpRequest : IHttpRequest
+    public class HttpRequestLeaderboard : IHttpRequest
     {
 
           /// <summary>
         /// Constructor for GetTop10 calls
         /// </summary>
         /// <param name="pNumReq"></param>
-        public HttpRequest(int pNumReq)
+        public HttpRequestLeaderboard(int pNumReq)
         {
-            this.requestType = LeaderboardRequestT.GET;
+            this.requestType = LeaderboardRequestT.GET_SYNC;
             this.numReq = pNumReq;
         }
 
@@ -197,9 +214,9 @@ namespace Leaderboard.Benchmark
         /// </summary>
         /// <param name="pScore"></param>
         /// <param name="pNumReq"></param>
-        public HttpRequest(int pNumReq,Score pScore)
+        public HttpRequestLeaderboard(int pNumReq,Score pScore)
         {
-            this.requestType = LeaderboardRequestT.POST;
+            this.requestType = LeaderboardRequestT.POST_SYNC;
             this.score = pScore;
             this.numReq = pNumReq;
         }
@@ -216,7 +233,7 @@ namespace Leaderboard.Benchmark
         {
             get
             {
-                if (requestType == LeaderboardRequestT.GET)
+                if (requestType == LeaderboardRequestT.GET_SYNC)
                 {
                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
                 }
@@ -237,21 +254,21 @@ namespace Leaderboard.Benchmark
         {
             Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
 
-            var leaderboard = LeaderBoardGrainFactory.GetGrain(0);
+            var leaderboard = LeaderboardGrainFactory.GetGrain(0);
             string posts;
             Score[] scores;
 
-           if (requestType == LeaderboardRequestT.GET)
+           if (requestType == LeaderboardRequestT.GET_SYNC)
             {
                 Console.Write("Get \n");
-                // string posts = leaderboard.SayHello("Hello").Result;
                 scores =  leaderboard.GetTopTen("hello").Result;
-                 posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                posts = Leaderboard.Interfaces.Score.PrintScores(scores);
                 Console.Write("{0}\n", posts);
                 return posts;
             }
             else
             {
+                Util.Assert(requestType == LeaderboardRequestT.POST_SYNC);
                 Console.Write("Post{0} \n ", score.ToString());
                 await leaderboard.Post(score);
                 return "ok";
@@ -272,6 +289,7 @@ namespace Leaderboard.Benchmark
     }
 
 
+    /*
 
 /// <summary>
 /// Socket Request class for the Leaderboard benchmark
@@ -382,7 +400,7 @@ namespace Leaderboard.Benchmark
         {
             Util.Fail("connection closed by server");
         }
-    }
+    } */
 }
 
 

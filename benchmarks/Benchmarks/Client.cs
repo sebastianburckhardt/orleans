@@ -86,7 +86,15 @@ namespace Benchmarks
                 LatencyDistribution distribution;
                 if (!Stats.TryGetValue(key, out distribution))
                     distribution = Stats[key] = new LatencyDistribution();
-                distribution.AddDataPoint(sw.ElapsedMilliseconds);
+                try
+                {
+                    distribution.AddDataPoint(sw.ElapsedMilliseconds);
+                }
+                catch (Exception e)
+                {
+                    System.Console.Write("Latency should not be negative");
+                    //TODO HANDLE BETTER
+                }
             }
 
 

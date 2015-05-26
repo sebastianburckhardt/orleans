@@ -34,56 +34,56 @@ namespace Leaderboard.Interfaces
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
-    public class LeaderBoardGrainFactory
+    public class SequencedLeaderboardGrainFactory
     {
         
 
-                        public static Leaderboard.Interfaces.ILeaderBoardGrain GetGrain(long primaryKey)
+                        public static Leaderboard.Interfaces.ISequencedLeaderboardGrain GetGrain(long primaryKey)
                         {
-                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderBoardGrain), 1980638826, primaryKey));
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ISequencedLeaderboardGrain), -1120216507, primaryKey));
                         }
 
-                        public static Leaderboard.Interfaces.ILeaderBoardGrain GetGrain(long primaryKey, string grainClassNamePrefix)
+                        public static Leaderboard.Interfaces.ISequencedLeaderboardGrain GetGrain(long primaryKey, string grainClassNamePrefix)
                         {
-                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderBoardGrain), 1980638826, primaryKey, grainClassNamePrefix));
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ISequencedLeaderboardGrain), -1120216507, primaryKey, grainClassNamePrefix));
                         }
 
-                        public static Leaderboard.Interfaces.ILeaderBoardGrain GetGrain(System.Guid primaryKey)
+                        public static Leaderboard.Interfaces.ISequencedLeaderboardGrain GetGrain(System.Guid primaryKey)
                         {
-                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderBoardGrain), 1980638826, primaryKey));
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ISequencedLeaderboardGrain), -1120216507, primaryKey));
                         }
 
-                        public static Leaderboard.Interfaces.ILeaderBoardGrain GetGrain(System.Guid primaryKey, string grainClassNamePrefix)
+                        public static Leaderboard.Interfaces.ISequencedLeaderboardGrain GetGrain(System.Guid primaryKey, string grainClassNamePrefix)
                         {
-                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderBoardGrain), 1980638826, primaryKey, grainClassNamePrefix));
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ISequencedLeaderboardGrain), -1120216507, primaryKey, grainClassNamePrefix));
                         }
 
-            public static Leaderboard.Interfaces.ILeaderBoardGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            public static Leaderboard.Interfaces.ISequencedLeaderboardGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
             {
                 
-                return LeaderBoardGrainReference.Cast(grainRef);
+                return SequencedLeaderboardGrainReference.Cast(grainRef);
             }
         
         [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
         [System.SerializableAttribute()]
-        [global::Orleans.CodeGeneration.GrainReferenceAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderBoardGrain")]
-        internal class LeaderBoardGrainReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, Leaderboard.Interfaces.ILeaderBoardGrain
+        [global::Orleans.CodeGeneration.GrainReferenceAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ISequencedLeaderboardGrain")]
+        internal class SequencedLeaderboardGrainReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, Leaderboard.Interfaces.ISequencedLeaderboardGrain
         {
             
 
-            public static Leaderboard.Interfaces.ILeaderBoardGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            public static Leaderboard.Interfaces.ISequencedLeaderboardGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
             {
                 
-                return (Leaderboard.Interfaces.ILeaderBoardGrain) global::Orleans.Runtime.GrainReference.CastInternal(typeof(Leaderboard.Interfaces.ILeaderBoardGrain), (global::Orleans.Runtime.GrainReference gr) => { return new LeaderBoardGrainReference(gr);}, grainRef, 1980638826);
+                return (Leaderboard.Interfaces.ISequencedLeaderboardGrain) global::Orleans.Runtime.GrainReference.CastInternal(typeof(Leaderboard.Interfaces.ISequencedLeaderboardGrain), (global::Orleans.Runtime.GrainReference gr) => { return new SequencedLeaderboardGrainReference(gr);}, grainRef, -1120216507);
             }
             
-            protected internal LeaderBoardGrainReference(global::Orleans.Runtime.GrainReference reference) : 
+            protected internal SequencedLeaderboardGrainReference(global::Orleans.Runtime.GrainReference reference) : 
                     base(reference)
             {
             }
             
-            protected internal LeaderBoardGrainReference(SerializationInfo info, StreamingContext context) : 
+            protected internal SequencedLeaderboardGrainReference(SerializationInfo info, StreamingContext context) : 
                     base(info, context)
             {
             }
@@ -92,7 +92,7 @@ namespace Leaderboard.Interfaces
             {
                 get
                 {
-                    return 1980638826;
+                    return -1120216507;
                 }
             }
             
@@ -100,28 +100,28 @@ namespace Leaderboard.Interfaces
             {
                 get
                 {
-                    return "Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderBoardGrain";
+                    return "Leaderboard.Interfaces.Leaderboard.Interfaces.ISequencedLeaderboardGrain";
                 }
             }
             
             [global::Orleans.CodeGeneration.CopierMethodAttribute()]
             public static object _Copier(object original)
             {
-                LeaderBoardGrainReference input = ((LeaderBoardGrainReference)(original));
-                return ((LeaderBoardGrainReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
+                SequencedLeaderboardGrainReference input = ((SequencedLeaderboardGrainReference)(original));
+                return ((SequencedLeaderboardGrainReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
             }
             
             [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
             public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
             {
-                LeaderBoardGrainReference input = ((LeaderBoardGrainReference)(original));
+                SequencedLeaderboardGrainReference input = ((SequencedLeaderboardGrainReference)(original));
                 global::Orleans.Runtime.GrainReference.SerializeGrainReference(input, stream, expected);
             }
             
             [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
             public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
             {
-                return LeaderBoardGrainReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
+                return SequencedLeaderboardGrainReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
             }
             
             public override bool IsCompatible(int interfaceId)
@@ -131,34 +131,46 @@ namespace Leaderboard.Interfaces
             
             protected override string GetMethodName(int interfaceId, int methodId)
             {
-                return LeaderBoardGrainMethodInvoker.GetMethodName(interfaceId, methodId);
+                return SequencedLeaderboardGrainMethodInvoker.GetMethodName(interfaceId, methodId);
             }
             
-            System.Threading.Tasks.Task Leaderboard.Interfaces.ILeaderBoardGrain.Post(Leaderboard.Interfaces.Score @score)
+            System.Threading.Tasks.Task Leaderboard.Interfaces.ISequencedLeaderboardGrain.PostNow(Leaderboard.Interfaces.Score @score)
             {
 
-                return base.InvokeMethodAsync<object>(-763693036, new object[] {@score} );
+                return base.InvokeMethodAsync<object>(-918231056, new object[] {@score} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ILeaderBoardGrain.GetTopTen(string @reqId)
+            System.Threading.Tasks.Task Leaderboard.Interfaces.ISequencedLeaderboardGrain.PostLater(Leaderboard.Interfaces.Score @score)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1207813380, new object[] {@reqId} );
+                return base.InvokeMethodAsync<object>(1325047215, new object[] {@score} );
+            }
+            
+            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ISequencedLeaderboardGrain.GetExactTopTen(string @reqId)
+            {
+
+                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(-1258319511, new object[] {@reqId} );
+            }
+            
+            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ISequencedLeaderboardGrain.GetApproxTopTen(string @reqId)
+            {
+
+                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1502759998, new object[] {@reqId} );
             }
         }
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
-    [global::Orleans.CodeGeneration.MethodInvokerAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderBoardGrain", 1980638826)]
-    internal class LeaderBoardGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
+    [global::Orleans.CodeGeneration.MethodInvokerAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ISequencedLeaderboardGrain", -1120216507)]
+    internal class SequencedLeaderboardGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
     {
         
         int global::Orleans.CodeGeneration.IGrainMethodInvoker.InterfaceId
         {
             get
             {
-                return 1980638826;
+                return -1120216507;
             }
         }
         
@@ -169,13 +181,17 @@ namespace Leaderboard.Interfaces
             {                    if (grain == null) throw new System.ArgumentNullException("grain");
                 switch (interfaceId)
                 {
-                    case 1980638826:  // ILeaderBoardGrain
+                    case -1120216507:  // ISequencedLeaderboardGrain
                         switch (methodId)
                         {
-                            case -763693036: 
-                                return ((ILeaderBoardGrain)grain).Post((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
-                            case 1207813380: 
-                                return ((ILeaderBoardGrain)grain).GetTopTen((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            case -918231056: 
+                                return ((ISequencedLeaderboardGrain)grain).PostNow((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case 1325047215: 
+                                return ((ISequencedLeaderboardGrain)grain).PostLater((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case -1258319511: 
+                                return ((ISequencedLeaderboardGrain)grain).GetExactTopTen((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            case 1502759998: 
+                                return ((ISequencedLeaderboardGrain)grain).GetApproxTopTen((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
                             default: 
                             throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
                         }
@@ -197,7 +213,194 @@ namespace Leaderboard.Interfaces
             switch (interfaceId)
             {
                 
-                case 1980638826:  // ILeaderBoardGrain
+                case -1120216507:  // ISequencedLeaderboardGrain
+                    switch (methodId)
+                    {
+                        case -918231056:
+                            return "PostNow";
+                    case 1325047215:
+                            return "PostLater";
+                    case -1258319511:
+                            return "GetExactTopTen";
+                    case 1502759998:
+                            return "GetApproxTopTen";
+                    
+                        default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                    }
+
+                default:
+                    throw new System.InvalidCastException("interfaceId="+interfaceId);
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    public class LeaderboardGrainFactory
+    {
+        
+
+                        public static Leaderboard.Interfaces.ILeaderboardGrain GetGrain(long primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderboardGrain), 553247506, primaryKey));
+                        }
+
+                        public static Leaderboard.Interfaces.ILeaderboardGrain GetGrain(long primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderboardGrain), 553247506, primaryKey, grainClassNamePrefix));
+                        }
+
+                        public static Leaderboard.Interfaces.ILeaderboardGrain GetGrain(System.Guid primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderboardGrain), 553247506, primaryKey));
+                        }
+
+                        public static Leaderboard.Interfaces.ILeaderboardGrain GetGrain(System.Guid primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Leaderboard.Interfaces.ILeaderboardGrain), 553247506, primaryKey, grainClassNamePrefix));
+                        }
+
+            public static Leaderboard.Interfaces.ILeaderboardGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return LeaderboardGrainReference.Cast(grainRef);
+            }
+        
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+        [System.SerializableAttribute()]
+        [global::Orleans.CodeGeneration.GrainReferenceAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderboardGrain")]
+        internal class LeaderboardGrainReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, Leaderboard.Interfaces.ILeaderboardGrain
+        {
+            
+
+            public static Leaderboard.Interfaces.ILeaderboardGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return (Leaderboard.Interfaces.ILeaderboardGrain) global::Orleans.Runtime.GrainReference.CastInternal(typeof(Leaderboard.Interfaces.ILeaderboardGrain), (global::Orleans.Runtime.GrainReference gr) => { return new LeaderboardGrainReference(gr);}, grainRef, 553247506);
+            }
+            
+            protected internal LeaderboardGrainReference(global::Orleans.Runtime.GrainReference reference) : 
+                    base(reference)
+            {
+            }
+            
+            protected internal LeaderboardGrainReference(SerializationInfo info, StreamingContext context) : 
+                    base(info, context)
+            {
+            }
+            
+            protected override int InterfaceId
+            {
+                get
+                {
+                    return 553247506;
+                }
+            }
+            
+            public override string InterfaceName
+            {
+                get
+                {
+                    return "Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderboardGrain";
+                }
+            }
+            
+            [global::Orleans.CodeGeneration.CopierMethodAttribute()]
+            public static object _Copier(object original)
+            {
+                LeaderboardGrainReference input = ((LeaderboardGrainReference)(original));
+                return ((LeaderboardGrainReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
+            }
+            
+            [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
+            public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+            {
+                LeaderboardGrainReference input = ((LeaderboardGrainReference)(original));
+                global::Orleans.Runtime.GrainReference.SerializeGrainReference(input, stream, expected);
+            }
+            
+            [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
+            public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+            {
+                return LeaderboardGrainReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
+            }
+            
+            public override bool IsCompatible(int interfaceId)
+            {
+                return (interfaceId == this.InterfaceId);
+            }
+            
+            protected override string GetMethodName(int interfaceId, int methodId)
+            {
+                return LeaderboardGrainMethodInvoker.GetMethodName(interfaceId, methodId);
+            }
+            
+            System.Threading.Tasks.Task Leaderboard.Interfaces.ILeaderboardGrain.Post(Leaderboard.Interfaces.Score @score)
+            {
+
+                return base.InvokeMethodAsync<object>(-763693036, new object[] {@score} );
+            }
+            
+            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ILeaderboardGrain.GetTopTen(string @reqId)
+            {
+
+                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1207813380, new object[] {@reqId} );
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.MethodInvokerAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderboardGrain", 553247506)]
+    internal class LeaderboardGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
+    {
+        
+        int global::Orleans.CodeGeneration.IGrainMethodInvoker.InterfaceId
+        {
+            get
+            {
+                return 553247506;
+            }
+        }
+        
+        global::System.Threading.Tasks.Task<object> global::Orleans.CodeGeneration.IGrainMethodInvoker.Invoke(global::Orleans.Runtime.IAddressable grain, int interfaceId, int methodId, object[] arguments)
+        {
+
+            try
+            {                    if (grain == null) throw new System.ArgumentNullException("grain");
+                switch (interfaceId)
+                {
+                    case 553247506:  // ILeaderboardGrain
+                        switch (methodId)
+                        {
+                            case -763693036: 
+                                return ((ILeaderboardGrain)grain).Post((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case 1207813380: 
+                                return ((ILeaderboardGrain)grain).GetTopTen((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                        }
+                    default:
+                        throw new System.InvalidCastException("interfaceId="+interfaceId);
+                }
+            }
+            catch(Exception ex)
+            {
+                var t = new System.Threading.Tasks.TaskCompletionSource<object>();
+                t.SetException(ex);
+                return t.Task;
+            }
+        }
+        
+        public static string GetMethodName(int interfaceId, int methodId)
+        {
+
+            switch (interfaceId)
+            {
+                
+                case 553247506:  // ILeaderboardGrain
                     switch (methodId)
                     {
                         case -763693036:

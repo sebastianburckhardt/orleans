@@ -50,4 +50,19 @@ namespace Leaderboard.Interfaces
 
     }
 
+    /// <summary>
+    /// Request types:
+    /// 1) GetTop10 (GET)
+    /// 2) PostScore (POST)
+    /// </summary>
+    public enum LeaderboardRequestT
+    {
+        GET_SYNC,
+        POST_SYNC,
+        GET_ASYNC,
+        POST_ASYNC
+    }
+
+
+
 }

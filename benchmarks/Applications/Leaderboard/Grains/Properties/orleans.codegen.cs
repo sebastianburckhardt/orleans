@@ -31,8 +31,8 @@ namespace Leaderboard.Grains
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [SerializableAttribute()]
-    [global::Orleans.CodeGeneration.GrainStateAttribute("Leaderboard.Grains.Leaderboard.Grains.LeaderBoardGrain")]
-    public class LeaderBoardGrainState : global::Orleans.CodeGeneration.GrainState, IGlobalState
+    [global::Orleans.CodeGeneration.GrainStateAttribute("Leaderboard.Grains.Leaderboard.Grains.SequencedLeaderboardGrain")]
+    public class SequencedLeaderboardGrainState : global::Orleans.CodeGeneration.GrainState, IGlobalState
     {
         
 
@@ -47,11 +47,11 @@ namespace Leaderboard.Grains
 
             public override System.String ToString()
             {
-                return System.String.Format("LeaderBoardGrainState( Raw={0} )", @Raw);
+                return System.String.Format("SequencedLeaderboardGrainState( Raw={0} )", @Raw);
             }
         
-        public LeaderBoardGrainState() : 
-                base("Leaderboard.Grains.LeaderBoardGrain")
+        public SequencedLeaderboardGrainState() : 
+                base("Leaderboard.Grains.SequencedLeaderboardGrain")
         {
             this.InitStateFields();
         }
@@ -71,21 +71,21 @@ namespace Leaderboard.Grains
         [global::Orleans.CodeGeneration.CopierMethodAttribute()]
         public static object _Copier(object original)
         {
-            LeaderBoardGrainState input = ((LeaderBoardGrainState)(original));
+            SequencedLeaderboardGrainState input = ((SequencedLeaderboardGrainState)(original));
             return input.DeepCopy();
         }
         
         [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
         public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
         {
-            LeaderBoardGrainState input = ((LeaderBoardGrainState)(original));
+            SequencedLeaderboardGrainState input = ((SequencedLeaderboardGrainState)(original));
             input.SerializeTo(stream);
         }
         
         [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
         public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
         {
-            LeaderBoardGrainState result = new LeaderBoardGrainState();
+            SequencedLeaderboardGrainState result = new SequencedLeaderboardGrainState();
             result.DeserializeFrom(stream);
             return result;
         }

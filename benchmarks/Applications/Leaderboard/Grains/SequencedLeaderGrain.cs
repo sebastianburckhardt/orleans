@@ -16,7 +16,7 @@ namespace Leaderboard.Grains
     // all operations are synchronous
 
     [StorageProvider(ProviderName = "AzureStore")]
-    public class LeaderBoardGrain : SequencedGrain<LeaderBoardGrain.State>, ILeaderBoardGrain
+    public class SequencedLeaderboardGrain : SequencedGrain<SequencedLeaderboardGrain.State>, Leaderboard.Interfaces.ISequencedLeaderboardGrain
     {
         [Serializable]
         public new class State
@@ -26,16 +26,27 @@ namespace Leaderboard.Grains
 
         #region Queries
 
-        public async Task<Score[]> GetTopTen(string post)
+        public async Task<Score[]> GetApproxTopTen(string post)
         {
             return (await GetLocalStateAsync()).TopTenScores.ToArray();
+        }
+
+        public async Task<Score[]> GetExactTopTen(string post)
+        {
+            return (await GetGlobalStateAsync()).TopTenScores.ToArray();
         }
 
         #endregion
 
         #region Updates
 
-        public async Task Post(Score score)
+        public async Task PostNow(Score score)
+        {
+            await UpdateGloballyAsync(new ScorePostedEvent() { Score = score });
+        }
+
+
+        public async Task PostLater(Score score)
         {
             await UpdateLocallyAsync(new ScorePostedEvent() { Score = score });
         }
