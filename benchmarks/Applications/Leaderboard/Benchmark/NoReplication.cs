@@ -235,11 +235,11 @@ namespace Leaderboard.Benchmark
             {
                 if (requestType == LeaderboardRequestT.GET_SYNC)
                 {
-                   return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
+                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
                 }
                 else
                 {
-                 return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString();
+                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=1";
                 }
             }
         }

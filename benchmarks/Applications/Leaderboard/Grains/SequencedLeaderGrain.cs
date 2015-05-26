@@ -21,19 +21,26 @@ namespace Leaderboard.Grains
         [Serializable]
         public new class State
         {
-            public List<Score> TopTenScores { get; set; }
+            public List<Score> topTenScores { get; set; }
+
+            public State()
+            {
+                topTenScores = new List<Score>();
+            } 
+
         }
 
         #region Queries
 
         public async Task<Score[]> GetApproxTopTen(string post)
         {
-            return (await GetLocalStateAsync()).TopTenScores.ToArray();
+            
+            return (await GetLocalStateAsync()).topTenScores.ToArray();
         }
 
         public async Task<Score[]> GetExactTopTen(string post)
         {
-            return (await GetGlobalStateAsync()).TopTenScores.ToArray();
+            return (await GetGlobalStateAsync()).topTenScores.ToArray();
         }
 
         #endregion
@@ -51,16 +58,23 @@ namespace Leaderboard.Grains
             await UpdateLocallyAsync(new ScorePostedEvent() { Score = score });
         }
 
+        public override Task OnActivateAsync()
+        {
+            
+            return base.OnActivateAsync();
+        }
+
         [Serializable]
         public class ScorePostedEvent : IAppliesTo<State>
         {
             public Score Score { get; set; } // the posted score
             public void Update(State state)
             {
+             
                 // add the score to the list of scores
-                state.TopTenScores.Add(Score);
+                state.topTenScores.Add(Score);
                 // sort the list of scores and keep only top 10
-                state.TopTenScores = state.TopTenScores.OrderBy((Score s) => s.Points).Take(10).ToList();
+                state.topTenScores = state.topTenScores.OrderByDescending((Score s) => s.Points).Take(10).ToList();
             }
         }
 

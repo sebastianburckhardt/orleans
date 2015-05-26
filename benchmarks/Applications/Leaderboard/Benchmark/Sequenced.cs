@@ -123,33 +123,46 @@ namespace Leaderboard.Benchmark
             totSyncReads = 0;
             totAsyncReads = 0;
             totSyncWrites = 0;
-            totAsyncWrites = 0; 
-           
-          
+            totAsyncWrites = 0;
+
+
+            /*
+            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, true));
+
             nextScore = new Score
             {
                 Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numReqs * robotnumber + 1
+                Points = numReqs * robotnumber + 5
             };
 
             await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore, false));
-        //    await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore, true));
-
-            /*
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
 
             nextScore = new Score
             {
                 Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numreqs * robotnumber + 1
+                Points = numReqs * robotnumber + 6
             };
 
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextScore));
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
-             */
-           
+            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore, false));
+
+        
+            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, false));
+
+            
+            nextScore = new Score
+            {
+                Name = names[rnd.Next(0, nameLength - 1)],
+                Points = numReqs * robotnumber + 7
+            };
+
+            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore,false));
+            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber,false));
+         
+            
+            */
+
             //TODO: refactor
-            /*
+           
             for (int i = 0; i < numReqs; i++)
             {
                 if (asyncReads == 0 && asyncWrites == 0
@@ -281,7 +294,7 @@ namespace Leaderboard.Benchmark
 
                 switch (nextOp) {
                     case OperationType.READ_SYNC:
-                //        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,false));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,false));
                         totSyncReads++;
                         break;
                     case OperationType.WRITE_SYNC:
@@ -290,11 +303,11 @@ namespace Leaderboard.Benchmark
                             Name = names[rnd.Next(0, nameLength - 1)],
                             Points = numReqs * robotnumber + i
                         };
-                 //       await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,false));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,false));
                         totSyncWrites++;
                         break;
                     case OperationType.READ_ASYNC:
-               //            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,true));
+                           await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,true));
                         totAsyncReads++;
                         break;
                     case OperationType.WRITE_ASYNC:
@@ -303,7 +316,7 @@ namespace Leaderboard.Benchmark
                             Name = names[rnd.Next(0, nameLength - 1)],
                             Points = numReqs * robotnumber + i
                         };
-              //          await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,true));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,true));
                         totAsyncWrites++;
                         break;
                 } // end switch
@@ -316,7 +329,7 @@ namespace Leaderboard.Benchmark
             Util.Assert(totSyncReads == (percentSyncRead * numReqs / 100), "Incorrect Number Sync Reads " + totSyncReads);
             Util.Assert(totSyncWrites == (percentSyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
-             * */
+            
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
             return parameters;
         }
@@ -382,11 +395,11 @@ namespace Leaderboard.Benchmark
             {
                 if (requestType == LeaderboardRequestT.GET_SYNC || requestType == LeaderboardRequestT.GET_ASYNC)
                 {
-                   return "GET seqleaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
+                   return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
                 }
                 else
                 {
-                 return "GET seqleaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString();
+                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=1";
                 }
             }
         }

@@ -36,7 +36,7 @@ namespace Leaderboard.Grains
         public Task Post(Leaderboard.Interfaces.Score score)
         {
             topTenScores_.Add(score);
-            topTenScores_ = topTenScores_.OrderBy((Score s) => s.Points).Take(10).ToList();
+            topTenScores_ = topTenScores_.OrderByDescending((Score s) => s.Points).Take(10).ToList();
             return TaskDone.Done;
         }
 
