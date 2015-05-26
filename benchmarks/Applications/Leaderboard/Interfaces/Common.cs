@@ -8,7 +8,7 @@ namespace Leaderboard.Interfaces
 {
 
 
-
+    [Serializable]
     public class Score : IEquatable<Score>
     {
         // Player Name

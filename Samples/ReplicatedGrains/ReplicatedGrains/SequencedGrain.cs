@@ -56,7 +56,7 @@ namespace ReplicatedGrains
         /// Staleness bound: if greater than zero, allows the local state to be stale up to the specified number of milliseconds.
         /// The default setting is long.MaxValue (no staleness bound).
         /// </summary>
-        protected long StalenessBound { get; set; }
+        protected double StalenessBound { get; set; }
 
         private bool isSynchronous = false;
 
@@ -74,10 +74,13 @@ namespace ReplicatedGrains
 
         private async Task RefreshLocalStateAsync(bool force = false)
         {
+            Console.Write("Stateleness Bound {0} ", StalenessBound);
+
             if (force
                 || LocalState == null
                 || StalenessBound == 0
                 || Timestamp.AddMilliseconds(StalenessBound) < DateTime.UtcNow)
+
             {
                 await ReadFromPrimary();
                 UpdateCacheFromRaw();
@@ -204,7 +207,7 @@ namespace ReplicatedGrains
         {
             Timestamp = DateTime.UtcNow;
             await base.OnActivateAsync();
-            StalenessBound = long.MaxValue;
+            StalenessBound = int.MaxValue ;
             worker = new BackgroundWorker(() => WriteQueuedUpdatesToStorage());
             UpdateCacheFromRaw();
         }
@@ -329,7 +332,9 @@ namespace ReplicatedGrains
                     LocalState = s;
                     return rval;
                 }
-                catch { } //TODO perhaps be more selective on what to catch here
+                catch (Exception e) {
+                    Console.Write("Error {0}", e.ToString());
+                } //TODO perhaps be more selective on what to catch here
 
                 // TODO perhaps add backoff delay
 
