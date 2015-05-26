@@ -171,7 +171,7 @@ namespace Orleans.Frontend
 
         public void StartNewServer()
         {
-            var endpointdescriptor = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["sessions"];
+            var endpointdescriptor = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["frontend"];
             var securehttp = (endpointdescriptor.Protocol == "https");
             var port = endpointdescriptor.IPEndpoint.Port.ToString();
             var endpoint = endpointdescriptor.Protocol + "://+:" + port + "/";

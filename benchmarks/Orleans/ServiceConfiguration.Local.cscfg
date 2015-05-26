@@ -3,14 +3,14 @@
   <Role name="Orleans.Frontend">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="InCloud" value="false"/>
-      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=sbazuresamples;AccountKey=TFNoCLYYM3I0smACKF+ucF/E9+1Ptn4vojT3Uj5Wcf3Le8awQ2z37gfigqtxeeyL7d6qQaEAEjcHxSBmgYX7ug==" />
+      <Setting name="InCloud" value="false" />
+      <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=sbazuresamples;AccountKey=TFNoCLYYM3I0smACKF+ucF/E9+1Ptn4vojT3Uj5Wcf3Le8awQ2z37gfigqtxeeyL7d6qQaEAEjcHxSBmgYX7ug==" />
+      <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>
