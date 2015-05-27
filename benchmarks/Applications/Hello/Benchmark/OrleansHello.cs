@@ -79,9 +79,10 @@ namespace Hello.Benchmark
             return await helloGrain.Hello(nr.ToString());
         }
 
-        public async Task ProcessResponseOnClient(string response)
+        public async Task<string> ProcessResponseOnClient(string response)
         {
             Util.Assert(response == "Hello From Orleans #" + nr, "incorrect response");
+            return response;
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)
