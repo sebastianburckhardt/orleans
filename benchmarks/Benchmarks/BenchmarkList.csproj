@@ -65,6 +65,10 @@
       <Project>{cfcca2ac-8483-422c-9cb3-c59091b99bf2}</Project>
       <Name>Leaderboard.Benchmark</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Applications\Size\Benchmark\Size.Benchmark.csproj">
+      <Project>{6123fb2f-6daf-4188-8b43-a97261f0424d}</Project>
+      <Name>Size.Benchmark</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Common\Common.csproj">
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>

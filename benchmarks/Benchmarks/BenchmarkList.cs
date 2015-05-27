@@ -20,6 +20,8 @@ namespace Benchmarks
 
             Register(new Hello.Benchmark.Benchmark());
             Register(new Leaderboard.Benchmark.Benchmark());
+            Register(new Size.Benchmark.Benchmark());
+
 
             //----------------------------------------------------------------------------------
         }

@@ -1,6 +1,6 @@
 ﻿using Orleans;
 using Common;
-using Leaderboard.Interfaces;
+using Size.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,16 +10,16 @@ using System.Threading.Tasks;
 
 #pragma warning disable 1998
 
-namespace Leaderboard.Benchmark
+namespace Size.Benchmark
 {
 
-    public class NoReplicationLeaderboard : IScenario
+    public class NoReplicationSize : IScenario
     {
 
         // scenario parameters
         // read operations = get top 10
         // write operations = post 
-        public NoReplicationLeaderboard(int pNumRobots, int pNumReqs, int pPercentRead)
+        public NoReplicationSize(int pNumRobots, int pNumReqs, int pPercentRead)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
@@ -31,6 +31,7 @@ namespace Leaderboard.Benchmark
         private int numReqs;
         private int percentRead;
         private int percentWrite;
+        private int payloadSize;
 
         enum OperationType
         {
@@ -40,7 +41,7 @@ namespace Leaderboard.Benchmark
             WRITE_ASYNC
         };
 
-        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}", numRobots, numReqs, percentRead); } }
+        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xsize{3}", numRobots, numReqs, percentRead, payloadSize); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -75,11 +76,9 @@ namespace Leaderboard.Benchmark
             int reads;
             int writes;
             Random rnd;
-            string[] names;
-            int nameLength;
             int nextRandom;
             OperationType nextOp;
-            Score nextScore;
+            byte[] nextWrite;
             Boolean executed;
 
             /* Debug */
@@ -87,36 +86,28 @@ namespace Leaderboard.Benchmark
             int totWrites;
 
             rnd = new Random();
-            names = new string[] { "Jack","John","Jim","Ted","Tid","Tad"};
-            nameLength = names.Length;
             reads = percentRead;
             writes = percentWrite;
             executed = false;
             nextOp = OperationType.READ_SYNC;
+            nextWrite = new byte[payloadSize];
 
             /* Debug */
             totReads = 0;
-            totWrites = 0; 
-           
-           /*
-            nextScore = new Score
-            {
-                Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numreqs * robotnumber + 1
-            };
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextScore));
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
+            totWrites = 0;
 
-            nextScore = new Score
-            {
-                Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numreqs * robotnumber + 1
-            };
+            rnd.NextBytes(nextWrite);
 
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextScore));
-            await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
-             */
-           
+            /*
+             await context.ServiceRequest(new HttpRequestSize(numreqs * robotnumber, nextWrite));
+             await context.ServiceRequest(new HttpRequestSize(numreqs * robotnumber));
+
+             rnd.NextBytes(nextWrite);
+
+             await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextWrite));
+             await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
+              */
+
             //TODO: refactor
             for (int i = 0; i < numReqs; i++)
             {
@@ -162,16 +153,12 @@ namespace Leaderboard.Benchmark
 
                 switch (nextOp) {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestLeaderboard(numReqs * robotnumber + i));
+                        await context.ServiceRequest(new HttpRequestSize(numReqs * robotnumber + i));
                         totReads++;
                         break;
                     case OperationType.WRITE_SYNC:
-                          nextScore = new Score
-                        {
-                            Name = names[rnd.Next(0, nameLength - 1)],
-                            Points = numReqs * robotnumber + i
-                        };
-                        await context.ServiceRequest(new HttpRequestLeaderboard(numReqs * robotnumber + i, nextScore));
+                          rnd.NextBytes(nextWrite);
+                        await context.ServiceRequest(new HttpRequestSize(numReqs * robotnumber + i, nextWrite));
                         totWrites++;
                         break;
                     case OperationType.READ_ASYNC:
@@ -196,16 +183,16 @@ namespace Leaderboard.Benchmark
     }
 
 
-    public class HttpRequestLeaderboard : IHttpRequest
+    public class HttpRequestSize : IHttpRequest
     {
 
           /// <summary>
         /// Constructor for GetTop10 calls
         /// </summary>
         /// <param name="pNumReq"></param>
-        public HttpRequestLeaderboard(int pNumReq)
+        public HttpRequestSize(int pNumReq)
         {
-            this.requestType = LeaderboardRequestT.GET_SYNC;
+            this.requestType = SizeRequestT.READ_SYNC;
             this.numReq = pNumReq;
         }
 
@@ -214,32 +201,32 @@ namespace Leaderboard.Benchmark
         /// </summary>
         /// <param name="pScore"></param>
         /// <param name="pNumReq"></param>
-        public HttpRequestLeaderboard(int pNumReq,Score pScore)
+        public HttpRequestSize(int pNumReq,byte[] pPayload)
         {
-            this.requestType = LeaderboardRequestT.POST_SYNC;
-            this.score = pScore;
+            this.requestType = SizeRequestT.WRITE_SYNC;
+            this.payload = pPayload;
             this.numReq = pNumReq;
         }
 
         // Request number
         private int numReq;
         // Request type, get or post
-        private LeaderboardRequestT requestType;
+        private SizeRequestT requestType;
         // Score to post if requestType = post
-        private Score score;
+        private byte[] payload ;
 
 
         public string Signature
         {
             get
             {
-                if (requestType == LeaderboardRequestT.GET_SYNC)
+                if (requestType == SizeRequestT.READ_SYNC)
                 {
-                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0";
+                    return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0";
                 }
                 else
                 {
-                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=0";
+                    return "POST size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0";
                 }
             }
         }
@@ -247,30 +234,27 @@ namespace Leaderboard.Benchmark
 
         public string Body
         {
-            get { return null; }
+            get { return Encoding.ASCII.GetString(payload); }
         }
 
         public async Task<string> ProcessRequestOnServer()
         {
             Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
 
-            var leaderboard = LeaderboardGrainFactory.GetGrain(0);
-            string posts;
-            Score[] scores;
+            var grain = SizeGrainFactory.GetGrain(0);
 
-           if (requestType == LeaderboardRequestT.GET_SYNC)
+            byte[] readData;
+
+           if (requestType == SizeRequestT.READ_SYNC)
             {
-                Console.Write("Get \n");
-                scores =  leaderboard.GetTopTen("hello").Result;
-                posts = Leaderboard.Interfaces.Score.PrintScores(scores);
-                Console.Write("{0}\n", posts);
-                return posts;
+                Console.Write("READ \n");
+                readData = grain.Read("Hello").Result;
+                return Encoding.ASCII.GetString(readData);
             }
             else
             {
-                Util.Assert(requestType == LeaderboardRequestT.POST_SYNC);
-                Console.Write("Post{0} \n ", score.ToString());
-                await leaderboard.Post(score);
+                Util.Assert(requestType == SizeRequestT.WRITE_SYNC);
+                await grain.Write(payload);
                 return "ok";
             }  
 

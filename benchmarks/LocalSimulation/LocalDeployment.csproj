@@ -128,6 +128,10 @@
       <Project>{224ffcb9-50fe-4250-8e6c-052c3e30c225}</Project>
       <Name>Leaderboard.Interfaces</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Applications\Size\Grains\Size.Grains.csproj">
+      <Project>{483b3fea-88e8-4ab2-a3a8-f4cd780660e5}</Project>
+      <Name>Size.Grains</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Benchmarks\BenchmarkList.csproj">
       <Project>{666fcf4a-a67f-4409-afde-8d8b869a804c}</Project>
       <Name>BenchmarkList</Name>
