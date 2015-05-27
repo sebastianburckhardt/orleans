@@ -76,19 +76,10 @@ namespace LocalSimulation
             return result;
         }
 
+
         public string PrintStats()
         {
-            var b = new StringBuilder();
-            if (Stats != null)
-                foreach (var kvp in Stats)
-                {
-                    b.AppendLine(kvp.Key);
-                    b.Append("      ");
-                    b.AppendLine(string.Join(" ", kvp.Value.GetStats()));
-                }
-            return b.ToString();
+            return Util.PrintStats(Stats);
         }
-
-       
     }
 }

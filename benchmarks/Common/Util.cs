@@ -66,5 +66,18 @@ namespace Common
                 return _roleinstance;
             }
         }
+
+        public static string PrintStats(Dictionary<string, LatencyDistribution> stats)
+        {
+            var b = new StringBuilder();
+            if (stats != null)
+                foreach (var kvp in stats)
+                {
+                    b.AppendLine(kvp.Key);
+                    b.Append("      ");
+                    b.AppendLine(string.Join(" ", kvp.Value.GetStats()));
+                }
+            return b.ToString();
+        }
     }
 }

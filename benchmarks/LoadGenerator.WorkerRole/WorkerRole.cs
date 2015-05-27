@@ -13,6 +13,8 @@ using System.Net.WebSockets;
 using System.Text;
 using Benchmarks;
 using Common;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace LoadGenerator.WorkerRole
 {
@@ -75,8 +77,8 @@ namespace LoadGenerator.WorkerRole
             while (!cancellationToken.IsCancellationRequested)
             {
 
-                //var uri = new Uri("ws://localhost:20473/api/robots");
-                var uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
+                var uri = new Uri("ws://localhost:20473/api/robots");
+                //var uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
             
                 using (var ws = new ClientWebSocket())
                 {
@@ -175,11 +177,26 @@ namespace LoadGenerator.WorkerRole
                                 }
 
                                 var scenario = scenarios.First();
-                                var serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
+                                string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
+                                if (!serviceEndpoint.EndsWith("/"))
+                                    serviceEndpoint += "/";
                                 var client = serviceEndpoint == null ? null : new Benchmarks.Client(serviceEndpoint, testname, robotnr);
                                 String result = await scenario.RobotScript(client, robotnr, args);
+
+                                var stats = client.Stats;
+                                BinaryFormatter bf = new BinaryFormatter();
+                                string statsBase64 = null;
+                                using(MemoryStream ms = new MemoryStream()) 
+                                {
+                                    bf.Serialize(ms, stats);
+                                    ms.Flush();
+                                    statsBase64 = System.Convert.ToBase64String(ms.ToArray());
+                                    byte[] converted = System.Convert.FromBase64String(statsBase64);
+                                    Array.Equals(converted, ms.ToArray());
+                                }
                                 
-                                var message = "DONE " + robotnr.ToString() + " " + result;
+                                //var statsBase64 = System.Convert.ToBase64String();
+                                var message = "DONE " + robotnr.ToString() + " " + result + " " + statsBase64;
 
                                 var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
                                 await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);

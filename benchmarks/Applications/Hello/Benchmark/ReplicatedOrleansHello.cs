@@ -56,7 +56,7 @@ namespace Hello.Benchmark
 
             var responses = string.Join(",", requests.Select((t) => t.Result));
 
-            return "ok: " + workernumber + " : " + responses;
+            return "ok:" + workernumber + ":" + responses;
         }
 
 
