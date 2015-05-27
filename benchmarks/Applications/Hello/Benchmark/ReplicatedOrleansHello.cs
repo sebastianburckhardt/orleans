@@ -56,17 +56,13 @@ namespace Hello.Benchmark
 
             var responses = string.Join(",", requests.Select((t) => t.Result));
 
-            return "ok: " + workernumber + " : " + responses;
+            return "ok:" + workernumber + ":" + responses;
         }
 
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            /*if (workernumber % 2 == 0)
-                return "orleansgeouswest.cloudapp.net/";
-            else
-                return "orleansgeoeuropewest.cloudapp.net/";*/
-            return "localhost:81/";
+            return Endpoints.GetService(workernumber);
         }
     }
 

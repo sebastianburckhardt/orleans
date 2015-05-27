@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNet.SignalR;
+﻿using Common;
+using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.WebSockets;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -70,9 +73,9 @@ namespace Conductor.Webrole.Controllers
 
             while (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
             {
-                ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[1024]);
+                ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[1024 * 4]);
                 WebSocketReceiveResult result = await socket.ReceiveAsync(
-                    buffer, CancellationToken.None);
+                    buffer, CancellationToken.  None);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
@@ -99,7 +102,26 @@ namespace Conductor.Webrole.Controllers
                         userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
                         var pos = userMessage.IndexOf(' ');
                         var robotnr = int.Parse(userMessage.Substring(0, pos));
-                        var msg = userMessage.Substring(pos + 1);
+                        var statsPos = userMessage.IndexOf(' ', pos + 1);
+                        var msg = userMessage.Substring(pos + 1, statsPos - pos) + "\n";
+                        
+                        var statsBase64 = userMessage.Substring(statsPos + 1);
+                        byte[] statsBinary = null;
+                        try
+                        {
+                            statsBinary = System.Convert.FromBase64String(statsBase64);
+                        }
+                        catch (Exception e)
+                        {
+
+                        }
+                        BinaryFormatter bf = new BinaryFormatter();
+                        using (MemoryStream ms = new MemoryStream(statsBinary))
+                        {
+                            var stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
+                            msg += Util.PrintStats(stats);
+                        }
+                        
                         conductor.OnRobotMessage(robotnr, msg);
                     }
                 }

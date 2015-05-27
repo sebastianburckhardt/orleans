@@ -43,10 +43,9 @@ namespace Size.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            if (workernumber % 2 == 0)
-                return "orleansgeouswest.cloudapp.net/";
-            else
-                return "orleansgeoeuropewest.cloudapp.net/";
+
+            return Endpoints.GetDefaultService();
+
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xsize{3}", numRobots, numReqs, percentRead, payloadSize); } }

@@ -39,12 +39,10 @@ namespace Leaderboard.Benchmark
             WRITE_ASYNC
         };
 
-        public String RobotServiceEndpoint(int workernumber)
+        public string RobotServiceEndpoint(int workernumber)
         {
-            if (workernumber % 2 == 0)
-                return "orleansgeouswest.cloudapp.net/";
-            else
-                return "orleansgeoeuropewest.cloudapp.net/";
+
+            return Endpoints.GetDefaultService();
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}", numRobots, numReqs, percentRead); } }
@@ -193,9 +191,7 @@ namespace Leaderboard.Benchmark
         }
 
 
-   
-
-    }
+     }
 
 
     public class HttpRequestLeaderboard : IHttpRequest
