@@ -82,8 +82,9 @@ namespace Benchmarks
                         body = await reader.ReadToEndAsync();
                     }
 
-
-                    var urlpath = url.AbsolutePath.Split('/').Select(s => HttpUtility.UrlDecode(s)).Skip(2).ToArray();
+                    //Potential bug. Ask Sebastian 
+                    //var urlpath = url.AbsolutePath.Split('/').Select(s => HttpUtility.UrlDecode(s)).Skip(2).ToArray(); 
+                    var urlpath = new String[] { url.AbsolutePath.Split('/').Last() };
                     var arguments = HttpUtility.ParseQueryString(url.Query);
 
                     var testname = arguments["testname"];

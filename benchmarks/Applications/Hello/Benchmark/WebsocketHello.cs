@@ -41,6 +41,12 @@ namespace Hello.Benchmark
 
             return "ok";
         }
+
+
+        public string RobotServiceEndpoint(int workernumber)
+        {
+            return "localhost:843/simserver0/";
+        }
     }
 
 

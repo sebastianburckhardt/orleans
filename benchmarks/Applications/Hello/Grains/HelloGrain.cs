@@ -13,7 +13,7 @@ namespace Hello.Grains
         public async Task<string> Hello(string arg)
         {
             // echo
-            return arg;
+            return "Hello From Orleans #" + arg;
         }
     }
 }

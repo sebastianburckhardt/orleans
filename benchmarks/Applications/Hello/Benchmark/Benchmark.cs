@@ -26,13 +26,24 @@ namespace Hello.Benchmark
             new HttpHello(4,10),
             new WebsocketHello(1,1),
             new WebsocketHello(4,10),
+            new OrleansHello(1,1),
+            new OrleansHello(4,10),
         };
 
         // parsing of http requests
         public IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body)
         {
             if (verb == "GET" && string.Join("/", urlpath) == "hello")
-                return new GetRequest(int.Parse(arguments["nr"]));
+            {
+                if (arguments["command"] == "http")
+                {
+                    return new GetRequest(int.Parse(arguments["nr"]));
+                }
+                else if (arguments["command"] == "orleans") 
+                {
+                    return new OrleansHelloRequest(int.Parse(arguments["nr"]));
+                }
+            }
 
             if (verb == "WS" && string.Join("/", urlpath) == "hello")
                 return new SocketRequest(int.Parse(arguments["numreqs"]));

@@ -1,4 +1,5 @@
 ﻿using Common;
+using Hello.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ using System.Threading.Tasks;
 namespace Hello.Benchmark
 {
 
-    public class HttpHello : IScenario
+    public class OrleansHello : IScenario
     {
-        public HttpHello(int numrobots, int numreqs)
+        public OrleansHello(int numrobots, int numreqs)
         {
             this.numworkers = numrobots;
             this.numreqs = numreqs;
@@ -19,7 +20,7 @@ namespace Hello.Benchmark
         private int numworkers;
         private int numreqs;
 
-        public string Name { get { return string.Format("http{0}x{1}", numworkers, numreqs); } }
+        public string Name { get { return string.Format("orleans{0}x{1}", numworkers, numreqs); } }
 
         public int NumRobots { get { return numworkers; } }
 
@@ -37,7 +38,7 @@ namespace Hello.Benchmark
         public async Task<string> RobotScript(IRobotContext context, int workernumber, string parameters)
         {
             for (int i = 0; i < numreqs; i++)
-                await context.ServiceRequest(new GetRequest(numreqs * workernumber + i));
+                await context.ServiceRequest(new OrleansHelloRequest(numreqs * workernumber + i));
 
             return "ok";
         }
@@ -49,9 +50,9 @@ namespace Hello.Benchmark
         }
     }
 
-    public class GetRequest : IHttpRequest
+    public class OrleansHelloRequest : IHttpRequest
     {
-        public GetRequest(int nr)
+        public OrleansHelloRequest(int nr)
         {
             this.nr = nr;
         }
@@ -60,7 +61,7 @@ namespace Hello.Benchmark
 
         public string Signature
         {
-            get { return string.Format("GET hello?nr={0}&command={1}", nr, "http"); }
+            get { return string.Format("GET hello?nr={0}&command={1}", nr, "orleans"); }
         }
 
         public string Body
@@ -70,12 +71,14 @@ namespace Hello.Benchmark
 
         public async Task<string> ProcessRequestOnServer()
         {
-            return "Hello #" + nr;
+            //send to some grain.
+            var helloGrain = HelloGrainFactory.GetGrain(0);
+            return await helloGrain.Hello(nr.ToString());
         }
 
         public async Task ProcessResponseOnClient(string response)
         {
-            Util.Assert(response == "Hello #" + nr, "incorrect response");
+            Util.Assert(response == "Hello From Orleans #" + nr, "incorrect response");
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)
