@@ -68,7 +68,7 @@ namespace Benchmarks
                 {
                     responsecategory = ((int) resp.StatusCode).ToString() + " " + resp.StatusCode.ToString();
                     System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream());
-                    result = await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
+                    result =  await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
                 }
             }
 

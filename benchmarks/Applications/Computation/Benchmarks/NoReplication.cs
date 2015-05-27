@@ -262,9 +262,10 @@ namespace Computation.Benchmark
          
         }
 
-        public async Task ProcessResponseOnClient(string response)
+        public Task<string> ProcessResponseOnClient(string response)
         {
-            Console.Write("{0} Req # {1} \n ", response, numReq );
+            Console.Write("{0} Req # {1} \n ", response, numReq);
+            return Task.FromResult(response);
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)
