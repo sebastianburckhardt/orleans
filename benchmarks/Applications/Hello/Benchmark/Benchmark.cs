@@ -28,6 +28,8 @@ namespace Hello.Benchmark
             new WebsocketHello(4,10),
             new OrleansHello(1,1),
             new OrleansHello(4,10),
+            new ReplicatedOrleansHello(1,1),
+            new ReplicatedOrleansHello(4,10),
         };
 
         // parsing of http requests
@@ -42,6 +44,10 @@ namespace Hello.Benchmark
                 else if (arguments["command"] == "orleans") 
                 {
                     return new OrleansHelloRequest(int.Parse(arguments["nr"]));
+                }
+                else if (arguments["command"] == "replicatedorleans")
+                {
+                    return new ReplicatedOrleansHelloRequest(int.Parse(arguments["nr"]));
                 }
             }
 

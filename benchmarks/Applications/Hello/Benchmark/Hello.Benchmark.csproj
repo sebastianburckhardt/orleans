@@ -39,7 +39,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-	<Reference Include="Orleans">
+    <Reference Include="Orleans">
       <HintPath>$(OrleansSDK)\Binaries\OrleansServer\Orleans.dll</HintPath>
     </Reference>
     <Reference Include="OrleansAzureUtils">
@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Benchmark.cs" />
+    <Compile Include="ReplicatedOrleansHello.cs" />
     <Compile Include="OrleansHello.cs" />
     <Compile Include="HttpHello.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
