@@ -41,7 +41,10 @@ namespace Leaderboard.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            throw new NotImplementedException();
+            if (workernumber % 2 == 0)
+                return "orleansgeouswest.cloudapp.net/";
+            else
+                return "orleansgeoeuropewest.cloudapp.net/";
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}", numRobots, numReqs, percentRead); } }
@@ -63,12 +66,7 @@ namespace Leaderboard.Benchmark
                 // wait for all robots
                 await Task.WhenAll(robotrequests);
 
-                // check robot responses
-                for (int i = 0; i < numRobots; i++) {
-                    Console.Write("Finished: {0} \n", robotrequests[i].Result );
-                }
-         
-            return "ok";
+                return "ok";
         }
 
         // each robot simply echoes the parameters

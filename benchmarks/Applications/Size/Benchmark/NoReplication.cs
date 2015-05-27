@@ -43,7 +43,10 @@ namespace Size.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            throw new NotImplementedException();
+            if (workernumber % 2 == 0)
+                return "orleansgeouswest.cloudapp.net/";
+            else
+                return "orleansgeoeuropewest.cloudapp.net/";
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xsize{3}", numRobots, numReqs, percentRead, payloadSize); } }

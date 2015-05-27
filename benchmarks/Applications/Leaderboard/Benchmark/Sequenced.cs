@@ -48,7 +48,10 @@ namespace Leaderboard.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            throw new NotImplementedException();
+            if (workernumber % 2 == 0)
+                return "orleansgeouswest.cloudapp.net/";
+            else
+                return "orleansgeoeuropewest.cloudapp.net/";
         }
 
         public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite); } }
