@@ -39,6 +39,11 @@ namespace Leaderboard.Benchmark
             WRITE_ASYNC
         };
 
+        public String RobotServiceEndpoint(int workernumber)
+        {
+            throw new NotImplementedException();
+        }
+
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}", numRobots, numReqs, percentRead); } }
 
         public int NumRobots { get { return numRobots; } }

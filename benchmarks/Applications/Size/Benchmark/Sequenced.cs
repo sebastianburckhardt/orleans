@@ -48,6 +48,11 @@ namespace Size.Benchmark
             WRITE_ASYNC
         };
 
+        public String RobotServiceEndpoint(int workernumber)
+        {
+            throw new NotImplementedException();
+        }
+
         public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite,payloadSize); } }
 
         public int NumRobots { get { return numRobots; } }
@@ -127,28 +132,9 @@ namespace Size.Benchmark
 
             rnd.NextBytes(nextWrite);
 
-            await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber, nextWrite, true));
-
-            /*
-            rnd.NextBytes(nextWrite);
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextWrite, false));
-            rnd.NextBytes(nextWrite);
-
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextWrite, false));
-
-        
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, false));
-
-            rnd.NextBytes(nextWrite);
-
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextWrite,false));
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber,false));
-         
-            
-            */
 
             //TODO: refactor
-            /*
+       
             for (int i = 0; i < numReqs; i++)
             {
                 if (asyncReads == 0 && asyncWrites == 0
@@ -308,7 +294,6 @@ namespace Size.Benchmark
             Util.Assert(totSyncReads == (percentSyncRead * numReqs / 100), "Incorrect Number Sync Reads " + totSyncReads);
             Util.Assert(totSyncWrites == (percentSyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
-            */
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
             return parameters;
