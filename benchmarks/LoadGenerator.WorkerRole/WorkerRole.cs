@@ -75,8 +75,15 @@ namespace LoadGenerator.WorkerRole
             while (!cancellationToken.IsCancellationRequested)
             {
 
-                //var uri = new Uri("ws://localhost:20473/api/robots");
-                var uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
+                Uri uri;
+                if (RoleEnvironment.IsEmulated)
+                {
+                    uri = new Uri("ws://localhost:20473/api/robots");
+                }
+                else
+                {
+                    uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
+                }
             
                 using (var ws = new ClientWebSocket())
                 {

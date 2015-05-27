@@ -32,7 +32,7 @@ namespace Benchmarks
 
         public int RobotNumber { get { return robotnumber;  } }
 
-        public async Task ServiceRequest(IHttpRequest request)
+        public async Task<string> ServiceRequest(IHttpRequest request)
         {
             var sig = request.Signature.Split(' ');
             Util.Assert(sig.Length == 2);
@@ -43,6 +43,7 @@ namespace Benchmarks
             //var req = (HttpWebRequest)WebRequest.Create("http://localhost:843/simserver/test");
             req.Method = sig[0];
 
+            string result = null;
 
             if (request.Body != null)
             {
@@ -67,7 +68,7 @@ namespace Benchmarks
                 {
                     responsecategory = ((int) resp.StatusCode).ToString() + " " + resp.StatusCode.ToString();
                     System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream());
-                    await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
+                    result = await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
                 }
             }
 
@@ -94,10 +95,9 @@ namespace Benchmarks
                 {
                     System.Console.Write("Latency should not be negative");
                     //TODO HANDLE BETTER
-                }
+                }                
             }
-
-
+            return await Task.FromResult(result);
         }
 
         public class SocketWrapper : ISocket
@@ -122,14 +122,14 @@ namespace Benchmarks
 
         private byte[] receiveBuffer = new byte[512];
 
-        public async Task ServiceConnection(ISocketRequest request)
+        public async Task<string> ServiceConnection(ISocketRequest request)
         {
             var sig = request.Signature.Split(' ');
             Util.Assert(sig.Length == 2);
             Util.Assert(sig[0] == "WS");
             var urlparams = (sig[1].Length == 0 ? "?" : (sig[1] + "&")) + "testname=" + testname;
             var uri = new Uri("ws://" + urlpath + urlparams);
-
+            string result = null;
             using (var ws = new ClientWebSocket())
             {
                 try
@@ -181,7 +181,7 @@ namespace Benchmarks
 
                             var content = Encoding.UTF8.GetString(receiveBuffer, 0, count);
 
-                            await request.ProcessMessageOnClient(socketwrapper, content);
+                            result = await request.ProcessMessageOnClient(socketwrapper, content);
                         }
                     }
                 }
@@ -193,6 +193,7 @@ namespace Benchmarks
                             ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None),
                             Task.Delay(10000));
                 }
+                return await Task.FromResult(result);
             }
         }
 

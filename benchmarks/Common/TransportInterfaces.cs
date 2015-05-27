@@ -36,7 +36,8 @@ namespace Common
 
         Task<string> ProcessRequestOnServer();
 
-        Task ProcessResponseOnClient(string response);
+        //Changed PorcessResponseOnClient to return string encoded "result" back to the conductor.
+        Task<string> ProcessResponseOnClient(string response);
     }
 
     public interface ISocket
@@ -57,7 +58,7 @@ namespace Common
 
         Task ProcessConnectionOnClient(ISocket socket);
 
-        Task ProcessMessageOnClient(ISocket socket, string message);
+        Task<string> ProcessMessageOnClient(ISocket socket, string message);
 
         Task ProcessCloseOnClient(ISocket socket, string message);
 
