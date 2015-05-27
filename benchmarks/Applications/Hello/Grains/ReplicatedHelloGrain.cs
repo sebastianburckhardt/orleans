@@ -64,7 +64,7 @@ namespace Hello.Grains
             {
                 messages = (await GetLocalStateAsync()).LastTenMessages;
             }
-            return await Task.FromResult(String.Join(" ", messages));
+            return await Task.FromResult(String.Join("", messages));
         }
     }
 }

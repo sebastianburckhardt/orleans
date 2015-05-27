@@ -120,14 +120,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Applications\Leaderboard\Grains\Leaderboard.Grains.csproj">
-      <Project>{90ae8b1c-d7f2-4fc2-a7fd-2086671b3cda}</Project>
-      <Name>Leaderboard.Grains</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Applications\Leaderboard\Interfaces\Leaderboard.Interfaces.csproj">
-      <Project>{224ffcb9-50fe-4250-8e6c-052c3e30c225}</Project>
-      <Name>Leaderboard.Interfaces</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Benchmarks\BenchmarkList.csproj">
       <Project>{666fcf4a-a67f-4409-afde-8d8b869a804c}</Project>
       <Name>BenchmarkList</Name>

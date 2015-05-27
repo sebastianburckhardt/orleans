@@ -46,7 +46,10 @@ namespace Hello.Benchmark
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            return "localhost/";
+            if (workernumber % 2 == 0)
+                return "orleansgeouswest.cloudapp.net/";
+            else
+                return "orleansgeoeuropewest.cloudapp.net/";
         }
     }
 
@@ -75,11 +78,15 @@ namespace Hello.Benchmark
             var replicatedGrain = ReplicatedHelloGrainFactory.GetGrain(0);
             await replicatedGrain.Hello("U1");
             return await replicatedGrain.GetTopMessagesAsync(false);
+
+            /*var helloGrain = HelloGrainFactory.GetGrain(0);
+            return await helloGrain.Hello(nr.ToString());*/
         }
 
         public async Task ProcessResponseOnClient(string response)
         {
-            Util.Assert(response == "Hello From Orleans #" + nr, "incorrect response");
+            //This is a temporary check due to the potential duplicate write bug.
+            Util.Assert(response.StartsWith("U1"), "incorrect response");
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)

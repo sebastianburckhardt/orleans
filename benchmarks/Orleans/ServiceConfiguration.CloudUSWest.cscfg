@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="Orleans" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="4" osVersion="*" schemaVersion="2014-06.2.4">
+  <Role name="Orleans.Frontend">
+    <Instances count="2" />
+    <ConfigurationSettings>
+      <Setting name="InCloud" value="true" />
+      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeouswest;AccountKey=pUIT+LRC/GohbXWMSAfKhuo3eLU8dz0LVUxHvb/X1BO7CZPs4aZ712vtwRPDxa388jbWJArz6hvsvIZTl96g0g==" />
+    </ConfigurationSettings>
+  </Role>
+  <Role name="Orleans.Silos">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeouswest;AccountKey=pUIT+LRC/GohbXWMSAfKhuo3eLU8dz0LVUxHvb/X1BO7CZPs4aZ712vtwRPDxa388jbWJArz6hvsvIZTl96g0g==" />
+    </ConfigurationSettings>
+  </Role>
+</ServiceConfiguration>
