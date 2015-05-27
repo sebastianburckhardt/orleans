@@ -54,5 +54,11 @@ namespace Hello.Benchmark
             // echo
             return parameters;
         }
+
+
+        public string RobotServiceEndpoint(int workernumber)
+        {
+            return null;
+        }
     }
 }

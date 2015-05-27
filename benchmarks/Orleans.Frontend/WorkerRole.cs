@@ -225,7 +225,7 @@ namespace Orleans.Frontend
 
                 diag("Portal: Starting server...");
                 server.Start(endpoint);
-                diag("Portal: Server started.");
+                diag("Portal: Server started at endpoint: " + endpoint);
 
             }
             catch (Exception e)

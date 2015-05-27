@@ -163,6 +163,16 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Applications\Hello\Grains\Hello.Grains.csproj">
+      <Project>{c0b03590-d395-47d0-b3fc-7fc6213c566b}</Project>
+      <Name>Hello.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Applications\Hello\Interfaces\Hello.Interfaces.csproj">
+      <Project>{c6d426d7-b79e-4f45-a235-a8b359a7dc10}</Project>
+      <Name>Hello.Interfaces</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

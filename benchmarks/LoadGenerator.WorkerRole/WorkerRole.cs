@@ -75,9 +75,9 @@ namespace LoadGenerator.WorkerRole
             while (!cancellationToken.IsCancellationRequested)
             {
 
-                var uri = new Uri("ws://localhost:20473/api/robots");
-
-
+                //var uri = new Uri("ws://localhost:20473/api/robots");
+                var uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
+            
                 using (var ws = new ClientWebSocket())
                 {
 
@@ -165,7 +165,7 @@ namespace LoadGenerator.WorkerRole
                                 var benchmarkName = testname.Substring(benchmarkStartPos + 1, scenarioStartPos - benchmarkStartPos - 1);
 
                                 var benchmark = benchmarks.ByName(benchmarkName);
-                                var scenarios = benchmark.Scenarios.Where(scenario => scenario.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
+                                var scenarios = benchmark.Scenarios.Where(s => s.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
                                 
                                 if (scenarios.Count() != 1) //i.e. no scenorio or more than one scenario with same name.
                                 {
@@ -174,8 +174,10 @@ namespace LoadGenerator.WorkerRole
                                     continue;
                                 }
 
-                                //TODO: Create the Client to connect to the Orleans frontend.
-                                String result = await scenarios.First().RobotScript(null, robotnr, args);
+                                var scenario = scenarios.First();
+                                var serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
+                                var client = serviceEndpoint == null ? null : new Benchmarks.Client(serviceEndpoint, testname, robotnr);
+                                String result = await scenario.RobotScript(client, robotnr, args);
                                 
                                 var message = "DONE " + robotnr.ToString() + " " + result;
 

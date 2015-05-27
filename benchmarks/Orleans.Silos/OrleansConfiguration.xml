@@ -9,7 +9,7 @@
   <Globals>
     <Liveness LivenessType="AzureTable" />
     <StorageProviders>
-      <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="DefaultEndpointsProtocol=https;AccountName=sbazuresamples;AccountKey=TFNoCLYYM3I0smACKF+ucF/E9+1Ptn4vojT3Uj5Wcf3Le8awQ2z37gfigqtxeeyL7d6qQaEAEjcHxSBmgYX7ug==" />
+      <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="DefaultEndpointsProtocol=https;AccountName=orleansgeosharedstorage;AccountKey=xhWdo16SU3RkAwL/WEeFAaJhHQeNApHKL4j1FmBfKRUa7hfAGZylBql9a5BWHmzO6vdmyNG4h9B6nq6fBWQbvg==" />
     </StorageProviders>
   </Globals>
   <Defaults>

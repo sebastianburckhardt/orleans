@@ -201,6 +201,189 @@ namespace Hello.Interfaces
             }
         }
     }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    public class ReplicatedHelloGrainFactory
+    {
+        
+
+                        public static Hello.Interfaces.IReplicatedHelloGrain GetGrain(long primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.IReplicatedHelloGrain), 1844412741, primaryKey));
+                        }
+
+                        public static Hello.Interfaces.IReplicatedHelloGrain GetGrain(long primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.IReplicatedHelloGrain), 1844412741, primaryKey, grainClassNamePrefix));
+                        }
+
+                        public static Hello.Interfaces.IReplicatedHelloGrain GetGrain(System.Guid primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.IReplicatedHelloGrain), 1844412741, primaryKey));
+                        }
+
+                        public static Hello.Interfaces.IReplicatedHelloGrain GetGrain(System.Guid primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.IReplicatedHelloGrain), 1844412741, primaryKey, grainClassNamePrefix));
+                        }
+
+            public static Hello.Interfaces.IReplicatedHelloGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return ReplicatedHelloGrainReference.Cast(grainRef);
+            }
+        
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+        [System.SerializableAttribute()]
+        [global::Orleans.CodeGeneration.GrainReferenceAttribute("Hello.Interfaces.Hello.Interfaces.IReplicatedHelloGrain")]
+        internal class ReplicatedHelloGrainReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, Hello.Interfaces.IReplicatedHelloGrain
+        {
+            
+
+            public static Hello.Interfaces.IReplicatedHelloGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return (Hello.Interfaces.IReplicatedHelloGrain) global::Orleans.Runtime.GrainReference.CastInternal(typeof(Hello.Interfaces.IReplicatedHelloGrain), (global::Orleans.Runtime.GrainReference gr) => { return new ReplicatedHelloGrainReference(gr);}, grainRef, 1844412741);
+            }
+            
+            protected internal ReplicatedHelloGrainReference(global::Orleans.Runtime.GrainReference reference) : 
+                    base(reference)
+            {
+            }
+            
+            protected internal ReplicatedHelloGrainReference(SerializationInfo info, StreamingContext context) : 
+                    base(info, context)
+            {
+            }
+            
+            protected override int InterfaceId
+            {
+                get
+                {
+                    return 1844412741;
+                }
+            }
+            
+            public override string InterfaceName
+            {
+                get
+                {
+                    return "Hello.Interfaces.Hello.Interfaces.IReplicatedHelloGrain";
+                }
+            }
+            
+            [global::Orleans.CodeGeneration.CopierMethodAttribute()]
+            public static object _Copier(object original)
+            {
+                ReplicatedHelloGrainReference input = ((ReplicatedHelloGrainReference)(original));
+                return ((ReplicatedHelloGrainReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
+            }
+            
+            [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
+            public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+            {
+                ReplicatedHelloGrainReference input = ((ReplicatedHelloGrainReference)(original));
+                global::Orleans.Runtime.GrainReference.SerializeGrainReference(input, stream, expected);
+            }
+            
+            [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
+            public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+            {
+                return ReplicatedHelloGrainReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
+            }
+            
+            public override bool IsCompatible(int interfaceId)
+            {
+                return (interfaceId == this.InterfaceId);
+            }
+            
+            protected override string GetMethodName(int interfaceId, int methodId)
+            {
+                return ReplicatedHelloGrainMethodInvoker.GetMethodName(interfaceId, methodId);
+            }
+            
+            System.Threading.Tasks.Task Hello.Interfaces.IReplicatedHelloGrain.Hello(string @msg)
+            {
+
+                return base.InvokeMethodAsync<object>(532006314, new object[] {@msg} );
+            }
+            
+            System.Threading.Tasks.Task<string> Hello.Interfaces.IReplicatedHelloGrain.GetTopMessagesAsync(bool @syncGlobal)
+            {
+
+                return base.InvokeMethodAsync<System.String>(-284572065, new object[] {@syncGlobal} );
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.MethodInvokerAttribute("Hello.Interfaces.Hello.Interfaces.IReplicatedHelloGrain", 1844412741)]
+    internal class ReplicatedHelloGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
+    {
+        
+        int global::Orleans.CodeGeneration.IGrainMethodInvoker.InterfaceId
+        {
+            get
+            {
+                return 1844412741;
+            }
+        }
+        
+        global::System.Threading.Tasks.Task<object> global::Orleans.CodeGeneration.IGrainMethodInvoker.Invoke(global::Orleans.Runtime.IAddressable grain, int interfaceId, int methodId, object[] arguments)
+        {
+
+            try
+            {                    if (grain == null) throw new System.ArgumentNullException("grain");
+                switch (interfaceId)
+                {
+                    case 1844412741:  // IReplicatedHelloGrain
+                        switch (methodId)
+                        {
+                            case 532006314: 
+                                return ((IReplicatedHelloGrain)grain).Hello((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case -284572065: 
+                                return ((IReplicatedHelloGrain)grain).GetTopMessagesAsync((Boolean)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                        }
+                    default:
+                        throw new System.InvalidCastException("interfaceId="+interfaceId);
+                }
+            }
+            catch(Exception ex)
+            {
+                var t = new System.Threading.Tasks.TaskCompletionSource<object>();
+                t.SetException(ex);
+                return t.Task;
+            }
+        }
+        
+        public static string GetMethodName(int interfaceId, int methodId)
+        {
+
+            switch (interfaceId)
+            {
+                
+                case 1844412741:  // IReplicatedHelloGrain
+                    switch (methodId)
+                    {
+                        case 532006314:
+                            return "Hello";
+                    case -284572065:
+                            return "GetTopMessagesAsync";
+                    
+                        default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                    }
+
+                default:
+                    throw new System.InvalidCastException("interfaceId="+interfaceId);
+            }
+        }
+    }
 }
 #pragma warning restore 162
 #pragma warning restore 219

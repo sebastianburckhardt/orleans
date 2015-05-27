@@ -4,13 +4,13 @@
     <Instances count="2" />
     <ConfigurationSettings>
       <Setting name="InCloud" value="true" />
-      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=sbazuresamples;AccountKey=TFNoCLYYM3I0smACKF+ucF/E9+1Ptn4vojT3Uj5Wcf3Le8awQ2z37gfigqtxeeyL7d6qQaEAEjcHxSBmgYX7ug==" />
+      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeoeuropewest;AccountKey=qZzwwZHfpBdoGnoPZ7Z3HS9kziEDdEZv16H4bbVIRPFOQkTGbtRoIJPRWn3oQWcQDa7n9hIhiaViCmTtlxYZew==" />
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=sbazuresamples;AccountKey=TFNoCLYYM3I0smACKF+ucF/E9+1Ptn4vojT3Uj5Wcf3Le8awQ2z37gfigqtxeeyL7d6qQaEAEjcHxSBmgYX7ug==" />
+      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeoeuropewest;AccountKey=qZzwwZHfpBdoGnoPZ7Z3HS9kziEDdEZv16H4bbVIRPFOQkTGbtRoIJPRWn3oQWcQDa7n9hIhiaViCmTtlxYZew==" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

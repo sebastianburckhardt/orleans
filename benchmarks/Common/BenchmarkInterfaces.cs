@@ -30,6 +30,8 @@ namespace Common
         Task<string> ConductorScript(IConductorContext context);
 
         Task<string> RobotScript(IRobotContext context, int workernumber, string parameters);
+
+        String RobotServiceEndpoint(int workernumber);
     }
 
 

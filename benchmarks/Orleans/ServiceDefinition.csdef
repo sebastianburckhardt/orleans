@@ -14,5 +14,9 @@
     <ConfigurationSettings>
       <Setting name="DataConnectionString" />
     </ConfigurationSettings>
+    <Endpoints>
+      <InternalEndpoint name="OrleansSiloEndpoint" protocol="tcp" port="11111" />
+      <InternalEndpoint name="OrleansProxyEndpoint" protocol="tcp" port="30000" />
+    </Endpoints>
   </WorkerRole>
 </ServiceDefinition>
