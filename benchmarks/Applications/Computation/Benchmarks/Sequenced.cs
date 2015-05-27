@@ -1,5 +1,5 @@
 ﻿using Common;
-using Size.Interfaces;
+using Computation.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 #pragma warning disable 1998
 
-namespace Size.Benchmark
+namespace Computation.Benchmark
 {
 
-    public class SequencedSize : IScenario
+    public class SequencedComputation : IScenario
     {
 
         // scenario parameters
@@ -20,7 +20,7 @@ namespace Size.Benchmark
         // async read operations = get approx top 10
         // sync write operations = post now
         // async write operations = postlater
-        public SequencedSize(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pPayloadSize)
+        public SequencedComputation(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pTimeUpdate)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
@@ -28,7 +28,7 @@ namespace Size.Benchmark
             this.percentAsyncRead = pPercentAsyncReads;
             this.percentSyncWrite = pPercentSyncWrites;
             this.percentAsyncWrite = pPercentAsyncWrites;
-            this.payloadSize = pPayloadSize;
+            this.timeUpdate = pTimeUpdate;
         }
 
         private int numRobots;
@@ -38,7 +38,7 @@ namespace Size.Benchmark
         private int percentAsyncRead;
         private int percentSyncWrite;
         private int percentAsyncWrite;
-        private int payloadSize;
+        private int timeUpdate;
 
         enum OperationType
         {
@@ -50,10 +50,10 @@ namespace Size.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            return Endpoints.GetDefaultService();
+            throw new NotImplementedException();
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite,payloadSize); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite,timeUpdate); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -115,7 +115,7 @@ namespace Size.Benchmark
 
 
             rnd = new Random();
-            nextWrite = new byte[payloadSize];
+            nextWrite = new byte[100];
             syncReads = percentSyncRead;
             asyncReads = percentAsyncRead;
             syncWrites = percentSyncWrite;
@@ -272,7 +272,7 @@ namespace Size.Benchmark
                         break;
                     case OperationType.WRITE_SYNC:
                         rnd.NextBytes(nextWrite);
-                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, nextWrite, false));
+                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, nextWrite, timeUpdate, false));
                         totSyncWrites++;
                         break;
                     case OperationType.READ_ASYNC:
@@ -281,7 +281,7 @@ namespace Size.Benchmark
                         break;
                     case OperationType.WRITE_ASYNC:
                         rnd.NextBytes(nextWrite);
-                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, nextWrite, true));
+                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, nextWrite, timeUpdate, true));
                         totAsyncWrites++;
                         break;
                 } // end switch
@@ -325,7 +325,7 @@ namespace Size.Benchmark
             this.numReq = pNumReq;
         }
 
-        public HttpRequestSequencedSize(int pNumReq, byte[] pPayload, bool async)
+        public HttpRequestSequencedSize(int pNumReq, byte[] pPayload, int pTime, bool async)
         {
             if (async)
             {
@@ -337,6 +337,7 @@ namespace Size.Benchmark
             }
             this.numReq = pNumReq;
             this.payload = pPayload;
+            this.timeUpdate = pTime;
                 
         }
 
@@ -346,9 +347,10 @@ namespace Size.Benchmark
         private int numReq;
         // Request type, get or post
         private SizeRequestT requestType;
-        // Score to post if requestType = post
+        // Dummy Payload
         private byte[] payload;
-  
+        // Time to spin
+        private int timeUpdate;
 
 
         public string Signature
@@ -357,11 +359,11 @@ namespace Size.Benchmark
             {
                 if (requestType == SizeRequestT.READ_SYNC || requestType == SizeRequestT.READ_ASYNC)
                 {
-                   return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
+                    return "GET computation?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
                 }
                 else
                 {
-                    return "POST size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
+                    return "POST computation?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1" + "&time=" + timeUpdate;
                 }
             }
         }
@@ -377,7 +379,7 @@ namespace Size.Benchmark
         {
             Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
 
-            var grain = SequencedSizeGrainFactory.GetGrain(0);
+            var grain = SequencedComputationGrainFactory.GetGrain(0);
             Byte[] readData;
 
 
@@ -397,24 +399,21 @@ namespace Size.Benchmark
            }
            else if (requestType == SizeRequestT.WRITE_SYNC)  {
                 Console.Write("Write Now \n");
-                await grain.WriteNow(payload);
+                await grain.WriteNow(timeUpdate);
                 return "ok";
             }   else { 
                // POST_ASYNC
                 Console.Write("Write Later \n ");
-                await grain.WriteLater(payload);
+                await grain.WriteLater(timeUpdate);
                 return "ok";
            }
         }
 
-
-
         public Task<string> ProcessResponseOnClient(string response)
         {
-            Console.Write("{0} Req # {1} \n ", response, numReq);
+            Console.Write("{0} Req # {1} \n ", response, numReq );
             return Task.FromResult(response);
         }
-
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)
         {

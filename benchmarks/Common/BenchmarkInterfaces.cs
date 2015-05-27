@@ -48,10 +48,11 @@ namespace Common
     public interface IRobotContext
     {
        //send an http request to the service. The task finishes after the response has been processed.
-        Task ServiceRequest(IHttpRequest request);
+        //each robot can optionally return a string encoded result back to the conductor.
+        Task<string> ServiceRequest(IHttpRequest request);
 
         //send an socket request to the service. The task finishes after the socket close has been processed.
-        Task ServiceConnection(ISocketRequest request);
+        Task<string> ServiceConnection(ISocketRequest request);
 
         //identifies this test instance. Can be used to name test-specific files and directories.
         string TestName { get; }

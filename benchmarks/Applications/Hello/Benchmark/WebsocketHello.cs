@@ -91,13 +91,14 @@ namespace Hello.Benchmark
             await socket.Send("Hello #" + count);
         }
 
-        public async Task ProcessMessageOnClient(ISocket socket, string message)
+        public async Task<string> ProcessMessageOnClient(ISocket socket, string message)
         {
             Util.Assert(message == "Hello #" + count);
             if (++count < numreqs)
                 await socket.Send("Hello #" + count);
             else
                 await socket.Close("completed");
+            return await Task.FromResult(message);
         }
 
         public async Task ProcessCloseOnClient(ISocket socket, string message)

@@ -73,9 +73,10 @@ namespace Hello.Benchmark
             return "Hello #" + nr;
         }
 
-        public async Task ProcessResponseOnClient(string response)
+        public async Task<string> ProcessResponseOnClient(string response)
         {
             Util.Assert(response == "Hello #" + nr, "incorrect response");
+            return response;
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)

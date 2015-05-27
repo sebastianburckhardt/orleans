@@ -6,16 +6,16 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Common;
-using Size.Interfaces; 
+using Computation.Interfaces; 
 
 #pragma warning disable 1998
 
-namespace Size.Benchmark
+namespace Computation.Benchmark
 {
     public class Benchmark : IBenchmark
     {
         // name of this benchmark
-        public string Name { get { return "size"; } }
+        public string Name { get { return "computation"; } }
 
         // list of scenarios for this benchmark
         public IEnumerable<IScenario> Scenarios { get { return scenarios; } }
@@ -28,12 +28,7 @@ namespace Size.Benchmark
              * All robots execute the same load.
              * Staleness bound is set to int.maxValue
              */ 
-            new NoReplicationSize(1,1000,100,1000),
-            new NoReplicationSize(1,1000,0,1000),
-            new SequencedSize(1,1,1000,0,0,0,100),
-            new SequencedSize(1,1000,0,100,0,0,100),
-            new SequencedSize(1,1000,0,0,100,0,100),
-            new SequencedSize(1,1000,0,0,100,0,100)
+   
 
 
 
@@ -103,7 +98,7 @@ namespace Size.Benchmark
                 Console.Write("{0}", arguments);
                 SizeRequestT requestType = (SizeRequestT)int.Parse(arguments["reqtype"]);
                 int numReq = int.Parse(arguments["numreq"]);
-
+                int timeUpdate = int.Parse(arguments["time"]);
 
                 if (int.Parse(arguments["rep"]) == 0)
                 {
@@ -111,7 +106,7 @@ namespace Size.Benchmark
                     HttpRequestSize request = null;
                     if (requestType == SizeRequestT.WRITE_SYNC)
                     {      
-                        request = new HttpRequestSize(numReq, Encoding.ASCII.GetBytes(body));
+                        request = new HttpRequestSize(numReq, Encoding.ASCII.GetBytes(body),timeUpdate);
                     }
                     else
                     {
@@ -127,12 +122,12 @@ namespace Size.Benchmark
                     if (requestType == SizeRequestT.WRITE_SYNC)
                     {
                         // Write Now Type
-                        request = new HttpRequestSequencedSize(numReq, Encoding.ASCII.GetBytes(body), false);
+                        request = new HttpRequestSequencedSize(numReq, Encoding.ASCII.GetBytes(body),timeUpdate, false);
                     }
                     else if (requestType == SizeRequestT.WRITE_ASYNC)
                     {
                         // Write Later Type
-                        request = new HttpRequestSequencedSize(numReq, Encoding.ASCII.GetBytes(body), true);
+                        request = new HttpRequestSequencedSize(numReq, Encoding.ASCII.GetBytes(body), timeUpdate, true);
                     }
                     return request;
                 }

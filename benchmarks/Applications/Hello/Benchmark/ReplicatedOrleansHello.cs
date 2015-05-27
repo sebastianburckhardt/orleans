@@ -37,10 +37,26 @@ namespace Hello.Benchmark
 
         public async Task<string> RobotScript(IRobotContext context, int workernumber, string parameters)
         {
-            for (int i = 0; i < numreqs; i++)
-                await context.ServiceRequest(new ReplicatedOrleansHelloRequest(numreqs * workernumber + i));
+            Task<string>[] requests = new Task<string>[numreqs];
 
-            return "ok";
+            for (int i = 0; i < numreqs; i++)
+                requests[i] = context.ServiceRequest(new ReplicatedOrleansHelloRequest(numreqs * workernumber + i));
+
+            Task.WaitAll(requests);
+
+            //verify that all responses are same. this wont work with current implementation. 
+            /*string r0 = responses[0];
+            for (int i = 1; i < numreqs; i++)
+            {
+                if (!responses[i].Equals(r0, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return "not ok. The responses do not match.";
+                }
+            }*/
+
+            var responses = string.Join(",", requests.Select((t) => t.Result));
+
+            return "ok: " + workernumber + " : " + responses;
         }
 
 
@@ -73,17 +89,18 @@ namespace Hello.Benchmark
         {
             //send to some grain.
             var replicatedGrain = ReplicatedHelloGrainFactory.GetGrain(0);
-            await replicatedGrain.Hello("U1");
-            return await replicatedGrain.GetTopMessagesAsync(false);
+            await replicatedGrain.Hello(nr.ToString());
+            return await replicatedGrain.GetTopMessagesAsync(true);
 
             /*var helloGrain = HelloGrainFactory.GetGrain(0);
             return await helloGrain.Hello(nr.ToString());*/
         }
 
-        public async Task ProcessResponseOnClient(string response)
+        public async Task<string> ProcessResponseOnClient(string response)
         {
             //This is a temporary check due to the potential duplicate write bug.
-            Util.Assert(response.StartsWith("U1"), "incorrect response");
+            //Util.Assert(response.StartsWith("U1"), "incorrect response");
+            return response;
         }
 
         public async Task ProcessErrorResponseOnClient(int statuscode, string response)
