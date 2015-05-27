@@ -11,6 +11,8 @@ using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 using System.Net.WebSockets;
 using System.Text;
+using Benchmarks;
+using Common;
 
 namespace LoadGenerator.WorkerRole
 {
@@ -18,6 +20,7 @@ namespace LoadGenerator.WorkerRole
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
+        private readonly BenchmarkList benchmarks = new BenchmarkList();        
 
         public override void Run()
         {
@@ -150,14 +153,31 @@ namespace LoadGenerator.WorkerRole
                                 content = content.Substring(content.IndexOf(' ') + 1);
                                 var pos1 = content.IndexOf(' ');
                                 var pos2 = content.IndexOf(' ', pos1+1);
-                                var pos3 = content.IndexOf(' ', pos2+1);
-                                var testname = content.Substring(pos1 + 1, pos2 - pos1);
-                                var robotnr = int.Parse(content.Substring(pos2 + 1, pos3 - pos2));
-                                var args = content.Substring(pos3 + 1);
+                                var testname = content.Substring(0, pos1 + 1);
+                                var robotnr = int.Parse(content.Substring(pos1 + 1, pos2 - pos1));
+                                var args = content.Substring(pos2 + 1);
 
                                 //  LoadGenerator -> Conductor : DONE robotnr result
+                                var scenarioStartPos = testname.LastIndexOf("."); //assuming senario name doesnt have "."
+                                var benchmarkStartPos = testname.LastIndexOf(".", scenarioStartPos - 1); //searches backward
+                                
+                                var scenarioName = testname.Substring(scenarioStartPos + 1).Trim(); //why is there extra space?
+                                var benchmarkName = testname.Substring(benchmarkStartPos + 1, scenarioStartPos - benchmarkStartPos - 1);
 
-                                var message = "DONE " + robotnr.ToString() + " " + args;
+                                var benchmark = benchmarks.ByName(benchmarkName);
+                                var scenarios = benchmark.Scenarios.Where(scenario => scenario.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
+                                
+                                if (scenarios.Count() != 1) //i.e. no scenorio or more than one scenario with same name.
+                                {
+                                    //TODO: Ask sebastian about error handling.
+                                    Trace.TraceInformation("No such scenario found");
+                                    continue;
+                                }
+
+                                //TODO: Create the Client to connect to the Orleans frontend.
+                                String result = await scenarios.First().RobotScript(null, robotnr, args);
+                                
+                                var message = "DONE " + robotnr.ToString() + " " + result;
 
                                 var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
                                 await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
