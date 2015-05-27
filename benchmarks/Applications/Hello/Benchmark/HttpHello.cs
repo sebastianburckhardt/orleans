@@ -45,7 +45,7 @@ namespace Hello.Benchmark
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            return "localhost:81/";
+            return Endpoints.GetDefaultService();
         }
     }
 

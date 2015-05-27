@@ -39,9 +39,9 @@ namespace Leaderboard.Benchmark
             WRITE_ASYNC
         };
 
-        public String RobotServiceEndpoint(int workernumber)
+        public string RobotServiceEndpoint(int workernumber)
         {
-            throw new NotImplementedException();
+            return Endpoints.GetDefaultService();
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}", numRobots, numReqs, percentRead); } }
@@ -195,9 +195,7 @@ namespace Leaderboard.Benchmark
         }
 
 
-   
-
-    }
+     }
 
 
     public class HttpRequestLeaderboard : IHttpRequest

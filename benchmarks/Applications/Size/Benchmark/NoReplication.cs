@@ -43,7 +43,7 @@ namespace Size.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            throw new NotImplementedException();
+            return Endpoints.GetDefaultService();
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xsize{3}", numRobots, numReqs, percentRead, payloadSize); } }

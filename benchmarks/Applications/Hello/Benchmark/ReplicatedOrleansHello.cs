@@ -46,10 +46,7 @@ namespace Hello.Benchmark
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            if (workernumber % 2 == 0)
-                return "orleansgeouswest.cloudapp.net/";
-            else
-                return "orleansgeoeuropewest.cloudapp.net/";
+            return Endpoints.GetService(workernumber);
         }
     }
 

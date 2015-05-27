@@ -44,7 +44,7 @@ namespace Benchmarks
             {
                 var command = rl();
 
-                if (command == "quit")
+                if (command == "quit" || command == "exit")
                     return null;
 
                 else if (command == "list") {

@@ -76,7 +76,7 @@ namespace LoadGenerator.WorkerRole
             {
 
                 //var uri = new Uri("ws://localhost:20473/api/robots");
-                var uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
+                var uri = new Uri(string.Format("ws://{0}/api/robots", Endpoints.GetConductor()));
             
                 using (var ws = new ClientWebSocket())
                 {

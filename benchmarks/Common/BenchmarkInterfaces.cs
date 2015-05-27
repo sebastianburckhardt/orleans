@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 namespace Common
 {
    
-
     public interface IBenchmark : IRequestDispatcher
     {
         // the name of this benchmark
@@ -17,8 +16,6 @@ namespace Common
 
         IEnumerable<IScenario> Scenarios { get; }
 
-        // factory methods for creating request objects on the server
-        IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body = null);
     }
 
     public interface IScenario
