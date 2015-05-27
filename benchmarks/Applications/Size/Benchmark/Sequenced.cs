@@ -1,5 +1,4 @@
-﻿using Orleans;
-using Common;
+﻿using Common;
 using Size.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ using System.Threading.Tasks;
 namespace Size.Benchmark
 {
 
-    public class SequencedLeaderboard : IScenario
+    public class SequencedSize : IScenario
     {
 
         // scenario parameters
@@ -21,7 +20,7 @@ namespace Size.Benchmark
         // async read operations = get approx top 10
         // sync write operations = post now
         // async write operations = postlater
-        public SequencedLeaderboard(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites)
+        public SequencedSize(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pPayloadSize)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
@@ -29,6 +28,7 @@ namespace Size.Benchmark
             this.percentAsyncRead = pPercentAsyncReads;
             this.percentSyncWrite = pPercentSyncWrites;
             this.percentAsyncWrite = pPercentAsyncWrites;
+            this.payloadSize = pPayloadSize;
         }
 
         private int numRobots;
@@ -96,8 +96,7 @@ namespace Size.Benchmark
             int asyncWrites;
 
             Random rnd;
-            string[] names;
-            int nameLength;
+
             int nextRandom;
             OperationType nextOp;
             byte[] nextWrite;
@@ -126,9 +125,11 @@ namespace Size.Benchmark
             totAsyncWrites = 0;
 
 
-            /*
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, true));
+            rnd.NextBytes(nextWrite);
 
+            await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber, nextWrite, true));
+
+            /*
             rnd.NextBytes(nextWrite);
             await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextWrite, false));
             rnd.NextBytes(nextWrite);
@@ -147,7 +148,7 @@ namespace Size.Benchmark
             */
 
             //TODO: refactor
-
+            /*
             for (int i = 0; i < numReqs; i++)
             {
                 if (asyncReads == 0 && asyncWrites == 0
@@ -307,6 +308,7 @@ namespace Size.Benchmark
             Util.Assert(totSyncReads == (percentSyncRead * numReqs / 100), "Incorrect Number Sync Reads " + totSyncReads);
             Util.Assert(totSyncWrites == (percentSyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
+            */
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
             return parameters;
@@ -329,11 +331,11 @@ namespace Size.Benchmark
         {
             if (async)
             {
-                this.requestType = SizeRequestT.READ_SYNC;
+                this.requestType = SizeRequestT.READ_ASYNC;
             }
             else
             {
-                this.requestType = SizeRequestT.READ_ASYNC;
+                this.requestType = SizeRequestT.READ_SYNC;
             }
             this.numReq = pNumReq;
         }
@@ -342,11 +344,11 @@ namespace Size.Benchmark
         {
             if (async)
             {
-                this.requestType = SizeRequestT.READ_SYNC;
+                this.requestType = SizeRequestT.WRITE_ASYNC;
             }
             else
             {
-                this.requestType = SizeRequestT.READ_ASYNC;
+                this.requestType = SizeRequestT.WRITE_SYNC;
             }
             this.numReq = pNumReq;
             this.payload = pPayload;
@@ -382,7 +384,8 @@ namespace Size.Benchmark
 
         public string Body
         {
-            get { return Encoding.ASCII.GetString(payload); }
+            get { if (payload == null) return null;
+                else return Encoding.ASCII.GetString(payload); }
         }
 
         public async Task<string> ProcessRequestOnServer()
@@ -390,20 +393,22 @@ namespace Size.Benchmark
             Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
 
             var grain = SequencedSizeGrainFactory.GetGrain(0);
-            byte[] readData;
-        
+            Byte[] readData;
+
 
            if (requestType == SizeRequestT.READ_SYNC)
             {
                 Console.Write("Read Current \n");
                 readData = grain.ReadCurrent("hello").Result;
-                return Encoding.ASCII.GetString(payload);
+                if (readData == null) return "";
+                else return Encoding.ASCII.GetString(payload);
             }
            else if (requestType == SizeRequestT.READ_ASYNC)
            {
-              Console.Write("Read Approx \n");
+                Console.Write("Read Approx \n");
                 readData = grain.ReadApprox("hello").Result;
-                return Encoding.ASCII.GetString(payload);
+                if (readData == null) return "";
+                else return Encoding.ASCII.GetString(payload);
            }
            else if (requestType == SizeRequestT.WRITE_SYNC)  {
                 Console.Write("Write Now \n");

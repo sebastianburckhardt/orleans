@@ -17,13 +17,13 @@ namespace Size.Grains
 
     {
 
-        private byte[] payload;
+        private Byte[] payload;
 
 
         #region Queries
 
        // public Task<Score[]> GetTopTen()
-        public Task<byte[]> Read(string post)
+        public Task<Byte[]> Read(string post)
         {
            return Task.FromResult(payload);
 
@@ -33,7 +33,7 @@ namespace Size.Grains
 
        #region Updates
 
-        public Task Write(byte[] pPayload)
+        public Task Write(Byte[] pPayload)
         {
             this.payload = pPayload;
             return TaskDone.Done;

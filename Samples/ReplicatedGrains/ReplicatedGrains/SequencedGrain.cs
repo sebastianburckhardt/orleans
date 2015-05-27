@@ -6,6 +6,8 @@ using System.Text;
 using Orleans;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using Common;
+
 #pragma warning disable 1998
 
 namespace ReplicatedGrains
@@ -255,6 +257,7 @@ namespace ReplicatedGrains
                 formatter.Serialize(ms, s);
                 ms.Position = 0;
                 this.State.Raw = ms.GetBuffer();
+                Util.Assert(this.State.Raw != null);
             }
         }
 

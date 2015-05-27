@@ -32,7 +32,7 @@ namespace Leaderboard.Interfaces
     using System.Collections;
     
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     public class SequencedLeaderboardGrainFactory
     {
@@ -64,7 +64,7 @@ namespace Leaderboard.Interfaces
                 return SequencedLeaderboardGrainReference.Cast(grainRef);
             }
         
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
         [System.SerializableAttribute()]
         [global::Orleans.CodeGeneration.GrainReferenceAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ISequencedLeaderboardGrain")]
@@ -160,7 +160,7 @@ namespace Leaderboard.Interfaces
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [global::Orleans.CodeGeneration.MethodInvokerAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ISequencedLeaderboardGrain", -1120216507)]
     internal class SequencedLeaderboardGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
@@ -235,7 +235,7 @@ namespace Leaderboard.Interfaces
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     public class LeaderboardGrainFactory
     {
@@ -267,7 +267,7 @@ namespace Leaderboard.Interfaces
                 return LeaderboardGrainReference.Cast(grainRef);
             }
         
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
         [System.SerializableAttribute()]
         [global::Orleans.CodeGeneration.GrainReferenceAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderboardGrain")]
@@ -351,7 +351,7 @@ namespace Leaderboard.Interfaces
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [global::Orleans.CodeGeneration.MethodInvokerAttribute("Leaderboard.Interfaces.Leaderboard.Interfaces.ILeaderboardGrain", 553247506)]
     internal class LeaderboardGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
@@ -418,7 +418,7 @@ namespace Leaderboard.Interfaces
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
     internal class Leaderboard_Interfaces_ScoreSerialization

@@ -1,26 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props" Condition="Exists('..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props')" />
+  <Import Project="..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.props" Condition="Exists('..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.props')" />
+  <Import Project="..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.7\build\Microsoft.Orleans.Templates.Interfaces.props" Condition="Exists('..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.7\build\Microsoft.Orleans.Templates.Interfaces.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{C0B03590-D395-47D0-B3FC-7FC6213C566B}</ProjectGuid>
+    <ProjectGuid>{082161E0-3095-4307-BD02-E69CACBB4A39}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Hello.Grains</RootNamespace>
-    <AssemblyName>Hello.Grains</AssemblyName>
+    <RootNamespace>Size.Interfaces</RootNamespace>
+    <AssemblyName>Size.Interfaces</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
-    <NuGetPackageImportStamp>f6be3f1b</NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(OrleansSDK)' != '' ">
-    <StartAction>Program</StartAction>
-    <StartProgram>$(OrleansSDK)\LocalSilo\OrleansHost.exe</StartProgram>
-    <StartWorkingDirectory>$(OrleansSDK)\LocalSilo</StartWorkingDirectory>
+    <NuGetPackageImportStamp>bdd84c7f</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -53,28 +49,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HelloGrain.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Common.cs" />
+    <Compile Include="ISequencedSizeGrain.cs" />
+    <Compile Include="ISizeGrain.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Interfaces\Hello.Interfaces.csproj">
-      <Project>{c6d426d7-b79e-4f45-a235-a8b359a7dc10}</Project>
-      <Name>Hello.Interfaces</Name>
-    </ProjectReference>
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.7\build\Microsoft.Orleans.Templates.Interfaces.targets" Condition="Exists('..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.7\build\Microsoft.Orleans.Templates.Interfaces.targets')" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.targets'))" />
   </Target>
-  <Import Project="..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets" Condition="Exists('..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.targets" Condition="Exists('..\..\..\packages\Microsoft.Orleans.Templates.Interfaces.1.0.8\build\Microsoft.Orleans.Templates.Interfaces.targets')" />
 </Project>

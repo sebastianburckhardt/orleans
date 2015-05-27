@@ -28,7 +28,8 @@ namespace Size.Benchmark
              * All robots execute the same load.
              * Staleness bound is set to int.maxValue
              */ 
-            
+            new NoReplicationSize(1,1,100,100),
+            new SequencedSize(1,1,100,0,0,0,100)
            
         };
 
@@ -126,7 +127,7 @@ namespace Size.Benchmark
                         // Write Later Type
                         request = new HttpRequestSequencedSize(numReq, Encoding.ASCII.GetBytes(body), true);
                     }
-
+                    return request;
                 }
             }
 

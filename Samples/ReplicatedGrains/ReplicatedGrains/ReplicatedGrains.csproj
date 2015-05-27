@@ -56,6 +56,10 @@
     <Compile Include="BackgroundWorker.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\benchmarks\Common\Common.csproj">
+      <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Examples.Interfaces\Examples.Interfaces.csproj">
       <Project>{163cce80-c506-468c-9b28-e2ff198097e3}</Project>
       <Name>Examples.Interfaces</Name>

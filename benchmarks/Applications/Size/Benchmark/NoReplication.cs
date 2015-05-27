@@ -1,5 +1,4 @@
-﻿using Orleans;
-using Common;
+﻿using Common;
 using Size.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -19,12 +18,13 @@ namespace Size.Benchmark
         // scenario parameters
         // read operations = get top 10
         // write operations = post 
-        public NoReplicationSize(int pNumRobots, int pNumReqs, int pPercentRead)
+        public NoReplicationSize(int pNumRobots, int pNumReqs, int pPercentRead, int pPayloadSize)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
             this.percentRead = pPercentRead;
             this.percentWrite = 100 - percentRead;
+            this.payloadSize = pPayloadSize;
         }
 
         private int numRobots;
@@ -98,15 +98,6 @@ namespace Size.Benchmark
 
             rnd.NextBytes(nextWrite);
 
-            /*
-             await context.ServiceRequest(new HttpRequestSize(numreqs * robotnumber, nextWrite));
-             await context.ServiceRequest(new HttpRequestSize(numreqs * robotnumber));
-
-             rnd.NextBytes(nextWrite);
-
-             await context.ServiceRequest(new HttpRequest(numreqs * robotnumber, nextWrite));
-             await context.ServiceRequest(new HttpRequest(numreqs * robotnumber));
-              */
 
             //TODO: refactor
             for (int i = 0; i < numReqs; i++)
@@ -172,7 +163,7 @@ namespace Size.Benchmark
 
             Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads "+ totReads);
             Util.Assert(totWrites == (percentWrite * numReqs / 100), "Incorrect Number Writes " + totWrites);
-
+            
             Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
             return parameters;
         }
@@ -206,6 +197,7 @@ namespace Size.Benchmark
             this.requestType = SizeRequestT.WRITE_SYNC;
             this.payload = pPayload;
             this.numReq = pNumReq;
+            this.payload = pPayload;
         }
 
         // Request number
@@ -226,6 +218,7 @@ namespace Size.Benchmark
                 }
                 else
                 {
+                    Util.Assert(payload != null, "Cannot have WRITE type and null payload");
                     return "POST size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0";
                 }
             }
@@ -234,7 +227,7 @@ namespace Size.Benchmark
 
         public string Body
         {
-            get { return Encoding.ASCII.GetString(payload); }
+            get { if (payload == null) return null; else return Encoding.ASCII.GetString(payload); }
         }
 
         public async Task<string> ProcessRequestOnServer()
@@ -249,7 +242,8 @@ namespace Size.Benchmark
             {
                 Console.Write("READ \n");
                 readData = grain.Read("Hello").Result;
-                return Encoding.ASCII.GetString(readData);
+                if (readData == null) return "";
+                else return Encoding.ASCII.GetString(readData);
             }
             else
             {

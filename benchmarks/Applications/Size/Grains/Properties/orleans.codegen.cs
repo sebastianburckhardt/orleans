@@ -16,23 +16,23 @@
 #pragma warning disable 1591
 #pragma warning disable 1998
 
-namespace Leaderboard.Grains
+namespace Size.Grains
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
     using Orleans.CodeGeneration;
     using Orleans;
-    using ReplicatedGrains;
+    using System;
     using System.Runtime.InteropServices;
     using System.Runtime.Serialization;
+    using System.Collections;
+    using System.Collections.Generic;
+    using ReplicatedGrains;
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [SerializableAttribute()]
-    [global::Orleans.CodeGeneration.GrainStateAttribute("Leaderboard.Grains.Leaderboard.Grains.SequencedLeaderboardGrain")]
-    public class SequencedLeaderboardGrainState : global::Orleans.CodeGeneration.GrainState, IGlobalState
+    [global::Orleans.CodeGeneration.GrainStateAttribute("Size.Grains.Size.Grains.SequencedSizeGrain")]
+    public class SequencedSizeGrainState : global::Orleans.CodeGeneration.GrainState, IGlobalState
     {
         
 
@@ -47,11 +47,11 @@ namespace Leaderboard.Grains
 
             public override System.String ToString()
             {
-                return System.String.Format("SequencedLeaderboardGrainState( Raw={0} )", @Raw);
+                return System.String.Format("SequencedSizeGrainState( Raw={0} )", @Raw);
             }
         
-        public SequencedLeaderboardGrainState() : 
-                base("Leaderboard.Grains.SequencedLeaderboardGrain")
+        public SequencedSizeGrainState() : 
+                base("Size.Grains.SequencedSizeGrain")
         {
             this.InitStateFields();
         }
@@ -71,21 +71,21 @@ namespace Leaderboard.Grains
         [global::Orleans.CodeGeneration.CopierMethodAttribute()]
         public static object _Copier(object original)
         {
-            SequencedLeaderboardGrainState input = ((SequencedLeaderboardGrainState)(original));
+            SequencedSizeGrainState input = ((SequencedSizeGrainState)(original));
             return input.DeepCopy();
         }
         
         [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
         public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
         {
-            SequencedLeaderboardGrainState input = ((SequencedLeaderboardGrainState)(original));
+            SequencedSizeGrainState input = ((SequencedSizeGrainState)(original));
             input.SerializeTo(stream);
         }
         
         [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
         public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
         {
-            SequencedLeaderboardGrainState result = new SequencedLeaderboardGrainState();
+            SequencedSizeGrainState result = new SequencedSizeGrainState();
             result.DeserializeFrom(stream);
             return result;
         }
