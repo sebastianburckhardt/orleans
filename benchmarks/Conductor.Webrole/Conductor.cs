@@ -1,4 +1,5 @@
 ﻿using Common;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,8 +93,6 @@ namespace Conductor.Webrole
 
                     var result = RunScenario(scenario).Result;
 
-                    Broadcast("Result", result);
-
 
                     // collect stats from all robots
                     var overallstats = new Dictionary<string, LatencyDistribution>();
@@ -105,6 +104,8 @@ namespace Conductor.Webrole
                                     overallstats.Add(kkvp.Key, new LatencyDistribution());
                                 overallstats[kkvp.Key].MergeDistribution(kkvp.Value);
                             }
+
+                    Broadcast("Result", result + " " + Util.PrintStats(overallstats));
 
                     if (overallstats.Count > 0)
                         Console.WriteLine("Stats", Util.PrintStats(overallstats));
@@ -128,19 +129,16 @@ namespace Conductor.Webrole
             Util.Assert(robot.promise == null);
             robot.promise = new TaskCompletionSource<string>();
 
-            var message = "START " + testname + " " + robotnumber + " " + parameters;
-            var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
-            var ws = LoadGenerators[robot.instance];
-            if (ws.State == WebSocketState.Open)
+            //var message = "START " + testname + " " + robotnumber + " " + parameters;
+            JObject message = JObject.FromObject(new
             {
-                await ws.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-                return await robot.promise.Task;
-            }
-            else
-            {
-                await this.Trace("lost connection to robot " + robotnumber);
-                return "connection lost";
-            }
+                type = "START",
+                testname = testname,
+                robotnr = robotnumber,
+                args = parameters
+            });
+            var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
+            await LoadGenerators[robot.instance].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
 
         }
 
@@ -150,6 +148,7 @@ namespace Conductor.Webrole
             var promise = robot.promise;
             robot.promise = null;
             robot.stats = stats;
+
             promise.SetResult(message);
         }
 
