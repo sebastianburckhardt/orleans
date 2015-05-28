@@ -71,6 +71,11 @@ namespace Benchmarks
                     result =  await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
                 }
             }
+            catch (Exception e)
+            {
+                System.Console.Write("Error: {0} \n", e.ToString());
+                return  ("ERROR " + e.ToString());
+            }
 
             finally
             {
