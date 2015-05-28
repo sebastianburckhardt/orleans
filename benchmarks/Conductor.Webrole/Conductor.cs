@@ -29,7 +29,7 @@ namespace Conductor.Webrole
         public Dictionary<string, WebSocket> LoadGenerators = new Dictionary<string, WebSocket>();
 
         IBenchmark benchmark;
-        IScenario scenario;
+        IEnumerable<IScenario> scenarios;
         public List<RobotInfo> robots;
 
         public class RobotInfo
@@ -62,10 +62,8 @@ namespace Conductor.Webrole
                     break;
 
                 this.benchmark = kvp.Value.Key;
-                this.scenario = kvp.Value.Value;
-                this.testname = string.Format("{0:o}.{1}.{2}", DateTime.UtcNow, benchmark.Name, scenario.Name);
-                this.robots = new List<RobotInfo>();
-
+                this.scenarios = kvp.Value.Value;
+                
                 if (LoadGenerators.Count == 0)
                 {
                     Broadcast("Failed", "cannot run scenario: no load generators");
@@ -73,18 +71,24 @@ namespace Conductor.Webrole
                 }
 
                 // assign robots to load generators round-robin
-                var numrobots = scenario.NumRobots;
-                while (numrobots > 0)
-                    foreach (var gen in LoadGenerators)
-                    {
-                        if (numrobots-- == 0)
-                            break;
-                        robots.Add(new RobotInfo() { instance = gen.Key, ws = gen.Value });
-                    }
 
-                var result = RunScenario().Result;
+                foreach (var scenario in scenarios)
+                {
+                    this.testname = string.Format("{0:o}.{1}.{2}", DateTime.UtcNow, benchmark.Name, scenario.Name);
+                    this.robots = new List<RobotInfo>();
+                    var numrobots = scenario.NumRobots;
+                    while (numrobots > 0)
+                        foreach (var gen in LoadGenerators)
+                        {
+                            if (numrobots-- == 0)
+                                break;
+                            robots.Add(new RobotInfo() { instance = gen.Key, ws = gen.Value });
+                        }
 
-                Broadcast("Result", result);
+                    var result = RunScenario(scenario).Result;
+
+                    Broadcast("Result", result);
+                }
             }
 
             Broadcast(">", "Finished");
@@ -143,7 +147,7 @@ namespace Conductor.Webrole
                 Broadcast("Connected Generators (" + LoadGenerators.Count.ToString() + ")", string.Join(" ", LoadGenerators.Keys));
         }
 
-        public async Task<string> RunScenario()
+        private async Task<string> RunScenario(IScenario scenario)
         {
             try
             {
