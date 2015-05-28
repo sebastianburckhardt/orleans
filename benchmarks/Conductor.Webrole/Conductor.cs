@@ -140,6 +140,7 @@ namespace Conductor.Webrole
             var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
             await LoadGenerators[robot.instance].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
 
+            return await robot.promise.Task;
         }
 
         public void OnRobotMessage(int robotnumber, string message, Dictionary<string, LatencyDistribution> stats)
