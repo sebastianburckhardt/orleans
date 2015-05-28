@@ -20,6 +20,7 @@
 
 using System;
 using Orleans;
+using Common;
 
 
 namespace LocalSimulation
@@ -31,7 +32,7 @@ namespace LocalSimulation
     {
         static void Main(string[] args)
         {
-            
+
 #if USE_INPROC_SILO
             // The Orleans silo environment is initialized in its own app domain in order to more
             // closely emulate the distributed situation, when the client and the server cannot
@@ -45,7 +46,7 @@ namespace LocalSimulation
             GrainClient.Initialize("DevTestClientConfiguration.xml");
 
             // initialize servers
-            
+
             var numservers = 2;
             var deployment = "local-simulation-on-" + System.Environment.MachineName;
             var servers = new Benchmarks.Server[numservers];
@@ -53,7 +54,7 @@ namespace LocalSimulation
 
             for (int i = 0; i < numservers; i++)
             {
-                string servername =  "server" + i;
+                string servername = "server" + i;
                 servers[i] = new Benchmarks.Server(
                     "localhost on " + System.Environment.MachineName,
                    servername,
@@ -65,9 +66,9 @@ namespace LocalSimulation
                 var endpoint = string.Format("http://+:843/simserver{0}/", i.ToString());
                 Console.WriteLine("Launching server at " + endpoint);
                 servers[i].Start(endpoint);
-                urlpath[i] = string.Format("localhost:843/simserver{0}/", i.ToString());
+                urlpath[i] = string.Format("localhost:843/simserver{0}", i.ToString());
             }
-            
+
             // start conductor console 
 
             var benchmarkconsole = new Benchmarks.Console(
@@ -75,31 +76,31 @@ namespace LocalSimulation
                    () => { Console.Write("> "); return Console.ReadLine(); }
                 );
 
-           benchmarkconsole.Welcome();
+            benchmarkconsole.Welcome();
 
-           while (true)
-           {
-               var scenarios = benchmarkconsole.SelectScenario();
+            while (true)
+            {
+                var scenarios = benchmarkconsole.SelectScenario();
 
-               if (scenarios == null || !scenarios.HasValue)
-               {
-                   break;
-               }
+                if (scenarios == null || !scenarios.HasValue)
+                {
+                    break;
+                }
 
-               foreach (var x in scenarios.Value.Value)
-               {
-                   var simulator = new Simulator(urlpath, x.NumRobots, scenarios.Value.Key, x);
+                foreach (var x in scenarios.Value.Value)
+                {
+                    var simulator = new Simulator(urlpath, x.NumRobots, scenarios.Value.Key, x);
 
-                   var result = simulator.Run().Result;
+                    var result = simulator.Run().Result;
 
-                   Console.WriteLine(result);
+                    Console.WriteLine(result);
 
-                   Console.WriteLine();
+                    Console.WriteLine();
 
-                   Console.WriteLine(simulator.PrintStats());
-               }
-           }
+                    Console.WriteLine(Util.PrintStats(simulator.Stats));
 
+                }
+            }
 #if USE_INPROC_SILO
             hostDomain.DoCallBack(ShutdownSilo);
 #endif
