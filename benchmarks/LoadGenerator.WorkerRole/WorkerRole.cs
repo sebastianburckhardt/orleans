@@ -102,7 +102,7 @@ namespace LoadGenerator.WorkerRole
                             JObject message = JObject.FromObject(new
                                 {
                                     type = "READY",
-                                    loadgenerator = instance + "." + connectioncount++.ToString()
+                                    loadgenerator = deployment + "." + instance + "." + connectioncount++.ToString()
                                 });
                             ArraySegment<byte> outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
                             await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
