@@ -57,6 +57,10 @@
     <Compile Include="Server.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Applications\Computation\Benchmarks\Computation.Benchmarks.csproj">
+      <Project>{dfb5c1c6-1d71-4494-b364-e794ae6ed7c2}</Project>
+      <Name>Computation.Benchmarks</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Applications\Hello\Benchmark\Hello.Benchmark.csproj">
       <Project>{139e86e5-0fd6-4ab2-855a-fd30ea5c1021}</Project>
       <Name>Hello.Benchmark</Name>

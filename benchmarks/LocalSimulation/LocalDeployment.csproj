@@ -126,6 +126,14 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Applications\Computation\Grains\Computation.Grains.csproj">
+      <Project>{e90fccbc-c1de-4d28-a093-522a38ed1901}</Project>
+      <Name>Computation.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Applications\Computation\Interfaces\Computation.Interfaces.csproj">
+      <Project>{33ffda3e-a966-4015-bdcc-3bc79e166653}</Project>
+      <Name>Computation.Interfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Applications\Leaderboard\Grains\Leaderboard.Grains.csproj">
       <Project>{90ae8b1c-d7f2-4fc2-a7fd-2086671b3cda}</Project>
       <Name>Leaderboard.Grains</Name>
@@ -137,6 +145,10 @@
     <ProjectReference Include="..\Applications\Size\Grains\Size.Grains.csproj">
       <Project>{483b3fea-88e8-4ab2-a3a8-f4cd780660e5}</Project>
       <Name>Size.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Applications\Size\Interfaces\Size.Interfaces.csproj">
+      <Project>{082161e0-3095-4307-bd02-e69cacbb4a39}</Project>
+      <Name>Size.Interfaces</Name>
     </ProjectReference>
     <ProjectReference Include="..\Benchmarks\BenchmarkList.csproj">
       <Project>{666fcf4a-a67f-4409-afde-8d8b869a804c}</Project>

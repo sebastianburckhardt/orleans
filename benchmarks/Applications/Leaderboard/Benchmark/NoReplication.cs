@@ -162,7 +162,7 @@ namespace Leaderboard.Benchmark
 
                 switch (nextOp) {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestLeaderboard(numReqs * robotnumber + i));
+                        string listSize = await context.ServiceRequest(new HttpRequestLeaderboard(numReqs * robotnumber + i));
                         totReads++;
                         break;
                     case OperationType.WRITE_SYNC:
