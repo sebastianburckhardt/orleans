@@ -390,9 +390,7 @@ namespace Leaderboard.Benchmark
         private LeaderboardRequestT requestType;
         // Score to post if requestType = post
         private Score score;
-        // Local or global call (sync or async calls to primary)
-        private bool async;
-
+    
 
         public string Signature
         {

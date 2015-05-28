@@ -80,6 +80,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{19F4F6F7-A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Computation.Benchmarks", "Applications\Computation\Benchmarks\Computation.Benchmarks.csproj", "{DFB5C1C6-1D71-4494-B364-E794AE6ED7C2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AzureBenchmark", "AzureBenchmark", "{3D45AA33-84A2-47EF-9C94-F5EB141C605C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Storage", "Benchmarks\Azure.Storage\Azure.Storage.csproj", "{8708E004-E6EA-4A16-8E3F-6EA0AC5E07C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -190,6 +194,10 @@ Global
 		{DFB5C1C6-1D71-4494-B364-E794AE6ED7C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFB5C1C6-1D71-4494-B364-E794AE6ED7C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFB5C1C6-1D71-4494-B364-E794AE6ED7C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8708E004-E6EA-4A16-8E3F-6EA0AC5E07C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8708E004-E6EA-4A16-8E3F-6EA0AC5E07C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8708E004-E6EA-4A16-8E3F-6EA0AC5E07C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8708E004-E6EA-4A16-8E3F-6EA0AC5E07C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -226,5 +234,6 @@ Global
 		{33FFDA3E-A966-4015-BDCC-3BC79E166653} = {D89511CF-C2E7-4C9C-93AA-938FC08D7593}
 		{19F4F6F7-ACDC-408F-BDFA-40D1C2060732} = {8588487F-7D5D-4715-BB10-293015FFFBD9}
 		{DFB5C1C6-1D71-4494-B364-E794AE6ED7C2} = {D89511CF-C2E7-4C9C-93AA-938FC08D7593}
+		{8708E004-E6EA-4A16-8E3F-6EA0AC5E07C0} = {3D45AA33-84A2-47EF-9C94-F5EB141C605C}
 	EndGlobalSection
 EndGlobal

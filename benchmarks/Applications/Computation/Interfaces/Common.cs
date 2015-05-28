@@ -15,7 +15,7 @@ namespace Computation.Interfaces
     /// 1) Read
     /// 2) Write
     /// </summary>
-    public enum SizeRequestT
+    public enum ComputationRequestT
     {
         READ_SYNC,
         WRITE_SYNC,

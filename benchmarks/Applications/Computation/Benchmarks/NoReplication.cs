@@ -43,10 +43,7 @@ namespace Computation.Benchmark
 
         public String RobotServiceEndpoint(int workernumber)
         {
-            if (workernumber % 2 == 0)
-                return "orleansgeouswest.cloudapp.net/";
-            else
-                return "orleansgeoeuropewest.cloudapp.net/";
+            return Endpoints.GetDefaultService();
         }
 
         public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xsize{3}", numRobots, numReqs, percentRead, timeUpdate); } }
@@ -152,12 +149,12 @@ namespace Computation.Benchmark
 
                 switch (nextOp) {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestSize(numReqs * robotnumber + i));
+                        await context.ServiceRequest(new HttpRequestComputation(numReqs * robotnumber + i));
                         totReads++;
                         break;
                     case OperationType.WRITE_SYNC:
                           rnd.NextBytes(nextWrite);
-                        await context.ServiceRequest(new HttpRequestSize(numReqs * robotnumber + i, nextWrite, timeUpdate));
+                        await context.ServiceRequest(new HttpRequestComputation(numReqs * robotnumber + i, nextWrite, timeUpdate));
                         totWrites++;
                         break;
                     case OperationType.READ_ASYNC:
@@ -182,16 +179,16 @@ namespace Computation.Benchmark
     }
 
 
-    public class HttpRequestSize : IHttpRequest
+    public class HttpRequestComputation : IHttpRequest
     {
 
           /// <summary>
         /// Constructor for GetTop10 calls
         /// </summary>
         /// <param name="pNumReq"></param>
-        public HttpRequestSize(int pNumReq)
+        public HttpRequestComputation(int pNumReq)
         {
-            this.requestType = SizeRequestT.READ_SYNC;
+            this.requestType = ComputationRequestT.READ_SYNC;
             this.numReq = pNumReq;
         }
 
@@ -200,9 +197,9 @@ namespace Computation.Benchmark
         /// </summary>
         /// <param name="pScore"></param>
         /// <param name="pNumReq"></param>
-        public HttpRequestSize(int pNumReq,byte[] pPayload, int pTimeUpdate)
+        public HttpRequestComputation(int pNumReq,byte[] pPayload, int pTimeUpdate)
         {
-            this.requestType = SizeRequestT.WRITE_SYNC;
+            this.requestType = ComputationRequestT.WRITE_SYNC;
             this.payload = pPayload;
             this.numReq = pNumReq;
             this.payload = pPayload;
@@ -212,7 +209,7 @@ namespace Computation.Benchmark
         // Request number
         private int numReq;
         // Request type, get or post
-        private SizeRequestT requestType;
+        private ComputationRequestT requestType;
         // Score to post if requestType = post
         private byte[] payload ;
         private int timeUpdate;
@@ -222,7 +219,7 @@ namespace Computation.Benchmark
         {
             get
             {
-                if (requestType == SizeRequestT.READ_SYNC)
+                if (requestType == ComputationRequestT.READ_SYNC)
                 {
                     return "GET computation?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0";
                 }
@@ -248,7 +245,7 @@ namespace Computation.Benchmark
 
             byte[] readData;
 
-           if (requestType == SizeRequestT.READ_SYNC)
+           if (requestType == ComputationRequestT.READ_SYNC)
             {
                 Console.Write("READ \n");
                 readData = grain.Read("Hello").Result;
@@ -257,7 +254,7 @@ namespace Computation.Benchmark
             }
             else
             {
-                Util.Assert(requestType == SizeRequestT.WRITE_SYNC);
+                Util.Assert(requestType == ComputationRequestT.WRITE_SYNC);
                 await grain.Write(timeUpdate);
                 return "ok";
             }  

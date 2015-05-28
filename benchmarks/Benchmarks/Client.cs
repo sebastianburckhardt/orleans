@@ -93,7 +93,7 @@ namespace Benchmarks
                 }
                 catch (Exception e)
                 {
-                    System.Console.Write("Latency should not be negative");
+                    System.Console.Write("Latency should not be negative " + e.ToString());
                     //TODO HANDLE BETTER
                 }                
             }
