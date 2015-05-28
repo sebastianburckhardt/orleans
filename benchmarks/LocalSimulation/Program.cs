@@ -79,20 +79,25 @@ namespace LocalSimulation
 
            while (true)
            {
-               var x = benchmarkconsole.SelectScenario();
+               var scenarios = benchmarkconsole.SelectScenario();
 
-               if (!x.HasValue)
+               if (scenarios == null || !scenarios.HasValue)
+               {
                    break;
+               }
 
-               var simulator = new Simulator(urlpath, x.Value.Value.NumRobots, x.Value.Key, x.Value.Value);
+               foreach (var x in scenarios.Value.Value)
+               {
+                   var simulator = new Simulator(urlpath, x.NumRobots, scenarios.Value.Key, x);
 
-               var result = simulator.Run().Result;
+                   var result = simulator.Run().Result;
 
-               Console.WriteLine(result);
+                   Console.WriteLine(result);
 
-               Console.WriteLine();
+                   Console.WriteLine();
 
-               Console.WriteLine(simulator.PrintStats());
+                   Console.WriteLine(simulator.PrintStats());
+               }
            }
 
 #if USE_INPROC_SILO

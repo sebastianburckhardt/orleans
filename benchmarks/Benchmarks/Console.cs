@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Benchmarks
@@ -38,7 +39,7 @@ namespace Benchmarks
             wl("");
         }
 
-        public KeyValuePair<IBenchmark, IScenario>?  SelectScenario()
+        public KeyValuePair<IBenchmark, IEnumerable<IScenario>>? SelectScenario()
         {
             while (true)
             {
@@ -76,14 +77,26 @@ namespace Benchmarks
                             else if (command.StartsWith("run"))
                             {
                                 var scenarioname = command.Substring(dotpos + 1);
-                                var sc = bm.Scenarios.FirstOrDefault(s => s.Name == scenarioname);
-                                if (sc == null)
+
+                                if (scenarioname == null || scenarioname.Length == 0)
+                                {
                                     PrintUsage(wl);
+                                }
                                 else
                                 {
-                                    // run the scenario
-                                    return new KeyValuePair<IBenchmark, IScenario>(bm, sc);
-                                }
+                                    //Regex scenarioRegex = new Regex(scenarioname);
+
+                                    var scenarios = bm.Scenarios.Where((s) => (scenarioname == s.Name || scenarioname == "*"));
+                                    
+                                    if (scenarios == null || !scenarios.Any())
+                                    {
+                                        PrintUsage(wl);
+                                    }
+                                    else
+                                    {
+                                        return new KeyValuePair<IBenchmark, IEnumerable<IScenario>>(bm, scenarios);
+                                    }
+                                }                                
                             }
                             else
                                 PrintUsage(wl);
