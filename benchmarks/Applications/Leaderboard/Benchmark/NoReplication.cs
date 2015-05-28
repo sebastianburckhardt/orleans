@@ -70,7 +70,6 @@ namespace Leaderboard.Benchmark
         // each robot simply echoes the parameters
         public async Task<string> RobotScript(IRobotContext context, int robotnumber, string parameters)
         {
-            Console.Write("PARAMETERS {0} \n", parameters);
      
             int reads;
             int writes;
@@ -250,7 +249,6 @@ namespace Leaderboard.Benchmark
 
         public async Task<string> ProcessRequestOnServer()
         {
-            Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
 
             var leaderboard = LeaderboardGrainFactory.GetGrain(0);
             string posts;
@@ -277,7 +275,6 @@ namespace Leaderboard.Benchmark
 
         public Task<string> ProcessResponseOnClient(string response)
         {
-            Console.Write("{0} Req # {1} \n ", response, numReq);
             return Task.FromResult(response);
         }
 
