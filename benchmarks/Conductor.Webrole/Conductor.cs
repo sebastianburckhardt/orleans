@@ -130,9 +130,18 @@ namespace Conductor.Webrole
 
             var message = "START " + testname + " " + robotnumber + " " + parameters;
             var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
-            await LoadGenerators[robot.instance].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+            var ws = LoadGenerators[robot.instance];
+            if (ws.State == WebSocketState.Open)
+            {
+                await ws.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+                return await robot.promise.Task;
+            }
+            else
+            {
+                await this.Trace("lost connection to robot " + robotnumber);
+                return "connection lost";
+            }
 
-            return await robot.promise.Task;
         }
 
         public void OnRobotMessage(int robotnumber, string message, Dictionary<string, LatencyDistribution> stats)
