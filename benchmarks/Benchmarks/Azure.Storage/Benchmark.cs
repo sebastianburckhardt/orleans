@@ -51,42 +51,47 @@ namespace Azure.Storage
                     AzureCommon.OperationType requestType = (AzureCommon.OperationType)int.Parse(arguments["reqtype"]);
                     int numReq = int.Parse(arguments["numreq"]);
                     string partitionKey = arguments["pkey"];
-                    string rowKey = arguments["rkey"];
-
+                    string table = arguments["table"];
+                     
                     HttpRequestAzureTable request = null;
                     if (requestType == AzureCommon.OperationType.READ)
                     {
                         // READ type
-                         request = new HttpRequestAzureTable(numReq,partitionKey, rowKey);
+                         string rowKey = arguments["rkey"];
+                         request = new HttpRequestAzureTable(requestType,numReq,table,partitionKey, rowKey, null);
                     } else if (requestType == AzureCommon.OperationType.READ_RANGE)
                     {
-                        // READ type
-                         request = new HttpRequestAzureTable(numReq,partitionKey);
+                        // READ RANGE type
+                         request = new HttpRequestAzureTable(requestType,numReq,table,partitionKey,null, null);
                     }
-                    else if (requestType == AzureCommon.OperationType.INSERT)
+                    else if (requestType == AzureCommon.OperationType.CREATE)
                     {
-                        // INSERT type
-                        Util.Assert(false, "Should be of POST type");
-                    } else if (requestType == AzureCommon.OperationType.INSERT_BATCH) {
-                        Util.Assert(false, "Should be of POST type");
+                        // CREATE type
+                        request = new HttpRequestAzureTable(requestType,numReq,table,null,null,null);
+                    }
+                    else
+                    {
+                        Util.Fail("Should be of post type");
                     }
 
                     return request;
                 }
-            else if (verb == "POST" && string.Join("/", urlpath) == "size")
+            else if (verb == "POST" && string.Join("/", urlpath) == "azure")
             {
                 Console.Write("{0}", arguments);
                 AzureCommon.OperationType requestType = (AzureCommon.OperationType)int.Parse(arguments["reqtype"]);
                 int numReq = int.Parse(arguments["numreq"]);
+                string table = arguments["table"];
 
                     HttpRequestAzureTable request = null;
                     if (requestType == AzureCommon.OperationType.UPDATE)
-                    {      
-                       // request = new HttpRequestAzureTable(numReq, body,false);
+                    {
+                         ByteEntity entity = Azure.Storage.ByteEntity.FromStringToEntity(body);
+                         request = new HttpRequestAzureTable(requestType,numReq, table, null,null,entity);
                     }
                     else
                     {
-                        Util.Assert(false, "Incorrect message type");
+                        throw new NotImplementedException();
                     }
 
                     return request;

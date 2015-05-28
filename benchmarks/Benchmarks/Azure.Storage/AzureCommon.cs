@@ -13,7 +13,7 @@ namespace Azure.Storage
     /// <summary>
     /// Utility class for Azure Storage
     /// </summary>
-    class AzureCommon
+    public class AzureCommon
     {
         /// <summary>
         /// Returns Storage account associated with specific StorageConnectionString
@@ -52,6 +52,13 @@ namespace Azure.Storage
             return table;
         }
 
+        public static bool createTableCheck(CloudTableClient pClient, string pName)
+        {
+            CloudTable table = pClient.GetTableReference(pName);
+            bool ret = table.CreateIfNotExists();
+            return ret;
+        }
+
 
         public static void deleteTable(CloudTableClient pClient, string pName)
         {
@@ -59,7 +66,7 @@ namespace Azure.Storage
             table.Delete();
         }
 
-        public static TableResult insertEntity(CloudTableClient pClient, string pTableName,
+        public static Task<TableResult> insertEntity(CloudTableClient pClient, string pTableName,
                                         TableEntity pEntity)
         {
             CloudTable table = pClient.GetTableReference(pTableName);
@@ -68,11 +75,11 @@ namespace Azure.Storage
                 //TODO: throw exception?
                 return null;
             }
-            var retValue = table.Execute(TableOperation.Insert(pEntity));
+            var retValue = table.ExecuteAsync(TableOperation.Insert(pEntity));
             return retValue;
         }
 
-        public static TableResult updateEntity(CloudTableClient pClient, string pTableName,
+        public static Task<TableResult> updateEntity(CloudTableClient pClient, string pTableName,
                                        TableEntity pEntity)
         {
             CloudTable table = pClient.GetTableReference(pTableName);
@@ -81,11 +88,11 @@ namespace Azure.Storage
                 //TODO: throw exception?
                 return null;
             }
-            var retValue = table.Execute(TableOperation.Replace(pEntity));
+            var retValue = table.ExecuteAsync(TableOperation.InsertOrReplace(pEntity));
             return retValue;
         }
 
-        public static IList<TableResult> insertEntities(CloudTableClient pClient, string pTableName,
+        public static Task<IList<TableResult>> insertEntities(CloudTableClient pClient, string pTableName,
                                                 IList<TableEntity> pEntityList)
         {
             CloudTable table = pClient.GetTableReference(pTableName);
@@ -99,7 +106,7 @@ namespace Azure.Storage
                 batch.Insert(ent);
             }
 
-            return table.ExecuteBatch(batch);
+            return table.ExecuteBatchAsync(batch);
         }
 
 
@@ -111,26 +118,34 @@ namespace Azure.Storage
             return table.ExecuteQuery(rangeQuery);
         }
 
-        public static TableResult findEntity(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey)
+        public static Task<TableResult> findEntity(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey)
         {
             CloudTable table = pClient.GetTableReference(pName);
             TableOperation op = TableOperation.Retrieve<TableEntity>(pPartitionKey, pRowKey);
-            return table.Execute(op);
+            return table.ExecuteAsync(op);
         }
 
 
-        public static TableResult deleteEntity(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey)
+        public static Task<TableResult> deleteEntity(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey)
         {
             CloudTable table = pClient.GetTableReference(pName);
             TableOperation op = TableOperation.Retrieve<TableEntity>(pPartitionKey, pRowKey);
-            TableEntity entityToDelete =  (TableEntity) table.Execute(op).Result;
-            if (entityToDelete != null)
+            TableResult result =  table.Execute(op);
+            if (result.HttpStatusCode == 404)
             {
-               return table.Execute(TableOperation.Delete(entityToDelete));
+                return null;
             }
             else
             {
-                return null;
+                ByteEntity entityToDelete = (ByteEntity)result.Result;
+                if (entityToDelete != null)
+                {
+                    return table.ExecuteAsync(TableOperation.Delete(entityToDelete));
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -143,6 +158,7 @@ namespace Azure.Storage
 
         public enum OperationType
         {
+            CREATE,
             READ,
             READ_BATCH,
             READ_RANGE,
