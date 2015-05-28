@@ -1,4 +1,5 @@
 ﻿using Common;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -128,8 +129,15 @@ namespace Conductor.Webrole
             Util.Assert(robot.promise == null);
             robot.promise = new TaskCompletionSource<string>();
 
-            var message = "START " + testname + " " + robotnumber + " " + parameters;
-            var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
+            //var message = "START " + testname + " " + robotnumber + " " + parameters;
+            JObject message = JObject.FromObject(new
+            {
+                type = "START",
+                testname = testname,
+                robotnr = robotnumber,
+                args = parameters
+            });
+            var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
             await LoadGenerators[robot.instance].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
 
             return await robot.promise.Task;
