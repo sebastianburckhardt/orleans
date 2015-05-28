@@ -22,7 +22,7 @@ namespace Benchmarks
             Register(new Leaderboard.Benchmark.Benchmark());
             Register(new Size.Benchmark.Benchmark());
             Register(new Computation.Benchmark.Benchmark());
-
+            Register(new Azure.Storage.Benchmark());
             //----------------------------------------------------------------------------------
         }
 

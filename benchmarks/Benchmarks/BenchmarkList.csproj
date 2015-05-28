@@ -77,6 +77,10 @@
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>
     </ProjectReference>
+    <ProjectReference Include="Azure.Storage\Azure.Storage.csproj">
+      <Project>{8708e004-e6ea-4a16-8e3f-6ea0ac5e07c0}</Project>
+      <Name>Azure.Storage</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

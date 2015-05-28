@@ -33,14 +33,6 @@ namespace Azure.Storage
 
     
 
-        public enum OperationType
-        {
-            READ_SYNC,
-            READ_ASYNC,
-            WRITE_SYNC,
-            WRITE_ASYNC
-        };
-
         public String RobotServiceEndpoint(int workernumber)
         {
 
@@ -80,6 +72,11 @@ namespace Azure.Storage
 
             string[] param = parameters.Split('-');
 
+            CloudTableClient azureClient = AzureCommon.getTableClient();
+            CloudTable table = AzureCommon.createTable(azureClient, "testTable");
+
+
+
               //          await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, false));
                    
             return parameters;
@@ -99,29 +96,25 @@ namespace Azure.Storage
         /// Constructor for READ calls
         /// </summary>
         /// <param name="pNumReq"></param>
-        public HttpRequestAzureTable(int pNumReq, bool async)
+        public HttpRequestAzureTable(int pNumReq, string pPartitionKey, string pRowKey)
         {
-            if (async)
-            {
-                this.requestType = Azure.Storage.AzureTableStorage.OperationType.READ_SYNC;
-            }
-            else
-            {
-                this.requestType = Azure.Storage.AzureTableStorage.OperationType.READ_ASYNC;
-            }
-            this.numReq = pNumReq;
+       
+                this.requestType = AzureCommon.OperationType.READ;
+                this.numReq = pNumReq;
+                this.partitionKey = pPartitionKey;
         }
 
-        public HttpRequestAzureTable(int pNumReq, string pPayload, bool async)
+        public HttpRequestAzureTable(int pNumReq, string pPartitionKey)
         {
-            if (async)
-            {
-                this.requestType = Azure.Storage.AzureTableStorage.OperationType.WRITE_ASYNC;
-            }
-            else
-            {
-                this.requestType = Azure.Storage.AzureTableStorage.OperationType.WRITE_SYNC;
-            }
+
+                this.requestType = AzureCommon.OperationType.READ_RANGE;
+                this.numReq = pNumReq;
+                this.partitionKey = pPartitionKey;
+        }
+
+        public HttpRequestAzureTable(int pNumReq, TableEntity pPayload)
+        {
+            this.requestType = AzureCommon.OperationType.INSERT;
             this.numReq = pNumReq;
             this.payload = pPayload;
 
@@ -132,24 +125,50 @@ namespace Azure.Storage
         // Request number
         private int numReq;
         // Request type, get or post
-        private Azure.Storage.AzureTableStorage.OperationType requestType;
-        private string payload;
-
+        private AzureCommon.OperationType requestType;
+        private TableEntity payload;
+        private string partitionKey;
+        private string rowKey;
 
 
         public string Signature
         {
             get
             {
-                if (requestType == Azure.Storage.AzureTableStorage.OperationType.READ_SYNC || 
-                    requestType == Azure.Storage.AzureTableStorage.OperationType.READ_ASYNC)
+                if (requestType == AzureCommon.OperationType.READ)
                 {
-                    return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
+                    return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&pkey=" + partitionKey + "&rkey="+rowKey;
                 }
-                else
+                else if (requestType == AzureCommon.OperationType.READ_RANGE)
+                {
+                    return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&pkey=" + partitionKey;
+
+                }
+                else if (requestType == AzureCommon.OperationType.READ_BATCH)
+                {
+                    throw new NotImplementedException();
+                }
+                else if (requestType == AzureCommon.OperationType.INSERT)
+                {
+                    throw new NotImplementedException();
+
+                }
+                else if (requestType == AzureCommon.OperationType.INSERT_BATCH)
+                {
+                    throw new NotImplementedException();
+
+                }
+                else if (requestType == AzureCommon.OperationType.UPDATE)
                 {
                     return "POST size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
+                } 
+                else if (requestType == AzureCommon.OperationType.UPDATE_BATCH)
+                {
+                   throw new NotImplementedException();
+
                 }
+                return null;
+               
             }
         }
 
@@ -158,7 +177,9 @@ namespace Azure.Storage
         {
             get
             {
-                return payload;
+               // return payload;
+                return null;
+
             }
         }
 

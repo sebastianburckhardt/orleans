@@ -46,7 +46,7 @@ namespace Computation.Benchmark
             return Endpoints.GetDefaultService();
         }
 
-        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xsize{3}", numRobots, numReqs, percentRead, timeUpdate); } }
+        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xcomp{3}", numRobots, numReqs, percentRead, timeUpdate); } }
 
         public int NumRobots { get { return numRobots; } }
 

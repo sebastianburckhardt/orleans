@@ -34,6 +34,17 @@ namespace Azure.Storage
             return pAccount.CreateCloudTableClient();
         }
 
+        public static CloudTableClient getTableClient()
+        {
+            string connectionKey = CloudConfigurationManager.GetSetting("StorageConnectionString");
+            if (connectionKey == null)
+            {
+                throw new Exception("No connection key specified");
+            }
+            CloudStorageAccount account = CloudStorageAccount.Parse(connectionKey);
+            return account.CreateCloudTableClient();
+        }
+
         public static CloudTable createTable(CloudTableClient pClient, string pName)
         {
             CloudTable table = pClient.GetTableReference(pName);
@@ -128,6 +139,18 @@ namespace Azure.Storage
             CloudTable table = pClient.GetTableReference(pName);
             TableQuery<DynamicTableEntity> projectionQuery = new TableQuery<DynamicTableEntity>().Select(properties);
             return table.ExecuteQuery(projectionQuery, pEntityResolver);
+        }
+
+        public enum OperationType
+        {
+            READ,
+            READ_BATCH,
+            READ_RANGE,
+            INSERT,
+            INSERT_BATCH,
+            UPDATE,
+            UPDATE_BATCH,
+            DELETE
         }
 
 

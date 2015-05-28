@@ -68,6 +68,7 @@
   <ItemGroup>
     <Compile Include="AzureTable.cs" />
     <Compile Include="AzureCommon.cs" />
+    <Compile Include="Benchmark.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
