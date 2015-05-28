@@ -92,9 +92,7 @@ namespace Conductor.Webrole
 
                     var result = RunScenario(scenario).Result;
 
-                    Broadcast("Result", result);
-
-
+                    
                     // collect stats from all robots
                     var overallstats = new Dictionary<string, LatencyDistribution>();
                     foreach (var robot in robots)
@@ -105,6 +103,8 @@ namespace Conductor.Webrole
                                     overallstats.Add(kkvp.Key, new LatencyDistribution());
                                 overallstats[kkvp.Key].MergeDistribution(kkvp.Value);
                             }
+
+                    Broadcast("Result", result + " " + Util.PrintStats(overallstats));
 
                     if (overallstats.Count > 0)
                         Console.WriteLine("Stats", Util.PrintStats(overallstats));
@@ -141,6 +141,7 @@ namespace Conductor.Webrole
             var promise = robot.promise;
             robot.promise = null;
             robot.stats = stats;
+
             promise.SetResult(message);
         }
 
