@@ -15,7 +15,8 @@ using Benchmarks;
 using Common;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 namespace LoadGenerator.WorkerRole
 {
     public class WorkerRole : RoleEntryPoint
@@ -97,8 +98,13 @@ namespace LoadGenerator.WorkerRole
                             Trace.TraceInformation("Connected.");
 
                             //  LoadGenerator ->  Conductor   :  READY instanceid
-                            var message = "READY " + instance + "." + connectioncount++.ToString();
-                            ArraySegment<byte> outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
+                            //var message = "READY " + instance + "." + connectioncount++.ToString();
+                            JObject message = JObject.FromObject(new
+                                {
+                                    type = "READY",
+                                    loadgenerator = instance + "." + connectioncount++.ToString()
+                                });
+                            ArraySegment<byte> outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
                             await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
 
                             Trace.TraceInformation(string.Format("Sent {0}", message));
@@ -109,8 +115,13 @@ namespace LoadGenerator.WorkerRole
                         {
                             if (ws.State == WebSocketState.Open)
                             {
-                                var message = "TRACE " + s;
-                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
+                                //var message = "TRACE " + s;
+                                JObject message = JObject.FromObject(new
+                                {
+                                    type = "TRACE",
+                                    message = s
+                                });
+                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
                                 await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
                                 Trace.TraceInformation("Sent " + message);
                             }
@@ -123,7 +134,15 @@ namespace LoadGenerator.WorkerRole
                             WebSocketReceiveResult receiveResult = null;
 
                             int bufsize = receiveBuffer.Length;
-                            receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
+                            try
+                            {
+                                receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                Trace.TraceInformation("Connection to conductor possibly timedout. Trying again");
+                                continue;
+                            }
 
                             if (receiveResult.MessageType == WebSocketMessageType.Close)
                             {
@@ -168,12 +187,17 @@ namespace LoadGenerator.WorkerRole
 
                                 //  Conductor -> LoadGenerator : START testname robotnr args
 
-                                content = content.Substring(content.IndexOf(' ') + 1);
+                                /*content = content.Substring(content.IndexOf(' ') + 1);
                                 var pos1 = content.IndexOf(' ');
                                 var pos2 = content.IndexOf(' ', pos1 + 1);
                                 var testname = content.Substring(0, pos1 + 1);
                                 var robotnr = int.Parse(content.Substring(pos1 + 1, pos2 - pos1));
-                                var args = content.Substring(pos2 + 1);
+                                var args = content.Substring(pos2 + 1);*/
+                                JObject testdata = JObject.Parse(content);
+                                string testname = (string)testdata["testname"];
+                                int robotnr = int.Parse((string)testdata["robotnr"]);
+                                string args = (string)testdata["args"];
+
 
                                 var scenarioStartPos = testname.LastIndexOf("."); //assuming senario name doesnt have "."
                                 var benchmarkStartPos = testname.LastIndexOf(".", scenarioStartPos - 1); //searches backward
@@ -211,9 +235,15 @@ namespace LoadGenerator.WorkerRole
                                 }
 
                                 //var statsBase64 = System.Convert.ToBase64String();
-                                var message = "DONE " + robotnr.ToString() + " " + statsBase64 + " " + retval;
-
-                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
+                                //var message = "DONE " + robotnr.ToString() + " " + statsBase64 + " " + retval;
+                                JObject message = JObject.FromObject(new
+                                {
+                                    type = "DONE",
+                                    robotnr = robotnr.ToString(),
+                                    stats = statsBase64,
+                                    retval = retval
+                                });
+                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
                                 await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
                                 Trace.TraceInformation("Sent " + message);
                             }

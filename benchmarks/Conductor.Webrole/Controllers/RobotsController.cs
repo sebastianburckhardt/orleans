@@ -1,6 +1,7 @@
 ﻿using Common;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -71,66 +72,95 @@ namespace Conductor.Webrole.Controllers
             if (conductor.Hub == null)
                 await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "No console connected", CancellationToken.None);
 
-            while (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
+            try
             {
-                ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[1024 * 4]);
-                WebSocketReceiveResult result = await socket.ReceiveAsync(
-                    buffer, CancellationToken.  None);
-
-                if (result.MessageType == WebSocketMessageType.Close)
+                while (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
                 {
-                    if (instance != null)
-                        conductor.OnDisconnect(instance, result.CloseStatusDescription);
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ack", CancellationToken.None);
-                }
-                else if (result.MessageType != WebSocketMessageType.Text)
-                {
-                    await socket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Cannot accept binary frame", CancellationToken.None);
-                }
-                else
-                {
+                    int bufsize = 1024;
+                    var receiveBuffer = new byte[bufsize];
+                    WebSocketReceiveResult receiveResult = await socket.ReceiveAsync(
+                        new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
 
-                    string userMessage = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
-
-                    if (userMessage.StartsWith("READY"))
+                    if (receiveResult.MessageType == WebSocketMessageType.Close)
                     {
-                        instance = userMessage.Substring(userMessage.IndexOf(' ') + 1);
-                        conductor.OnConnect(instance, socket);
+                        if (instance != null)
+                            conductor.OnDisconnect(instance, receiveResult.CloseStatusDescription);
+                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close ack", CancellationToken.None);
                     }
-                    else if (userMessage.StartsWith("TRACE"))
+                    else if (receiveResult.MessageType != WebSocketMessageType.Text)
                     {
-                        userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
-                        await conductor.Trace(userMessage);
+                        await socket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Cannot accept binary frame", CancellationToken.None);
                     }
-                    else if (userMessage.StartsWith("DONE"))
+                    else
                     {
-                        userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
-                        var pos = userMessage.IndexOf(' ');
-                        var robotnr = int.Parse(userMessage.Substring(0, pos));
-                        var rvalPos = userMessage.IndexOf(' ', pos + 1);
-                        var statsBase64 = userMessage.Substring(pos + 1, rvalPos - pos);
-                        var rval = userMessage.Substring(rvalPos + 1);
-                       
-                        Dictionary<string, LatencyDistribution> stats;
+                        int count = receiveResult.Count;
 
-                        byte[] statsBinary = null;
-                        try
+                        while (receiveResult.EndOfMessage == false)
                         {
-                            statsBinary = System.Convert.FromBase64String(statsBase64);
-                        }
-                        catch (Exception e)
-                        {
+                            if (count >= bufsize)
+                            {
+                                // enlarge buffer
+                                bufsize = bufsize * 2;
+                                var newbuf = new byte[bufsize * 2];
+                                receiveBuffer.CopyTo(newbuf, 0);
+                                receiveBuffer = newbuf;
+                            }
 
-                        }
-                        BinaryFormatter bf = new BinaryFormatter();
-                        using (MemoryStream ms = new MemoryStream(statsBinary))
-                        {
-                            stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
+                            receiveResult = await socket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer, count, bufsize - count), CancellationToken.None);
+
+                            //if (receiveResult.MessageType != WebSocketMessageType.Text)
+                            //    await ws.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "expected text frame", CancellationToken.None);
+
+                            count += receiveResult.Count;
                         }
                         
-                        conductor.OnRobotMessage(robotnr, rval, stats);
+                        string userMessageJson = Encoding.UTF8.GetString(receiveBuffer, 0, count);
+                        JObject message = JObject.Parse(userMessageJson);
+                        string messageType = (string)message["type"];
+                        if (messageType.StartsWith("READY"))
+                        {
+                            //instance = userMessage.Substring(userMessage.IndexOf(' ') + 1);
+                            instance = (string)message["loadgenerator"];
+                            conductor.OnConnect(instance, socket);
+                        }
+                        else if (messageType.StartsWith("TRACE"))
+                        {
+                            //userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
+                            var traceMessage = (string)message["message"];
+                            await conductor.Trace(traceMessage);
+                        }
+                        else if (messageType.StartsWith("DONE"))
+                        {
+
+                            /*userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
+                            var pos = userMessage.IndexOf(' ');
+                            var robotnr = int.Parse(userMessage.Substring(0, pos));
+                            var rvalPos = userMessage.IndexOf(' ', pos + 1);
+                            var statsBase64 = userMessage.Substring(pos + 1, rvalPos - pos);
+                            var rval = userMessage.Substring(rvalPos + 1);*/
+                            var robotnr = int.Parse((string)message["robotnr"]);
+                            var statsBase64 = (string)message["stats"];
+                            var rval = (string)message["retval"];
+
+                            Dictionary<string, LatencyDistribution> stats;
+
+                            byte[] statsBinary = null;
+
+                            statsBinary = System.Convert.FromBase64String(statsBase64);
+                            BinaryFormatter bf = new BinaryFormatter();
+                            using (MemoryStream ms = new MemoryStream(statsBinary))
+                            {
+                                stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
+                            }
+
+                            conductor.OnRobotMessage(robotnr, rval, stats);
+                        }
                     }
                 }
+            } 
+            catch(Exception e)
+            {
+                conductor.WriteLine("Exception: " + e.Message + e.StackTrace);
             }
         }
 
