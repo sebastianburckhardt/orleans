@@ -16,16 +16,18 @@ namespace Benchmarks
     /// </summary>
     public class Client : IRobotContext
     {
-        public Client(string urlpath, string testname, int robotnumber)
+        public Client(string urlpath, string testname, int robotnumber, Func<string, Task> tracer)
         {
             this.urlpath = urlpath;
             this.testname = testname;
             this.robotnumber = robotnumber;
+            this.tracer = tracer;
         }
 
         string urlpath;
         string testname;
         int robotnumber;
+        Func<string,Task> tracer;
         public Dictionary<string, LatencyDistribution> Stats = new Dictionary<string, LatencyDistribution>();
 
         public string TestName { get { return testname; } }
@@ -39,7 +41,7 @@ namespace Benchmarks
             Util.Assert(sig[0] == "GET" || sig[0] == "PUT" || sig[0] == "POST");
             var urlparams = (sig[1].Length == 0 ? "?" : (sig[1] + "&")) + "testname=" + testname;
 
-            var req = (HttpWebRequest)WebRequest.Create("http://" + urlpath + urlparams);
+            var req = (HttpWebRequest)WebRequest.Create("http://" + urlpath + "/" + urlparams);
             //var req = (HttpWebRequest)WebRequest.Create("http://localhost:843/simserver/test");
             req.Method = sig[0];
 
@@ -201,6 +203,12 @@ namespace Benchmarks
         public IBenchmark Benchmark
         {
             get { return Benchmark; }
+        }
+
+
+        public Task Trace(string info)
+        {
+            return tracer(string.Format("[robot{0}] {1}", this.RobotNumber, info));
         }
     }
 }

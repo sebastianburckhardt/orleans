@@ -51,6 +51,10 @@ namespace Hello.Benchmark
         // each robot simply echoes the parameters
         public async Task<string> RobotScript(IRobotContext context, int robotnumber, string parameters)
         {
+
+            // trace
+            await context.Trace("Robot " + robotnumber + " says hello");
+
             // echo
             return parameters;
         }
@@ -58,7 +62,7 @@ namespace Hello.Benchmark
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            return null;
+            return Endpoints.GetDefaultService();
         }
     }
 }

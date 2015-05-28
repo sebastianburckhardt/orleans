@@ -24,7 +24,7 @@ namespace Conductor.Webrole
 
         private string testname;
 
-        public string TestName{  get { return testname; } }
+        public string TestName { get { return testname; } }
 
         public Dictionary<string, WebSocket> LoadGenerators = new Dictionary<string, WebSocket>();
 
@@ -37,8 +37,9 @@ namespace Conductor.Webrole
             public string instance;
             public WebSocket ws;
             public TaskCompletionSource<string> promise;
-
+            public Dictionary<string, LatencyDistribution> stats;
         }
+
 
         public CommandHub Hub;
 
@@ -63,19 +64,23 @@ namespace Conductor.Webrole
 
                 this.benchmark = kvp.Value.Key;
                 this.scenarios = kvp.Value.Value;
-                
+
                 if (LoadGenerators.Count == 0)
                 {
                     Broadcast("Failed", "cannot run scenario: no load generators");
                     continue;
                 }
 
-                // assign robots to load generators round-robin
+
 
                 foreach (var scenario in scenarios)
                 {
+
                     this.testname = string.Format("{0:o}.{1}.{2}", DateTime.UtcNow, benchmark.Name, scenario.Name);
                     this.robots = new List<RobotInfo>();
+
+
+                    // assign robots to load generators round-robin
                     var numrobots = scenario.NumRobots;
                     while (numrobots > 0)
                         foreach (var gen in LoadGenerators)
@@ -88,6 +93,21 @@ namespace Conductor.Webrole
                     var result = RunScenario(scenario).Result;
 
                     Broadcast("Result", result);
+
+
+                    // collect stats from all robots
+                    var overallstats = new Dictionary<string, LatencyDistribution>();
+                    foreach (var robot in robots)
+                        if (robot.stats != null)
+                            foreach (var kkvp in robot.stats)
+                            {
+                                if (!overallstats.ContainsKey(kkvp.Key))
+                                    overallstats.Add(kkvp.Key, new LatencyDistribution());
+                                overallstats[kkvp.Key].MergeDistribution(kkvp.Value);
+                            }
+
+                    if (overallstats.Count > 0)
+                        Console.WriteLine("Stats", Util.PrintStats(overallstats));
                 }
             }
 
@@ -115,11 +135,12 @@ namespace Conductor.Webrole
             return await robot.promise.Task;
         }
 
-        public void OnRobotMessage(int robotnumber, string message)
+        public void OnRobotMessage(int robotnumber, string message, Dictionary<string, LatencyDistribution> stats)
         {
             var robot = robots[robotnumber];
             var promise = robot.promise;
             robot.promise = null;
+            robot.stats = stats;
             promise.SetResult(message);
         }
 
@@ -212,15 +233,21 @@ namespace Conductor.Webrole
             }
 
             if (!string.IsNullOrEmpty(command))
-            lock (commands)
-            {
-                commands.Enqueue(command);
-                if (commands.Count == 1)
-                    System.Threading.Monitor.PulseAll(commands);
-            }
+                lock (commands)
+                {
+                    commands.Enqueue(command);
+                    if (commands.Count == 1)
+                        System.Threading.Monitor.PulseAll(commands);
+                }
 
 
         }
 
+
+
+        public async Task Trace(string info)
+        {
+            Broadcast("", info);
+        }
     }
 }

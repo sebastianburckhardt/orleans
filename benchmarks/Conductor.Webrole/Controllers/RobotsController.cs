@@ -97,15 +97,22 @@ namespace Conductor.Webrole.Controllers
                         instance = userMessage.Substring(userMessage.IndexOf(' ') + 1);
                         conductor.OnConnect(instance, socket);
                     }
+                    else if (userMessage.StartsWith("TRACE"))
+                    {
+                        userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
+                        await conductor.Trace(userMessage);
+                    }
                     else if (userMessage.StartsWith("DONE"))
                     {
                         userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
                         var pos = userMessage.IndexOf(' ');
                         var robotnr = int.Parse(userMessage.Substring(0, pos));
-                        var statsPos = userMessage.IndexOf(' ', pos + 1);
-                        var msg = userMessage.Substring(pos + 1, statsPos - pos) + "\n";
-                        
-                        var statsBase64 = userMessage.Substring(statsPos + 1);
+                        var rvalPos = userMessage.IndexOf(' ', pos + 1);
+                        var statsBase64 = userMessage.Substring(pos + 1, rvalPos - pos);
+                        var rval = userMessage.Substring(rvalPos + 1);
+                       
+                        Dictionary<string, LatencyDistribution> stats;
+
                         byte[] statsBinary = null;
                         try
                         {
@@ -118,11 +125,10 @@ namespace Conductor.Webrole.Controllers
                         BinaryFormatter bf = new BinaryFormatter();
                         using (MemoryStream ms = new MemoryStream(statsBinary))
                         {
-                            var stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
-                            msg += Util.PrintStats(stats);
+                            stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
                         }
                         
-                        conductor.OnRobotMessage(robotnr, msg);
+                        conductor.OnRobotMessage(robotnr, rval, stats);
                     }
                 }
             }

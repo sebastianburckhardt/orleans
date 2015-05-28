@@ -22,7 +22,7 @@ namespace LocalSimulation
             while (robotnum < numrobots)
                 foreach (var server in servers)
                 {
-                    robotclients.Add(new Benchmarks.Client(server, testname, robotnum++));
+                    robotclients.Add(new Benchmarks.Client(server, testname, robotnum++, Trace));
                     if (robotnum == numrobots)
                         break;
                 }
@@ -47,7 +47,7 @@ namespace LocalSimulation
         }
 
         List<Benchmarks.Client> robotclients = new List<Benchmarks.Client>();
-        Dictionary<string, LatencyDistribution> Stats = new Dictionary<string, LatencyDistribution>();
+        public Dictionary<string, LatencyDistribution> Stats = new Dictionary<string, LatencyDistribution>();
         IBenchmark benchmark;
         IScenario scenario;
         string testname;
@@ -64,7 +64,7 @@ namespace LocalSimulation
             // run the scenario
             var result = await scenario.RobotScript(robotclients[robotnumber], robotnumber, parameters);
 
-            // collect stats from robot
+            // collect stats from this robot
             foreach (var kvp in robotclients[robotnumber].Stats)
             {
                 if (!Stats.ContainsKey(kvp.Key))
@@ -72,14 +72,16 @@ namespace LocalSimulation
                 Stats[kvp.Key].MergeDistribution(kvp.Value);
             }
 
-
             return result;
         }
 
 
-        public string PrintStats()
+ 
+
+
+        public async Task Trace(string info)
         {
-            return Util.PrintStats(Stats);
+            Console.WriteLine(info);
         }
     }
 }

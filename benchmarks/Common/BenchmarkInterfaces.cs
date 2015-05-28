@@ -41,6 +41,8 @@ namespace Common
         //identifies this test instance. Can be used to name test-specific files and directories.
         string TestName { get; }
 
+        // trace an event to the conductor console
+        Task Trace(string info);
     }
 
  
@@ -59,6 +61,9 @@ namespace Common
 
         // the number of this robot
         int RobotNumber { get; }
+
+        // trace an event to the conductor console
+        Task Trace(string info);
     }
  
  

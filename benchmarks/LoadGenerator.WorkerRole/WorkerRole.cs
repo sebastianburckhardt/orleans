@@ -22,7 +22,7 @@ namespace LoadGenerator.WorkerRole
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
-        private readonly BenchmarkList benchmarks = new BenchmarkList();        
+        private readonly BenchmarkList benchmarks = new BenchmarkList();
 
         public override void Run()
         {
@@ -80,7 +80,9 @@ namespace LoadGenerator.WorkerRole
                 //var uri = new Uri("ws://localhost:20473/api/robots");
                 //var uri = new Uri("ws://orleansgeoconductor.cloudapp.net/api/robots");
                 var uri = new Uri("ws://" + Endpoints.GetConductor() + "/api/robots");
-            
+
+                Func<string, Task> tracer = null;
+
                 using (var ws = new ClientWebSocket())
                 {
 
@@ -100,7 +102,20 @@ namespace LoadGenerator.WorkerRole
                             await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
 
                             Trace.TraceInformation(string.Format("Sent {0}", message));
-                        }  
+                        }
+
+                        // define trace function
+                        tracer = async (string s) =>
+                        {
+                            if (ws.State == WebSocketState.Open)
+                            {
+                                var message = "TRACE " + s;
+                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
+                                await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
+                                Trace.TraceInformation("Sent " + message);
+                            }
+                        };
+
 
                         // receive loop
                         while (ws.State == WebSocketState.Open || ws.State == WebSocketState.CloseSent)
@@ -124,7 +139,7 @@ namespace LoadGenerator.WorkerRole
                             }
                             else
                             {
-                                 
+
 
                                 int count = receiveResult.Count;
 
@@ -155,21 +170,20 @@ namespace LoadGenerator.WorkerRole
 
                                 content = content.Substring(content.IndexOf(' ') + 1);
                                 var pos1 = content.IndexOf(' ');
-                                var pos2 = content.IndexOf(' ', pos1+1);
+                                var pos2 = content.IndexOf(' ', pos1 + 1);
                                 var testname = content.Substring(0, pos1 + 1);
                                 var robotnr = int.Parse(content.Substring(pos1 + 1, pos2 - pos1));
                                 var args = content.Substring(pos2 + 1);
 
-                                //  LoadGenerator -> Conductor : DONE robotnr result
                                 var scenarioStartPos = testname.LastIndexOf("."); //assuming senario name doesnt have "."
                                 var benchmarkStartPos = testname.LastIndexOf(".", scenarioStartPos - 1); //searches backward
-                                
+
                                 var scenarioName = testname.Substring(scenarioStartPos + 1).Trim(); //why is there extra space?
                                 var benchmarkName = testname.Substring(benchmarkStartPos + 1, scenarioStartPos - benchmarkStartPos - 1);
 
                                 var benchmark = benchmarks.ByName(benchmarkName);
                                 var scenarios = benchmark.Scenarios.Where(s => s.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
-                                
+
                                 if (scenarios.Count() != 1) //i.e. no scenorio or more than one scenario with same name.
                                 {
                                     //TODO: Ask sebastian about error handling.
@@ -179,15 +193,15 @@ namespace LoadGenerator.WorkerRole
 
                                 var scenario = scenarios.First();
                                 string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
-                                if (!serviceEndpoint.EndsWith("/"))
-                                    serviceEndpoint += "/";
-                                var client = serviceEndpoint == null ? null : new Benchmarks.Client(serviceEndpoint, testname, robotnr);
-                                String result = await scenario.RobotScript(client, robotnr, args);
+                                var client = serviceEndpoint == null ? null : new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
+                                String retval = await scenario.RobotScript(client, robotnr, args);
+
+                                //  LoadGenerator -> Conductor : DONE robotnr stats retval
 
                                 var stats = client.Stats;
                                 BinaryFormatter bf = new BinaryFormatter();
                                 string statsBase64 = null;
-                                using(MemoryStream ms = new MemoryStream()) 
+                                using (MemoryStream ms = new MemoryStream())
                                 {
                                     bf.Serialize(ms, stats);
                                     ms.Flush();
@@ -195,9 +209,9 @@ namespace LoadGenerator.WorkerRole
                                     byte[] converted = System.Convert.FromBase64String(statsBase64);
                                     Array.Equals(converted, ms.ToArray());
                                 }
-                                
+
                                 //var statsBase64 = System.Convert.ToBase64String();
-                                var message = "DONE " + robotnr.ToString() + " " + result + " " + statsBase64;
+                                var message = "DONE " + robotnr.ToString() + " " + statsBase64 + " " + retval;
 
                                 var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
                                 await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
@@ -205,9 +219,12 @@ namespace LoadGenerator.WorkerRole
                             }
                         }
                     }
-                        catch(Exception e)
+                    catch (Exception e)
                     {
                         Trace.TraceInformation(string.Format("Exception caught: {0}", e));
+
+                        // send exception to conductor if WS is open
+                        tracer(string.Format("Exception in load generator {0}: {1}", instance, e)).Wait();
                     }
                     finally
                     {
