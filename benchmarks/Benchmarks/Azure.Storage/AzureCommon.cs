@@ -41,6 +41,10 @@ namespace Azure.Storage
             {
                 throw new Exception("No connection key specified");
             }
+            else
+            {
+                Console.Write("Connection Key {0} \n ", connectionKey);
+            }
             CloudStorageAccount account = CloudStorageAccount.Parse(connectionKey);
             return account.CreateCloudTableClient();
         }
@@ -48,7 +52,10 @@ namespace Azure.Storage
         public static CloudTable createTable(CloudTableClient pClient, string pName)
         {
             CloudTable table = pClient.GetTableReference(pName);
-            table.CreateIfNotExists();
+            if (!table.CreateIfNotExists())
+            {
+                throw new Exception("Table already existed");
+            }
             return table;
         }
 

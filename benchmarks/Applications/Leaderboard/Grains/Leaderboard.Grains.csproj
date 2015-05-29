@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\orleans.codegen.cs" />
+    <Compile Include="DummySequencedLeaderGrain.cs" />
     <Compile Include="SequencedLeaderGrain.cs" />
     <Compile Include="LeaderGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

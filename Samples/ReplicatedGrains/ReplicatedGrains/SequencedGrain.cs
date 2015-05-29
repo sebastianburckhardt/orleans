@@ -271,7 +271,8 @@ namespace ReplicatedGrains
 
             await this.State.ReadStateAsync();
             this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
-            Console.WriteLine("END read from primary");
+            if (DebuggingControls.Trace) 
+                Console.WriteLine("END read from primary");
         }
         
         private async Task WriteToPrimary()
@@ -288,7 +289,7 @@ namespace ReplicatedGrains
             }
             finally {
                 if (DebuggingControls.Trace)
-                Console.WriteLine("END writing to primary");
+                    Console.WriteLine("END writing to primary");
             }
            
         }

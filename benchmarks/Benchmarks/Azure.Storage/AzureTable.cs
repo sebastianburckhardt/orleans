@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
-using Azure.Storage.AzureCommon;
 
 #pragma warning disable 1998
 
@@ -22,11 +21,16 @@ namespace Azure.Storage
         // async read operations = get approx top 10
         // sync write operations = post now
         // async write operations = postlater
-        public AzureTableStorage(int pNumRobots, int pNumReqs)
+        public AzureTableStorage(int pNumRobots, int pNumReqs, int pPercentReads,  int pSamePartition, int pSameRow, int pPayloadSize)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
-  
+            this.percentReads = pPercentReads;
+            this.percentWrites = 100 - pPercentReads;
+            this.samePartition = pSamePartition;
+            this.sameRow = pSameRow;
+            this.payloadSize = pPayloadSize;
+ 
         }
 
         private int numRobots;
@@ -35,7 +39,8 @@ namespace Azure.Storage
         private int percentWrites;
         private int samePartition;
         private int sameRow;
-    
+        private int payloadSize;
+        private Random rnd = new Random();
 
         public String RobotServiceEndpoint(int workernumber)
         {
@@ -44,7 +49,7 @@ namespace Azure.Storage
 
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xreads{2}xpkey{1}xrkey{1}", numRobots, numReqs,percentReads,samePartition,sameRow); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xreads{2}xpkey{3}xrkey{4}xsize{5}", numRobots, numReqs,percentReads,samePartition,sameRow, payloadSize); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -69,22 +74,90 @@ namespace Azure.Storage
             return "ok";
         }
 
+
+        private AzureCommon.OperationType generateOperationType()
+        {
+            AzureCommon.OperationType retType;
+            int nextInt;
+
+            nextInt = rnd.Next(1, 100);
+
+            if (nextInt <= percentReads)
+            {
+                retType = AzureCommon.OperationType.READ;
+            }
+            else
+            {
+                retType = AzureCommon.OperationType.UPDATE;
+            }
+            return retType;
+        }
+
+        private string generatePartitionKey()
+        {
+            throw new NotImplementedException();
+        }
+
+        private string generateRowKey()
+        {
+            throw new NotImplementedException();
+        }
+
+
         // each robot simply echoes the parameters
         public async Task<string> RobotScript(IRobotContext context, int robotnumber, string parameters)
         {
             Console.Write("PARAMETERS {0} \n", parameters);
 
             string[] param = parameters.Split('-');
+            AzureCommon.OperationType nextOp;
+            int totReads = 0;
+            int totWrites= 0;
+            byte[] nextPayload = new byte[payloadSize];
+            string testTable = "testTable";
 
             CloudTableClient azureClient = AzureCommon.getTableClient();
-            CloudTable table = AzureCommon.createTable(azureClient, "testTable");
+            bool created = AzureCommon.createTableCheck(azureClient, "testTable");
 
+            rnd.NextBytes(nextPayload);
+            ByteEntity testEntity = new ByteEntity("hello", "world", nextPayload);
+            TableResult insertResult = await AzureCommon.updateEntity(azureClient, "testTable", testEntity);
+            Console.Write("Error code {0} \n ", insertResult.HttpStatusCode);
 
+            TableResult res = await AzureCommon.findEntity(azureClient, "testTable", "hello", "world");
+            Console.Write("Error code {0} \n ", res.HttpStatusCode);
+            ByteEntity retrieved = (ByteEntity) res.Result;
+            if (retrieved != null)
+            {
+                if (retrieved.payload != nextPayload)
+                {
+                    throw new Exception("Error, incorrect value returned");
+                }
+            }
 
+            /*
+            for (int i = 0; i < numReqs; i++)
+            {
+                nextOp = generateOperationType();
+                switch (nextOp)
+                {
+                    case AzureCommon.OperationType.READ:
+         //               await context.ServiceRequest(new HttpRequestAzureStorage(numReqs * robotnumber + i, false));
+                        totReads++;
+                        break;
+                    case AzureCommon.OperationType.UPDATE:
+                        rnd.NextBytes(nextPayload);
+                        totWrites++;
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                } // end switch
+            }
 
-              //          await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, false));
+             * */
+            Console.Write("Executed {0} Reads {0} Writes \n ", ((double)totReads / (double)numReqs) * 100, ((double)totWrites / (double)numReqs) * 100);
                    
-            return parameters;
+            return "ok";
         }
 
 
@@ -98,7 +171,7 @@ namespace Azure.Storage
     {
 
         /// <summary>
-        /// Constructor for READ calls
+        /// Constructor for HTTP Calls
         /// </summary>
         /// <param name="pNumReq"></param>
         public HttpRequestAzureTable( AzureCommon.OperationType pRequestType, int pNumReq, string pTable, string pPartitionKey, string pRowKey, ByteEntity pEntity)
@@ -110,17 +183,20 @@ namespace Azure.Storage
                 this.partitionKey = pPartitionKey;
                 this.rowKey = pRowKey;
                 this.payload = pEntity;
-            
         }
 
 
         // Request number
         private int numReq;
-        // Request type, get or post
+        // Request type
         private AzureCommon.OperationType requestType;
+        // Payload type (used in UPDATE requests)
         private ByteEntity payload;
+        // Desired partition key 
         private string partitionKey;
+        // Desired row key (used in GET requests)
         private string rowKey;
+        // Table name
         private string tableName;
 
         public string Signature

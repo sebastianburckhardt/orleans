@@ -12,6 +12,7 @@
     <AssemblyName>Conductor</AssemblyName>
     <StartDevelopmentStorage>True</StartDevelopmentStorage>
     <Name>Conductor</Name>
+    <UseWebProjectPorts>False</UseWebProjectPorts>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

@@ -35,95 +35,106 @@ namespace Leaderboard.Benchmark
             // No replication
             new NoReplicationLeaderboard(1, 10000,100),
             // Sequenced Grain. All Global Reads
-            new SequencedLeaderboard(1,10000,100,0,0,0),
+            new SequencedLeaderboard(1,10000,100,0,0,0,0),
+
             // Sequenced Grain, All Local Reads
-            new SequencedLeaderboard(1,10000,0,100,0,0),
+            new SequencedLeaderboard(1,10000,0,100,0,0,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(1,10000,75,25,0,0),
+            new SequencedLeaderboard(1,10000,75,25,0,0,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(1,10000,50,50,0,0),
+            new SequencedLeaderboard(1,10000,50,50,0,0,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(1,10000,25,75,0,0),
+            new SequencedLeaderboard(1,10000,25,75,0,0,0),
         
             /* 1.2 Write-Only Benchmarks */
             // No replication
             new NoReplicationLeaderboard(1, 10000,0),
             // Sequenced Grain. All Global writes
-            new SequencedLeaderboard(1,10000,0,0,100,0),
+            new SequencedLeaderboard(1,10000,0,0,100,0,0),
+             new SequencedLeaderboard(1,10000,0,0,100,0,1),
+
             // Sequenced Grain, All Local writes
-            new SequencedLeaderboard(1,10000,0,0,0,100),
+            new SequencedLeaderboard(1,10000,0,0,0,100,0),
+            new SequencedLeaderboard(1,10000,0,0,0,100,1),
+
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(1,10000,0,0,75,25),
+            new SequencedLeaderboard(1,10000,0,0,75,25,0),
+                        new SequencedLeaderboard(1,10000,0,0,75,25,1),
+
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(1,10000,0,0,50,50),
+            new SequencedLeaderboard(1,10000,0,0,50,50,0),
+                        new SequencedLeaderboard(1,10000,0,0,50,50,1),
+
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(1,10000,0,0,25,75),
+            new SequencedLeaderboard(1,10000,0,0,25,75,0),
+                        new SequencedLeaderboard(1,10000,0,0,25,75,1),
+
 
             /* 1.3 Read-Write Benchmarks */
             /* 1.3.4 Read mostly (ratio rw: 90/10) */
               // no replication
               new NoReplicationLeaderboard(1, 10000,90),
               // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(1,10000,90,0,10,0),
+             new SequencedLeaderboard(1,10000,90,0,10,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(1,10000,0,90,0,10),
+             new SequencedLeaderboard(1,10000,0,90,0,10,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(1,10000,45,45,5,5),
+             new SequencedLeaderboard(1,10000,45,45,5,5,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(1,10000,0,90,10,0),
+             new SequencedLeaderboard(1,10000,0,90,10,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(1,10000,90,0,0,10),
+             new SequencedLeaderboard(1,10000,90,0,0,10,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(1,10000,45,45,0,10),
+             new SequencedLeaderboard(1,10000,45,45,0,10,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(1,10000,45,45,10,0),
+             new SequencedLeaderboard(1,10000,45,45,10,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(1,10000,90,0,5,5),
+             new SequencedLeaderboard(1,10000,90,0,5,5,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(1,10000,0,90,5,5),
+             new SequencedLeaderboard(1,10000,0,90,5,5,0),
 
             /* 1.3.5 Write heavy (ratio rw: 70/30) */
             new NoReplicationLeaderboard(1, 10000,70),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(1,10000,70,0,30,0),
+             new SequencedLeaderboard(1,10000,70,0,30,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(1,10000,0,70,0,30),
+             new SequencedLeaderboard(1,10000,0,70,0,30,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(1,10000,35,35,15,15),
+             new SequencedLeaderboard(1,10000,35,35,15,15,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(1,10000,0,70,30,0),
+             new SequencedLeaderboard(1,10000,0,70,30,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(1,10000,70,0,0,30),
+             new SequencedLeaderboard(1,10000,70,0,0,30,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(1,10000,35,35,0,30),
+             new SequencedLeaderboard(1,10000,35,35,0,30,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(1,10000,35,35,30,0),
+             new SequencedLeaderboard(1,10000,35,35,30,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(1,10000,70,0,15,15),
+             new SequencedLeaderboard(1,10000,70,0,15,15,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(1,10000,0,70,15,15),
+             new SequencedLeaderboard(1,10000,0,70,15,15,0),
 
 
             /* 1.3.6 Read/Write (ratio rw: 50/50) */
             new NoReplicationLeaderboard(1, 10000,50),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(1,10000,50,0,50,0),
+             new SequencedLeaderboard(1,10000,50,0,50,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(1,10000,0,50,0,50),
+             new SequencedLeaderboard(1,10000,0,50,0,50,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(1,10000,25,25,25,25),
+             new SequencedLeaderboard(1,10000,25,25,25,25,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(1,10000,0,50,50,0),
+             new SequencedLeaderboard(1,10000,0,50,50,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(1,10000,50,0,0,50),
+             new SequencedLeaderboard(1,10000,50,0,0,50,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(1,10000,25,25,0,50),
+             new SequencedLeaderboard(1,10000,25,25,0,50,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(1,10000,25,25,50,0),
+             new SequencedLeaderboard(1,10000,25,25,50,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(1,10000,50,0,25,25),
+             new SequencedLeaderboard(1,10000,50,0,25,25,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(1,10000,0,50,25,25),
+             new SequencedLeaderboard(1,10000,0,50,25,25,0),
 
            
               /* 2. FOR 50 ROBOT */
@@ -132,95 +143,95 @@ namespace Leaderboard.Benchmark
             // No replication
             new NoReplicationLeaderboard(50, 10000,100),
             // Sequenced Grain. All Global Reads
-            new SequencedLeaderboard(50,10000,100,0,0,0),
+            new SequencedLeaderboard(50,10000,100,0,0,0,0),
             // Sequenced Grain, All Local Reads
-            new SequencedLeaderboard(50,10000,0,100,0,0),
+            new SequencedLeaderboard(50,10000,0,100,0,0,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(50,10000,75,25,0,0),
+            new SequencedLeaderboard(50,10000,75,25,0,0,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(50,10000,50,50,0,0),
+            new SequencedLeaderboard(50,10000,50,50,0,0,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(50,10000,25,75,0,0),
+            new SequencedLeaderboard(50,10000,25,75,0,0,0),
         
             /* 2.2 Write-Only Benchmarks */
             // No replication
             new NoReplicationLeaderboard(50, 10000,0),
             // Sequenced Grain. All Global writes
-            new SequencedLeaderboard(50,10000,0,0,100,0),
+            new SequencedLeaderboard(50,10000,0,0,100,0,0),
             // Sequenced Grain, All Local writes
-            new SequencedLeaderboard(50,10000,0,0,0,100),
+            new SequencedLeaderboard(50,10000,0,0,0,100,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(50,10000,0,0,75,25),
+            new SequencedLeaderboard(50,10000,0,0,75,25,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(50,10000,0,0,50,50),
+            new SequencedLeaderboard(50,10000,0,0,50,50,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(50,10000,0,0,25,75),
+            new SequencedLeaderboard(50,10000,0,0,25,75,0),
 
             /* 2.3 Read-Write Benchmarks */
             /* 2.3.4 Read mostly (ratio rw: 90/10) */
               // no replication
               new NoReplicationLeaderboard(50, 10000,90),
               // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(50,10000,90,0,10,0),
+             new SequencedLeaderboard(50,10000,90,0,10,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(50,10000,0,90,0,10),
+             new SequencedLeaderboard(50,10000,0,90,0,10,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(50,10000,45,45,5,5),
+             new SequencedLeaderboard(50,10000,45,45,5,5,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(50,10000,0,90,10,0),
+             new SequencedLeaderboard(50,10000,0,90,10,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,90,0,0,10),
+             new SequencedLeaderboard(50,10000,90,0,0,10,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,45,45,0,10),
+             new SequencedLeaderboard(50,10000,45,45,0,10,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(50,10000,45,45,10,0),
+             new SequencedLeaderboard(50,10000,45,45,10,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,90,0,5,5),
+             new SequencedLeaderboard(50,10000,90,0,5,5,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,0,90,5,5),
+             new SequencedLeaderboard(50,10000,0,90,5,5,0),
 
             /* 2.3.5 Write heavy (ratio rw: 70/30) */
             new NoReplicationLeaderboard(50, 10000,70),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(50,10000,70,0,30,0),
+             new SequencedLeaderboard(50,10000,70,0,30,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(50,10000,0,70,0,30),
+             new SequencedLeaderboard(50,10000,0,70,0,30,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(50,10000,35,35,15,15),
+             new SequencedLeaderboard(50,10000,35,35,15,15,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(50,10000,0,70,30,0),
+             new SequencedLeaderboard(50,10000,0,70,30,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,70,0,0,30),
+             new SequencedLeaderboard(50,10000,70,0,0,30,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,35,35,0,30),
+             new SequencedLeaderboard(50,10000,35,35,0,30,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(50,10000,35,35,30,0),
+             new SequencedLeaderboard(50,10000,35,35,30,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,70,0,15,15),
+             new SequencedLeaderboard(50,10000,70,0,15,15,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,0,70,15,15),
+             new SequencedLeaderboard(50,10000,0,70,15,15,0),
 
 
             /* 2.3.6 Read/Write (ratio rw: 50/50) */
             new NoReplicationLeaderboard(50, 10000,50),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(50,10000,50,0,50,0),
+             new SequencedLeaderboard(50,10000,50,0,50,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(50,10000,0,50,0,50),
+             new SequencedLeaderboard(50,10000,0,50,0,50,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(50,10000,25,25,25,25),
+             new SequencedLeaderboard(50,10000,25,25,25,25,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(50,10000,0,50,50,0),
+             new SequencedLeaderboard(50,10000,0,50,50,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,50,0,0,50),
+             new SequencedLeaderboard(50,10000,50,0,0,50,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,25,25,0,50),
+             new SequencedLeaderboard(50,10000,25,25,0,50,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(50,10000,25,25,50,0),
+             new SequencedLeaderboard(50,10000,25,25,50,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,50,0,25,25),
+             new SequencedLeaderboard(50,10000,50,0,25,25,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,0,50,25,25),
+             new SequencedLeaderboard(50,10000,0,50,25,25,0),
 
                    /* 3. FOR 100 ROBOT */
 
@@ -228,95 +239,95 @@ namespace Leaderboard.Benchmark
             // No replication
             new NoReplicationLeaderboard(100, 10000,100),
             // Sequenced Grain. All Global Reads
-            new SequencedLeaderboard(100,10000,100,0,0,0),
+            new SequencedLeaderboard(100,10000,100,0,0,0,0),
             // Sequenced Grain, All Local Reads
-            new SequencedLeaderboard(100,10000,0,100,0,0),
+            new SequencedLeaderboard(100,10000,0,100,0,0,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(100,10000,75,25,0,0),
+            new SequencedLeaderboard(100,10000,75,25,0,0,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(100,10000,50,50,0,0),
+            new SequencedLeaderboard(100,10000,50,50,0,0,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(100,10000,25,75,0,0),
+            new SequencedLeaderboard(100,10000,25,75,0,0,0),
         
             /* 3.2 Write-Only Benchmarks */
             // No replication
             new NoReplicationLeaderboard(100, 10000,0),
             // Sequenced Grain. All Global writes
-            new SequencedLeaderboard(100,10000,0,0,100,0),
+            new SequencedLeaderboard(100,10000,0,0,100,0,0),
             // Sequenced Grain, All Local writes
-            new SequencedLeaderboard(100,10000,0,0,0,100),
+            new SequencedLeaderboard(100,10000,0,0,0,100,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(100,10000,0,0,75,25),
+            new SequencedLeaderboard(100,10000,0,0,75,25,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(100,10000,0,0,50,50),
+            new SequencedLeaderboard(100,10000,0,0,50,50,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(100,10000,0,0,25,75),
+            new SequencedLeaderboard(100,10000,0,0,25,75,0),
 
             /* 3.3 Read-Write Benchmarks */
             /* 3.3.4 Read mostly (ratio rw: 90/10) */
               // no replication
               new NoReplicationLeaderboard(100, 10000,90),
               // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(100,10000,90,0,10,0),
+             new SequencedLeaderboard(100,10000,90,0,10,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(100,10000,0,90,0,10),
+             new SequencedLeaderboard(100,10000,0,90,0,10,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(100,10000,45,45,5,5),
+             new SequencedLeaderboard(100,10000,45,45,5,5,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(100,10000,0,90,10,0),
+             new SequencedLeaderboard(100,10000,0,90,10,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,90,0,0,10),
+             new SequencedLeaderboard(100,10000,90,0,0,10,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,45,45,0,10),
+             new SequencedLeaderboard(100,10000,45,45,0,10,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(100,10000,45,45,10,0),
+             new SequencedLeaderboard(100,10000,45,45,10,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,90,0,5,5),
+             new SequencedLeaderboard(100,10000,90,0,5,5,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,0,90,5,5),
+             new SequencedLeaderboard(100,10000,0,90,5,5,0),
 
             /* 3.3.5 Write heavy (ratio rw: 70/30) */
             new NoReplicationLeaderboard(100, 10000,70),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(100,10000,70,0,30,0),
+             new SequencedLeaderboard(100,10000,70,0,30,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(100,10000,0,70,0,30),
+             new SequencedLeaderboard(100,10000,0,70,0,30,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(100,10000,35,35,15,15),
+             new SequencedLeaderboard(100,10000,35,35,15,15,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(100,10000,0,70,30,0),
+             new SequencedLeaderboard(100,10000,0,70,30,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,70,0,0,30),
+             new SequencedLeaderboard(100,10000,70,0,0,30,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,35,35,0,30),
+             new SequencedLeaderboard(100,10000,35,35,0,30,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(100,10000,35,35,30,0),
+             new SequencedLeaderboard(100,10000,35,35,30,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,70,0,15,15),
+             new SequencedLeaderboard(100,10000,70,0,15,15,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,0,70,15,15),
+             new SequencedLeaderboard(100,10000,0,70,15,15,0),
 
 
             /* 2.3.6 Read/Write (ratio rw: 50/50) */
             new NoReplicationLeaderboard(50, 10000,50),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(50,10000,50,0,50,0),
+             new SequencedLeaderboard(50,10000,50,0,50,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(50,10000,0,50,0,50),
+             new SequencedLeaderboard(50,10000,0,50,0,50,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(50,10000,25,25,25,25),
+             new SequencedLeaderboard(50,10000,25,25,25,25,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(50,10000,0,50,50,0),
+             new SequencedLeaderboard(50,10000,0,50,50,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,50,0,0,50),
+             new SequencedLeaderboard(50,10000,50,0,0,50,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(50,10000,25,25,0,50),
+             new SequencedLeaderboard(50,10000,25,25,0,50,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(50,10000,25,25,50,0),
+             new SequencedLeaderboard(50,10000,25,25,50,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,50,0,25,25),
+             new SequencedLeaderboard(50,10000,50,0,25,25,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(50,10000,0,50,25,25),
+             new SequencedLeaderboard(50,10000,0,50,25,25,0),
 
                          /* 3. FOR 100 ROBOT */
 
@@ -324,95 +335,95 @@ namespace Leaderboard.Benchmark
             // No replication
             new NoReplicationLeaderboard(100, 10000,100),
             // Sequenced Grain. All Global Reads
-            new SequencedLeaderboard(100,10000,100,0,0,0),
+            new SequencedLeaderboard(100,10000,100,0,0,0,0),
             // Sequenced Grain, All Local Reads
-            new SequencedLeaderboard(100,10000,0,100,0,0),
+            new SequencedLeaderboard(100,10000,0,100,0,0,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(100,10000,75,25,0,0),
+            new SequencedLeaderboard(100,10000,75,25,0,0,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(100,10000,50,50,0,0),
+            new SequencedLeaderboard(100,10000,50,50,0,0,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(100,10000,25,75,0,0),
+            new SequencedLeaderboard(100,10000,25,75,0,0,0),
         
             /* 3.2 Write-Only Benchmarks */
             // No replication
             new NoReplicationLeaderboard(100, 10000,0),
             // Sequenced Grain. All Global writes
-            new SequencedLeaderboard(100,10000,0,0,100,0),
+            new SequencedLeaderboard(100,10000,0,0,100,0,0),
             // Sequenced Grain, All Local writes
-            new SequencedLeaderboard(100,10000,0,0,0,100),
+            new SequencedLeaderboard(100,10000,0,0,0,100,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(100,10000,0,0,75,25),
+            new SequencedLeaderboard(100,10000,0,0,75,25,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(100,10000,0,0,50,50),
+            new SequencedLeaderboard(100,10000,0,0,50,50,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(100,10000,0,0,25,75),
+            new SequencedLeaderboard(100,10000,0,0,25,75,0),
 
             /* 3.3 Read-Write Benchmarks */
             /* 3.3.4 Read mostly (ratio rw: 90/10) */
               // no replication
               new NoReplicationLeaderboard(100, 10000,90),
               // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(100,10000,90,0,10,0),
+             new SequencedLeaderboard(100,10000,90,0,10,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(100,10000,0,90,0,10),
+             new SequencedLeaderboard(100,10000,0,90,0,10,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(100,10000,45,45,5,5),
+             new SequencedLeaderboard(100,10000,45,45,5,5,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(100,10000,0,90,10,0),
+             new SequencedLeaderboard(100,10000,0,90,10,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,90,0,0,10),
+             new SequencedLeaderboard(100,10000,90,0,0,10,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,45,45,0,10),
+             new SequencedLeaderboard(100,10000,45,45,0,10,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(100,10000,45,45,10,0),
+             new SequencedLeaderboard(100,10000,45,45,10,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,90,0,5,5),
+             new SequencedLeaderboard(100,10000,90,0,5,5,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,0,90,5,5),
+             new SequencedLeaderboard(100,10000,0,90,5,5,0),
 
             /* 3.3.5 Write heavy (ratio rw: 70/30) */
             new NoReplicationLeaderboard(100, 10000,70),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(100,10000,70,0,30,0),
+             new SequencedLeaderboard(100,10000,70,0,30,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(100,10000,0,70,0,30),
+             new SequencedLeaderboard(100,10000,0,70,0,30,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(100,10000,35,35,15,15),
+             new SequencedLeaderboard(100,10000,35,35,15,15,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(100,10000,0,70,30,0),
+             new SequencedLeaderboard(100,10000,0,70,30,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,70,0,0,30),
+             new SequencedLeaderboard(100,10000,70,0,0,30,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,35,35,0,30),
+             new SequencedLeaderboard(100,10000,35,35,0,30,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(100,10000,35,35,30,0),
+             new SequencedLeaderboard(100,10000,35,35,30,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,70,0,15,15),
+             new SequencedLeaderboard(100,10000,70,0,15,15,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,0,70,15,15),
+             new SequencedLeaderboard(100,10000,0,70,15,15,0),
 
 
             /* 2.3.6 Read/Write (ratio rw: 50/50) */
             new NoReplicationLeaderboard(100, 10000,50),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(100,10000,50,0,50,0),
+             new SequencedLeaderboard(100,10000,50,0,50,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(100,10000,0,50,0,50),
+             new SequencedLeaderboard(100,10000,0,50,0,50,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(100,10000,25,25,25,25),
+             new SequencedLeaderboard(100,10000,25,25,25,25,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(100,10000,0,50,50,0),
+             new SequencedLeaderboard(100,10000,0,50,50,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,50,0,0,50),
+             new SequencedLeaderboard(100,10000,50,0,0,50,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(100,10000,25,25,0,50),
+             new SequencedLeaderboard(100,10000,25,25,0,50,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(100,10000,25,25,50,0),
+             new SequencedLeaderboard(100,10000,25,25,50,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,50,0,25,25),
+             new SequencedLeaderboard(100,10000,50,0,25,25,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(100,10000,0,50,25,25),
+             new SequencedLeaderboard(100,10000,0,50,25,25,0),
 
                          /* 4. FOR 500 ROBOT */
 
@@ -420,95 +431,95 @@ namespace Leaderboard.Benchmark
             // No replication
             new NoReplicationLeaderboard(500, 10000,100),
             // Sequenced Grain. All Global Reads
-            new SequencedLeaderboard(500,10000,100,0,0,0),
+            new SequencedLeaderboard(500,10000,100,0,0,0,0),
             // Sequenced Grain, All Local Reads
-            new SequencedLeaderboard(500,10000,0,100,0,0),
+            new SequencedLeaderboard(500,10000,0,100,0,0,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(500,10000,75,25,0,0),
+            new SequencedLeaderboard(500,10000,75,25,0,0,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(500,10000,50,50,0,0),
+            new SequencedLeaderboard(500,10000,50,50,0,0,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(500,10000,25,75,0,0),
+            new SequencedLeaderboard(500,10000,25,75,0,0,0),
         
             /* 4.2 Write-Only Benchmarks */
             // No replication
             new NoReplicationLeaderboard(500, 10000,0),
             // Sequenced Grain. All Global writes
-            new SequencedLeaderboard(500,10000,0,0,100,0),
+            new SequencedLeaderboard(500,10000,0,0,100,0,0),
             // Sequenced Grain, All Local writes
-            new SequencedLeaderboard(500,10000,0,0,0,100),
+            new SequencedLeaderboard(500,10000,0,0,0,100,0),
             // Sequenced Grain. 75 Global / 25 Local
-            new SequencedLeaderboard(500,10000,0,0,75,25),
+            new SequencedLeaderboard(500,10000,0,0,75,25,0),
               // Sequenced Grain. 50 Global / 50 Local
-            new SequencedLeaderboard(500,10000,0,0,50,50),
+            new SequencedLeaderboard(500,10000,0,0,50,50,0),
               // Sequenced Grain. 25 Global / 75 Local
-            new SequencedLeaderboard(500,10000,0,0,25,75),
+            new SequencedLeaderboard(500,10000,0,0,25,75,0),
 
             /* 4.3 Read-Write Benchmarks */
             /* 4.3.4 Read mostly (ratio rw: 90/10) */
               // no replication
               new NoReplicationLeaderboard(500, 10000,90),
               // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(500,10000,90,0,10,0),
+             new SequencedLeaderboard(500,10000,90,0,10,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(500,10000,0,90,0,10),
+             new SequencedLeaderboard(500,10000,0,90,0,10,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(500,10000,45,45,5,5),
+             new SequencedLeaderboard(500,10000,45,45,5,5,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(500,10000,0,90,10,0),
+             new SequencedLeaderboard(500,10000,0,90,10,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(500,10000,90,0,0,10),
+             new SequencedLeaderboard(500,10000,90,0,0,10,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(500,10000,45,45,0,10),
+             new SequencedLeaderboard(500,10000,45,45,0,10,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(500,10000,45,45,10,0),
+             new SequencedLeaderboard(500,10000,45,45,10,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(500,10000,90,0,5,5),
+             new SequencedLeaderboard(500,10000,90,0,5,5,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(500,10000,0,90,5,5),
+             new SequencedLeaderboard(500,10000,0,90,5,5,0),
 
             /* 4.3.5 Write heavy (ratio rw: 70/30) */
             new NoReplicationLeaderboard(500, 10000,70),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(500,10000,70,0,30,0),
+             new SequencedLeaderboard(500,10000,70,0,30,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(500,10000,0,70,0,30),
+             new SequencedLeaderboard(500,10000,0,70,0,30,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(500,10000,35,35,15,15),
+             new SequencedLeaderboard(500,10000,35,35,15,15,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(500,10000,0,70,30,0),
+             new SequencedLeaderboard(500,10000,0,70,30,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(500,10000,70,0,0,30),
+             new SequencedLeaderboard(500,10000,70,0,0,30,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(500,10000,35,35,0,30),
+             new SequencedLeaderboard(500,10000,35,35,0,30,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(500,10000,35,35,30,0),
+             new SequencedLeaderboard(500,10000,35,35,30,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(500,10000,70,0,15,15),
+             new SequencedLeaderboard(500,10000,70,0,15,15,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(500,10000,0,70,15,15),
+             new SequencedLeaderboard(500,10000,0,70,15,15,0),
 
 
             /* 4.3.6 Read/Write (ratio rw: 50/50) */
             new NoReplicationLeaderboard(500, 10000,50),
                 // Sequenced Grain. All Global ops
-             new SequencedLeaderboard(500,10000,50,0,50,0),
+             new SequencedLeaderboard(500,10000,50,0,50,0,0),
               // Sequenced Grain. All Local ops
-             new SequencedLeaderboard(500,10000,0,50,0,50),
+             new SequencedLeaderboard(500,10000,0,50,0,50,0),
               // Sequenced Grain. 50/50 Global/Local
-             new SequencedLeaderboard(500,10000,25,25,25,25),
+             new SequencedLeaderboard(500,10000,25,25,25,25,0),
              // Sequenced Grain Local Reads, Global Writes
-             new SequencedLeaderboard(500,10000,0,50,50,0),
+             new SequencedLeaderboard(500,10000,0,50,50,0,0),
              // Sequenced Grain Global Reads, Local Writes
-             new SequencedLeaderboard(500,10000,50,0,0,50),
+             new SequencedLeaderboard(500,10000,50,0,0,50,0),
              // Sequenced Grain 50/50 Local/Global Reads, Local Writes
-             new SequencedLeaderboard(500,10000,25,25,0,50),
+             new SequencedLeaderboard(500,10000,25,25,0,50,0),
               // Sequenced Grain 50/50 Local/Global Reads, Global Writes
-             new SequencedLeaderboard(500,10000,25,25,50,0),
+             new SequencedLeaderboard(500,10000,25,25,50,0,0),
              // Sequenced Grain Global Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(500,10000,50,0,25,25),
+             new SequencedLeaderboard(500,10000,50,0,25,25,0),
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
-             new SequencedLeaderboard(500,10000,0,50,25,25),
+             new SequencedLeaderboard(500,10000,0,50,25,25,0),
         };
 
         // parsing of http requests
@@ -563,30 +574,30 @@ namespace Leaderboard.Benchmark
                     Console.Write("{0}", arguments);
                     LeaderboardRequestT requestType = (LeaderboardRequestT)int.Parse(arguments["reqtype"]);
                     int numReq = int.Parse(arguments["numreq"]);
-
+                    int dummyGrain = int.Parse(arguments["dummy"]);
 
                     HttpRequestSequencedLeaderboard request = null;
                     if (requestType == LeaderboardRequestT.GET_SYNC)
                     {
                         // GetCurrentTop10 type
-                        request = new HttpRequestSequencedLeaderboard(numReq, false);
+                        request = new HttpRequestSequencedLeaderboard(numReq, false, dummyGrain);
                     }
                     else if (requestType == LeaderboardRequestT.GET_ASYNC)
                     {
 
                         // GetApproxTop10 type
-                        request = new HttpRequestSequencedLeaderboard(numReq, true);
+                        request = new HttpRequestSequencedLeaderboard(numReq, true, dummyGrain);
 
                     }
                     else if (requestType == LeaderboardRequestT.POST_SYNC)
                     {
                         // Post Now Type
-                        request = new HttpRequestSequencedLeaderboard(numReq, Score.fromString(arguments["score"]), false);
+                        request = new HttpRequestSequencedLeaderboard(numReq, Score.fromString(arguments["score"]), false, dummyGrain);
                     }
                     else if (requestType == LeaderboardRequestT.POST_ASYNC)
                     {
                         // Post Later Type
-                        request = new HttpRequestSequencedLeaderboard(numReq, Score.fromString(arguments["score"]), true);
+                        request = new HttpRequestSequencedLeaderboard(numReq, Score.fromString(arguments["score"]), true, dummyGrain);
                     }
 
                     return request;
