@@ -37,10 +37,13 @@ namespace Hello.Benchmark
 
         public async Task<string> RobotScript(IRobotContext context, int workernumber, string parameters)
         {
-            for (int i = 0; i < numreqs; i++)
-                await context.ServiceRequest(new OrleansHelloRequest(numreqs * workernumber + i));
+            using (new TraceInterval("LoadGenerator", workernumber))
+            {
+                for (int i = 0; i < numreqs; i++)
+                    await context.ServiceRequest(new OrleansHelloRequest(numreqs * workernumber + i));
 
-            return "ok";
+                return "ok";
+            }
         }
 
 
@@ -71,9 +74,17 @@ namespace Hello.Benchmark
 
         public async Task<string> ProcessRequestOnServer()
         {
+            IHelloGrain helloGrain;
+
             //send to some grain.
-            var helloGrain = HelloGrainFactory.GetGrain(0);
-            return await helloGrain.Hello(nr.ToString());
+            using (new TraceInterval("Frontend - get", nr))
+            {
+                helloGrain = HelloGrainFactory.GetGrain(0);
+            }
+            using (new TraceInterval("Frontend - call", nr))
+            {
+                return await helloGrain.Hello(nr.ToString());
+            }
         }
 
         public async Task<string> ProcessResponseOnClient(string response)

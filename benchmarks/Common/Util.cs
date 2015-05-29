@@ -36,36 +36,43 @@ namespace Common
         }
 
 
-        private static string _roleinstance;
-        public static string RoleInstance
+    
+        private static string myinstancename;
+
+        public static string MyInstanceName
         {
             get
             {
-                if (_roleinstance == null)
-                {
+                if (myinstancename == null)
                     try
                     {
-                        _roleinstance = RoleEnvironment.CurrentRoleInstance.Id;
+                        myinstancename = Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment.CurrentRoleInstance.Id;
                     }
                     catch (System.Runtime.InteropServices.SEHException)
                     {
                         // we are in a ASP.NET dev server
-                        _roleinstance = "asp";
+                        myinstancename = "localsim";
                     }
                     catch (System.InvalidOperationException)
                     {
                         // we are in a ASP.NET dev server
-                        _roleinstance = "asp";
+                        myinstancename = "localsim";
                     }
                     catch (System.TypeInitializationException)
                     {
                         // we are in a ASP.NET dev server
-                        _roleinstance = "asp";
+                        myinstancename = "localsim";
                     }
-                }
-                return _roleinstance;
+
+                return myinstancename;
             }
         }
+
+        public static bool RunningInAzureSimulator()
+        {
+            return Util.MyInstanceName.Contains("deployment");
+        }
+
 
         public static string PrintStats(Dictionary<string, LatencyDistribution> stats)
         {

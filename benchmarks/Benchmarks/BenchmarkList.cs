@@ -23,7 +23,7 @@ namespace Benchmarks
             Register(new Size.Benchmark.Benchmark());
 
             Register(new Computation.Benchmark.Benchmark());
-            Register(new Azure.Storage.Benchmark());
+           // Register(new Azure.Storage.Benchmark());
             //Register(new Computation.Benchmark.Benchmark());
 
             //----------------------------------------------------------------------------------

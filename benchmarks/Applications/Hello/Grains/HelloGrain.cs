@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using Hello.Interfaces;
 using System.Threading.Tasks;
+using Common;
 #pragma warning disable 1998
 
 namespace Hello.Grains
@@ -13,7 +14,10 @@ namespace Hello.Grains
         public async Task<string> Hello(string arg)
         {
             // echo
-            return "Hello From Orleans #" + arg;
+            using (new TraceInterval("Orleans - answer", int.Parse(arg)))
+            {
+                return "Hello From Orleans #" + arg;
+            }
         }
     }
 }

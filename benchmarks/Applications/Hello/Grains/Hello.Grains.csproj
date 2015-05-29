@@ -67,6 +67,10 @@
       <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
       <Name>ReplicatedGrains</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\Common\Common.csproj">
+      <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Interfaces\Hello.Interfaces.csproj">
       <Project>{c6d426d7-b79e-4f45-a235-a8b359a7dc10}</Project>
       <Name>Hello.Interfaces</Name>

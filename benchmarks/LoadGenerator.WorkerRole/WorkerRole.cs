@@ -263,7 +263,8 @@ namespace LoadGenerator.WorkerRole
                         Trace.TraceInformation(string.Format("Exception caught: {0}", e));
 
                         // send exception to conductor if WS is open
-                        tracer(string.Format("Exception in load generator {0}: {1}", instance, e)).Wait();
+                        if (tracer != null)
+                            tracer(string.Format("Exception in load generator {0}: {1}", instance, e)).Wait();
                     }
                     finally
                     {

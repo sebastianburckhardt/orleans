@@ -75,6 +75,8 @@
     <Compile Include="Endpoints.cs" />
     <Compile Include="LatencyDistribution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SecUtility.cs" />
+    <Compile Include="StorageAccounts.cs" />
     <Compile Include="TraceInterval.cs" />
     <Compile Include="TransportInterfaces.cs" />
     <Compile Include="Util.cs" />

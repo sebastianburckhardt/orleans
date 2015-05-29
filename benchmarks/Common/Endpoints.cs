@@ -10,7 +10,7 @@ namespace Common
     {
 
 
-        //----- URLs of endpoints
+        //----- URLs of service endpoints
 
         public enum Conductor
         {
@@ -22,23 +22,19 @@ namespace Common
             OrleansGeoUsWest,
             OrleansGeoEuropeWest
         }
-        public enum ServiceStorage
-        {
-            OrleansGeoUsWest,    
-            OrleansGeoEuropeWest
-        }
-        public enum LoadGenerators
+         public enum LoadGenerators
         {
             OrleansGeoLoadUsWest,
             OrleansGeoLoadEuropeWest
         }
 
+    
 
         //----------- code for picking them
 
         public static string GetService(int number)
         {
-            if (RunningInAzureSimulator())
+            if (Util.RunningInAzureSimulator())
                 // we are running in Azure simulator - use localhost
                 return "localhost:81";
             else
@@ -56,7 +52,7 @@ namespace Common
 
         public static string GetDefaultService()
         {
-            if (RunningInAzureSimulator())
+            if (Util.RunningInAzureSimulator())
                 // we are running in Azure simulator - use localhost
                 return "localhost:81";
             else
@@ -66,7 +62,7 @@ namespace Common
 
         public static string GetConductor()
         {
-            if (RunningInAzureSimulator())
+            if (Util.RunningInAzureSimulator())
                 // we are running in Azure simulator - use localhost
                 return "localhost:20473";
             else
@@ -74,45 +70,9 @@ namespace Common
                 return MakeServiceEndpoint(((Conductor) 0).ToString());
         }
 
+     
+
       
-
-        public static bool RunningInAzureSimulator()
-        {
-            return MyLocation.Contains("deployment");
-        }
-
-
-        private static string myinstancename;
-
-        public static string MyLocation
-        {
-            get
-            {
-                if (myinstancename == null)
-                try
-                {
-                    myinstancename = Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment.CurrentRoleInstance.Id;
-                }
-                catch (System.Runtime.InteropServices.SEHException)
-                {
-                    // we are in a ASP.NET dev server
-                    myinstancename = "localsim";
-                }
-                catch (System.InvalidOperationException)
-                {
-                    // we are in a ASP.NET dev server
-                    myinstancename = "localsim";
-                }
-                catch (System.TypeInitializationException)
-                {
-                    // we are in a ASP.NET dev server
-                    myinstancename = "localsim";
-                }
-
-                return myinstancename;
-            }
-        }
-
-
+       
     }
 }
