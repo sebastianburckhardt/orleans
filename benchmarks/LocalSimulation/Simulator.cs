@@ -62,7 +62,16 @@ namespace LocalSimulation
         public async Task<string> RunRobot(int robotnumber, string parameters)
         {
             // run the scenario
-            var result = await scenario.RobotScript(robotclients[robotnumber], robotnumber, parameters);
+            string retval;
+            try
+            {
+                retval = await scenario.RobotScript(robotclients[robotnumber], robotnumber, parameters);
+            }
+            catch (Exception e)
+            {
+                retval = e.ToString();
+                robotclients[robotnumber].Trace(retval).Wait();
+            }
 
             // collect stats from this robot
             foreach (var kvp in robotclients[robotnumber].Stats)
@@ -72,7 +81,7 @@ namespace LocalSimulation
                 Stats[kvp.Key].MergeDistribution(kvp.Value);
             }
 
-            return result;
+            return retval;
         }
 
 
