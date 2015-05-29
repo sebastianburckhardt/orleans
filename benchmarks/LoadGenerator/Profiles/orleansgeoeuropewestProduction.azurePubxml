@@ -9,14 +9,14 @@
     <AzureEnableRemoteDesktop>True</AzureEnableRemoteDesktop>
     <AzureEnableWebDeploy>False</AzureEnableWebDeploy>
     <AzureFallbackToDeleteAndRecreateIfUpgradeFails>False</AzureFallbackToDeleteAndRecreateIfUpgradeFails>
-    <AzureHostedServiceLabel>orleansgeoloaduswest</AzureHostedServiceLabel>
-    <AzureHostedServiceName>orleansgeoloaduswest</AzureHostedServiceName>
+    <AzureHostedServiceLabel>orleansgeoloadeuropewest</AzureHostedServiceLabel>
+    <AzureHostedServiceName>orleansgeoloadeuropewest</AzureHostedServiceName>
     <AzureEnableIntelliTrace>False</AzureEnableIntelliTrace>
     <AzureEnableProfiling>False</AzureEnableProfiling>
-    <AzureServiceConfiguration>CloudUSWest</AzureServiceConfiguration>
+    <AzureServiceConfiguration>CloudEuropeWest</AzureServiceConfiguration>
     <AzureSolutionConfiguration>Release</AzureSolutionConfiguration>
-    <AzureStorageAccountLabel>orleansgeouswest</AzureStorageAccountLabel>
-    <AzureStorageAccountName>orleansgeouswest</AzureStorageAccountName>
+    <AzureStorageAccountLabel>orleansgeoeuropewest</AzureStorageAccountLabel>
+    <AzureStorageAccountName>orleansgeoeuropewest</AzureStorageAccountName>
     <AzureAppendTimestampToDeploymentLabel>True</AzureAppendTimestampToDeploymentLabel>
   </PropertyGroup>
 </Project>
