@@ -13,7 +13,7 @@ namespace Azure.Storage
     /// <summary>
     /// Utility class for Azure Storage
     /// </summary>
-    class AzureCommon
+    public class AzureCommon
     {
         /// <summary>
         /// Returns Storage account associated with specific StorageConnectionString
@@ -41,6 +41,10 @@ namespace Azure.Storage
             {
                 throw new Exception("No connection key specified");
             }
+            else
+            {
+                Console.Write("Connection Key {0} \n ", connectionKey);
+            }
             CloudStorageAccount account = CloudStorageAccount.Parse(connectionKey);
             return account.CreateCloudTableClient();
         }
@@ -48,8 +52,18 @@ namespace Azure.Storage
         public static CloudTable createTable(CloudTableClient pClient, string pName)
         {
             CloudTable table = pClient.GetTableReference(pName);
-            table.CreateIfNotExists();
+            if (!table.CreateIfNotExists())
+            {
+                throw new Exception("Table already existed");
+            }
             return table;
+        }
+
+        public static bool createTableCheck(CloudTableClient pClient, string pName)
+        {
+            CloudTable table = pClient.GetTableReference(pName);
+            bool ret = table.CreateIfNotExists();
+            return ret;
         }
 
 
@@ -59,8 +73,8 @@ namespace Azure.Storage
             table.Delete();
         }
 
-        public static TableResult insertEntity(CloudTableClient pClient, string pTableName,
-                                        TableEntity pEntity)
+        public static Task<TableResult> insertEntity<T>(CloudTableClient pClient, string pTableName,
+                                        TableEntity pEntity) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pTableName);
             if (table == null)
@@ -68,12 +82,12 @@ namespace Azure.Storage
                 //TODO: throw exception?
                 return null;
             }
-            var retValue = table.Execute(TableOperation.Insert(pEntity));
+            var retValue = table.ExecuteAsync(TableOperation.Insert(pEntity));
             return retValue;
         }
 
-        public static TableResult updateEntity(CloudTableClient pClient, string pTableName,
-                                       TableEntity pEntity)
+        public static Task<TableResult> updateEntity<T>(CloudTableClient pClient, string pTableName,
+                                       TableEntity pEntity) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pTableName);
             if (table == null)
@@ -81,12 +95,12 @@ namespace Azure.Storage
                 //TODO: throw exception?
                 return null;
             }
-            var retValue = table.Execute(TableOperation.Replace(pEntity));
+            var retValue = table.ExecuteAsync(TableOperation.InsertOrReplace(pEntity));
             return retValue;
         }
 
-        public static IList<TableResult> insertEntities(CloudTableClient pClient, string pTableName,
-                                                IList<TableEntity> pEntityList)
+        public static Task<IList<TableResult>> insertEntities<T>(CloudTableClient pClient, string pTableName,
+                                                IList<T> pEntityList) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pTableName);
             if (table == null)
@@ -95,46 +109,67 @@ namespace Azure.Storage
                 return null;
             }
             TableBatchOperation batch = new TableBatchOperation();
-            foreach (TableEntity ent in pEntityList) {
+            foreach (T ent in pEntityList) {
                 batch.Insert(ent);
             }
 
-            return table.ExecuteBatch(batch);
+            return table.ExecuteBatchAsync(batch);
         }
 
 
-        public static IEnumerable<TableEntity> findEntitiesInPartition(CloudTableClient pClient, string pName, string pPartitionKey)
+        public static IEnumerable<DynamicTableEntity> findEntitiesInPartition(CloudTableClient pClient, string pName, string pPartitionKey) 
         {
             CloudTable table = pClient.GetTableReference(pName);
-            TableQuery<TableEntity> rangeQuery = new TableQuery<TableEntity>().Where(
+            TableQuery<DynamicTableEntity> rangeQuery = new TableQuery<DynamicTableEntity>().Where(
                         TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, pPartitionKey));
             return table.ExecuteQuery(rangeQuery);
         }
 
-        public static TableResult findEntity(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey)
+        public static Task<TableResult> findEntity<T>(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pName);
-            TableOperation op = TableOperation.Retrieve<TableEntity>(pPartitionKey, pRowKey);
+            TableOperation op = TableOperation.Retrieve<T>(pPartitionKey, pRowKey);
+            return table.ExecuteAsync(op);
+        }
+
+        public static TableResult findEntitySync<T>(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey) where T : TableEntity, new()
+        {
+            try { 
+            CloudTable table = pClient.GetTableReference(pName);
+            TableOperation op = TableOperation.Retrieve<T>(pPartitionKey, pRowKey);
             return table.Execute(op);
+        } catch (Exception e) { 
+               Console.WriteLine("Execption {0} \n ", e.ToString());
+        }
+            return null;
         }
 
 
-        public static TableResult deleteEntity(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey)
+
+        public static Task<TableResult> deleteEntity<T>(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pName);
-            TableOperation op = TableOperation.Retrieve<TableEntity>(pPartitionKey, pRowKey);
-            TableEntity entityToDelete =  (TableEntity) table.Execute(op).Result;
-            if (entityToDelete != null)
-            {
-               return table.Execute(TableOperation.Delete(entityToDelete));
-            }
-            else
+            TableOperation op = TableOperation.Retrieve<T>(pPartitionKey, pRowKey);
+            TableResult result =  table.Execute(op);
+            if (result.HttpStatusCode == 404)
             {
                 return null;
             }
+            else
+            {
+                T entityToDelete = (T)result.Result;
+                if (entityToDelete != null)
+                {
+                    return table.ExecuteAsync(TableOperation.Delete(entityToDelete));
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
 
-        public static IEnumerable<T> findEntitiesProjection<T>(CloudTableClient pClient, string pName, string[] properties, EntityResolver<T> pEntityResolver)
+        public static IEnumerable<T> findEntitiesProjection<T>(CloudTableClient pClient, string pName, string[] properties, EntityResolver<T> pEntityResolver) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pName);
             TableQuery<DynamicTableEntity> projectionQuery = new TableQuery<DynamicTableEntity>().Select(properties);
@@ -143,6 +178,7 @@ namespace Azure.Storage
 
         public enum OperationType
         {
+            CREATE,
             READ,
             READ_BATCH,
             READ_RANGE,
@@ -153,6 +189,14 @@ namespace Azure.Storage
             DELETE
         }
 
+
+        public static string generateKey(int pByteLength)
+        {
+            Random rnd = new Random();
+            byte[] bytes = new byte[pByteLength];
+            rnd.NextBytes(bytes);
+            return Encoding.ASCII.GetString(bytes);
+        }
 
     }
 }

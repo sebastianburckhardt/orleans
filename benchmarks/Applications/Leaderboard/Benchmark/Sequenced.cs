@@ -20,7 +20,7 @@ namespace Leaderboard.Benchmark
         // async read operations = get approx top 10
         // sync write operations = post now
         // async write operations = postlater
-        public SequencedLeaderboard(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites)
+        public SequencedLeaderboard(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pDummy)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
@@ -28,6 +28,7 @@ namespace Leaderboard.Benchmark
             this.percentAsyncRead = pPercentAsyncReads;
             this.percentSyncWrite = pPercentSyncWrites;
             this.percentAsyncWrite = pPercentAsyncWrites;
+            this.dummyGrain = pDummy;
         }
 
         private int numRobots;
@@ -37,6 +38,7 @@ namespace Leaderboard.Benchmark
         private int percentAsyncRead;
         private int percentSyncWrite;
         private int percentAsyncWrite;
+        private int dummyGrain = 0;
 
         enum OperationType
         {
@@ -52,7 +54,7 @@ namespace Leaderboard.Benchmark
 
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xdummy{6}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite,dummyGrain); } }
 
         public int NumRobots { get { return numRobots; } }
         
@@ -298,7 +300,7 @@ namespace Leaderboard.Benchmark
 
                 switch (nextOp) {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,false));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,false, dummyGrain));
                         totSyncReads++;
                         break;
                     case OperationType.WRITE_SYNC:
@@ -307,11 +309,11 @@ namespace Leaderboard.Benchmark
                             Name = names[rnd.Next(0, nameLength - 1)],
                             Points = numReqs * robotnumber + i
                         };
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,false));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,false,dummyGrain));
                         totSyncWrites++;
                         break;
                     case OperationType.READ_ASYNC:
-                           await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,true));
+                           await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i,true,dummyGrain));
                         totAsyncReads++;
                         break;
                     case OperationType.WRITE_ASYNC:
@@ -320,7 +322,7 @@ namespace Leaderboard.Benchmark
                             Name = names[rnd.Next(0, nameLength - 1)],
                             Points = numReqs * robotnumber + i
                         };
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,true));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore,true,dummyGrain));
                         totAsyncWrites++;
                         break;
                 } // end switch
@@ -364,6 +366,25 @@ namespace Leaderboard.Benchmark
             this.numReq = pNumReq;
         }
 
+
+        /// <summary>
+        /// Constructor for GetTop10 calls
+        /// </summary>
+        /// <param name="pNumReq"></param>
+        public HttpRequestSequencedLeaderboard(int pNumReq, bool async, int pDummyGrain)
+        {
+            if (async)
+            {
+                this.requestType = LeaderboardRequestT.GET_ASYNC;
+            }
+            else
+            {
+                this.requestType = LeaderboardRequestT.GET_SYNC;
+            }
+            this.numReq = pNumReq;
+            this.dummyGrain = pDummyGrain;
+        }
+
         /// <summary>
         /// Constructor for POST calls.
         /// </summary>
@@ -381,6 +402,28 @@ namespace Leaderboard.Benchmark
             }
             this.score = pScore;
             this.numReq = pNumReq;
+            this.dummyGrain = 0;
+        }
+
+
+        /// <summary>
+        /// Dummy Constructor for POST calls.
+        /// </summary>
+        /// <param name="pScore"></param>
+        /// <param name="pNumReq"></param>
+        public HttpRequestSequencedLeaderboard(int pNumReq, Score pScore, bool async, int pDummyGrain)
+        {
+            if (async)
+            {
+                this.requestType = LeaderboardRequestT.POST_ASYNC;
+            }
+            else
+            {
+                this.requestType = LeaderboardRequestT.POST_SYNC;
+            }
+            this.score = pScore;
+            this.numReq = pNumReq;
+            this.dummyGrain = pDummyGrain;
         }
 
         // Request number
@@ -389,7 +432,7 @@ namespace Leaderboard.Benchmark
         private LeaderboardRequestT requestType;
         // Score to post if requestType = post
         private Score score;
-    
+        private int dummyGrain;
 
         public string Signature
         {
@@ -397,11 +440,11 @@ namespace Leaderboard.Benchmark
             {
                 if (requestType == LeaderboardRequestT.GET_SYNC || requestType == LeaderboardRequestT.GET_ASYNC)
                 {
-                   return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
+                   return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1" + "&dummy="+dummyGrain;
                 }
                 else
                 {
-                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=1";
+                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=1" + "&dummy=" + dummyGrain;
                 }
             }
         }
@@ -414,40 +457,74 @@ namespace Leaderboard.Benchmark
 
         public async Task<string> ProcessRequestOnServer()
         {
-
-           
-            var leaderboard = SequencedLeaderboardGrainFactory.GetGrain(0);
             string posts;
             Score[] scores;
 
-           if (requestType == LeaderboardRequestT.GET_SYNC)
+            if (dummyGrain == 1)
             {
-                Console.Write("Get Cuurent \n");
-                scores =  leaderboard.GetExactTopTen("hello").Result;
-                posts = Leaderboard.Interfaces.Score.PrintScores(scores);
-                Console.Write("{0}\n", posts);
-                return posts;
+                // Use dummy grain;
+                var leaderboard = DummySequencedLeaderboardGrainFactory.GetGrain(0);
+                if (requestType == LeaderboardRequestT.GET_SYNC)
+                {
+                    //              Console.Write("Get Cuurent \n");
+                    scores = leaderboard.GetExactTopTen("hello").Result;
+                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    //            Console.Write("{0}\n", posts);
+                    return posts;
+                }
+                else if (requestType == LeaderboardRequestT.GET_ASYNC)
+                {
+                    //            Console.Write("Get Approx \n");
+                    scores = leaderboard.GetApproxTopTen("hello").Result;
+                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    //              Console.Write("{0}\n", posts);
+                    return posts;
+                }
+                else if (requestType == LeaderboardRequestT.POST_SYNC)
+                {
+                    await leaderboard.PostNow(score);
+                    return "ok";
+                }
+                else
+                {
+                    // POST_ASYNC
+                    //            Console.Write("Post Later {0} \n ", score.ToString());
+                    await leaderboard.PostLater(score);
+                    return "ok";
+                }
             }
-           else if (requestType == LeaderboardRequestT.GET_ASYNC)
-           {
-                Console.Write("Get Approx \n");
-                scores =  leaderboard.GetApproxTopTen("hello").Result;
-                posts = Leaderboard.Interfaces.Score.PrintScores(scores);
-                Console.Write("{0}\n", posts);
-                return posts;
-           }
-           else if (requestType == LeaderboardRequestT.POST_SYNC)  {
-                Console.Write("Post Now {0} \n ", score.ToString());
-                await leaderboard.PostNow(score);
-                return "ok";
-            }   else { 
-               // POST_ASYNC
-                Console.Write("Post Later {0} \n ", score.ToString());
-                await leaderboard.PostLater(score);
-                return "ok";
-           }
-
-         
+            else
+            {
+                var leaderboard = SequencedLeaderboardGrainFactory.GetGrain(0);
+                if (requestType == LeaderboardRequestT.GET_SYNC)
+                {
+                    //              Console.Write("Get Cuurent \n");
+                    scores = leaderboard.GetExactTopTen("hello").Result;
+                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    //            Console.Write("{0}\n", posts);
+                    return posts;
+                }
+                else if (requestType == LeaderboardRequestT.GET_ASYNC)
+                {
+                    //            Console.Write("Get Approx \n");
+                    scores = leaderboard.GetApproxTopTen("hello").Result;
+                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    //              Console.Write("{0}\n", posts);
+                    return posts;
+                }
+                else if (requestType == LeaderboardRequestT.POST_SYNC)
+                {
+                    await leaderboard.PostNow(score);
+                    return "ok";
+                }
+                else
+                {
+                    // POST_ASYNC
+                    //            Console.Write("Post Later {0} \n ", score.ToString());
+                    await leaderboard.PostLater(score);
+                    return "ok";
+                }
+            } 
         }
 
 
