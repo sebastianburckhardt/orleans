@@ -93,7 +93,7 @@ namespace Conductor.Webrole
 
                     var result = RunScenario(scenario).Result;
 
-                    
+
                     // collect stats from all robots
                     var overallstats = new Dictionary<string, LatencyDistribution>();
                     foreach (var robot in robots)

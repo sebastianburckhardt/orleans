@@ -135,7 +135,7 @@ namespace Benchmarks
             Util.Assert(sig.Length == 2);
             Util.Assert(sig[0] == "WS");
             var urlparams = (sig[1].Length == 0 ? "?" : (sig[1] + "&")) + "testname=" + testname;
-            var uri = new Uri("ws://" + urlpath + urlparams);
+            var uri = new Uri("ws://" + urlpath + "/" + urlparams);
             string result = null;
             using (var ws = new ClientWebSocket())
             {

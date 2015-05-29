@@ -102,7 +102,7 @@ namespace LoadGenerator.WorkerRole
                             JObject message = JObject.FromObject(new
                                 {
                                     type = "READY",
-                                    loadgenerator = instance + "." + connectioncount++.ToString()
+                                    loadgenerator = deployment + "." + instance + "." + connectioncount++.ToString()
                                 });
                             ArraySegment<byte> outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
                             await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
@@ -217,8 +217,17 @@ namespace LoadGenerator.WorkerRole
 
                                 var scenario = scenarios.First();
                                 string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
-                                var client = serviceEndpoint == null ? null : new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
-                                String retval = await scenario.RobotScript(client, robotnr, args);
+                                String retval;
+                                var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
+                                try
+                                {
+                                    retval = await scenario.RobotScript(client, robotnr, args);
+                                }
+                                catch (Exception e)
+                                {
+                                    retval = e.ToString();
+                                    client.Trace(retval).Wait();
+                                }
 
                                 //  LoadGenerator -> Conductor : DONE robotnr stats retval
 
@@ -261,7 +270,7 @@ namespace LoadGenerator.WorkerRole
                         // close websocket if it is still open
                         if (ws.State == WebSocketState.Open)
                             Task.WaitAny(
-                                ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None),
+                                ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", cancellationToken),
                                 Task.Delay(10000));
                     }
 

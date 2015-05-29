@@ -83,10 +83,12 @@ namespace Benchmarks
                                     PrintUsage(wl);
                                 }
                                 else
-                                {
-                                    //Regex scenarioRegex = new Regex(scenarioname);
-
-                                    var scenarios = bm.Scenarios.Where((s) => (scenarioname == s.Name || scenarioname == "*"));
+                                {                                    
+                                    //support for basic globbing pattern matching (e.g. A* will select all scenarios beginning with A)
+                                    //supports * and ? operators
+                                    string pattern = string.Format("^{0}$", Regex.Escape(scenarioname).Replace(@"\*", ".*").Replace(@"\?", "."));
+                                    Regex scenarioRegex = new Regex(scenarioname);
+                                    var scenarios = bm.Scenarios.Where((s) => scenarioRegex.IsMatch(s.Name));
                                     
                                     if (scenarios == null || !scenarios.Any())
                                     {
@@ -96,7 +98,7 @@ namespace Benchmarks
                                     {
                                         return new KeyValuePair<IBenchmark, IEnumerable<IScenario>>(bm, scenarios);
                                     }
-                                }                                
+                                }
                             }
                             else
                                 PrintUsage(wl);
