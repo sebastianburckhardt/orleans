@@ -16,11 +16,25 @@ namespace Azure.Storage
     public class AzureTableStorage : IScenario
     {
 
-        // scenario parameters
-        // sync read operations = get exact top 10
-        // async read operations = get approx top 10
-        // sync write operations = post now
-        // async write operations = postlater
+
+        private int numRobots;
+        private int numReqs;
+        private int percentReads;
+        private int percentWrites;
+        private int samePartition;
+        private int sameRow;
+        private int payloadSize;
+
+
+        private Random rnd = new Random();
+
+        private const string DEFAULT_PARTITION_KEY = "hello";
+        private const string DEFAULT_ROW_KEY = "world";
+
+        private const int PARTITION_KEY_SIZE = 16;
+        private const int ROW_KEY_SIZE = 16;
+
+      
         public AzureTableStorage(int pNumRobots, int pNumReqs, int pPercentReads,  int pSamePartition, int pSameRow, int pPayloadSize)
         {
             this.numRobots = pNumRobots;
@@ -30,17 +44,10 @@ namespace Azure.Storage
             this.samePartition = pSamePartition;
             this.sameRow = pSameRow;
             this.payloadSize = pPayloadSize;
+       
  
         }
 
-        private int numRobots;
-        private int numReqs;
-        private int percentReads;
-        private int percentWrites;
-        private int samePartition;
-        private int sameRow;
-        private int payloadSize;
-        private Random rnd = new Random();
 
         public String RobotServiceEndpoint(int workernumber)
         {
@@ -95,12 +102,28 @@ namespace Azure.Storage
 
         private string generatePartitionKey()
         {
-            throw new NotImplementedException();
+            if (samePartition == 1)
+            {
+                return DEFAULT_PARTITION_KEY;
+            }
+            else
+            {
+                return AzureCommon.generateKey(PARTITION_KEY_SIZE);
+            }
+            throw new Exception("Parameter out of bound" + samePartition);
         }
 
         private string generateRowKey()
         {
-            throw new NotImplementedException();
+            if (sameRow == 1)
+            {
+                return DEFAULT_ROW_KEY;
+            }
+            else
+            {
+                return AzureCommon.generateKey(PARTITION_KEY_SIZE);
+            }
+            throw new Exception("Parameter out of bound" + sameRow);
         }
 
 
@@ -109,52 +132,78 @@ namespace Azure.Storage
         {
             Console.Write("PARAMETERS {0} \n", parameters);
 
-            string[] param = parameters.Split('-');
-            AzureCommon.OperationType nextOp;
-            int totReads = 0;
-            int totWrites= 0;
-            byte[] nextPayload = new byte[payloadSize];
-            string testTable = "testTable";
+                string[] param = parameters.Split('-');
+                AzureCommon.OperationType nextOp;
+                int totReads = 0;
+                int totWrites = 0;
+                byte[] nextPayload = new byte[payloadSize];
+                string testTable = "testTable";
+                ByteEntity nextEntity = null;
+                string nextResult = null;
 
-            CloudTableClient azureClient = AzureCommon.getTableClient();
-            bool created = AzureCommon.createTableCheck(azureClient, "testTable");
+                /*
+                CloudTableClient azureClient = AzureCommon.getTableClient();
+                bool created = AzureCommon.createTableCheck(azureClient, "testTable");
 
-            rnd.NextBytes(nextPayload);
-            ByteEntity testEntity = new ByteEntity("hello", "world", nextPayload);
-            TableResult insertResult = await AzureCommon.updateEntity(azureClient, "testTable", testEntity);
-            Console.Write("Error code {0} \n ", insertResult.HttpStatusCode);
+                rnd.NextBytes(nextPayload);
+                ByteEntity testEntity = new ByteEntity("hello", "world", nextPayload);
+                TableResult insertResult = await AzureCommon.updateEntity<ByteEntity>(azureClient, "testTable", testEntity);
+                Console.Write("Error code {0} \n ", insertResult.HttpStatusCode);
 
-            TableResult res = await AzureCommon.findEntity(azureClient, "testTable", "hello", "world");
-            Console.Write("Error code {0} \n ", res.HttpStatusCode);
-            ByteEntity retrieved = (ByteEntity) res.Result;
-            if (retrieved != null)
-            {
-                if (retrieved.payload != nextPayload)
+                TableResult res =  AzureCommon.findEntitySync<ByteEntity>(azureClient, "testTable", "hello", "world");
+                Console.Write("Reached here \n");
+                if (res == null)
                 {
-                    throw new Exception("Error, incorrect value returned");
+                    Console.Write("Error NullTable Result \n");
+                    throw new Exception("Error, TableResult null \n ");
+                } 
+                Console.Write("Error code {0} \n ", res.HttpStatusCode);
+                ByteEntity retrieved = (ByteEntity) res.Result;
+                if (retrieved != null)
+                {
+                    if (!retrieved.Equals(testEntity))
+                    {
+                        throw new Exception("Error, incorrect value returned");
+                    }
                 }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception occurred {0} ", e.ToString());
             }
 
-            /*
+             */
+
+           
             for (int i = 0; i < numReqs; i++)
             {
                 nextOp = generateOperationType();
                 switch (nextOp)
                 {
                     case AzureCommon.OperationType.READ:
-         //               await context.ServiceRequest(new HttpRequestAzureStorage(numReqs * robotnumber + i, false));
+                        nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, numReqs * robotnumber + i, testTable, generatePartitionKey(), generateRowKey(), null));
                         totReads++;
+                        if (!nextResult.Equals("200"))
+                        {
+                            throw new Exception("HTTP Return Code " + nextResult);
+                        }
                         break;
                     case AzureCommon.OperationType.UPDATE:
                         rnd.NextBytes(nextPayload);
+                        nextEntity = new ByteEntity(generatePartitionKey(), generateRowKey(), nextPayload);
+                        nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, numReqs * robotnumber + i, testTable, generatePartitionKey(), generateRowKey(), nextEntity));
                         totWrites++;
+                        if (!nextResult.Equals("200"))
+                        {
+                            throw new Exception("HTTP Return Code " + nextResult);
+                        }
                         break;
                     default:
                         throw new NotImplementedException();
                 } // end switch
             }
 
-             * */
             Console.Write("Executed {0} Reads {0} Writes \n ", ((double)totReads / (double)numReqs) * 100, ((double)totWrites / (double)numReqs) * 100);
                    
             return "ok";
@@ -274,10 +323,10 @@ namespace Azure.Storage
             if (requestType == AzureCommon.OperationType.READ)
             {
                 TableResult res = 
-                    await AzureCommon.findEntity(tableClient, tableName, partitionKey, rowKey);
+                    await AzureCommon.findEntity<ByteEntity>(tableClient, tableName, partitionKey, rowKey);
                 if (res.HttpStatusCode == 404)
                 {
-                    result = "Error ";
+                    result = res.HttpStatusCode.ToString();
                 }
                 else {
                     ByteEntity entity = (ByteEntity) res.Result;
@@ -298,13 +347,13 @@ namespace Azure.Storage
             }
             else if (requestType == AzureCommon.OperationType.INSERT_BATCH)
             {
-                return "Unimplemented";
+                return "Unimplemented"; 
             }
             else if (requestType == AzureCommon.OperationType.UPDATE)
 
             {
                 TableResult res = 
-                        await AzureCommon.updateEntity(tableClient, tableName, payload);
+                        await AzureCommon.updateEntity<ByteEntity>(tableClient, tableName, payload);
                 return res.HttpStatusCode.ToString();
             }
             else if (requestType == AzureCommon.OperationType.UPDATE_BATCH)
@@ -319,7 +368,6 @@ namespace Azure.Storage
 
         public Task<string> ProcessResponseOnClient(string response)
         {
-            Console.Write("{0} Req # {1} \n ", response, numReq);
             return Task.FromResult(response);
         }
 
