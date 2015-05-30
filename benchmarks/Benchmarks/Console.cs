@@ -87,9 +87,9 @@ namespace Benchmarks
                                     //support for basic globbing pattern matching (e.g. A* will select all scenarios beginning with A)
                                     //supports * and ? operators
                                     string pattern = string.Format("^{0}$", Regex.Escape(scenarioname).Replace(@"\*", ".*").Replace(@"\?", "."));
-                                    Regex scenarioRegex = new Regex(scenarioname);
+                                    Regex scenarioRegex = new Regex(pattern);
                                     var scenarios = bm.Scenarios.Where((s) => scenarioRegex.IsMatch(s.Name));
-                                    
+
                                     if (scenarios == null || !scenarios.Any())
                                     {
                                         PrintUsage(wl);
