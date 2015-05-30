@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceDefinition name="Conductor" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2014-06.2.4">
-  <WebRole name="Conductor.WebRole" vmsize="Small">
+  <WebRole name="Conductor.WebRole" vmsize="Medium">
     <Sites>
       <Site name="Web">
         <Bindings>
