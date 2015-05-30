@@ -241,13 +241,17 @@ namespace ReplicatedGrains
         
         private StateObject ReadRawState()
         {
+            var begin = DateTime.Now;
+
             if (this.State.Raw == null)
                 return new StateObject();
             var formatter = new BinaryFormatter();
             using (var ms = new MemoryStream(this.State.Raw))
             {
-                return (StateObject)formatter.Deserialize(ms);
+                StateObject o =  (StateObject)formatter.Deserialize(ms);
+                return o;
             }
+
         }
         private void WriteRawState(StateObject s)
         {
@@ -259,6 +263,7 @@ namespace ReplicatedGrains
                 this.State.Raw = ms.GetBuffer();
                 Util.Assert(this.State.Raw != null);
             }
+
         }
 
         

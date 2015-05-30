@@ -7,6 +7,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure;
+using Microsoft.Azure;
 
 namespace Azure.Storage
 {
@@ -19,7 +20,7 @@ namespace Azure.Storage
         /// Returns Storage account associated with specific StorageConnectionString
         /// </summary>
         /// <returns></returns>
-        public static  CloudStorageAccount getStorageAccount()
+        public static CloudStorageAccount getStorageAccount()
         {
             string connectionKey = CloudConfigurationManager.GetSetting("StorageConnectionString");
             if (connectionKey == null)
@@ -109,7 +110,8 @@ namespace Azure.Storage
                 return null;
             }
             TableBatchOperation batch = new TableBatchOperation();
-            foreach (T ent in pEntityList) {
+            foreach (T ent in pEntityList)
+            {
                 batch.Insert(ent);
             }
 
@@ -117,7 +119,7 @@ namespace Azure.Storage
         }
 
 
-        public static IEnumerable<DynamicTableEntity> findEntitiesInPartition(CloudTableClient pClient, string pName, string pPartitionKey) 
+        public static IEnumerable<DynamicTableEntity> findEntitiesInPartition(CloudTableClient pClient, string pName, string pPartitionKey)
         {
             CloudTable table = pClient.GetTableReference(pName);
             TableQuery<DynamicTableEntity> rangeQuery = new TableQuery<DynamicTableEntity>().Where(
@@ -134,13 +136,16 @@ namespace Azure.Storage
 
         public static TableResult findEntitySync<T>(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey) where T : TableEntity, new()
         {
-            try { 
-            CloudTable table = pClient.GetTableReference(pName);
-            TableOperation op = TableOperation.Retrieve<T>(pPartitionKey, pRowKey);
-            return table.Execute(op);
-        } catch (Exception e) { 
-               Console.WriteLine("Execption {0} \n ", e.ToString());
-        }
+            try
+            {
+                CloudTable table = pClient.GetTableReference(pName);
+                TableOperation op = TableOperation.Retrieve<T>(pPartitionKey, pRowKey);
+                return table.Execute(op);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Execption {0} \n ", e.ToString());
+            }
             return null;
         }
 
@@ -150,7 +155,7 @@ namespace Azure.Storage
         {
             CloudTable table = pClient.GetTableReference(pName);
             TableOperation op = TableOperation.Retrieve<T>(pPartitionKey, pRowKey);
-            TableResult result =  table.Execute(op);
+            TableResult result = table.Execute(op);
             if (result.HttpStatusCode == 404)
             {
                 return null;

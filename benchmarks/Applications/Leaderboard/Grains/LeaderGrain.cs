@@ -14,7 +14,6 @@ namespace Leaderboard.Grains
     /// To be used for reference performance
     /// </summary>
     public class LeaderGrain : Orleans.Grain, Leaderboard.Interfaces.ILeaderboardGrain
-
     {
 
         private List<Score> topTenScores_ = new List<Score>();
@@ -22,16 +21,16 @@ namespace Leaderboard.Grains
 
         #region Queries
 
-       // public Task<Score[]> GetTopTen()
+        // public Task<Score[]> GetTopTen()
         public Task<Score[]> GetTopTen(string post)
         {
-           return Task.FromResult(topTenScores_.ToArray());
+            return Task.FromResult(topTenScores_.ToArray());
 
         }
 
         #endregion
 
-       #region Updates
+        #region Updates
 
         public Task Post(Leaderboard.Interfaces.Score score)
         {
@@ -41,9 +40,9 @@ namespace Leaderboard.Grains
         }
 
 
-    #endregion
-          
-      
+        #endregion
+
+
     }
-    
+
 }

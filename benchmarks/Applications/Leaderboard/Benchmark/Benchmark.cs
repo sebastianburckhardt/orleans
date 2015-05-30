@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Common;
-using Leaderboard.Interfaces; 
+using Leaderboard.Interfaces;
 
 #pragma warning disable 1998
 

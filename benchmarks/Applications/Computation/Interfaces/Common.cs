@@ -8,7 +8,7 @@ namespace Computation.Interfaces
 {
 
 
-    
+
 
     /// <summary>
     /// Request types:

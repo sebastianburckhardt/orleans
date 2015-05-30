@@ -26,7 +26,7 @@ namespace Leaderboard.Grains
             public State()
             {
                 topTenScores = new List<Score>();
-            } 
+            }
 
         }
 
@@ -34,7 +34,7 @@ namespace Leaderboard.Grains
 
         public async Task<Score[]> GetApproxTopTen(string post)
         {
-            
+
             return (await GetLocalStateAsync()).topTenScores.ToArray();
         }
 
@@ -60,7 +60,7 @@ namespace Leaderboard.Grains
 
         public override Task OnActivateAsync()
         {
-            
+
             return base.OnActivateAsync();
         }
 
@@ -70,7 +70,7 @@ namespace Leaderboard.Grains
             public Score Score { get; set; } // the posted score
             public void Update(State state)
             {
-             
+
                 // add the score to the list of scores
                 state.topTenScores.Add(Score);
                 // sort the list of scores and keep only top 10

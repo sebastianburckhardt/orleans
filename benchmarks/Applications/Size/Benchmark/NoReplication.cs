@@ -60,18 +60,19 @@ namespace Size.Benchmark
         {
             var robotrequests = new Task<string>[numRobots];
 
-                // start each robot
-                for (int i = 0; i < numRobots; i++)
-                    robotrequests[i] = context.RunRobot(i, numReqs.ToString()+"-"+percentRead);
+            // start each robot
+            for (int i = 0; i < numRobots; i++)
+                robotrequests[i] = context.RunRobot(i, numReqs.ToString() + "-" + percentRead);
 
-                // wait for all robots
-                await Task.WhenAll(robotrequests);
+            // wait for all robots
+            await Task.WhenAll(robotrequests);
 
-                // check robot responses
-                for (int i = 0; i < numRobots; i++) {
-                    Console.Write("Finished: {0} \n", robotrequests[i].Result );
-                }
-         
+            // check robot responses
+            for (int i = 0; i < numRobots; i++)
+            {
+                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+            }
+
             return "ok";
         }
 
@@ -79,7 +80,7 @@ namespace Size.Benchmark
         public async Task<string> RobotScript(IRobotContext context, int robotnumber, string parameters)
         {
             Console.Write("PARAMETERS {0} \n", parameters);
-     
+
             int reads;
             int writes;
             Random rnd;
@@ -149,13 +150,14 @@ namespace Size.Benchmark
 
                 } // !executed 
 
-                switch (nextOp) {
+                switch (nextOp)
+                {
                     case OperationType.READ_SYNC:
                         await context.ServiceRequest(new HttpRequestSize(numReqs * robotnumber + i));
                         totReads++;
                         break;
                     case OperationType.WRITE_SYNC:
-                          rnd.NextBytes(nextWrite);
+                        rnd.NextBytes(nextWrite);
                         await context.ServiceRequest(new HttpRequestSize(numReqs * robotnumber + i, nextWrite));
                         totWrites++;
                         break;
@@ -168,15 +170,15 @@ namespace Size.Benchmark
 
             } // end for loop
 
-            Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads "+ totReads);
+            Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads " + totReads);
             Util.Assert(totWrites == (percentWrite * numReqs / 100), "Incorrect Number Writes " + totWrites);
-            
+
             Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
             return parameters;
         }
 
 
-   
+
 
     }
 
@@ -184,7 +186,7 @@ namespace Size.Benchmark
     public class HttpRequestSize : IHttpRequest
     {
 
-          /// <summary>
+        /// <summary>
         /// Constructor for GetTop10 calls
         /// </summary>
         /// <param name="pNumReq"></param>
@@ -199,7 +201,7 @@ namespace Size.Benchmark
         /// </summary>
         /// <param name="pScore"></param>
         /// <param name="pNumReq"></param>
-        public HttpRequestSize(int pNumReq,byte[] pPayload)
+        public HttpRequestSize(int pNumReq, byte[] pPayload)
         {
             this.requestType = SizeRequestT.WRITE_SYNC;
             this.payload = pPayload;
@@ -212,7 +214,7 @@ namespace Size.Benchmark
         // Request type, get or post
         private SizeRequestT requestType;
         // Score to post if requestType = post
-        private byte[] payload ;
+        private byte[] payload;
 
 
         public string Signature
@@ -245,7 +247,7 @@ namespace Size.Benchmark
 
             byte[] readData;
 
-           if (requestType == SizeRequestT.READ_SYNC)
+            if (requestType == SizeRequestT.READ_SYNC)
             {
                 Console.Write("READ \n");
                 readData = grain.Read("Hello").Result;
@@ -257,9 +259,9 @@ namespace Size.Benchmark
                 Util.Assert(requestType == SizeRequestT.WRITE_SYNC);
                 await grain.Write(payload);
                 return "ok";
-            }  
+            }
 
-         
+
         }
 
 

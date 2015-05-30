@@ -38,10 +38,18 @@ namespace Azure.Storage
 
         public static string FromEntityToString(ByteEntity pEntity)
         {
-            MemoryStream ms = new MemoryStream();
-            BinaryFormatter bf = new BinaryFormatter();
-            bf.Serialize(ms, pEntity);
-            return Encoding.ASCII.GetString(ms.GetBuffer());
+            try
+            {
+                MemoryStream ms = new MemoryStream();
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(ms, pEntity);
+                return Encoding.ASCII.GetString(ms.GetBuffer());
+            }
+            catch (Exception e)
+            {
+                Console.Write("Exception " + e.ToString());
+            }
+            return null; 
         }
 
         public override bool Equals(object obj)
@@ -50,9 +58,9 @@ namespace Azure.Storage
             {
                 return false;
             }
-            ByteEntity entity = (ByteEntity) obj;
-            return entity.PartitionKey == this.PartitionKey && 
-                    this.RowKey == entity.RowKey && 
+            ByteEntity entity = (ByteEntity)obj;
+            return entity.PartitionKey == this.PartitionKey &&
+                    this.RowKey == entity.RowKey &&
                 checkArray(entity.payload, this.payload);
         }
 
@@ -65,7 +73,7 @@ namespace Azure.Storage
             {
                 for (int i = 0; i < sizeP1; i++)
                 {
-                     if (p1[i]!=p2[i] ) return false;
+                    if (p1[i] != p2[i]) return false;
                 }
             }
             return true;
@@ -73,8 +81,8 @@ namespace Azure.Storage
 
     }
 
-    
-   
+
+
 
 
 }

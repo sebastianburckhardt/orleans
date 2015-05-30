@@ -33,16 +33,14 @@ namespace Size.Grains
 
         #region Queries
 
-   //     public async Task<byte[]> ReadApprox(string post)
-         public async Task<Byte[]> ReadApprox(string post)
-
+        //     public async Task<byte[]> ReadApprox(string post)
+        public async Task<Byte[]> ReadApprox(string post)
         {
-            
+
             return (await GetLocalStateAsync()).payload;
         }
 
-         public async Task<Byte[]> ReadCurrent(string post)
-
+        public async Task<Byte[]> ReadCurrent(string post)
         {
             return (await GetGlobalStateAsync()).payload;
         }
@@ -73,7 +71,7 @@ namespace Size.Grains
         public class WriteEvent : IAppliesTo<State>
         {
             public Byte[] payload { get; set; }
- 
+
             public void Update(State state)
             {
                 Util.Assert(payload != null, "Payload should not be null");

@@ -14,7 +14,6 @@ namespace Size.Grains
     /// To be used for reference performance
     /// </summary>
     public class SizeGrain : Orleans.Grain, Size.Interfaces.ISizeGrain
-
     {
 
         private Byte[] payload;
@@ -22,16 +21,16 @@ namespace Size.Grains
 
         #region Queries
 
-       // public Task<Score[]> GetTopTen()
+        // public Task<Score[]> GetTopTen()
         public Task<Byte[]> Read(string post)
         {
-           return Task.FromResult(payload);
+            return Task.FromResult(payload);
 
         }
 
         #endregion
 
-       #region Updates
+        #region Updates
 
         public Task Write(Byte[] pPayload)
         {
@@ -40,9 +39,9 @@ namespace Size.Grains
         }
 
 
-    #endregion
-          
-      
+        #endregion
+
+
     }
-    
+
 }

@@ -58,18 +58,19 @@ namespace Computation.Benchmark
         {
             var robotrequests = new Task<string>[numRobots];
 
-                // start each robot
-                for (int i = 0; i < numRobots; i++)
-                    robotrequests[i] = context.RunRobot(i, numReqs.ToString()+"-"+percentRead);
+            // start each robot
+            for (int i = 0; i < numRobots; i++)
+                robotrequests[i] = context.RunRobot(i, numReqs.ToString() + "-" + percentRead);
 
-                // wait for all robots
-                await Task.WhenAll(robotrequests);
+            // wait for all robots
+            await Task.WhenAll(robotrequests);
 
-                // check robot responses
-                for (int i = 0; i < numRobots; i++) {
-                    Console.Write("Finished: {0} \n", robotrequests[i].Result );
-                }
-         
+            // check robot responses
+            for (int i = 0; i < numRobots; i++)
+            {
+                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+            }
+
             return "ok";
         }
 
@@ -77,7 +78,7 @@ namespace Computation.Benchmark
         public async Task<string> RobotScript(IRobotContext context, int robotnumber, string parameters)
         {
             Console.Write("PARAMETERS {0} \n", parameters);
-     
+
             int reads;
             int writes;
             Random rnd;
@@ -147,13 +148,14 @@ namespace Computation.Benchmark
 
                 } // !executed 
 
-                switch (nextOp) {
+                switch (nextOp)
+                {
                     case OperationType.READ_SYNC:
                         await context.ServiceRequest(new HttpRequestComputation(numReqs * robotnumber + i));
                         totReads++;
                         break;
                     case OperationType.WRITE_SYNC:
-                          rnd.NextBytes(nextWrite);
+                        rnd.NextBytes(nextWrite);
                         await context.ServiceRequest(new HttpRequestComputation(numReqs * robotnumber + i, nextWrite, timeUpdate));
                         totWrites++;
                         break;
@@ -166,15 +168,15 @@ namespace Computation.Benchmark
 
             } // end for loop
 
-            Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads "+ totReads);
+            Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads " + totReads);
             Util.Assert(totWrites == (percentWrite * numReqs / 100), "Incorrect Number Writes " + totWrites);
-            
+
             Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
             return parameters;
         }
 
 
-   
+
 
     }
 
@@ -182,7 +184,7 @@ namespace Computation.Benchmark
     public class HttpRequestComputation : IHttpRequest
     {
 
-          /// <summary>
+        /// <summary>
         /// Constructor for GetTop10 calls
         /// </summary>
         /// <param name="pNumReq"></param>
@@ -197,7 +199,7 @@ namespace Computation.Benchmark
         /// </summary>
         /// <param name="pScore"></param>
         /// <param name="pNumReq"></param>
-        public HttpRequestComputation(int pNumReq,byte[] pPayload, int pTimeUpdate)
+        public HttpRequestComputation(int pNumReq, byte[] pPayload, int pTimeUpdate)
         {
             this.requestType = ComputationRequestT.WRITE_SYNC;
             this.payload = pPayload;
@@ -211,7 +213,7 @@ namespace Computation.Benchmark
         // Request type, get or post
         private ComputationRequestT requestType;
         // Score to post if requestType = post
-        private byte[] payload ;
+        private byte[] payload;
         private int timeUpdate;
 
 
@@ -226,7 +228,7 @@ namespace Computation.Benchmark
                 else
                 {
                     Util.Assert(payload != null, "Cannot have WRITE type and null payload");
-                    return "POST computation?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0" + "&time="+timeUpdate;
+                    return "POST computation?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=0" + "&time=" + timeUpdate;
                 }
             }
         }
@@ -245,7 +247,7 @@ namespace Computation.Benchmark
 
             byte[] readData;
 
-           if (requestType == ComputationRequestT.READ_SYNC)
+            if (requestType == ComputationRequestT.READ_SYNC)
             {
                 Console.Write("READ \n");
                 readData = grain.Read("Hello").Result;
@@ -257,9 +259,9 @@ namespace Computation.Benchmark
                 Util.Assert(requestType == ComputationRequestT.WRITE_SYNC);
                 await grain.Write(timeUpdate);
                 return "ok";
-            }  
+            }
 
-         
+
         }
 
         public Task<string> ProcessResponseOnClient(string response)

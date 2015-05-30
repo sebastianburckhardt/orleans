@@ -55,7 +55,7 @@ namespace Size.Benchmark
 
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite,payloadSize); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, numReqs, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite, payloadSize); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -71,18 +71,19 @@ namespace Size.Benchmark
         {
             var robotrequests = new Task<string>[numRobots];
 
-                // start each robot
-                for (int i = 0; i < numRobots; i++)
-                    robotrequests[i] = context.RunRobot(i, numReqs.ToString());
+            // start each robot
+            for (int i = 0; i < numRobots; i++)
+                robotrequests[i] = context.RunRobot(i, numReqs.ToString());
 
-                // wait for all robots
-                await Task.WhenAll(robotrequests);
+            // wait for all robots
+            await Task.WhenAll(robotrequests);
 
-                // check robot responses
-                for (int i = 0; i < numRobots; i++) {
-                    Console.Write("Finished: {0} \n", robotrequests[i].Result );
-                }
-         
+            // check robot responses
+            for (int i = 0; i < numRobots; i++)
+            {
+                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+            }
+
             return "ok";
         }
 
@@ -136,7 +137,7 @@ namespace Size.Benchmark
 
 
             //TODO: refactor
-       
+
             for (int i = 0; i < numReqs; i++)
             {
                 if (asyncReads == 0 && asyncWrites == 0
@@ -302,7 +303,7 @@ namespace Size.Benchmark
         }
 
 
-   
+
 
     }
 
@@ -310,7 +311,7 @@ namespace Size.Benchmark
     public class HttpRequestSequencedSize : IHttpRequest
     {
 
-          /// <summary>
+        /// <summary>
         /// Constructor for READ calls
         /// </summary>
         /// <param name="pNumReq"></param>
@@ -339,10 +340,10 @@ namespace Size.Benchmark
             }
             this.numReq = pNumReq;
             this.payload = pPayload;
-                
+
         }
 
-        
+
 
         // Request number
         private int numReq;
@@ -350,7 +351,7 @@ namespace Size.Benchmark
         private SizeRequestT requestType;
         // Score to post if requestType = post
         private byte[] payload;
-  
+
 
 
         public string Signature
@@ -359,7 +360,7 @@ namespace Size.Benchmark
             {
                 if (requestType == SizeRequestT.READ_SYNC || requestType == SizeRequestT.READ_ASYNC)
                 {
-                   return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
+                    return "GET size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
                 }
                 else
                 {
@@ -371,8 +372,11 @@ namespace Size.Benchmark
 
         public string Body
         {
-            get { if (payload == null) return null;
-                else return Encoding.ASCII.GetString(payload); }
+            get
+            {
+                if (payload == null) return null;
+                else return Encoding.ASCII.GetString(payload);
+            }
         }
 
         public async Task<string> ProcessRequestOnServer()
@@ -383,30 +387,33 @@ namespace Size.Benchmark
             Byte[] readData;
 
 
-           if (requestType == SizeRequestT.READ_SYNC)
+            if (requestType == SizeRequestT.READ_SYNC)
             {
                 Console.Write("Read Current \n");
                 readData = grain.ReadCurrent("hello").Result;
                 if (readData == null) return "";
                 else return Encoding.ASCII.GetString(readData);
             }
-           else if (requestType == SizeRequestT.READ_ASYNC)
-           {
+            else if (requestType == SizeRequestT.READ_ASYNC)
+            {
                 Console.Write("Read Approx \n");
                 readData = grain.ReadApprox("hello").Result;
                 if (readData == null) return "";
                 else return Encoding.ASCII.GetString(readData);
-           }
-           else if (requestType == SizeRequestT.WRITE_SYNC)  {
+            }
+            else if (requestType == SizeRequestT.WRITE_SYNC)
+            {
                 Console.Write("Write Now \n");
                 await grain.WriteNow(payload);
                 return "ok";
-            }   else { 
-               // POST_ASYNC
+            }
+            else
+            {
+                // POST_ASYNC
                 Console.Write("Write Later \n ");
                 await grain.WriteLater(payload);
                 return "ok";
-           }
+            }
         }
 
 

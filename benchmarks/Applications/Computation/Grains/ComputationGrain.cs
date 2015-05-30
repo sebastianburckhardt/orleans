@@ -14,23 +14,22 @@ namespace Computation.Grains
     /// To be used for reference performance
     /// </summary>
     public class ComputationGrain : Orleans.Grain, Computation.Interfaces.IComputationGrain
-
     {
 
         byte[] payload = new byte[100];
 
         #region Queries
 
-       // public Task<Score[]> GetTopTen()
+        // public Task<Score[]> GetTopTen()
         public Task<byte[]> Read(string post)
         {
-           return Task.FromResult(payload);
+            return Task.FromResult(payload);
 
         }
 
         #endregion
 
-       #region Updates
+        #region Updates
 
         public Task Write(int pTime)
         {
@@ -43,13 +42,13 @@ namespace Computation.Grains
                 i++;
                 end = DateTime.Now;
             }
-            return TaskDone.Done; 
+            return TaskDone.Done;
         }
 
 
-    #endregion
-          
-      
+        #endregion
+
+
     }
-    
+
 }

@@ -34,8 +34,8 @@ namespace Azure.Storage
         private const int PARTITION_KEY_SIZE = 16;
         private const int ROW_KEY_SIZE = 16;
 
-      
-        public AzureTableDirect(int pNumRobots, int pNumReqs, int pPercentReads,  int pSamePartition, int pSameRow, int pPayloadSize)
+
+        public AzureTableDirect(int pNumRobots, int pNumReqs, int pPercentReads, int pSamePartition, int pSameRow, int pPayloadSize)
         {
             this.numRobots = pNumRobots;
             this.numReqs = pNumReqs;
@@ -44,8 +44,8 @@ namespace Azure.Storage
             this.samePartition = pSamePartition;
             this.sameRow = pSameRow;
             this.payloadSize = pPayloadSize;
-       
- 
+
+
         }
 
 
@@ -56,7 +56,7 @@ namespace Azure.Storage
 
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xreads{2}xpkey{3}xrkey{4}xsize{5}", numRobots, numReqs,percentReads,samePartition,sameRow, payloadSize); } }
+        public string Name { get { return string.Format("direct-robots{0}xnr{1}xreads{2}xpkey{3}xrkey{4}xsize{5}", numRobots, numReqs, percentReads, samePartition, sameRow, payloadSize); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -132,19 +132,19 @@ namespace Azure.Storage
         {
             Console.Write("PARAMETERS {0} \n", parameters);
 
-                string[] param = parameters.Split('-');
-                AzureCommon.OperationType nextOp;
-                int totReads = 0;
-                int totWrites = 0;
-                byte[] nextPayload = new byte[payloadSize];
-                string testTable = "testTable";
-                ByteEntity nextEntity = null;
-                TableResult nextResult = null;
+            string[] param = parameters.Split('-');
+            AzureCommon.OperationType nextOp;
+            int totReads = 0;
+            int totWrites = 0;
+            byte[] nextPayload = new byte[payloadSize];
+            string testTable = "testTable";
+            ByteEntity nextEntity = null;
+            TableResult nextResult = null;
 
-                
-                CloudTableClient azureClient = AzureCommon.getTableClient();
-                bool created = AzureCommon.createTableCheck(azureClient, testTable);
-           
+
+            CloudTableClient azureClient = AzureCommon.getTableClient();
+            bool created = AzureCommon.createTableCheck(azureClient, testTable);
+
             for (int i = 0; i < numReqs; i++)
             {
                 nextOp = generateOperationType();
@@ -163,7 +163,7 @@ namespace Azure.Storage
                         nextEntity = new ByteEntity(generatePartitionKey(), generateRowKey(), nextPayload);
                         nextResult = await AzureCommon.updateEntity<ByteEntity>(azureClient, "testTable", nextEntity);
                         totWrites++;
-                        if (nextResult == null || nextResult.HttpStatusCode!=204)
+                        if (nextResult == null || nextResult.HttpStatusCode != 204)
                         {
                             throw new Exception("HTTP Return Code " + nextResult);
                         }
@@ -173,9 +173,9 @@ namespace Azure.Storage
                 } // end switch
             }
 
-            Console.Write("Executed {0} Reads {0} Writes \n ", ((double)totReads / (double)numReqs) * 100, ((double)totWrites / (double)numReqs) * 100);
-                   
-            return "ok";
+            string result = string.Format("Executed {0}% Reads {0}% Writes \n ", ((double)totReads / (double)numReqs) * 100, ((double)totWrites / (double)numReqs) * 100);
+
+            return "ok: " + result;
         }
 
 
@@ -183,7 +183,7 @@ namespace Azure.Storage
 
     }
 
-   
+
 
 }
 

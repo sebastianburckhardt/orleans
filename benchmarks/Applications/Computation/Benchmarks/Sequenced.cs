@@ -53,7 +53,7 @@ namespace Computation.Benchmark
             return Endpoints.GetDefaultService();
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xcomp{6}", numRobots, numReqs, percentSyncRead,percentAsyncRead, percentSyncWrite,percentAsyncWrite,timeUpdate); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xcomp{6}", numRobots, numReqs, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite, timeUpdate); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -69,18 +69,19 @@ namespace Computation.Benchmark
         {
             var robotrequests = new Task<string>[numRobots];
 
-                // start each robot
-                for (int i = 0; i < numRobots; i++)
-                    robotrequests[i] = context.RunRobot(i, numReqs.ToString());
+            // start each robot
+            for (int i = 0; i < numRobots; i++)
+                robotrequests[i] = context.RunRobot(i, numReqs.ToString());
 
-                // wait for all robots
-                await Task.WhenAll(robotrequests);
+            // wait for all robots
+            await Task.WhenAll(robotrequests);
 
-                // check robot responses
-                for (int i = 0; i < numRobots; i++) {
-                    Console.Write("Finished: {0} \n", robotrequests[i].Result );
-                }
-         
+            // check robot responses
+            for (int i = 0; i < numRobots; i++)
+            {
+                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+            }
+
             return "ok";
         }
 
@@ -134,7 +135,7 @@ namespace Computation.Benchmark
 
 
             //TODO: refactor
-       
+
             for (int i = 0; i < numReqs; i++)
             {
                 if (asyncReads == 0 && asyncWrites == 0
@@ -300,7 +301,7 @@ namespace Computation.Benchmark
         }
 
 
-   
+
 
     }
 
@@ -308,7 +309,7 @@ namespace Computation.Benchmark
     public class HttpRequestSequencedComputation : IHttpRequest
     {
 
-          /// <summary>
+        /// <summary>
         /// Constructor for READ calls
         /// </summary>
         /// <param name="pNumReq"></param>
@@ -338,10 +339,10 @@ namespace Computation.Benchmark
             this.numReq = pNumReq;
             this.payload = pPayload;
             this.timeUpdate = pTime;
-                
+
         }
 
-        
+
 
         // Request number
         private int numReq;
@@ -371,8 +372,11 @@ namespace Computation.Benchmark
 
         public string Body
         {
-            get { if (payload == null) return null;
-                else return Encoding.ASCII.GetString(payload); }
+            get
+            {
+                if (payload == null) return null;
+                else return Encoding.ASCII.GetString(payload);
+            }
         }
 
         public async Task<string> ProcessRequestOnServer()
@@ -383,35 +387,38 @@ namespace Computation.Benchmark
             Byte[] readData;
 
 
-           if (requestType == ComputationRequestT.READ_SYNC)
+            if (requestType == ComputationRequestT.READ_SYNC)
             {
                 Console.Write("Read Current \n");
                 readData = grain.ReadCurrent("hello").Result;
                 if (readData == null) return "";
                 else return Encoding.ASCII.GetString(readData);
             }
-           else if (requestType == ComputationRequestT.READ_ASYNC)
-           {
+            else if (requestType == ComputationRequestT.READ_ASYNC)
+            {
                 Console.Write("Read Approx \n");
                 readData = grain.ReadApprox("hello").Result;
                 if (readData == null) return "";
                 else return Encoding.ASCII.GetString(readData);
-           }
-           else if (requestType == ComputationRequestT.WRITE_SYNC)  {
+            }
+            else if (requestType == ComputationRequestT.WRITE_SYNC)
+            {
                 Console.Write("Write Now \n");
                 await grain.WriteNow(timeUpdate);
                 return "ok";
-            }   else { 
-               // POST_ASYNC
+            }
+            else
+            {
+                // POST_ASYNC
                 Console.Write("Write Later \n ");
                 await grain.WriteLater(timeUpdate);
                 return "ok";
-           }
+            }
         }
 
         public Task<string> ProcessResponseOnClient(string response)
         {
-            Console.Write("{0} Req # {1} \n ", response, numReq );
+            Console.Write("{0} Req # {1} \n ", response, numReq);
             return Task.FromResult(response);
         }
 

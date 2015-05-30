@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Common;
-using Computation.Interfaces; 
+using Computation.Interfaces;
 
 #pragma warning disable 1998
 
@@ -331,7 +331,7 @@ namespace Computation.Benchmark
                     if (requestType == ComputationRequestT.READ_SYNC)
                     {
                         // READ type
-                         request = new HttpRequestComputation(numReq);
+                        request = new HttpRequestComputation(numReq);
                     }
                     else if (requestType == ComputationRequestT.WRITE_SYNC)
                     {
@@ -375,11 +375,11 @@ namespace Computation.Benchmark
 
                 if (int.Parse(arguments["rep"]) == 0)
                 {
-                  
+
                     HttpRequestComputation request = null;
                     if (requestType == ComputationRequestT.WRITE_SYNC)
-                    {      
-                        request = new HttpRequestComputation(numReq, Encoding.ASCII.GetBytes(body),timeUpdate);
+                    {
+                        request = new HttpRequestComputation(numReq, Encoding.ASCII.GetBytes(body), timeUpdate);
                     }
                     else
                     {
@@ -395,7 +395,7 @@ namespace Computation.Benchmark
                     if (requestType == ComputationRequestT.WRITE_SYNC)
                     {
                         // Write Now Type
-                        request = new HttpRequestSequencedComputation(numReq, Encoding.ASCII.GetBytes(body),timeUpdate, false);
+                        request = new HttpRequestSequencedComputation(numReq, Encoding.ASCII.GetBytes(body), timeUpdate, false);
                     }
                     else if (requestType == ComputationRequestT.WRITE_ASYNC)
                     {

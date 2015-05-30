@@ -27,7 +27,7 @@ namespace Computation.Grains
             public State()
             {
                 payload = new byte[100];
-            } 
+            }
 
         }
 
@@ -35,7 +35,7 @@ namespace Computation.Grains
 
         public async Task<byte[]> ReadApprox(string post)
         {
-            
+
             return (await GetLocalStateAsync()).payload;
         }
 
@@ -61,21 +61,21 @@ namespace Computation.Grains
 
         public override Task OnActivateAsync()
         {
-            
+
             return base.OnActivateAsync();
         }
 
         [Serializable]
         public class WriteEvent : IAppliesTo<State>
         {
-            public int time { get; set; } 
+            public int time { get; set; }
             public void Update(State state)
             {
                 var start = DateTime.Now;
                 var end = DateTime.Now;
 
                 int i = 0;
-                while ((end-start).TotalMilliseconds<time)
+                while ((end - start).TotalMilliseconds < time)
                 {
                     i++;
                     end = DateTime.Now;

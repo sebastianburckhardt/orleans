@@ -8,7 +8,7 @@ namespace Size.Interfaces
 {
 
 
-    
+
 
     /// <summary>
     /// Request types:

@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Common;
-using Size.Interfaces; 
+using Size.Interfaces;
 
 #pragma warning disable 1998
 
@@ -331,7 +331,7 @@ namespace Size.Benchmark
                     if (requestType == SizeRequestT.READ_SYNC)
                     {
                         // READ type
-                         request = new HttpRequestSize(numReq);
+                        request = new HttpRequestSize(numReq);
                     }
                     else if (requestType == SizeRequestT.WRITE_SYNC)
                     {
@@ -375,10 +375,10 @@ namespace Size.Benchmark
 
                 if (int.Parse(arguments["rep"]) == 0)
                 {
-                  
+
                     HttpRequestSize request = null;
                     if (requestType == SizeRequestT.WRITE_SYNC)
-                    {      
+                    {
                         request = new HttpRequestSize(numReq, Encoding.ASCII.GetBytes(body));
                     }
                     else
