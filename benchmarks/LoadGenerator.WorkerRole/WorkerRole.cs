@@ -219,16 +219,10 @@ namespace LoadGenerator.WorkerRole
                                 string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
                                 String retval;
                                 var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
-                                try
-                                {
-                                    retval = await scenario.RobotScript(client, robotnr, args);
-                                }
-                                catch (Exception e)
-                                {
-                                    retval = e.ToString();
-                                    client.Trace(retval).Wait();
-                                }
-
+                                
+                                //Do not catch here. Let the surrounding catch handle the exception (which will also notify the conductor)
+                                retval = await scenario.RobotScript(client, robotnr, args);
+                                
                                 //  LoadGenerator -> Conductor : DONE robotnr stats retval
 
                                 var stats = client.Stats;
@@ -258,7 +252,7 @@ namespace LoadGenerator.WorkerRole
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception e) //todo: use this handler only for websocket level exception. "server exceptions should be handled within the loop and the connection should be reused.
                     {
                         Trace.TraceInformation(string.Format("Exception caught: {0}", e));
 

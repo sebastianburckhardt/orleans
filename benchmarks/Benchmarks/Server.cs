@@ -189,14 +189,16 @@ namespace Benchmarks
                 }
 
                 // send Json with detailed error description to Client
-                var json = new JObject();
-                json["code"] = response.StatusCode;
-                json["error"] = response.StatusDescription;
-                var exc = new JObject();
-                exc["type"] = ee.GetType().Name;
-                exc["message"] = ee.Message;
-                exc["stacktrace"] = ee.StackTrace;
-                json["exception"] = exc;
+                var json = JObject.FromObject(new 
+                {
+                    code = response.StatusCode,
+                    error = response.StatusDescription,
+                    exception = new {
+                        type = ee.GetType().Name,
+                        message = ee.Message,
+                        stacktrace = ee.StackTrace,
+                    }
+                });
                 EncodeJsonResponse(response, json.ToString());
                 response.Close();
 
