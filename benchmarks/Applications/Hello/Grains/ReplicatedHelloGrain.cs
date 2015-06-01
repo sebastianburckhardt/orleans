@@ -50,7 +50,7 @@ namespace Hello.Grains
     {
         public async Task Hello(string arg)
         {
-            await UpdateLocallyAsync(new AddOperation(arg));
+            await UpdateLocallyAsync(new AddOperation(arg),false);
         }
 
         public async Task<string> GetTopMessagesAsync(bool syncGlobal)

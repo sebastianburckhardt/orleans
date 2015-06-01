@@ -1,10 +1,12 @@
-﻿using Orleans;
+﻿using Common;
+using Orleans;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
+using Common;
 
 namespace ReplicatedGrains
 {
@@ -55,24 +57,29 @@ namespace ReplicatedGrains
 
         private void Start()
         {
-            signal = new TaskCompletionSource<int>();
-            task = (taskfactory()).ContinueWith(t => this.CheckForMoreWork());
+            using (new TraceInterval("WorkerThread"))
+            {
+                signal = new TaskCompletionSource<int>();
+                task = (taskfactory()).ContinueWith(t => this.CheckForMoreWork());
+            }
         }
 
 
         private void CheckForMoreWork()
         {
-       
-            lock (this)
+            using (new TraceInterval("Background - checkmorework", 0))
             {
-                if (morework)
+                lock (this)
                 {
-                    morework = false;
-                    Start();
-                }
-                else
-                {
-                    task = null;
+                    if (morework)
+                    {
+                        morework = false;
+                        Start();
+                    }
+                    else
+                    {
+                        task = null;
+                    }
                 }
             }
         }
@@ -80,6 +87,7 @@ namespace ReplicatedGrains
 
         public async Task WaitForCompletion()
         {
+            using (new TraceInterval("WaitForCompletion")) { 
             while (true)
             {
                 Task t;
@@ -92,6 +100,7 @@ namespace ReplicatedGrains
                     return;
                 await t;
             }
+         }
         }
 
 

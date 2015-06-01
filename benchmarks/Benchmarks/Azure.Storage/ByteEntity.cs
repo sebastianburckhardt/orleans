@@ -12,7 +12,6 @@ namespace Azure.Storage
     {
         // assume no . in partition key
 
-
         public byte[] payload { get; set; }
 
         public ByteEntity()

@@ -59,7 +59,7 @@ namespace Size.Grains
         public async Task WriteLater(Byte[] pPayload)
         {
             Util.Assert(pPayload != null, "payload should never be null");
-            await UpdateLocallyAsync(new WriteEvent() { payload = pPayload });
+            await UpdateLocallyAsync(new WriteEvent() { payload = pPayload },false);
         }
 
         public override Task OnActivateAsync()

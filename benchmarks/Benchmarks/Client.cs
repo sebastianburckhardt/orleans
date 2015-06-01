@@ -82,17 +82,22 @@ namespace Benchmarks
 
                 if (re != null && re.StatusCode == HttpStatusCode.InternalServerError)
                 {
-                    //THis exception will occur when there is a server exception and an error code (say 500 is sent).
+                //THis exception will occur when there is a server exception and an error code (say 500 is sent).
                     //This is the scenario where the server (i.e. the front end has caught some unhandled exception and generated and sent a 500 error with details in the body)
              
-                    string responseStr = null;
-                    using (Stream data = re.GetResponseStream())
+                string responseStr = null;
+                if (re != null) { 
+                using (Stream data = re.GetResponseStream())
+                {
+                    using (var reader = new StreamReader(data))
                     {
-                        using (var reader = new StreamReader(data))
-                        {
-                            responseStr = reader.ReadToEnd();
-                        }
+                        responseStr = reader.ReadToEnd();                                            
                     }
+                }
+                Exception ex;
+                if(re.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    //This is the scenario where the server (i.e. the front end has caught some unhandled exception and generated and sent a 500 error with details in the body)
 
                     Exception clientex;
                     string message;

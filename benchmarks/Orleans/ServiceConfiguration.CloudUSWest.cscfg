@@ -5,7 +5,6 @@
     <ConfigurationSettings>
       <Setting name="InCloud" value="true" />
       <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeouswest;AccountKey=pUIT+LRC/GohbXWMSAfKhuo3eLU8dz0LVUxHvb/X1BO7CZPs4aZ712vtwRPDxa388jbWJArz6hvsvIZTl96g0g==" />
-
       <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeouswest;AccountKey=pUIT+LRC/GohbXWMSAfKhuo3eLU8dz0LVUxHvb/X1BO7CZPs4aZ712vtwRPDxa388jbWJArz6hvsvIZTl96g0g==" />
     </ConfigurationSettings>
   </Role>

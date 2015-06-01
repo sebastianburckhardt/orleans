@@ -163,6 +163,7 @@ namespace Azure.Storage
                         totWrites++;
                         if (!nextResult.Equals("200"))
                         {
+                            
                             throw new Exception("HTTP Return Code " + nextResult);
                         }
                         break;
@@ -286,6 +287,7 @@ namespace Azure.Storage
                 bool ret = AzureCommon.createTableCheck(tableClient, tableName);
                 if (ret) result = "Table Created";
                 else result = "Could not create table";
+                return result;
             }
             if (requestType == AzureCommon.OperationType.READ)
             {
@@ -300,6 +302,8 @@ namespace Azure.Storage
                     ByteEntity entity = (ByteEntity)res.Result;
                     result = ByteEntity.FromEntityToString(entity);
                 }
+                return result;
+
             }
             else if (requestType == AzureCommon.OperationType.READ_RANGE)
             {
@@ -328,7 +332,7 @@ namespace Azure.Storage
                 return "Unimplemented";
             }
 
-            return "ok";
+            return "error, incompatible message type";
         }
 
 

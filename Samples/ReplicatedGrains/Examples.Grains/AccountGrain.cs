@@ -40,7 +40,7 @@ namespace Examples.Grains
 
         public async Task ReliableDeposit(uint amount)
         {
-            await UpdateLocallyAsync(new DepositOperation() { Amount = amount });
+            await UpdateLocallyAsync(new DepositOperation() { Amount = amount },false);
         }
 
 

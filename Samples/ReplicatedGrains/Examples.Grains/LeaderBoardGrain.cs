@@ -35,7 +35,7 @@ namespace Examples.Grains
 
         public async Task Post(Score score)
         {
-            await UpdateLocallyAsync(new ScorePostedEvent() { Score = score });
+            await UpdateLocallyAsync(new ScorePostedEvent() { Score = score },false);
         }
 
         [Serializable]

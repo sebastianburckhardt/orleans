@@ -55,7 +55,7 @@ namespace Leaderboard.Grains
 
         public async Task PostLater(Score score)
         {
-            await UpdateLocallyAsync(new ScorePostedEvent() { Score = score });
+            await UpdateLocallyAsync(new ScorePostedEvent() { Score = score },false);
         }
 
         public override Task OnActivateAsync()
