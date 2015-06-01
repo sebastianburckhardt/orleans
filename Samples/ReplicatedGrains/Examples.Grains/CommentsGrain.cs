@@ -26,15 +26,15 @@ namespace Examples.Grains
         } 
         public async Task Post(Entry entry)
         {
-            await UpdateLocallyAsync(new PostUpdate() { Entry = entry });
+            await UpdateLocallyAsync(new PostUpdate() { Entry = entry },false);
         }
         public async Task Delete(Entry entry)
         {
-            await UpdateLocallyAsync(new DeleteUpdate() { Entry = entry });
+            await UpdateLocallyAsync(new DeleteUpdate() { Entry = entry },false);
         }
         public async Task DeleteRange(DateTime from, DateTime to)
         {
-            await UpdateLocallyAsync(new DeleteRangeUpdate() { From = from, To = to });
+            await UpdateLocallyAsync(new DeleteRangeUpdate() { From = from, To = to },false);
         }
 
 

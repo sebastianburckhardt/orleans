@@ -102,7 +102,7 @@ namespace ReplicatedGrains
         /// <param name="update">An object representing the update</param>
         /// <param name="save">whether to save update to local storage before returning</param>
         /// </summary>
-        public async Task UpdateLocallyAsync(IAppliesTo<StateObject> update, bool save = true)
+        public async Task UpdateLocallyAsync(IAppliesTo<StateObject> update, bool save )
         {
 
             using (new TraceInterval("SequencedGrain - Update locally", 0))

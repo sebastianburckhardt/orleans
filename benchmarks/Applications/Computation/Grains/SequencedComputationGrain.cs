@@ -56,7 +56,7 @@ namespace Computation.Grains
 
         public async Task WriteLater(int pTime)
         {
-            await UpdateLocallyAsync(new WriteEvent() { time = pTime });
+            await UpdateLocallyAsync(new WriteEvent() { time = pTime }, false);
         }
 
         public override Task OnActivateAsync()
