@@ -88,8 +88,8 @@ namespace Benchmarks
                         responseStr = reader.ReadToEnd();                                            
                     }
                 }
-                } else { 
-                    responseStr = "No Error Messages";
+                } else {
+                    responseStr = we.Message==null ? we.Message : "No Error message";
                 }
                 Exception ex;
                 if(re.StatusCode == HttpStatusCode.InternalServerError)
