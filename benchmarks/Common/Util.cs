@@ -35,6 +35,36 @@ namespace Common
                 : base(info, context) { }
         }
 
+        private static string mydeploymentname;
+
+        public static string MyDeploymentId
+        {
+            get
+            {
+                if (mydeploymentname == null)
+                    try
+                    {
+                        mydeploymentname = Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment.DeploymentId;
+                    }
+                    catch (System.Runtime.InteropServices.SEHException)
+                    {
+                        // we are in a ASP.NET dev server
+                        mydeploymentname = "localdeployment";
+                    }
+                    catch (System.InvalidOperationException)
+                    {
+                        // we are in a ASP.NET dev server
+                        mydeploymentname = "localdeployment";
+                    }
+                    catch (System.TypeInitializationException)
+                    {
+                        // we are in a ASP.NET dev server
+                        mydeploymentname = "localdeployment";
+                    }
+
+                return mydeploymentname;
+            }
+        }
 
     
         private static string myinstancename;

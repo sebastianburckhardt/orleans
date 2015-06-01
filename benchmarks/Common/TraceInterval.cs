@@ -120,9 +120,10 @@ namespace Common
         
         private static string GetBlobName()
         {
+            string deploymentid = SecUtility.Escape(Util.MyDeploymentId);
             string datetime = DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm fffffff");
             string instance = SecUtility.Escape(Util.MyInstanceName);
-            return string.Format("{0} {1}", datetime, instance);
+            return string.Format("{0} {1} {2}", deploymentid, datetime, instance);
         }
 
         private static List<TraceInterval> HeartBeats = new List<TraceInterval>();

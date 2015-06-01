@@ -76,6 +76,7 @@ namespace TaskoMeter
                 lock (TaskGroup.TaskGroups)
                 {
                     foreach (TaskGroup m in TaskGroup.TaskGroups.Values)
+                    {
                         if (m.Intervals != null)
                         {
 
@@ -92,6 +93,7 @@ namespace TaskoMeter
                                 dlist[0] = d;
                             }
                         }
+                    }
 
                     dataGridView1.Sort(this);
 
@@ -435,7 +437,8 @@ namespace TaskoMeter
                 Enum.Parse(typeof(StorageAccounts.Account), comboBoxAccount.Text);
 
             string folder = comboBoxFolder.Text;
-            bool success = TaskGroup.ReadFromFile(folder);
+            string deployment = txtDeployment.Text;
+            bool success = TaskGroup.ReadFromFile(folder, deployment);
 
             if (success)
             {

@@ -45,6 +45,8 @@
             this.comboBoxAccount = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.fldr = new System.Windows.Forms.Label();
+            this.lblDeployment = new System.Windows.Forms.Label();
+            this.txtDeployment = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             this.SuspendLayout();
@@ -65,10 +67,10 @@
             this.Start,
             this.End,
             this.Display});
-            this.dataGridView1.Location = new System.Drawing.Point(1, 56);
+            this.dataGridView1.Location = new System.Drawing.Point(1, 96);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.ReadOnly = true;
-            this.dataGridView1.Size = new System.Drawing.Size(1233, 308);
+            this.dataGridView1.Size = new System.Drawing.Size(1060, 517);
             this.dataGridView1.TabIndex = 0;
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.dataGridView1.CellMouseDown += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dataGridView1_CellMouseDown);
@@ -129,7 +131,7 @@
             // 
             this.textBox2.AcceptsTab = true;
             this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox2.Location = new System.Drawing.Point(1173, 6);
+            this.textBox2.Location = new System.Drawing.Point(1000, 6);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(47, 20);
             this.textBox2.TabIndex = 5;
@@ -141,7 +143,7 @@
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(1073, 9);
+            this.label2.Location = new System.Drawing.Point(900, 9);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(94, 13);
             this.label2.TabIndex = 4;
@@ -156,7 +158,7 @@
             this.hScrollBar1.Location = new System.Drawing.Point(322, 33);
             this.hScrollBar1.Maximum = 100000;
             this.hScrollBar1.Name = "hScrollBar1";
-            this.hScrollBar1.Size = new System.Drawing.Size(912, 20);
+            this.hScrollBar1.Size = new System.Drawing.Size(739, 20);
             this.hScrollBar1.SmallChange = 5000;
             this.hScrollBar1.TabIndex = 6;
             this.hScrollBar1.Value = 80000;
@@ -170,7 +172,7 @@
             this.trackBar1.Location = new System.Drawing.Point(322, 5);
             this.trackBar1.Maximum = 100000;
             this.trackBar1.Name = "trackBar1";
-            this.trackBar1.Size = new System.Drawing.Size(746, 45);
+            this.trackBar1.Size = new System.Drawing.Size(573, 45);
             this.trackBar1.SmallChange = 1000;
             this.trackBar1.TabIndex = 6;
             this.trackBar1.TabStop = false;
@@ -227,11 +229,29 @@
             this.fldr.TabIndex = 13;
             this.fldr.Text = "folder";
             // 
+            // lblDeployment
+            // 
+            this.lblDeployment.AutoSize = true;
+            this.lblDeployment.Location = new System.Drawing.Point(7, 60);
+            this.lblDeployment.Name = "lblDeployment";
+            this.lblDeployment.Size = new System.Drawing.Size(148, 13);
+            this.lblDeployment.TabIndex = 14;
+            this.lblDeployment.Text = "Deployment Id (can be empty)";
+            // 
+            // txtDeployment
+            // 
+            this.txtDeployment.Location = new System.Drawing.Point(161, 55);
+            this.txtDeployment.Name = "txtDeployment";
+            this.txtDeployment.Size = new System.Drawing.Size(100, 20);
+            this.txtDeployment.TabIndex = 15;
+            // 
             // Stats
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1232, 365);
+            this.ClientSize = new System.Drawing.Size(1059, 614);
+            this.Controls.Add(this.txtDeployment);
+            this.Controls.Add(this.lblDeployment);
             this.Controls.Add(this.fldr);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.comboBoxAccount);
@@ -270,6 +290,8 @@
         private System.Windows.Forms.ComboBox comboBoxAccount;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label fldr;
+        private System.Windows.Forms.Label lblDeployment;
+        private System.Windows.Forms.TextBox txtDeployment;
 
     }
 }

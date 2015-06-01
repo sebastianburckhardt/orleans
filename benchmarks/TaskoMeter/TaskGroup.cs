@@ -9,6 +9,7 @@ using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Common;
 using Microsoft.WindowsAzure.Storage.Blob;
+using System.Text.RegularExpressions;
 
 namespace TaskoMeter
 {
@@ -76,7 +77,7 @@ namespace TaskoMeter
         /// </summary>
         public static StorageAccounts.Account storagemode = StorageAccounts.Account.OrleansGeoSharedStorage;
     
-        public static bool ReadFromFile(string foldername)
+        public static bool ReadFromFile(string foldername, string deploymentid)
         {
           
             long minticks = long.MaxValue;
@@ -87,6 +88,18 @@ namespace TaskoMeter
             var blobClient = storageaccount.CreateCloudBlobClient();
 
             var blobcontainer = blobClient.GetContainerReference(foldername);
+
+            string pattern;
+            if (deploymentid == null || deploymentid.Length == 0)
+            {
+                pattern = "^.*";
+            }
+            else
+            {
+                pattern = "^" + Regex.Escape(deploymentid);
+            }
+            Regex deploymentRegex = new Regex(pattern);
+
             try
             {
                 blobcontainer.FetchAttributes();
@@ -104,7 +117,7 @@ namespace TaskoMeter
             foreach (var x in blobcontainer.ListBlobs())
             {
                 var blockblob = x as CloudBlockBlob;
-                if (blockblob == null)
+                if (blockblob == null || !deploymentRegex.IsMatch(blockblob.Name))
                     continue;
 
                 var blobstream = blockblob.OpenRead();
