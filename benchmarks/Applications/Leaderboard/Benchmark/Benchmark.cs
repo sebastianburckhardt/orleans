@@ -50,11 +50,11 @@ namespace Leaderboard.Benchmark
             // No replication
             new NoReplicationLeaderboard(1, 10000,0),
             // Sequenced Grain. All Global writes
-            new SequencedLeaderboard(1,10000,0,0,100,0,0),
+            new SequencedLeaderboard(1,5,0,0,100,0,0),
              new SequencedLeaderboard(1,10000,0,0,100,0,1),
 
             // Sequenced Grain, All Local writes
-            new SequencedLeaderboard(1,10000,0,0,0,100,0),
+            new SequencedLeaderboard(1,5,0,0,0,100,0),
             new SequencedLeaderboard(1,10000,0,0,0,100,1),
 
             // Sequenced Grain. 75 Global / 25 Local
