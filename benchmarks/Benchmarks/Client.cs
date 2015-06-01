@@ -70,54 +70,64 @@ namespace Benchmarks
 
                 if (resp != null)
                 {
-                    responsecategory = ((int) resp.StatusCode).ToString() + " " + resp.StatusCode.ToString();
+                    responsecategory = ((int)resp.StatusCode).ToString() + " " + resp.StatusCode.ToString();
                     System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream());
-                    result =  await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
+                    result = await request.ProcessResponseOnClient(await sr.ReadToEndAsync());
                 }
             }
             catch (WebException we) //catch only web exceptions, let other exceptions be handled by parent handlers.
             {
-                //THis exception will occur when there is a server exception and an error code (say 500 is sent).
-                HttpWebResponse re = (HttpWebResponse) we.Response;
-                string responseStr = null;
-                if (re != null) { 
-                using (Stream data = re.GetResponseStream())
-                {
-                    using (var reader = new StreamReader(data))
-                    {
-                        responseStr = reader.ReadToEnd();                                            
-                    }
-                }
-                } else {
-                    responseStr = we.Message==null ? we.Message : "No Error message";
-                }
+                HttpWebResponse re = we.Response as HttpWebResponse;
                 Exception ex;
-                if(re.StatusCode == HttpStatusCode.InternalServerError)
+
+                if (re != null && re.StatusCode == HttpStatusCode.InternalServerError)
                 {
+                    //THis exception will occur when there is a server exception and an error code (say 500 is sent).
                     //This is the scenario where the server (i.e. the front end has caught some unhandled exception and generated and sent a 500 error with details in the body)
 
-                    Exception clientex;
-                    string message;
-                    if (re.ContentType == "application/json")
+                    string responseStr = null;
+                    if (re != null)
                     {
-                        message = responseStr;
-                        //todo: do this recursively for inner exceptions.
-                        /*JObject serverex = JObject.Parse(responseStr);
-                        JObject exception = JObject.Parse((string)serverex["exception"]);
-                        clientex.StackTrace = (string) exception["stacktrace"];*/
-                        clientex = new Exception(String.Format("Following exception occured on frontend or orleans silo: {0}", message));
+                        using (Stream data = re.GetResponseStream())
+                        {
+                            using (var reader = new StreamReader(data))
+                            {
+                                responseStr = reader.ReadToEnd();
+                            }
+                        }
                     }
                     else
                     {
-                        clientex = new Exception(responseStr);
+                        responseStr = we.Message == null ? we.Message : "No Error message";
                     }
-                    ex = clientex;
+
+                    if (re.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        //This is the scenario where the server (i.e. the front end has caught some unhandled exception and generated and sent a 500 error with details in the body)
+
+                        Exception clientex;
+                        string message;
+                        if (re.ContentType == "application/json")
+                        {
+                            message = responseStr;
+                            //todo: do this recursively for inner exceptions.
+                            /*JObject serverex = JObject.Parse(responseStr);
+                            JObject exception = JObject.Parse((string)serverex["exception"]);
+                            clientex.StackTrace = (string) exception["stacktrace"];*/
+                            clientex = new Exception(String.Format("Following exception occured on frontend or orleans silo: {0}", message));
+                        }
+                        else
+                        {
+                            clientex = new Exception(responseStr);
+                        }
+                        ex = clientex;
+                    }
+                    else
+                    {
+                        ex = we;
+                    }
+                    throw ex;
                 }
-                else
-                {
-                    ex = we;
-                }
-                throw ex;
             }
             finally
             {
