@@ -1,4 +1,5 @@
-﻿using Orleans;
+﻿using Common;
+using Orleans;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -66,17 +67,19 @@ namespace ReplicatedGrains
 
         private void CheckForMoreWork()
         {
-       
-            lock (this)
+            using (new TraceInterval("Background - checkmorework", 0))
             {
-                if (morework)
+                lock (this)
                 {
-                    morework = false;
-                    Start();
-                }
-                else
-                {
-                    task = null;
+                    if (morework)
+                    {
+                        morework = false;
+                        Start();
+                    }
+                    else
+                    {
+                        task = null;
+                    }
                 }
             }
         }

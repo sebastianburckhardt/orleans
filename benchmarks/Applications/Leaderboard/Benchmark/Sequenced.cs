@@ -465,65 +465,98 @@ namespace Leaderboard.Benchmark
             if (dummyGrain == 1)
             {
                 // Use dummy grain;
-                var leaderboard = DummySequencedLeaderboardGrainFactory.GetGrain(0);
+                IDummySequencedLeaderboardGrain leaderboard = null;
+                using (new TraceInterval("Leaderboard FE - dummy - getgrain", 0))
+                {
+                    leaderboard = DummySequencedLeaderboardGrainFactory.GetGrain(0);
+                }
                 if (requestType == LeaderboardRequestT.GET_SYNC)
                 {
                     //              Console.Write("Get Cuurent \n");
-                    scores = leaderboard.GetExactTopTen("hello").Result;
-                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+
+                    using (new TraceInterval("Leaderboard FE - dummy - get - sync", 1))
+                    {
+                        scores = leaderboard.GetExactTopTen("hello").Result;
+                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    }
                     //            Console.Write("{0}\n", posts);
                     return posts;
                 }
                 else if (requestType == LeaderboardRequestT.GET_ASYNC)
                 {
                     //            Console.Write("Get Approx \n");
-                    scores = leaderboard.GetApproxTopTen("hello").Result;
-                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    using (new TraceInterval("Leaderboard FE - dummy - get - Async", 2))
+                    {
+                        scores = leaderboard.GetApproxTopTen("hello").Result;
+                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    }
                     //              Console.Write("{0}\n", posts);
                     return posts;
                 }
                 else if (requestType == LeaderboardRequestT.POST_SYNC)
                 {
-                    await leaderboard.PostNow(score);
+                    using (new TraceInterval("Leaderboard FE - dummy - post - sync", 3))
+                    {
+                        await leaderboard.PostNow(score);
+                    }
                     return "ok";
                 }
                 else
                 {
                     // POST_ASYNC
                     //            Console.Write("Post Later {0} \n ", score.ToString());
-                    await leaderboard.PostLater(score);
+                    using (new TraceInterval("Leaderboard FE - dummy - post - async", 4))
+                    {
+                        await leaderboard.PostLater(score);
+                    }
                     return "ok";
                 }
             }
             else
             {
-                var leaderboard = SequencedLeaderboardGrainFactory.GetGrain(0);
+                ISequencedLeaderboardGrain leaderboard = null;
+                using (new TraceInterval("Leaderboard FE - getgrain", 0))
+                {
+                    leaderboard = SequencedLeaderboardGrainFactory.GetGrain(0);
+                }
                 if (requestType == LeaderboardRequestT.GET_SYNC)
                 {
                     //              Console.Write("Get Cuurent \n");
-                    scores = leaderboard.GetExactTopTen("hello").Result;
-                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    using (new TraceInterval("Leaderboard FE - get - sync", 1))
+                    {
+                        scores = leaderboard.GetExactTopTen("hello").Result;
+                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    }
                     //            Console.Write("{0}\n", posts);
                     return posts;
                 }
                 else if (requestType == LeaderboardRequestT.GET_ASYNC)
                 {
                     //            Console.Write("Get Approx \n");
-                    scores = leaderboard.GetApproxTopTen("hello").Result;
-                    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    using (new TraceInterval("Leaderboard FE - get - Async", 2))
+                    {
+                        scores = leaderboard.GetApproxTopTen("hello").Result;
+                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    }
                     //              Console.Write("{0}\n", posts);
                     return posts;
                 }
                 else if (requestType == LeaderboardRequestT.POST_SYNC)
                 {
-                    await leaderboard.PostNow(score);
+                    using (new TraceInterval("Leaderboard FE - post - sync", 3))
+                    {
+                        await leaderboard.PostNow(score);
+                    }
                     return "ok";
                 }
                 else
                 {
                     // POST_ASYNC
                     //            Console.Write("Post Later {0} \n ", score.ToString());
-                    await leaderboard.PostLater(score);
+                    using (new TraceInterval("Leaderboard FE - post - async", 4))
+                    {
+                        await leaderboard.PostLater(score);
+                    }
                     return "ok";
                 }
             }
