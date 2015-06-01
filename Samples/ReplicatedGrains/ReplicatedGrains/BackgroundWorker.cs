@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
+using Common;
 
 namespace ReplicatedGrains
 {
@@ -55,8 +56,11 @@ namespace ReplicatedGrains
 
         private void Start()
         {
-            signal = new TaskCompletionSource<int>();
-            task = (taskfactory()).ContinueWith(t => this.CheckForMoreWork());
+            using (new TraceInterval("WorkerThread"))
+            {
+                signal = new TaskCompletionSource<int>();
+                task = (taskfactory()).ContinueWith(t => this.CheckForMoreWork());
+            }
         }
 
 
@@ -80,6 +84,7 @@ namespace ReplicatedGrains
 
         public async Task WaitForCompletion()
         {
+            using (new TraceInterval("WaitForCompletion")) { 
             while (true)
             {
                 Task t;
@@ -92,6 +97,7 @@ namespace ReplicatedGrains
                     return;
                 await t;
             }
+         }
         }
 
 

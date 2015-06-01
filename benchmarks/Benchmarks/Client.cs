@@ -80,12 +80,16 @@ namespace Benchmarks
                 //THis exception will occur when there is a server exception and an error code (say 500 is sent).
                 HttpWebResponse re = (HttpWebResponse) we.Response;
                 string responseStr = null;
+                if (re != null) { 
                 using (Stream data = re.GetResponseStream())
                 {
                     using (var reader = new StreamReader(data))
                     {
                         responseStr = reader.ReadToEnd();                                            
                     }
+                }
+                } else { 
+                    responseStr = "No Error Messages";
                 }
                 Exception ex;
                 if(re.StatusCode == HttpStatusCode.InternalServerError)

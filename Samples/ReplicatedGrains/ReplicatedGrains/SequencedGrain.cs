@@ -31,8 +31,11 @@ namespace ReplicatedGrains
         /// Returns the current global state of this grain. May require global coordination.
         protected async Task<StateObject> GetGlobalStateAsync()
         {
-            await RefreshLocalStateAsync(true);
-            return LocalState;
+            using (new TraceInterval("GetGlobalStateAsync"))
+            {
+                await RefreshLocalStateAsync(true);
+                return LocalState;
+            }
         }
 
         /// <summary>
@@ -96,6 +99,7 @@ namespace ReplicatedGrains
         /// </summary>
         public async Task UpdateLocallyAsync(IAppliesTo<StateObject> update, bool save = true)
         {
+            using (new TraceInterval("UpdateLocallyAsync")) {
             if (!isSynchronous)
             {
                Exception ee = null;
@@ -127,13 +131,15 @@ namespace ReplicatedGrains
                  await UpdateGloballyAsync(update);
             }
         }
+        }
       
         private Task SaveLocallyAsync()
         {
             //note: in current impl, this save is going to master, thus not any faster than global update
             // in future impl, this will go to local storage and thus be faster
-
+            using (new TraceInterval("SaveLocallyAsync")) {
             return worker.WaitForCompletion();
+        }
         }
 
 
@@ -143,9 +149,11 @@ namespace ReplicatedGrains
         /// <returns></returns>
         protected async Task SynchronizeStateAsync()
         {
+            using (new TraceInterval("SynchronizeStateAsync")) { 
             await worker.WaitForCompletion();
 
             await this.RefreshLocalStateAsync(true);
+        }
         }
 
 
@@ -154,6 +162,7 @@ namespace ReplicatedGrains
         /// </summary>
         protected async Task UpdateGloballyAsync(IAppliesTo<StateObject> update)
         {
+            using (new TraceInterval("UpdateGloballyAsync")) {
             await worker.WaitForCompletion(); // wait for pending stores to complete
 
             await UpdatePrimaryStorage<bool>((StateObject state) => {
@@ -161,12 +170,14 @@ namespace ReplicatedGrains
                 return true; // dummy return value
             });
         }
+        }
 
         /// <summary>
         /// Update the global grain state directly. May require global coordination.
         /// </summary>
         protected async Task UpdateGloballyAsync<ResultType>(Action<StateObject> update)
         {
+    using (new TraceInterval("UpdateGloballyAsync")) {
             await worker.WaitForCompletion(); // wait for pending stores to complete
 
             await UpdatePrimaryStorage<bool>((StateObject state) =>
@@ -174,6 +185,7 @@ namespace ReplicatedGrains
                 update(state);
                 return true; // dummy return value
             });
+    }
         }
       
 
@@ -182,9 +194,11 @@ namespace ReplicatedGrains
         /// </summary>
         protected async Task<ResultType> UpdateGloballyAsync<ResultType>(Func<StateObject, ResultType> update)
         {
+            using (new TraceInterval("UpdateGloballyAsync")) { 
             await worker.WaitForCompletion(); // wait for pending stores to complete
 
             return await UpdatePrimaryStorage<ResultType>(update);
+        }
         }
       
 
@@ -224,10 +238,12 @@ namespace ReplicatedGrains
 
         private void UpdateCacheFromRaw()
         {
+            using (new TraceInterval("UpdateCacheFromRaw")) {
             LocalState = ReadRawState();
             // apply all the pending updates to the cached state
             foreach (var u in pending)
                 u.Update(LocalState);
+        }
         }
 
         // the currently pending updates. 
@@ -241,6 +257,7 @@ namespace ReplicatedGrains
         
         private StateObject ReadRawState()
         {
+            using (new TraceInterval("ReadRawState")) { 
             var begin = DateTime.Now;
 
             if (this.State.Raw == null)
@@ -251,17 +268,21 @@ namespace ReplicatedGrains
                 StateObject o =  (StateObject)formatter.Deserialize(ms);
                 return o;
             }
+        }
 
         }
         private void WriteRawState(StateObject s)
         {
-            var formatter = new BinaryFormatter();
-            using (var ms = new MemoryStream())
+            using (new TraceInterval("WriteRawState"))
             {
-                formatter.Serialize(ms, s);
-                ms.Position = 0;
-                this.State.Raw = ms.GetBuffer();
-                Util.Assert(this.State.Raw != null);
+                var formatter = new BinaryFormatter();
+                using (var ms = new MemoryStream())
+                {
+                    formatter.Serialize(ms, s);
+                    ms.Position = 0;
+                    this.State.Raw = ms.GetBuffer();
+                    Util.Assert(this.State.Raw != null);
+                }
             }
 
         }
@@ -269,19 +290,23 @@ namespace ReplicatedGrains
         
         private async Task ReadFromPrimary()
         {
-            if (DebuggingControls.Trace) 
-                Console.WriteLine("BEGIN read from primary");
-            if (DebuggingControls.ArtificialReadDelay > 0)
-                await Task.Delay((int) DebuggingControls.ArtificialReadDelay);
+            using (new TraceInterval("ReadFromPrimary"))
+            {
+                if (DebuggingControls.Trace)
+                    Console.WriteLine("BEGIN read from primary");
+                if (DebuggingControls.ArtificialReadDelay > 0)
+                    await Task.Delay((int)DebuggingControls.ArtificialReadDelay);
 
-            await this.State.ReadStateAsync();
-            this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
-            if (DebuggingControls.Trace) 
-                Console.WriteLine("END read from primary");
+                await this.State.ReadStateAsync();
+                this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
+                if (DebuggingControls.Trace)
+                    Console.WriteLine("END read from primary");
+            }
         }
         
         private async Task WriteToPrimary()
         {
+            using (new TraceInterval("WriteToPrimary")) { 
             if (DebuggingControls.Trace)
                 Console.WriteLine("BEGIN writing to primary");
             try
@@ -296,11 +321,14 @@ namespace ReplicatedGrains
                 if (DebuggingControls.Trace)
                     Console.WriteLine("END writing to primary");
             }
+        }
            
         }
         
         private async Task WriteQueuedUpdatesToStorage()
         {
+
+            using (new TraceInterval("WriteQueuedUpdatesToStorage")) { 
             if (pending.Count == 0)
                 return;
 
@@ -320,37 +348,43 @@ namespace ReplicatedGrains
             pending.RemoveRange(0, numupdates);
             UpdateCacheFromRaw();
         }
+        }
 
         private async Task<ResultType> UpdatePrimaryStorage<ResultType>(Func<StateObject,ResultType> update)
         {
-            int retries = 10;
-            while (retries-- > 0)
+
+            using (new TraceInterval("UpdatePrimaryStorage"))
             {
-                // get master state
-                var s = ReadRawState();
-                
-                // apply the update function  (or take an exception)
-                var rval = update(s);
-                
-                // try to update master
-                try
+                int retries = 10;
+                while (retries-- > 0)
                 {
-                    WriteRawState(s);
-                    await WriteToPrimary();
-                    // we succeededed
-                    LocalState = s;
-                    return rval;
+                    // get master state
+                    var s = ReadRawState();
+
+                    // apply the update function  (or take an exception)
+                    var rval = update(s);
+
+                    // try to update master
+                    try
+                    {
+                        WriteRawState(s);
+                        await WriteToPrimary();
+                        // we succeededed
+                        LocalState = s;
+                        return rval;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Write("Error {0}", e.ToString());
+                    } //TODO perhaps be more selective on what to catch here
+
+                    // TODO perhaps add backoff delay
+
+                    // on etag failure, reload and retry
+                    await ReadFromPrimary();
                 }
-                catch (Exception e) {
-                    Console.Write("Error {0}", e.ToString());
-                } //TODO perhaps be more selective on what to catch here
-
-                // TODO perhaps add backoff delay
-
-                // on etag failure, reload and retry
-                await ReadFromPrimary();
+                throw new Exception("could not update primary storage");
             }
-            throw new Exception("could not update primary storage");
         }
 
      
