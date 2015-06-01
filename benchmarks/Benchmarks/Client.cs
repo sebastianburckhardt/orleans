@@ -77,20 +77,22 @@ namespace Benchmarks
             }
             catch (WebException we) //catch only web exceptions, let other exceptions be handled by parent handlers.
             {
-                //THis exception will occur when there is a server exception and an error code (say 500 is sent).
-                HttpWebResponse re = (HttpWebResponse) we.Response;
-                string responseStr = null;
-                using (Stream data = re.GetResponseStream())
-                {
-                    using (var reader = new StreamReader(data))
-                    {
-                        responseStr = reader.ReadToEnd();                                            
-                    }
-                }
+                HttpWebResponse re = we.Response as HttpWebResponse;
                 Exception ex;
-                if(re.StatusCode == HttpStatusCode.InternalServerError)
+
+                if (re != null && re.StatusCode == HttpStatusCode.InternalServerError)
                 {
+                    //THis exception will occur when there is a server exception and an error code (say 500 is sent).
                     //This is the scenario where the server (i.e. the front end has caught some unhandled exception and generated and sent a 500 error with details in the body)
+             
+                    string responseStr = null;
+                    using (Stream data = re.GetResponseStream())
+                    {
+                        using (var reader = new StreamReader(data))
+                        {
+                            responseStr = reader.ReadToEnd();
+                        }
+                    }
 
                     Exception clientex;
                     string message;
