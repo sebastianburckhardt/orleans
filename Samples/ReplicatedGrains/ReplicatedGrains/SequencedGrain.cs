@@ -318,15 +318,8 @@ namespace ReplicatedGrains
 
             using (new TraceInterval("SequencedGrain - ReadFromPrimary", 0))
             {
-                if (DebuggingControls.Trace)
-                    Console.WriteLine("BEGIN read from primary");
-                if (DebuggingControls.ArtificialReadDelay > 0)
-                    await Task.Delay((int)DebuggingControls.ArtificialReadDelay);
-
                 await this.State.ReadStateAsync();
                 this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
-                if (DebuggingControls.Trace)
-                    Console.WriteLine("END read from primary");
             }
         }
         
@@ -335,20 +328,13 @@ namespace ReplicatedGrains
 
             using (new TraceInterval("SequencedGrain - Write to primary", 0))
             {
-                if (DebuggingControls.Trace)
-                    Console.WriteLine("BEGIN writing to primary");
                 try
                 {
-                    if (DebuggingControls.ArtificialWriteDelay > 0)
-                        await Task.Delay((int)DebuggingControls.ArtificialWriteDelay);
-
                     await this.State.WriteStateAsync();
                     this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
                 }
                 finally
                 {
-                    if (DebuggingControls.Trace)
-                        Console.WriteLine("END writing to primary");
                 }
             }
 
