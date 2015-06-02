@@ -4,6 +4,8 @@ using Microsoft.WindowsAzure.Storage.Table;
 using System.Text;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Newtonsoft.Json.Linq;
+
 
 namespace Azure.Storage
 {
@@ -49,8 +51,20 @@ namespace Azure.Storage
                 Console.Write("Exception " + e.ToString());
             }
             return null; 
+       }
+
+        public static string FromEntityToJsonString(ByteEntity pEntity)
+        {
+            var json = JObject.FromObject(new {pkey=pEntity.PartitionKey,rkey=pEntity.RowKey,payload=Encoding.ASCII.GetString(pEntity.payload)});
+            return json.ToString();
         }
 
+        public static ByteEntity FromJsonToEntity(string pEntity)
+        {
+            
+            JObject message = JObject.Parse(pEntity);
+            return new ByteEntity((string) message["pkey"], (String) message["rkey"], Encoding.ASCII.GetBytes((string)message["payload"]));
+        }
         public override bool Equals(object obj)
         {
             if (!(obj is ByteEntity))

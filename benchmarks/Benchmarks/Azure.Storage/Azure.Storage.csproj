@@ -71,6 +71,7 @@
     <Compile Include="AzureTable.cs" />
     <Compile Include="AzureCommon.cs" />
     <Compile Include="Benchmark.cs" />
+    <Compile Include="StatEntity.cs" />
     <Compile Include="ByteEntity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

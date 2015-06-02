@@ -20,10 +20,10 @@ namespace Leaderboard.Benchmark
         // async read operations = get approx top 10
         // sync write operations = post now
         // async write operations = postlater
-        public SequencedLeaderboard(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pDummy)
+        public SequencedLeaderboard(int pNumRobots, int pRunTime, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pDummy)
         {
             this.numRobots = pNumRobots;
-            this.numReqs = pNumReqs;
+            this.runTime = pRunTime;
             this.percentSyncRead = pPercentSyncReads;
             this.percentAsyncRead = pPercentAsyncReads;
             this.percentSyncWrite = pPercentSyncWrites;
@@ -32,13 +32,14 @@ namespace Leaderboard.Benchmark
         }
 
         private int numRobots;
-        private int numReqs;
+        private int runTime;
 
         private int percentSyncRead;
         private int percentAsyncRead;
         private int percentSyncWrite;
         private int percentAsyncWrite;
         private int dummyGrain = 0;
+        private Random rnd = new Random();
 
         enum OperationType
         {
@@ -54,7 +55,7 @@ namespace Leaderboard.Benchmark
 
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xdummy{6}", numRobots, numReqs, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite, dummyGrain); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xdummy{6}", numRobots, runTime, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite, dummyGrain); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -72,25 +73,55 @@ namespace Leaderboard.Benchmark
 
             // start each robot
             for (int i = 0; i < numRobots; i++)
-                robotrequests[i] = context.RunRobot(i, numReqs.ToString());
+                robotrequests[i] = context.RunRobot(i,"");
 
             // wait for all robots
             await Task.WhenAll(robotrequests);
 
+            int totalOps = 0;
+            double throughput = 0.0;
             // check robot responses
             for (int i = 0; i < numRobots; i++)
             {
-                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+                string response = robotrequests[i].Result;
+                string[] res = response.Split('-');
+                totalOps += int.Parse(res[0]);
             }
+            throughput = totalOps / runTime;
+            return throughput.ToString();
+        }
 
-            return "ok";
+        private OperationType generateOperationType()
+        {
+            OperationType retType = OperationType.READ_ASYNC;
+            int nextInt;
+
+            nextInt = rnd.Next(1, 100);
+
+            if (nextInt <= percentSyncRead)
+            {
+                retType = OperationType.READ_SYNC;
+            }
+            else if (nextInt <= (percentSyncRead + percentAsyncRead))
+            {
+                retType = OperationType.READ_ASYNC;
+            }
+            else if (nextInt <= (percentSyncRead + percentAsyncRead + percentSyncWrite))
+            {
+                retType = OperationType.WRITE_SYNC;
+            }
+            else if (nextInt <= (percentSyncRead + percentAsyncRead + percentSyncWrite + percentAsyncWrite))
+            {
+                retType = OperationType.WRITE_ASYNC;
+            }
+            return retType;
         }
 
         // each robot simply echoes the parameters
         public async Task<string> RobotScript(IRobotContext context, int robotnumber, string parameters)
         {
 
-            string[] param = parameters.Split('-');
+ 
 
             Util.Assert(percentSyncRead + percentAsyncRead + percentSyncWrite + percentAsyncWrite == 100,
                 "Incorrect percentage breakdown " + percentSyncRead + " " + percentAsyncRead + " " +
@@ -104,17 +135,17 @@ namespace Leaderboard.Benchmark
             Random rnd;
             string[] names;
             int nameLength;
-            int nextRandom;
             OperationType nextOp;
             Score nextScore;
-            Boolean executed;
 
             /* Debug */
             int totSyncReads;
             int totAsyncReads;
             int totSyncWrites;
             int totAsyncWrites;
-
+            int totOps;
+            
+            
 
             rnd = new Random();
             names = new string[] { "Jack", "John", "Jim", "Ted", "Tid", "Tad" };
@@ -123,7 +154,6 @@ namespace Leaderboard.Benchmark
             asyncReads = percentAsyncRead;
             syncWrites = percentSyncWrite;
             asyncWrites = percentAsyncWrite;
-            executed = false;
             nextOp = OperationType.READ_SYNC;
 
             /* Debug */
@@ -131,215 +161,66 @@ namespace Leaderboard.Benchmark
             totAsyncReads = 0;
             totSyncWrites = 0;
             totAsyncWrites = 0;
+            totOps = 0;
 
-
-            /*
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, true));
-
-            nextScore = new Score
-            {
-                Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numReqs * robotnumber + 5
-            };
-
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore, false));
-
-            nextScore = new Score
-            {
-                Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numReqs * robotnumber + 6
-            };
-
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore, false));
-
-        
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, false));
-
-            
-            nextScore = new Score
-            {
-                Name = names[rnd.Next(0, nameLength - 1)],
-                Points = numReqs * robotnumber + 7
-            };
-
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber, nextScore,false));
-            await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber,false));
-         
-            
-            */
+            var begin = DateTime.Now;
+            var end = DateTime.Now;
 
             //TODO: refactor
 
-            for (int i = 0; i < numReqs; i++)
+            while (true)
             {
-                if (asyncReads == 0 && asyncWrites == 0
-                    && syncReads == 0 && syncWrites == 0)
-                {
-                    syncReads = percentSyncRead;
-                    asyncReads = percentAsyncRead;
-                    syncWrites = percentSyncWrite;
-                    asyncWrites = percentAsyncWrite;
-                }
 
+                if ((end - begin).TotalSeconds > runTime) break;
+                end = DateTime.Now;
 
-                nextRandom = rnd.Next(0, 3);
-                if (nextRandom == 0)
-                {
-                    if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-                    else if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                }
-                else if (nextRandom == 1)
-                {
-
-                    if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-                    else if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                }
-                else if (nextRandom == 2)
-                {
-                    if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-
-                }
-
-                else if (nextRandom == 3)
-                {
-                    if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                    else if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-
-                    else if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-
-                }
-
-                Util.Assert(executed == true, "Incorrect If logic \n");
+                nextOp = generateOperationType();
+              
 
                 switch (nextOp)
                 {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, false, dummyGrain));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(runTime * robotnumber + totOps, false, dummyGrain));
                         totSyncReads++;
+                        totOps++;
                         break;
                     case OperationType.WRITE_SYNC:
                         nextScore = new Score
                       {
                           Name = names[rnd.Next(0, nameLength - 1)],
-                          Points = numReqs * robotnumber + i
+                          Points = runTime * robotnumber + totOps
                       };
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore, false, dummyGrain));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(runTime * robotnumber +  totOps, nextScore, false, dummyGrain));
                         totSyncWrites++;
+                        totOps++;
                         break;
                     case OperationType.READ_ASYNC:
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, true, dummyGrain));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(runTime * robotnumber + totOps, true, dummyGrain));
                         totAsyncReads++;
+                        totOps++;
                         break;
                     case OperationType.WRITE_ASYNC:
                         nextScore = new Score
                      {
                          Name = names[rnd.Next(0, nameLength - 1)],
-                         Points = numReqs * robotnumber + i
+                         Points = runTime * robotnumber + totOps
                      };
-                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(numReqs * robotnumber + i, nextScore, true, dummyGrain));
+                        await context.ServiceRequest(new HttpRequestSequencedLeaderboard(runTime * robotnumber + totOps, nextScore, true, dummyGrain));
                         totAsyncWrites++;
+                        totOps++;
                         break;
                 } // end switch
-                executed = false;
 
             } // end for loop
 
-            Util.Assert(totAsyncReads == (percentAsyncRead * numReqs / 100), "Incorrect Number Async Reads " + totAsyncReads);
-            Util.Assert(totAsyncWrites == (percentAsyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totAsyncWrites);
-            Util.Assert(totSyncReads == (percentSyncRead * numReqs / 100), "Incorrect Number Sync Reads " + totSyncReads);
-            Util.Assert(totSyncWrites == (percentSyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totSyncWrites);
+            Util.Assert(totAsyncReads == (percentAsyncRead * totOps / 100), "Incorrect Number Async Reads " + totAsyncReads);
+            Util.Assert(totAsyncWrites == (percentAsyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totAsyncWrites);
+            Util.Assert(totSyncReads == (percentSyncRead * totOps / 100), "Incorrect Number Sync Reads " + totSyncReads);
+            Util.Assert(totSyncWrites == (percentSyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
-            return parameters;
+            return totOps.ToString() + "-" + begin + "-" + end;
         }
 
 
