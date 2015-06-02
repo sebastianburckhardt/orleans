@@ -36,6 +36,14 @@ namespace Azure.Storage
             new AzureTableStorage(1,180,0,1,0,100),
             new AzureTableStorage(1,180,0,0,0,100),
 
+            new AzureTableStorage(1,30,100,1,1,100),
+            new AzureTableStorage(1,30,100,1,0,100),
+            new AzureTableStorage(1,30,100,0,0,100),
+            new AzureTableStorage(1,30,0,1,1,100),
+            new AzureTableStorage(1,30,0,1,0,100),
+            new AzureTableStorage(1,30,0,0,0,100),
+
+
             new AzureTableDirect(1,180,100,1,1,100),
             new AzureTableDirect(1,180,100,1,0,100),
             new AzureTableDirect(1,180,100,0,0,100),
@@ -133,7 +141,7 @@ namespace Azure.Storage
                 HttpRequestAzureTable request = null;
                 if (requestType == AzureCommon.OperationType.UPDATE)
                 {
-                    ByteEntity entity = Azure.Storage.ByteEntity.FromStringToEntity(body);
+                    ByteEntity entity = Azure.Storage.ByteEntity.FromJsonToEntity(body);
                     request = new HttpRequestAzureTable(requestType, numReq, table, null, null, entity);
                 }
                 else

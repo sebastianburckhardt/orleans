@@ -141,7 +141,7 @@ namespace Azure.Storage
             int totReads = 0;
             int totWrites = 0;
             byte[] nextPayload = new byte[payloadSize];
-            string testTable = "testTable";
+            string testTable = "helloworld";
             ByteEntity nextEntity = null;
             string nextResult = null;
             int totOps = 0;
@@ -180,7 +180,7 @@ namespace Azure.Storage
                         nextEntity = new ByteEntity(generatePartitionKey(), generateRowKey(), nextPayload);
                         nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, totOps * robotnumber, testTable, generatePartitionKey(), generateRowKey(), nextEntity));
                         totWrites++;
-                        if (!nextResult.Equals("200"))
+                        if (!nextResult.Equals("204"))
                         {
                             
                             throw new Exception("HTTP Return Code " + nextResult);
@@ -221,6 +221,8 @@ namespace Azure.Storage
             this.partitionKey = pPartitionKey;
             this.rowKey = pRowKey;
             this.payload = pEntity;
+
+            if (tableName == null) throw new Exception("Incorrect parameters");
         }
 
 
@@ -270,7 +272,7 @@ namespace Azure.Storage
                 }
                 else if (requestType == AzureCommon.OperationType.UPDATE)
                 {
-                    return "POST size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
+                    return "POST azure?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&table=" + tableName;
                 }
                 else if (requestType == AzureCommon.OperationType.UPDATE_BATCH)
                 {
@@ -289,7 +291,7 @@ namespace Azure.Storage
             {
                 // return payload;
                 if (payload == null) return null;
-                else return ByteEntity.FromEntityToString(payload);
+                else return ByteEntity.FromEntityToJsonString(payload);
 
             }
         }
@@ -305,7 +307,7 @@ namespace Azure.Storage
             // every request. Make this persistent somehow?
             if (requestType == AzureCommon.OperationType.CREATE)
             {
-                bool ret = AzureCommon.createTableCheck(tableClient, tableName);
+                CloudTable table = AzureCommon.createTable(tableClient, tableName);
                 //todo : handle error
                 return "ok";
             }

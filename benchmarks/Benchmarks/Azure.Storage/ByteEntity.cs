@@ -28,7 +28,7 @@ namespace Azure.Storage
             this.payload = pPayload;
         }
 
-
+        /*
         public static ByteEntity FromStringToEntity(string pEntityString)
         {
             byte[] bytes = Encoding.ASCII.GetBytes(pEntityString);
@@ -52,6 +52,7 @@ namespace Azure.Storage
             }
             return null; 
        }
+*/
 
         public static string FromEntityToJsonString(ByteEntity pEntity)
         {

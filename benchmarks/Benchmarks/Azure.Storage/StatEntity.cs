@@ -32,23 +32,12 @@ namespace Azure.Storage
             this.date = pDate.ToString();
             this.throughput = pThroughput;
             this.latency = pLatency;
-            this.PartitionKey = ToAzureKeyString(benchmarkName);
-            this.RowKey = ToAzureKeyString(scenarioName + pDate.ToString());
+            this.PartitionKey = AzureCommon.ToAzureKeyString(benchmarkName);
+            this.RowKey = AzureCommon.ToAzureKeyString(scenarioName + pDate.ToString());
         }
 
 
-        public static string ToAzureKeyString(string str)
-        {
-            var sb = new StringBuilder();
-            foreach (var c in str .Where(c => c != '/'
-                            && c != '\\'
-                            && c != '#'
-                            && c != '/'
-                            && c != '?'
-                            && !char.IsControl(c)))
-                sb.Append(c);
-            return sb.ToString();
-        }
+       
     }
 
 
