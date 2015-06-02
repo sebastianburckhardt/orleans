@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Diagnostics;
 
 #pragma warning disable 1998
 
@@ -163,14 +163,16 @@ namespace Size.Benchmark
 
             rnd.NextBytes(nextWrite);
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while(true)
             {
-                if ((end - begin).TotalSeconds > runTime) break;
+                s.Stop();
+      
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
 
-                end = DateTime.Now;
+                s.Start();
+
                 nextOp = generateOperationType();
 
                
@@ -209,7 +211,7 @@ namespace Size.Benchmark
 
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
-            return totOps.ToString() + "-" + begin + "-" + end;
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
 
         }
 

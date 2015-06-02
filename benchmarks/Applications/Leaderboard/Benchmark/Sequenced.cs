@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 
 #pragma warning disable 1998
@@ -163,16 +164,16 @@ namespace Leaderboard.Benchmark
             totAsyncWrites = 0;
             totOps = 0;
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
-            //TODO: refactor
-
+         
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while (true)
             {
+                s.Stop();
 
-                if ((end - begin).TotalSeconds > runTime) break;
-                end = DateTime.Now;
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
 
                 nextOp = generateOperationType();
               
@@ -220,7 +221,7 @@ namespace Leaderboard.Benchmark
 
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
-            return totOps.ToString() + "-" + begin + "-" + end;
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
         }
 
 

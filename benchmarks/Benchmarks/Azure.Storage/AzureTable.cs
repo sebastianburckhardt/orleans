@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
+using System.Diagnostics;
 
 #pragma warning disable 1998
 
@@ -147,14 +148,18 @@ namespace Azure.Storage
 
             nextResult = await context.ServiceRequest(new HttpRequestAzureTable(AzureCommon.OperationType.CREATE, totOps * robotnumber, testTable, null, null, null));
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
-            while(true)
+            Stopwatch s = new Stopwatch();
+            s.Start();
+            while (true)
             {
-                end = DateTime.Now;
-                if ((end - begin).TotalSeconds > runTime) break;
+                s.Stop();
+
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
+
                 nextOp = generateOperationType();
+              
                 switch (nextOp)
                 {
                     case AzureCommon.OperationType.READ:
@@ -189,7 +194,7 @@ namespace Azure.Storage
 
             string result = string.Format("Executed {0}% Reads {0}% Writes \n ", ((double)totReads / (double)totOps) * 100, ((double)totWrites / (double)totOps) * 100);
 
-            return totOps.ToString() + "-" + begin + "-" + end;
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
 
         }
 
@@ -301,9 +306,8 @@ namespace Azure.Storage
             if (requestType == AzureCommon.OperationType.CREATE)
             {
                 bool ret = AzureCommon.createTableCheck(tableClient, tableName);
-                if (ret) result = "Table Created";
-                else result = "Could not create table";
-                return result;
+                //todo : handle error
+                return "ok";
             }
             if (requestType == AzureCommon.OperationType.READ)
             {
@@ -348,7 +352,7 @@ namespace Azure.Storage
                 return "Unimplemented";
             }
 
-            return "error, incompatible message type";
+            return "ok";
         }
 
 

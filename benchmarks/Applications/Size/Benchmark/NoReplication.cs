@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+
 
 
 #pragma warning disable 1998
@@ -128,16 +130,18 @@ namespace Size.Benchmark
 
             rnd.NextBytes(nextWrite);
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
-            //TODO: refactor
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while (true)
             {
+                s.Stop();
 
-                if ((end - begin).TotalSeconds > runTime) break;
-                end = DateTime.Now;
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
+
                 nextOp = generateOperationType();
+              
 
                 switch (nextOp)
                 {
@@ -166,8 +170,8 @@ namespace Size.Benchmark
             Util.Assert(totWrites == (percentWrite * runTime / 100), "Incorrect Number Writes " + totWrites);
 
             Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
-            return totOps.ToString() + "-" + begin + "-" + end;
-;
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
+
         }
 
 
