@@ -131,11 +131,16 @@ namespace ReplicatedGrains
                     }
 
                     pending.Add(update);
-                    worker.Notify();
+                    using (new TraceInterval("SequencedGrain - Update locally notify", 0))
+                    {
+                        worker.Notify();
+                    }
 
-                    if (save)
-                        await SaveLocallyAsync();
-
+                    using (new TraceInterval("SequencedGrain - Update locally save", 0))
+                    {
+                        if (save)
+                            await SaveLocallyAsync();
+                    }
                 }
                 else
                 {
