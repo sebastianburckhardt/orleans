@@ -16,7 +16,9 @@ namespace Benchmarks
             //---------------------------------------------------------------------------------
             // To add a new benchmark:
             // - add it to this list
-            // - add a project reference for the interface dll and the implementation dll to this project
+            // - add a reference for the benchmark dll to this project
+            // - add a reference for the grain dll to the LocalDeployment project
+            // - add a reference for both interface and grain dll to the Orleans.Silos project
 
             Register(new Hello.Benchmark.Benchmark());
             Register(new Leaderboard.Benchmark.Benchmark());
