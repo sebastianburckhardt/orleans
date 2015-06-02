@@ -146,7 +146,7 @@
     </ProjectReference>
     <ProjectReference Include="..\Benchmarks\BenchmarkList.csproj">
       <Project>{666fcf4a-a67f-4409-afde-8d8b869a804c}</Project>
-      <Name>BenchmarkList</Name>
+      <Name>Benchmarks</Name>
     </ProjectReference>
     <ProjectReference Include="..\Common\Common.csproj">
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
