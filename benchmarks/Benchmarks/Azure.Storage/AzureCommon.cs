@@ -145,6 +145,16 @@ namespace Azure.Storage
             return table.ExecuteQuery(rangeQuery);
         }
 
+        public static IEnumerable<T> findEntitiesInPartition<T>(CloudTableClient pClient, string pName, string pPartitionKey)
+            where T: ITableEntity, new()
+        {
+            CloudTable table = pClient.GetTableReference(pName);
+            TableQuery<T> rangeQuery = new TableQuery<T>().Where(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, pPartitionKey));
+            return table.ExecuteQuery(rangeQuery);
+        }
+
+
         public static Task<TableResult> findEntity<T>(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey) where T : TableEntity, new()
         {
             CloudTable table = pClient.GetTableReference(pName);
