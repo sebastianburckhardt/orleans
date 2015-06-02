@@ -28,7 +28,7 @@ namespace Examples.Grains
     using System.Runtime.Serialization;
     
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [SerializableAttribute()]
     [global::Orleans.CodeGeneration.GrainStateAttribute("Examples.Grains.Examples.Grains.AccountGrain")]
@@ -91,7 +91,7 @@ namespace Examples.Grains
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [SerializableAttribute()]
     [global::Orleans.CodeGeneration.GrainStateAttribute("Examples.Grains.Examples.Grains.CommentsGrain")]
@@ -154,7 +154,7 @@ namespace Examples.Grains
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     [SerializableAttribute()]
     [global::Orleans.CodeGeneration.GrainStateAttribute("Examples.Grains.Examples.Grains.LeaderBoardGrain")]
