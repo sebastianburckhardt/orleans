@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using Orleans;
+using System.Diagnostics;
 
 #pragma warning disable 1998
 
@@ -33,14 +34,16 @@ namespace Computation.Grains
 
         public Task Write(int pTime)
         {
-            var start = DateTime.Now;
-            var end = DateTime.Now;
+            var s = new Stopwatch();
 
             int i = 0;
-            while ((end - start).TotalMilliseconds < pTime)
+            s.Start();
+            double elapsedTime = 0;
+            while (elapsedTime< pTime)
             {
                 i++;
-                end = DateTime.Now;
+                s.Stop();
+                elapsedTime = s.ElapsedMilliseconds;
             }
             return TaskDone.Done;
         }

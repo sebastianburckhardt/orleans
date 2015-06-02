@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Diagnostics;
 
 
 #pragma warning disable 1998
@@ -166,15 +168,16 @@ namespace Computation.Benchmark
 
             rnd.NextBytes(nextWrite);
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
-            //TODO: refactor
-
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while (true)
             {
-                end = DateTime.Now;
-                if ((end-begin).TotalSeconds > runTime) break;
+                s.Stop();
+
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
+
                 nextOp = generateOperationType();
 
                 switch (nextOp)
@@ -211,10 +214,9 @@ namespace Computation.Benchmark
             Util.Assert(totSyncReads == (percentSyncRead * totOps / 100), "Incorrect Number Sync Reads " + totSyncReads);
             Util.Assert(totSyncWrites == (percentSyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
-            throughput = (double) totOps / (double) (end - begin).TotalSeconds;
 
-            Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes Throughput {4}\n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites, throughput);
-            return totOps.ToString() + "-" + begin + "-" + end;
+            Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes Throughput {4}\n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
         }
 
 

@@ -166,7 +166,7 @@ namespace Benchmarks
 
                 if (responsestring != null)
                     EncodeJsonResponse(response, responsestring);
-
+                else throw new Exception("response string should not be null");
                 response.Close();
 
                 tracer("<- HttpResponse " + (responsestring.Length > 100 ? ("(" + responsestring.Length + " characters)") : responsestring));
@@ -219,6 +219,7 @@ namespace Benchmarks
             response.ContentType = "application/json";
             response.ContentLength64 = buffer.Length;
             System.IO.Stream output = response.OutputStream;
+            System.Console.WriteLine(response.ToString());
             output.Write(buffer, 0, buffer.Length);
             // Send the response
             output.Close();

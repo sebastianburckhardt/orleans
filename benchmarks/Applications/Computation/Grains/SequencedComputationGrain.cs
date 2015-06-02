@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Computation.Interfaces;
 using Orleans.Providers;
+using System.Diagnostics;
+
 #pragma warning disable 1998
 
 namespace Computation.Grains
@@ -71,14 +73,16 @@ namespace Computation.Grains
             public int time { get; set; }
             public void Update(State state)
             {
-                var start = DateTime.Now;
-                var end = DateTime.Now;
+                var s = new Stopwatch();
 
                 int i = 0;
-                while ((end - start).TotalMilliseconds < time)
+                s.Start();
+                double elapsedTime = 0;
+                while (elapsedTime < time)
                 {
                     i++;
-                    end = DateTime.Now;
+                    s.Stop();
+                    elapsedTime = s.ElapsedMilliseconds;
                 }
 
 
