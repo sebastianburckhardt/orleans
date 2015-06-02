@@ -5,7 +5,7 @@ using System.Text;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json.Linq;
-
+using System.Linq;
 
 namespace Azure.Storage
 {
@@ -14,7 +14,7 @@ namespace Azure.Storage
     {
         // assume no . in partition key
 
-        public DateTime date { get; set; }
+        public string date { get; set; }
         public string throughput { get; set; }
         public System.Collections.Generic.Dictionary<string,Common.LatencyDistribution> latency { get; set; }
         public string benchmarkName { get; set; }
@@ -25,18 +25,33 @@ namespace Azure.Storage
 
         }
 
-        public StatEntity(string pBenchmarkName, string pScenarioName, DateTime pDate, string pThroughput, 
-                System.Collections.Generic.Dictionary<string, Common.LatencyDistribution> pLatency)
-        {
+        public StatEntity(string pBenchmarkName, string pScenarioName, DateTime pDate, string pThroughput,
+                System.Collections.Generic.Dictionary<string, Common.LatencyDistribution> pLatency) {
             this.benchmarkName = pBenchmarkName;
             this.scenarioName = pScenarioName;
-            this.date = pDate;
+            this.date = pDate.ToString();
             this.throughput = pThroughput;
             this.latency = pLatency;
-            this.PartitionKey = benchmarkName;
-            this.RowKey = scenarioName + pDate.ToString();
+            this.PartitionKey = ToAzureKeyString(benchmarkName);
+            this.RowKey = ToAzureKeyString(scenarioName + pDate.ToString());
+        }
+
+
+        public static string ToAzureKeyString(string str)
+        {
+            var sb = new StringBuilder();
+            foreach (var c in str .Where(c => c != '/'
+                            && c != '\\'
+                            && c != '#'
+                            && c != '/'
+                            && c != '?'
+                            && !char.IsControl(c)))
+                sb.Append(c);
+            return sb.ToString();
         }
     }
+
+
 
 
 }

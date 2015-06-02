@@ -42,7 +42,7 @@ namespace Azure.Storage
             string connectionKey = CloudConfigurationManager.GetSetting(pConnectionKey);
             if (connectionKey == null)
             {
-                throw new Exception("No connection key specified");
+                connectionKey = "UseDevelopmentStorage=true";
             }
             else
             {
