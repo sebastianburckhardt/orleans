@@ -295,6 +295,10 @@
     <None Include="Project_Readme.html" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Benchmarks\Azure.Storage\Azure.Storage.csproj">
+      <Project>{8708e004-e6ea-4a16-8e3f-6ea0ac5e07c0}</Project>
+      <Name>Azure.Storage</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Benchmarks\BenchmarkList.csproj">
       <Project>{666fcf4a-a67f-4409-afde-8d8b869a804c}</Project>
       <Name>BenchmarkList</Name>

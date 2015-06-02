@@ -18,20 +18,22 @@ namespace Computation.Benchmark
         // scenario parameters
         // read operations = get top 10
         // write operations = post 
-        public NoReplicationComputation(int pNumRobots, int pNumReqs, int pPercentRead, int pTimeUpdate)
+        public NoReplicationComputation(int pNumRobots, int pRunTime, int pPercentRead, int pTimeUpdate)
         {
             this.numRobots = pNumRobots;
-            this.numReqs = pNumReqs;
+            this.runTime = pRunTime;
             this.percentRead = pPercentRead;
             this.percentWrite = 100 - percentRead;
             this.timeUpdate = pTimeUpdate;
         }
 
         private int numRobots;
-        private int numReqs;
         private int percentRead;
         private int percentWrite;
         private int timeUpdate;
+        private int runTime;
+
+        private Random rnd = new Random();
 
         enum OperationType
         {
@@ -46,7 +48,7 @@ namespace Computation.Benchmark
             return Endpoints.GetDefaultService();
         }
 
-        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xcomp{3}", numRobots, numReqs, percentRead, timeUpdate); } }
+        public string Name { get { return string.Format("norep-robots{0}xnr{1}xsreads{2}xcomp{3}", numRobots, runTime, percentRead, timeUpdate); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -60,18 +62,22 @@ namespace Computation.Benchmark
 
             // start each robot
             for (int i = 0; i < numRobots; i++)
-                robotrequests[i] = context.RunRobot(i, numReqs.ToString() + "-" + percentRead);
+                robotrequests[i] = context.RunRobot(i, "");
 
             // wait for all robots
             await Task.WhenAll(robotrequests);
 
+            int totalOps = 0;
+            double throughput = 0.0;
             // check robot responses
             for (int i = 0; i < numRobots; i++)
             {
-                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+                string response = robotrequests[i].Result;
+                string[] res = response.Split('-');
+                totalOps += int.Parse(res[0]);
             }
-
-            return "ok";
+            throughput = totalOps / runTime;
+            return throughput.ToString();
         }
 
         // each robot simply echoes the parameters
@@ -82,100 +88,89 @@ namespace Computation.Benchmark
             int reads;
             int writes;
             Random rnd;
-            int nextRandom;
+  
             OperationType nextOp;
             byte[] nextWrite;
-            Boolean executed;
-
-            /* Debug */
+            
+            /* Stats */
             int totReads;
             int totWrites;
+            int totOps;
+            double throughput;
 
             rnd = new Random();
             reads = percentRead;
             writes = percentWrite;
-            executed = false;
+     
             nextOp = OperationType.READ_SYNC;
             nextWrite = new byte[100];
 
-            /* Debug */
+            /* Stats */
             totReads = 0;
             totWrites = 0;
+            totOps = 0;
 
             rnd.NextBytes(nextWrite);
 
 
-            //TODO: refactor
-            for (int i = 0; i < numReqs; i++)
+            var begin = DateTime.Now;
+            var end = DateTime.Now;
+
+            while (true)
             {
-                while (!executed)
-                {
-                    nextRandom = rnd.Next(0, 1);
-                    if (nextRandom == 0)
-                    {
-                        if (reads > 0)
-                        {
-                            nextOp = OperationType.READ_SYNC;
-                            reads--;
-                            executed = true;
-                        }
-                        else if (writes > 0)
-                        {
-                            nextOp = OperationType.WRITE_SYNC;
-                            writes--;
-                            executed = true;
-                        }
-                    }
-                    else if (writes > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        writes--;
-                        executed = true;
-                    }
-                    else if (reads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        reads--;
-                        executed = true;
-                    }
+                end = DateTime.Now;
+                if ((end - begin).TotalSeconds > runTime) break;
+                 //TODO: refactor
 
-                    if (!executed)
-                    {
-                        // all reads and writes have been executed, reinitialise
-                        reads = percentRead;
-                        writes = percentWrite;
-                    }
-
-                } // !executed 
+                nextOp = generateOperationType();
 
                 switch (nextOp)
                 {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestComputation(numReqs * robotnumber + i));
+                        await context.ServiceRequest(new HttpRequestComputation(totOps * robotnumber));
                         totReads++;
+                        totOps++;
                         break;
                     case OperationType.WRITE_SYNC:
                         rnd.NextBytes(nextWrite);
-                        await context.ServiceRequest(new HttpRequestComputation(numReqs * robotnumber + i, nextWrite, timeUpdate));
+                        await context.ServiceRequest(new HttpRequestComputation(totOps * robotnumber, nextWrite, timeUpdate));
                         totWrites++;
+                        totOps++;
                         break;
                     case OperationType.READ_ASYNC:
                         throw new NotImplementedException();
                     case OperationType.WRITE_ASYNC:
                         throw new NotImplementedException();
                 } // end switch
-                executed = false;
-
+   
             } // end for loop
 
-            Util.Assert(totReads == (percentRead * numReqs / 100), "Incorrect Number Reads " + totReads);
-            Util.Assert(totWrites == (percentWrite * numReqs / 100), "Incorrect Number Writes " + totWrites);
+            Util.Assert(totReads == (percentRead * totOps / 100), "Incorrect Number Reads " + totReads);
+            Util.Assert(totWrites == (percentWrite * totOps / 100), "Incorrect Number Writes " + totWrites);
 
             Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
-            return parameters;
+
+            throughput = (double) totOps / ((double) (end - begin).TotalSeconds);
+            return throughput.ToString();
         }
 
+        private OperationType generateOperationType()
+        {
+            OperationType retType;
+            int nextInt;
 
+            nextInt = rnd.Next(1, 100);
+
+            if (nextInt <= percentRead)
+            {
+                retType =OperationType.READ_SYNC;
+            }
+            else
+            {
+                retType = OperationType.WRITE_SYNC;
+            }
+            return retType;
+        }
 
 
     }

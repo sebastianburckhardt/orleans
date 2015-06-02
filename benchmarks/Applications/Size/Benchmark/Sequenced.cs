@@ -20,10 +20,10 @@ namespace Size.Benchmark
         // async read operations = get approx top 10
         // sync write operations = post now
         // async write operations = postlater
-        public SequencedSize(int pNumRobots, int pNumReqs, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pPayloadSize)
+        public SequencedSize(int pNumRobots, int pRunTime, int pPercentSyncReads, int pPercentAsyncReads, int pPercentSyncWrites, int pPercentAsyncWrites, int pPayloadSize)
         {
             this.numRobots = pNumRobots;
-            this.numReqs = pNumReqs;
+            this.runTime = pRunTime;
             this.percentSyncRead = pPercentSyncReads;
             this.percentAsyncRead = pPercentAsyncReads;
             this.percentSyncWrite = pPercentSyncWrites;
@@ -32,13 +32,15 @@ namespace Size.Benchmark
         }
 
         private int numRobots;
-        private int numReqs;
+        private int runTime;
 
         private int percentSyncRead;
         private int percentAsyncRead;
         private int percentSyncWrite;
         private int percentAsyncWrite;
         private int payloadSize;
+        private Random rnd = new Random();
+
 
         enum OperationType
         {
@@ -55,7 +57,7 @@ namespace Size.Benchmark
 
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, numReqs, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite, payloadSize); } }
+        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}xsize{6}", numRobots, runTime, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite, payloadSize); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -73,18 +75,48 @@ namespace Size.Benchmark
 
             // start each robot
             for (int i = 0; i < numRobots; i++)
-                robotrequests[i] = context.RunRobot(i, numReqs.ToString());
+                robotrequests[i] = context.RunRobot(i, "");
 
             // wait for all robots
             await Task.WhenAll(robotrequests);
 
+            int totalOps = 0;
+            double throughput = 0.0;
             // check robot responses
             for (int i = 0; i < numRobots; i++)
             {
-                Console.Write("Finished: {0} \n", robotrequests[i].Result);
+                string response = robotrequests[i].Result;
+                string[] res = response.Split('-');
+                totalOps += int.Parse(res[0]);
             }
+            throughput = totalOps / runTime;
+            return throughput.ToString();
+        }
 
-            return "ok";
+        private OperationType generateOperationType()
+        {
+            OperationType retType = OperationType.READ_ASYNC;
+            int nextInt;
+
+            nextInt = rnd.Next(1, 100);
+
+            if (nextInt <= percentSyncRead)
+            {
+                retType = OperationType.READ_SYNC;
+            }
+            else if (nextInt <= (percentSyncRead + percentAsyncRead))
+            {
+                retType = OperationType.READ_ASYNC;
+            }
+            else if (nextInt <= (percentSyncRead + percentAsyncRead + percentSyncWrite))
+            {
+                retType = OperationType.WRITE_SYNC;
+            }
+            else if (nextInt <= (percentSyncRead + percentAsyncRead + percentSyncWrite + percentAsyncWrite))
+            {
+                retType = OperationType.WRITE_ASYNC;
+            }
+            return retType;
         }
 
         // each robot simply echoes the parameters
@@ -92,7 +124,6 @@ namespace Size.Benchmark
         {
             Console.Write("PARAMETERS {0} \n", parameters);
 
-            string[] param = parameters.Split('-');
 
             Util.Assert(percentSyncRead + percentAsyncRead + percentSyncWrite + percentAsyncWrite == 100,
                 "Incorrect percentage breakdown " + percentSyncRead + " " + percentAsyncRead + " " +
@@ -105,17 +136,15 @@ namespace Size.Benchmark
 
             Random rnd;
 
-            int nextRandom;
             OperationType nextOp;
             byte[] nextWrite;
-            Boolean executed;
 
             /* Debug */
             int totSyncReads;
             int totAsyncReads;
             int totSyncWrites;
             int totAsyncWrites;
-
+            int totOps;
 
             rnd = new Random();
             nextWrite = new byte[payloadSize];
@@ -123,7 +152,6 @@ namespace Size.Benchmark
             asyncReads = percentAsyncRead;
             syncWrites = percentSyncWrite;
             asyncWrites = percentAsyncWrite;
-            executed = false;
             nextOp = OperationType.READ_SYNC;
 
             /* Debug */
@@ -131,175 +159,58 @@ namespace Size.Benchmark
             totAsyncReads = 0;
             totSyncWrites = 0;
             totAsyncWrites = 0;
-
+            totOps = 0;
 
             rnd.NextBytes(nextWrite);
 
+            var begin = DateTime.Now;
+            var end = DateTime.Now;
 
-            //TODO: refactor
-
-            for (int i = 0; i < numReqs; i++)
+            while(true)
             {
-                if (asyncReads == 0 && asyncWrites == 0
-                    && syncReads == 0 && syncWrites == 0)
-                {
-                    syncReads = percentSyncRead;
-                    asyncReads = percentAsyncRead;
-                    syncWrites = percentSyncWrite;
-                    asyncWrites = percentAsyncWrite;
-                }
+                if ((end - begin).TotalSeconds > runTime) break;
 
+                end = DateTime.Now;
+                nextOp = generateOperationType();
 
-                nextRandom = rnd.Next(0, 3);
-                if (nextRandom == 0)
-                {
-                    if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-                    else if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                }
-                else if (nextRandom == 1)
-                {
-
-                    if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-                    else if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                }
-                else if (nextRandom == 2)
-                {
-                    if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                    else if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-
-                }
-
-                else if (nextRandom == 3)
-                {
-                    if (asyncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_ASYNC;
-                        asyncWrites--;
-                        executed = true;
-                    }
-                    else if (syncWrites > 0)
-                    {
-                        nextOp = OperationType.WRITE_SYNC;
-                        syncWrites--;
-                        executed = true;
-                    }
-
-                    else if (asyncReads > 0)
-                    {
-                        nextOp = OperationType.READ_ASYNC;
-                        asyncReads--;
-                        executed = true;
-                    }
-                    else if (syncReads > 0)
-                    {
-                        nextOp = OperationType.READ_SYNC;
-                        syncReads--;
-                        executed = true;
-                    }
-
-                }
-
-                Util.Assert(executed == true, "Incorrect If logic \n");
-
+               
                 switch (nextOp)
                 {
                     case OperationType.READ_SYNC:
-                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, false));
+                        await context.ServiceRequest(new HttpRequestSequencedSize(totOps * robotnumber, false));
                         totSyncReads++;
+                        totOps++;
                         break;
                     case OperationType.WRITE_SYNC:
                         rnd.NextBytes(nextWrite);
-                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, nextWrite, false));
+                        await context.ServiceRequest(new HttpRequestSequencedSize(totOps * robotnumber, nextWrite, false));
                         totSyncWrites++;
+                        totOps++;
                         break;
                     case OperationType.READ_ASYNC:
-                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, true));
+                        await context.ServiceRequest(new HttpRequestSequencedSize(totOps * robotnumber, true));
                         totAsyncReads++;
+                        totOps++;
                         break;
                     case OperationType.WRITE_ASYNC:
                         rnd.NextBytes(nextWrite);
-                        await context.ServiceRequest(new HttpRequestSequencedSize(numReqs * robotnumber + i, nextWrite, true));
+                        await context.ServiceRequest(new HttpRequestSequencedSize(totOps * robotnumber, nextWrite, true));
                         totAsyncWrites++;
+                        totOps++;
                         break;
                 } // end switch
-                executed = false;
 
             } // end for loop
 
-            Util.Assert(totAsyncReads == (percentAsyncRead * numReqs / 100), "Incorrect Number Async Reads " + totAsyncReads);
-            Util.Assert(totAsyncWrites == (percentAsyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totAsyncWrites);
-            Util.Assert(totSyncReads == (percentSyncRead * numReqs / 100), "Incorrect Number Sync Reads " + totSyncReads);
-            Util.Assert(totSyncWrites == (percentSyncWrite * numReqs / 100), "Incorrect Number Sync Writes " + totSyncWrites);
+            Util.Assert(totAsyncReads == (percentAsyncRead * totOps / 100), "Incorrect Number Async Reads " + totAsyncReads);
+            Util.Assert(totAsyncWrites == (percentAsyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totAsyncWrites);
+            Util.Assert(totSyncReads == (percentSyncRead * totOps / 100), "Incorrect Number Sync Reads " + totSyncReads);
+            Util.Assert(totSyncWrites == (percentSyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes \n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);
-            return parameters;
+            return totOps.ToString() + "-" + begin + "-" + end;
+
         }
 
 

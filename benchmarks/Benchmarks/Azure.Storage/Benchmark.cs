@@ -29,20 +29,54 @@ namespace Azure.Storage
              * Staleness bound is set to int.maxValue
              */ 
 
-            new AzureTableStorage(1,10000,100,1,1,100),
-            new AzureTableStorage(1,10000,100,1,0,100),
-            new AzureTableStorage(1,10000,100,0,0,100),
-            new AzureTableStorage(1,10000,0,1,1,100),
-            new AzureTableStorage(1,10000,0,1,0,100),
-            new AzureTableStorage(1,10000,0,0,0,100),
+            new AzureTableStorage(1,180,100,1,1,100),
+            new AzureTableStorage(1,180,100,1,0,100),
+            new AzureTableStorage(1,180,100,0,0,100),
+            new AzureTableStorage(1,180,0,1,1,100),
+            new AzureTableStorage(1,180,0,1,0,100),
+            new AzureTableStorage(1,180,0,0,0,100),
 
-            new AzureTableDirect(1,10000,100,1,1,100),
-            new AzureTableDirect(1,10000,100,1,0,100),
-            new AzureTableDirect(1,10000,100,0,0,100),
-            new AzureTableDirect(1,10000,0,1,1,100),
-            new AzureTableDirect(1,10000,0,1,0,100),
-            new AzureTableDirect(1,10000,0,0,0,100),
+            new AzureTableDirect(1,180,100,1,1,100),
+            new AzureTableDirect(1,180,100,1,0,100),
+            new AzureTableDirect(1,180,100,0,0,100),
+            new AzureTableDirect(1,180,0,1,1,100),
+            new AzureTableDirect(1,180,0,1,0,100),
+            new AzureTableDirect(1,180,0,0,0,100),
 
+            new AzureTableDirect(5,180,100,1,1,100),
+            new AzureTableDirect(5,180,100,1,0,100),
+            new AzureTableDirect(5,180,100,0,0,100),
+            new AzureTableDirect(5,180,0,1,1,100),
+            new AzureTableDirect(5,180,0,1,0,100),
+            new AzureTableDirect(5,180,0,0,0,100),
+
+            new AzureTableDirect(10,180,100,1,1,100),
+            new AzureTableDirect(10,180,100,1,0,100),
+            new AzureTableDirect(10,180,100,0,0,100),
+            new AzureTableDirect(10,180,0,1,1,100),
+            new AzureTableDirect(10,180,0,1,0,100),
+            new AzureTableDirect(10,180,0,0,0,100),
+
+            new AzureTableDirect(20,180,100,1,1,100),
+            new AzureTableDirect(20,180,100,1,0,100),
+            new AzureTableDirect(20,180,100,0,0,100),
+            new AzureTableDirect(20,180,0,1,1,100),
+            new AzureTableDirect(20,180,0,1,0,100),
+            new AzureTableDirect(20,180,0,0,0,100),
+
+            new AzureTableDirect(50,180,100,1,1,100),
+            new AzureTableDirect(50,180,100,1,0,100),
+            new AzureTableDirect(50,180,100,0,0,100),
+            new AzureTableDirect(50,180,0,1,1,100),
+            new AzureTableDirect(50,180,0,1,0,100),
+            new AzureTableDirect(50,180,0,0,0,100),
+
+              new AzureTableDirect(100,180,100,1,1,100),
+            new AzureTableDirect(100,180,100,1,0,100),
+            new AzureTableDirect(100,180,100,0,0,100),
+            new AzureTableDirect(100,180,0,1,1,100),
+            new AzureTableDirect(100,180,0,1,0,100),
+            new AzureTableDirect(100,180,0,0,0,100),
            
         };
 

@@ -8,6 +8,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Table;
+using Azure.Storage;
 
 namespace Conductor.Webrole
 {
@@ -32,6 +36,9 @@ namespace Conductor.Webrole
         IBenchmark benchmark;
         IEnumerable<IScenario> scenarios;
         public List<RobotInfo> robots;
+
+        private string STAT_TABLE = "results";
+
 
         public class RobotInfo
         {
@@ -72,7 +79,8 @@ namespace Conductor.Webrole
                     continue;
                 }
 
-
+                CloudTableClient tableClient = AzureCommon.getTableClient();
+                AzureCommon.createTable(tableClient, "results");
 
                 foreach (var scenario in scenarios)
                 {
@@ -106,6 +114,14 @@ namespace Conductor.Webrole
                             }
 
                     Broadcast("Result", result + " " + Util.PrintStats(overallstats));
+
+                    Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name,DateTime.Now, result,  overallstats);
+
+                    TableResult logResult =  AzureCommon.updateEntity<Azure.Storage.StatEntity>(tableClient, STAT_TABLE, statEntity).Result;
+                    if (logResult.HttpStatusCode != 204)
+                    {
+                        Console.WriteLine("Failed to write results to storage {0}", logResult.HttpStatusCode);
+                    }
 
                     if (overallstats.Count > 0)
                         Console.WriteLine("Stats", Util.PrintStats(overallstats));
