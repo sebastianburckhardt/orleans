@@ -79,7 +79,7 @@ namespace Conductor.Webrole
                     continue;
                 }
 
-                CloudTableClient tableClient = AzureCommon.getTableClient();
+                CloudTableClient tableClient = AzureCommon.getTableClient("DataConnectionString");
                 AzureCommon.createTable(tableClient, "results");
 
                 foreach (var scenario in scenarios)

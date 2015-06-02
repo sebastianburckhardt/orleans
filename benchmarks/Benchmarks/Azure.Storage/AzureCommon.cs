@@ -35,6 +35,24 @@ namespace Azure.Storage
             return pAccount.CreateCloudTableClient();
         }
 
+
+
+        public static CloudTableClient getTableClient(string pConnectionKey)
+        {
+            string connectionKey = CloudConfigurationManager.GetSetting(pConnectionKey);
+            if (connectionKey == null)
+            {
+                throw new Exception("No connection key specified");
+            }
+            else
+            {
+                Console.Write("Connection Key {0} \n ", connectionKey);
+            }
+            CloudStorageAccount account = CloudStorageAccount.Parse(connectionKey);
+            return account.CreateCloudTableClient();
+        }
+
+
         public static CloudTableClient getTableClient()
         {
             string connectionKey = CloudConfigurationManager.GetSetting("StorageConnectionString");
