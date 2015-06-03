@@ -162,8 +162,6 @@ namespace Leaderboard.Benchmark
                 } // end switch
 
             }
-                Util.Assert(totReads == (percentRead * totOps / 100), "Incorrect Number Reads " + totReads);
-                Util.Assert(totWrites == (percentWrite * totOps / 100), "Incorrect Number Writes " + totWrites);
 
                 Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
                 return totOps.ToString() + "-" + s.ElapsedMilliseconds;
