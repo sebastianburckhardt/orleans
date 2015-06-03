@@ -39,9 +39,11 @@ namespace Hello.Benchmark
         {
             using (new TraceInterval("LoadGenerator", workernumber))
             {
+                Task[] tasks = new Task[numreqs];
                 for (int i = 0; i < numreqs; i++)
-                    await context.ServiceRequest(new OrleansHelloRequest(numreqs * workernumber + i));
+                    tasks[i] = context.ServiceRequest(new OrleansHelloRequest(numreqs * workernumber + i));
 
+                await Task.WhenAll(tasks);
                 return "ok";
             }
         }
@@ -75,7 +77,7 @@ namespace Hello.Benchmark
         public async Task<string> ProcessRequestOnServer()
         {
             IHelloGrain helloGrain;
-
+            
             //send to some grain.
             using (new TraceInterval("Frontend - get", nr))
             {

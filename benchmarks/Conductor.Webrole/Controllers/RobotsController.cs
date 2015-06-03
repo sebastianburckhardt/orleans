@@ -129,7 +129,8 @@ namespace Conductor.Webrole.Controllers
                             var traceMessage = (string)message["message"];
                             await conductor.Trace(traceMessage);
                         }
-                        else if (messageType.StartsWith("DONE"))
+                        else if (messageType.StartsWith("DONE") || 
+                            messageType.StartsWith("EXCEPTION"))
                         {
 
                             /*userMessage = userMessage.Substring(userMessage.IndexOf(' ') + 1);
@@ -153,6 +154,10 @@ namespace Conductor.Webrole.Controllers
                                 stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
                             }
 
+                            if (messageType.StartsWith("EXCEPTION"))
+                            {
+                                rval = "Exception occurred on FrontEnd: (skipping the scenario):" + rval;
+                            }
                             conductor.OnRobotMessage(robotnr, rval, stats);
                         }
                     }

@@ -146,8 +146,11 @@ namespace Benchmarks
                 // statistics are collected per request and response category
                 var key = requestcategory + " (" + responsecategory + ")";
                 LatencyDistribution distribution;
-                if (!Stats.TryGetValue(key, out distribution))
-                    distribution = Stats[key] = new LatencyDistribution();
+                lock (Stats)
+                {
+                    if (!Stats.TryGetValue(key, out distribution))
+                        distribution = Stats[key] = new LatencyDistribution();
+                }
                 try
                 {
                     distribution.AddDataPoint(sw.ElapsedMilliseconds);

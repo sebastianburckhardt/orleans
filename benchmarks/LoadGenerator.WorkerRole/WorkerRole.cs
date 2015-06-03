@@ -68,6 +68,91 @@ namespace LoadGenerator.WorkerRole
 
         private byte[] receiveBuffer = new byte[512];
 
+        private async Task StartRobotAsync(string content, WebSocket ws, Func<string, Task> tracer, CancellationToken cancellationToken)
+        {
+            JObject testdata = JObject.Parse(content);
+            string testname = (string)testdata["testname"];
+            int robotnr = int.Parse((string)testdata["robotnr"]);
+            string args = (string)testdata["args"];
+
+
+            var scenarioStartPos = testname.LastIndexOf("."); //assuming senario name doesnt have "."
+            var benchmarkStartPos = testname.LastIndexOf(".", scenarioStartPos - 1); //searches backward
+
+            var scenarioName = testname.Substring(scenarioStartPos + 1).Trim(); //why is there extra space?
+            var benchmarkName = testname.Substring(benchmarkStartPos + 1, scenarioStartPos - benchmarkStartPos - 1);
+
+            var benchmark = benchmarks.ByName(benchmarkName);
+            var scenarios = benchmark.Scenarios.Where(s => s.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
+
+            if (scenarios.Count() != 1) //i.e. no scenorio or more than one scenario with same name.
+            {
+                //TODO: Ask sebastian about error handling.
+                await tracer("No such scenario found");
+                Trace.TraceInformation("No such scenario found");
+                return;
+            }
+
+            var scenario = scenarios.First();
+            string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
+            String retval;
+            var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
+
+            await tracer("Starting robot: " + robotnr + DateTime.Now.ToString());
+            //Should catch exceptions from the robot script and notify the conductor of the failure. Which may decide to retry if required.
+            //no need to disconnect from the conductor since this is the FE error.
+            bool success = true;
+            try
+            {
+                retval = await scenario.RobotScript(client, robotnr, args);
+            }
+            catch (Exception ex)
+            {
+                success = false;
+                retval = ex.Message + " " + ex.StackTrace;
+            }
+
+            //  LoadGenerator -> Conductor : DONE robotnr stats retval
+
+            var stats = client.Stats;
+            BinaryFormatter bf = new BinaryFormatter();
+            string statsBase64 = null;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                bf.Serialize(ms, stats);
+                ms.Flush();
+                statsBase64 = System.Convert.ToBase64String(ms.ToArray());
+                byte[] converted = System.Convert.FromBase64String(statsBase64);
+                Array.Equals(converted, ms.ToArray());
+            }
+
+            string messagetype;
+            if (success)
+            {
+                messagetype = "DONE";
+            }
+            else
+            {
+                messagetype = "EXCEPTION";
+            }
+
+            //var statsBase64 = System.Convert.ToBase64String();
+            //var message = "DONE " + robotnr.ToString() + " " + statsBase64 + " " + retval;
+            JObject message = JObject.FromObject(new
+            {
+                type = messagetype,
+                robotnr = robotnr.ToString(),
+                stats = statsBase64,
+                retval = retval
+            });
+            var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
+
+            await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
+
+            Trace.TraceInformation("Sent " + message);
+        }
+
+
         private async Task RunAsync(CancellationToken cancellationToken)
         {
             var deployment = RoleEnvironment.DeploymentId;
@@ -136,6 +221,7 @@ namespace LoadGenerator.WorkerRole
                             int bufsize = receiveBuffer.Length;
                             try
                             {
+                                //receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
                                 receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
                             }
                             catch (Exception ex)
@@ -185,6 +271,10 @@ namespace LoadGenerator.WorkerRole
 
                                 Trace.TraceInformation("Received " + content);
 
+                                //NOTE: Do not await
+                                //Task.Run(() => StartRobotAsync(content, ws, tracer, cancellationToken));
+                                StartRobotAsync(content, ws, tracer, cancellationToken);
+
                                 //  Conductor -> LoadGenerator : START testname robotnr args
 
                                 /*content = content.Substring(content.IndexOf(' ') + 1);
@@ -193,62 +283,7 @@ namespace LoadGenerator.WorkerRole
                                 var testname = content.Substring(0, pos1 + 1);
                                 var robotnr = int.Parse(content.Substring(pos1 + 1, pos2 - pos1));
                                 var args = content.Substring(pos2 + 1);*/
-                                JObject testdata = JObject.Parse(content);
-                                string testname = (string)testdata["testname"];
-                                int robotnr = int.Parse((string)testdata["robotnr"]);
-                                string args = (string)testdata["args"];
 
-
-                                var scenarioStartPos = testname.LastIndexOf("."); //assuming senario name doesnt have "."
-                                var benchmarkStartPos = testname.LastIndexOf(".", scenarioStartPos - 1); //searches backward
-
-                                var scenarioName = testname.Substring(scenarioStartPos + 1).Trim(); //why is there extra space?
-                                var benchmarkName = testname.Substring(benchmarkStartPos + 1, scenarioStartPos - benchmarkStartPos - 1);
-
-                                var benchmark = benchmarks.ByName(benchmarkName);
-                                var scenarios = benchmark.Scenarios.Where(s => s.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
-
-                                if (scenarios.Count() != 1) //i.e. no scenorio or more than one scenario with same name.
-                                {
-                                    //TODO: Ask sebastian about error handling.
-                                    Trace.TraceInformation("No such scenario found");
-                                    continue;
-                                }
-
-                                var scenario = scenarios.First();
-                                string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
-                                String retval;
-                                var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
-                                
-                                //Do not catch here. Let the surrounding catch handle the exception (which will also notify the conductor)
-                                retval = await scenario.RobotScript(client, robotnr, args);
-                                
-                                //  LoadGenerator -> Conductor : DONE robotnr stats retval
-
-                                var stats = client.Stats;
-                                BinaryFormatter bf = new BinaryFormatter();
-                                string statsBase64 = null;
-                                using (MemoryStream ms = new MemoryStream())
-                                {
-                                    bf.Serialize(ms, stats);
-                                    ms.Flush();
-                                    statsBase64 = System.Convert.ToBase64String(ms.ToArray());
-                                    byte[] converted = System.Convert.FromBase64String(statsBase64);
-                                    Array.Equals(converted, ms.ToArray());
-                                }
-
-                                //var statsBase64 = System.Convert.ToBase64String();
-                                //var message = "DONE " + robotnr.ToString() + " " + statsBase64 + " " + retval;
-                                JObject message = JObject.FromObject(new
-                                {
-                                    type = "DONE",
-                                    robotnr = robotnr.ToString(),
-                                    stats = statsBase64,
-                                    retval = retval
-                                });
-                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
-                                await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
-                                Trace.TraceInformation("Sent " + message);
                             }
                         }
                     }
