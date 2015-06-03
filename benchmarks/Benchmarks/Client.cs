@@ -128,6 +128,10 @@ namespace Benchmarks
                     }
                     throw ex;
                 }
+                else
+                {
+                    throw we;
+                }
             }
             finally
             {
