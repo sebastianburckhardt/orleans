@@ -29,54 +29,62 @@ namespace Azure.Storage
              * Staleness bound is set to int.maxValue
              */ 
 
-            new AzureTableStorage(1,180,100,1,1,100),
-            new AzureTableStorage(1,180,100,1,0,100),
-            new AzureTableStorage(1,180,100,0,0,100),
-            new AzureTableStorage(1,180,0,1,1,100),
-            new AzureTableStorage(1,180,0,1,0,100),
-            new AzureTableStorage(1,180,0,0,0,100),
+            new AzureTableStorage(1,60,100,1,1,100),
+            new AzureTableStorage(1,60,100,1,0,100),
+            new AzureTableStorage(1,60,100,0,0,100),
+            new AzureTableStorage(1,60,0,1,1,100),
+            new AzureTableStorage(1,60,0,1,0,100),
+            new AzureTableStorage(1,60,0,0,0,100),
 
-            new AzureTableDirect(1,180,100,1,1,100),
-            new AzureTableDirect(1,180,100,1,0,100),
-            new AzureTableDirect(1,180,100,0,0,100),
-            new AzureTableDirect(1,180,0,1,1,100),
-            new AzureTableDirect(1,180,0,1,0,100),
-            new AzureTableDirect(1,180,0,0,0,100),
+            new AzureTableStorage(1,30,100,1,1,100),
+            new AzureTableStorage(1,30,100,1,0,100),
+            new AzureTableStorage(1,30,100,0,0,100),
+            new AzureTableStorage(1,30,0,1,1,100),
+            new AzureTableStorage(1,30,0,1,0,100),
+            new AzureTableStorage(1,30,0,0,0,100),
 
-            new AzureTableDirect(5,180,100,1,1,100),
-            new AzureTableDirect(5,180,100,1,0,100),
-            new AzureTableDirect(5,180,100,0,0,100),
-            new AzureTableDirect(5,180,0,1,1,100),
-            new AzureTableDirect(5,180,0,1,0,100),
-            new AzureTableDirect(5,180,0,0,0,100),
 
-            new AzureTableDirect(10,180,100,1,1,100),
-            new AzureTableDirect(10,180,100,1,0,100),
-            new AzureTableDirect(10,180,100,0,0,100),
-            new AzureTableDirect(10,180,0,1,1,100),
-            new AzureTableDirect(10,180,0,1,0,100),
-            new AzureTableDirect(10,180,0,0,0,100),
+            new AzureTableDirect(1,60,100,1,1,100),
+            new AzureTableDirect(1,60,100,1,0,100),
+            new AzureTableDirect(1,60,100,0,0,100),
+            new AzureTableDirect(1,60,0,1,1,100),
+            new AzureTableDirect(1,60,0,1,0,100),
+            new AzureTableDirect(1,60,0,0,0,100),
 
-            new AzureTableDirect(20,180,100,1,1,100),
-            new AzureTableDirect(20,180,100,1,0,100),
-            new AzureTableDirect(20,180,100,0,0,100),
-            new AzureTableDirect(20,180,0,1,1,100),
-            new AzureTableDirect(20,180,0,1,0,100),
-            new AzureTableDirect(20,180,0,0,0,100),
+            new AzureTableDirect(5,60,100,1,1,100),
+            new AzureTableDirect(5,60,100,1,0,100),
+            new AzureTableDirect(5,60,100,0,0,100),
+            new AzureTableDirect(5,60,0,1,1,100),
+            new AzureTableDirect(5,60,0,1,0,100),
+            new AzureTableDirect(5,60,0,0,0,100),
 
-            new AzureTableDirect(50,180,100,1,1,100),
-            new AzureTableDirect(50,180,100,1,0,100),
-            new AzureTableDirect(50,180,100,0,0,100),
-            new AzureTableDirect(50,180,0,1,1,100),
-            new AzureTableDirect(50,180,0,1,0,100),
-            new AzureTableDirect(50,180,0,0,0,100),
+            new AzureTableDirect(10,60,100,1,1,100),
+            new AzureTableDirect(10,60,100,1,0,100),
+            new AzureTableDirect(10,60,100,0,0,100),
+            new AzureTableDirect(10,60,0,1,1,100),
+            new AzureTableDirect(10,60,0,1,0,100),
+            new AzureTableDirect(10,60,0,0,0,100),
 
-              new AzureTableDirect(100,180,100,1,1,100),
-            new AzureTableDirect(100,180,100,1,0,100),
-            new AzureTableDirect(100,180,100,0,0,100),
-            new AzureTableDirect(100,180,0,1,1,100),
-            new AzureTableDirect(100,180,0,1,0,100),
-            new AzureTableDirect(100,180,0,0,0,100),
+            new AzureTableDirect(20,60,100,1,1,100),
+            new AzureTableDirect(20,60,100,1,0,100),
+            new AzureTableDirect(20,60,100,0,0,100),
+            new AzureTableDirect(20,60,0,1,1,100),
+            new AzureTableDirect(20,60,0,1,0,100),
+            new AzureTableDirect(20,60,0,0,0,100),
+
+            new AzureTableDirect(50,60,100,1,1,100),
+            new AzureTableDirect(50,60,100,1,0,100),
+            new AzureTableDirect(50,60,100,0,0,100),
+            new AzureTableDirect(50,60,0,1,1,100),
+            new AzureTableDirect(50,60,0,1,0,100),
+            new AzureTableDirect(50,60,0,0,0,100),
+
+              new AzureTableDirect(100,60,100,1,1,100),
+            new AzureTableDirect(100,60,100,1,0,100),
+            new AzureTableDirect(100,60,100,0,0,100),
+            new AzureTableDirect(100,60,0,1,1,100),
+            new AzureTableDirect(100,60,0,1,0,100),
+            new AzureTableDirect(100,60,0,0,0,100),
            
         };
 
@@ -133,7 +141,7 @@ namespace Azure.Storage
                 HttpRequestAzureTable request = null;
                 if (requestType == AzureCommon.OperationType.UPDATE)
                 {
-                    ByteEntity entity = Azure.Storage.ByteEntity.FromStringToEntity(body);
+                    ByteEntity entity = Azure.Storage.ByteEntity.FromJsonToEntity(body);
                     request = new HttpRequestAzureTable(requestType, numReq, table, null, null, entity);
                 }
                 else

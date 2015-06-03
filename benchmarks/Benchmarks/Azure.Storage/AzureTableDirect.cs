@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
+using System.Diagnostics;
 
 #pragma warning disable 1998
 
@@ -150,14 +151,18 @@ namespace Azure.Storage
             CloudTableClient azureClient = AzureCommon.getTableClient();
             bool created = AzureCommon.createTableCheck(azureClient, testTable);
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-            while(true) 
+            Stopwatch s = new Stopwatch();
+            s.Start();
+            while (true)
             {
-                end = DateTime.Now;
-                if ((end - begin).TotalSeconds > runTime) break;
+                s.Stop();
+
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
 
                 nextOp = generateOperationType();
+              
                 switch (nextOp)
                 {
                     case AzureCommon.OperationType.READ:
@@ -196,7 +201,7 @@ namespace Azure.Storage
 
             string result = string.Format("Executed {0}% Reads {0}% Writes \n ", ((double)totReads / (double)totOps) * 100, ((double)totWrites / (double)totOps) * 100);
 
-            return totOps.ToString() + "-" + begin + "-" + end;
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
 
         }
 

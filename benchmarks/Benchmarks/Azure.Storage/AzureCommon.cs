@@ -36,6 +36,7 @@ namespace Azure.Storage
         }
 
 
+   
 
         public static CloudTableClient getTableClient(string pConnectionKey)
         {
@@ -58,7 +59,9 @@ namespace Azure.Storage
             string connectionKey = CloudConfigurationManager.GetSetting("StorageConnectionString");
             if (connectionKey == null)
             {
-                throw new Exception("No connection key specified");
+                if (!Common.Util.RunningInAzureSimulator())
+                    throw new Exception("No connection key specified");
+                else connectionKey = "UseDevStorage=true";
             }
             else
             {
@@ -70,10 +73,17 @@ namespace Azure.Storage
 
         public static CloudTable createTable(CloudTableClient pClient, string pName)
         {
+            IEnumerable<CloudTable> tables = pClient.ListTables();
+
+            
+            foreach (CloudTable t in tables) {
+                
+                Console.WriteLine(t);
+            }
             CloudTable table = pClient.GetTableReference(pName);
             if (!table.CreateIfNotExists())
             {
-                throw new Exception("Table already existed");
+           //     throw new Exception("Table already existed");
             }
             return table;
         }
@@ -144,6 +154,16 @@ namespace Azure.Storage
                         TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, pPartitionKey));
             return table.ExecuteQuery(rangeQuery);
         }
+
+        public static IEnumerable<T> findEntitiesInPartition<T>(CloudTableClient pClient, string pName, string pPartitionKey)
+            where T: ITableEntity, new()
+        {
+            CloudTable table = pClient.GetTableReference(pName);
+            TableQuery<T> rangeQuery = new TableQuery<T>().Where(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, pPartitionKey));
+            return table.ExecuteQuery(rangeQuery);
+        }
+
 
         public static Task<TableResult> findEntity<T>(CloudTableClient pClient, string pName, string pPartitionKey, string pRowKey) where T : TableEntity, new()
         {
@@ -218,8 +238,20 @@ namespace Azure.Storage
             Random rnd = new Random();
             byte[] bytes = new byte[pByteLength];
             rnd.NextBytes(bytes);
-            return Encoding.ASCII.GetString(bytes);
+            return ToAzureKeyString(Encoding.ASCII.GetString(bytes));
         }
 
+        public static string ToAzureKeyString(string str)
+        {
+            var sb = new StringBuilder();
+            foreach (var c in str.Where(c => c != '/'
+                            && c != '\\'
+                            && c != '#'
+                            && c != '/'
+                            && c != '?'
+                            && !char.IsControl(c)))
+                sb.Append(c);
+            return sb.ToString();
+        }
     }
 }

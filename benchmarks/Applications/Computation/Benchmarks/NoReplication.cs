@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 
 #pragma warning disable 1998
@@ -113,14 +114,15 @@ namespace Computation.Benchmark
             rnd.NextBytes(nextWrite);
 
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while (true)
             {
-                end = DateTime.Now;
-                if ((end - begin).TotalSeconds > runTime) break;
-                 //TODO: refactor
+                s.Stop();
+
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
 
                 nextOp = generateOperationType();
 
@@ -150,8 +152,7 @@ namespace Computation.Benchmark
 
             Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
 
-            throughput = (double) totOps / ((double) (end - begin).TotalSeconds);
-            return throughput.ToString();
+            return totOps.ToString();
         }
 
         private OperationType generateOperationType()

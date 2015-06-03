@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 
 #pragma warning disable 1998
@@ -126,16 +127,16 @@ namespace Leaderboard.Benchmark
             totWrites = 0;
             totOps = 0;
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
-
-            //TODO: refactor
+            Stopwatch s = new Stopwatch();
+            s.Start();
             while (true)
             {
+                s.Stop();
 
-                end = DateTime.Now;
-                if ((end - begin).TotalSeconds > runTime) break;
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
+
                 nextOp = generateOperationType();
                 switch (nextOp)
                 {
@@ -161,11 +162,9 @@ namespace Leaderboard.Benchmark
                 } // end switch
 
             }
-                Util.Assert(totReads == (percentRead * totOps / 100), "Incorrect Number Reads " + totReads);
-                Util.Assert(totWrites == (percentWrite * totOps / 100), "Incorrect Number Writes " + totWrites);
 
                 Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
-                return totOps.ToString() + "-" + begin + "-" + end;
+                return totOps.ToString() + "-" + s.ElapsedMilliseconds;
         }
     }
 

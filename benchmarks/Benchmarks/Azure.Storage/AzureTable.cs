@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
+using System.Diagnostics;
 
 #pragma warning disable 1998
 
@@ -65,24 +66,27 @@ namespace Azure.Storage
         {
             var robotrequests = new Task<string>[numRobots];
 
-            // start each robot
-            for (int i = 0; i < numRobots; i++)
-                robotrequests[i] = context.RunRobot(i, "");
 
-            // wait for all robots
-            await Task.WhenAll(robotrequests);
+                // start each robot
+                for (int i = 0; i < numRobots; i++)
+                    robotrequests[i] = context.RunRobot(i, "");
 
-            int totalOps = 0;
-            double throughput = 0.0;
-            // check robot responses
-            for (int i = 0; i < numRobots; i++)
-            {
-                string response = robotrequests[i].Result;
-                string[] res = response.Split('-');
-                totalOps += int.Parse(res[0]);
-            }
-            throughput = totalOps / runTime;
-            return throughput.ToString();
+                // wait for all robots
+                await Task.WhenAll(robotrequests);
+
+                int totalOps = 0;
+                double throughput = 0.0;
+                // check robot responses
+                for (int i = 0; i < numRobots; i++)
+                {
+                    string response = robotrequests[i].Result;
+                    string[] res = response.Split('-');
+                    totalOps += int.Parse(res[0]);
+                }
+                throughput = totalOps / runTime;
+                return throughput.ToString();
+           
+  
         }
 
 
@@ -140,26 +144,34 @@ namespace Azure.Storage
             int totReads = 0;
             int totWrites = 0;
             byte[] nextPayload = new byte[payloadSize];
-            string testTable = "testTable";
+            string testTable = "helloworld";
             ByteEntity nextEntity = null;
             string nextResult = null;
             int totOps = 0;
 
             nextResult = await context.ServiceRequest(new HttpRequestAzureTable(AzureCommon.OperationType.CREATE, totOps * robotnumber, testTable, null, null, null));
 
-            var begin = DateTime.Now;
-            var end = DateTime.Now;
-
-            while(true)
+            Stopwatch s = new Stopwatch();
+            s.Start();
+            while (true)
             {
-                end = DateTime.Now;
-                if ((end - begin).TotalSeconds > runTime) break;
+                s.Stop();
+
+                if (s.ElapsedMilliseconds > runTime * 1000) break;
+
+                s.Start();
+
                 nextOp = generateOperationType();
+              
                 switch (nextOp)
                 {
                     case AzureCommon.OperationType.READ:
                         nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, totOps * robotnumber, testTable, generatePartitionKey(), generateRowKey(), null));
                         totReads++;
+                        if (nextResult.Equals("404"))
+                        {
+                            throw new Exception("HTTP Return Code " + nextResult);
+                        }
                         if (nextResult.Equals(""))
                         {
                             Console.Write("Empty Entity \n ");
@@ -175,7 +187,7 @@ namespace Azure.Storage
                         nextEntity = new ByteEntity(generatePartitionKey(), generateRowKey(), nextPayload);
                         nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, totOps * robotnumber, testTable, generatePartitionKey(), generateRowKey(), nextEntity));
                         totWrites++;
-                        if (!nextResult.Equals("200"))
+                        if (!nextResult.Equals("204"))
                         {
                             
                             throw new Exception("HTTP Return Code " + nextResult);
@@ -189,7 +201,7 @@ namespace Azure.Storage
 
             string result = string.Format("Executed {0}% Reads {0}% Writes \n ", ((double)totReads / (double)totOps) * 100, ((double)totWrites / (double)totOps) * 100);
 
-            return totOps.ToString() + "-" + begin + "-" + end;
+            return totOps.ToString() + "-" + s.ElapsedMilliseconds;
 
         }
 
@@ -216,6 +228,8 @@ namespace Azure.Storage
             this.partitionKey = pPartitionKey;
             this.rowKey = pRowKey;
             this.payload = pEntity;
+
+            if (tableName == null) throw new Exception("Incorrect parameters");
         }
 
 
@@ -265,7 +279,7 @@ namespace Azure.Storage
                 }
                 else if (requestType == AzureCommon.OperationType.UPDATE)
                 {
-                    return "POST size?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq;
+                    return "POST azure?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&table=" + tableName;
                 }
                 else if (requestType == AzureCommon.OperationType.UPDATE_BATCH)
                 {
@@ -284,7 +298,7 @@ namespace Azure.Storage
             {
                 // return payload;
                 if (payload == null) return null;
-                else return ByteEntity.FromEntityToString(payload);
+                else return ByteEntity.FromEntityToJsonString(payload);
 
             }
         }
@@ -300,10 +314,9 @@ namespace Azure.Storage
             // every request. Make this persistent somehow?
             if (requestType == AzureCommon.OperationType.CREATE)
             {
-                bool ret = AzureCommon.createTableCheck(tableClient, tableName);
-                if (ret) result = "Table Created";
-                else result = "Could not create table";
-                return result;
+                CloudTable table = AzureCommon.createTable(tableClient, tableName);
+                //todo : handle error
+                return "ok";
             }
             if (requestType == AzureCommon.OperationType.READ)
             {
@@ -311,7 +324,7 @@ namespace Azure.Storage
                     await AzureCommon.findEntity<ByteEntity>(tableClient, tableName, partitionKey, rowKey);
                 if (res.HttpStatusCode == 404)
                 {
-                    result = res.HttpStatusCode.ToString();
+                    result = "";
                 }
                 else
                 {
@@ -348,7 +361,7 @@ namespace Azure.Storage
                 return "Unimplemented";
             }
 
-            return "error, incompatible message type";
+            return "ok";
         }
 
 

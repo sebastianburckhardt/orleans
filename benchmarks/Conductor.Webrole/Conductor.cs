@@ -115,7 +115,12 @@ namespace Conductor.Webrole
 
                     Broadcast("Result", result + " " + Util.PrintStats(overallstats));
 
-                    Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name,DateTime.Now, result,  overallstats);
+                    LatencyDistribution stats = null;
+                    if (overallstats.Any()) 
+                    {
+                        stats = overallstats.First().Value;
+                    }
+                    Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result, stats);
                  //   Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result);
 
                     TableResult logResult =  AzureCommon.updateEntity<Azure.Storage.StatEntity>(tableClient, STAT_TABLE, statEntity).Result;
