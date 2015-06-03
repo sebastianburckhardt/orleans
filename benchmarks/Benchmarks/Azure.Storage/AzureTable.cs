@@ -66,24 +66,27 @@ namespace Azure.Storage
         {
             var robotrequests = new Task<string>[numRobots];
 
-            // start each robot
-            for (int i = 0; i < numRobots; i++)
-                robotrequests[i] = context.RunRobot(i, "");
 
-            // wait for all robots
-            await Task.WhenAll(robotrequests);
+                // start each robot
+                for (int i = 0; i < numRobots; i++)
+                    robotrequests[i] = context.RunRobot(i, "");
 
-            int totalOps = 0;
-            double throughput = 0.0;
-            // check robot responses
-            for (int i = 0; i < numRobots; i++)
-            {
-                string response = robotrequests[i].Result;
-                string[] res = response.Split('-');
-                totalOps += int.Parse(res[0]);
-            }
-            throughput = totalOps / runTime;
-            return throughput.ToString();
+                // wait for all robots
+                await Task.WhenAll(robotrequests);
+
+                int totalOps = 0;
+                double throughput = 0.0;
+                // check robot responses
+                for (int i = 0; i < numRobots; i++)
+                {
+                    string response = robotrequests[i].Result;
+                    string[] res = response.Split('-');
+                    totalOps += int.Parse(res[0]);
+                }
+                throughput = totalOps / runTime;
+                return throughput.ToString();
+           
+  
         }
 
 

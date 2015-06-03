@@ -62,9 +62,15 @@ namespace Azure.Storage
 
         public static ByteEntity FromJsonToEntity(string pEntity)
         {
-            
-            JObject message = JObject.Parse(pEntity);
-            return new ByteEntity((string) message["pkey"], (String) message["rkey"], Encoding.ASCII.GetBytes((string)message["payload"]));
+            try
+            {
+                JObject message = JObject.Parse(pEntity);
+                return new ByteEntity((string)message["pkey"], (String)message["rkey"], Encoding.ASCII.GetBytes((string)message["payload"]));
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Incorrect JSON " + e.ToString() + " " + pEntity);
+            }
         }
         public override bool Equals(object obj)
         {
