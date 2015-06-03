@@ -67,9 +67,9 @@ namespace Orleans.Azure.Silos
             config.StandardLoad();
 
             // First example of how to configure an existing provider
-            Example_ConfigureExistingStorageProvider(config);
-            Example_ConfigureNewStorageProvider(config);
-            Example_ConfigureNewBootstrapProvider(config);
+            //Example_ConfigureExistingStorageProvider(config);
+            //Example_ConfigureNewStorageProvider(config);
+            //Example_ConfigureNewBootstrapProvider(config);
 
             // It is IMPORTANT to start the silo not in OnStart but in Run.
             // Azure may not have the firewalls open yet (on the remote silos) at the OnStart phase.

@@ -26,4 +26,5 @@ SET UseBackgroundGC="True"
 
 PowerShell.exe -executionpolicy unrestricted -command ".\GCSettingsManagement.ps1" -serverGC %UseServerGC% -backgroundGC %UseBackgroundGC%
 
+:EOF
 Exit /b
