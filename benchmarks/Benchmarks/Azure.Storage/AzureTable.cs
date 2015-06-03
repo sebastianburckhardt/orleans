@@ -168,6 +168,10 @@ namespace Azure.Storage
                     case AzureCommon.OperationType.READ:
                         nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, totOps * robotnumber, testTable, generatePartitionKey(), generateRowKey(), null));
                         totReads++;
+                        if (nextResult.Equals("404"))
+                        {
+                            throw new Exception("HTTP Return Code " + nextResult);
+                        }
                         if (nextResult.Equals(""))
                         {
                             Console.Write("Empty Entity \n ");
@@ -320,7 +324,7 @@ namespace Azure.Storage
                     await AzureCommon.findEntity<ByteEntity>(tableClient, tableName, partitionKey, rowKey);
                 if (res.HttpStatusCode == 404)
                 {
-                    result = res.HttpStatusCode.ToString();
+                    result = "";
                 }
                 else
                 {
