@@ -69,11 +69,20 @@ namespace Leaderboard.Benchmark
             int totalOps = 0;
             double throughput = 0.0;
             // check robot responses
+
             for (int i = 0; i < numRobots; i++)
             {
-                string response = robotrequests[i].Result;
-                string[] res = response.Split('-');
-                totalOps += int.Parse(res[0]);
+                string response = "";
+                try
+                {
+                    response = robotrequests[i].Result;
+                    string[] res = response.Split('-');
+                    totalOps += int.Parse(res[0]);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Robot failed to return totOps value " + response + " " + e.ToString());
+                }
             }
             throughput = totalOps / runTime;
             return throughput.ToString();
@@ -164,7 +173,7 @@ namespace Leaderboard.Benchmark
             }
 
                 Console.Write("Executed {0} reads, {1} writes \n", totReads, totWrites);
-                return totOps.ToString() + "-" + s.ElapsedMilliseconds;
+                return totOps.ToString();
         }
     }
 

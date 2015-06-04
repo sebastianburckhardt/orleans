@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NetworkConfiguration xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/ServiceHosting/2011/07/NetworkConfiguration">
+  <VirtualNetworkConfiguration>
+    <Dns>
+      <DnsServers>
+        <DnsServer name="DN1" IPAddress="10.1.0.10" />
+        <DnsServer name="DNS1" IPAddress="10.1.0.10" />
+        <DnsServer name="DNS2" IPAddress="10.2.0.10" />
+      </DnsServers>
+    </Dns>
+    <LocalNetworkSites>
+      <LocalNetworkSite name="vneteurope">
+        <AddressSpace>
+          <AddressPrefix>10.2.0.0/16</AddressPrefix>
+        </AddressSpace>
+        <VPNGatewayAddress>10.1.0.4</VPNGatewayAddress>
+      </LocalNetworkSite>
+      <LocalNetworkSite name="vnetuswest">
+        <AddressSpace>
+          <AddressPrefix>10.1.0.0/16</AddressPrefix>
+        </AddressSpace>
+        <VPNGatewayAddress>10.2.0.4</VPNGatewayAddress>
+      </LocalNetworkSite>
+    </LocalNetworkSites>
+    <VirtualNetworkSites>
+      <VirtualNetworkSite name="vneteurope" Location="West Europe">
+        <AddressSpace>
+          <AddressPrefix>10.2.0.0/16</AddressPrefix>
+        </AddressSpace>
+        <Subnets>
+          <Subnet name="Subnet-1">
+            <AddressPrefix>10.2.0.0/19</AddressPrefix>
+          </Subnet>
+          <Subnet name="GatewaySubnet">
+            <AddressPrefix>10.2.32.0/29</AddressPrefix>
+          </Subnet>
+        </Subnets>
+        <DnsServersRef>
+          <DnsServerRef name="DNS2" />
+        </DnsServersRef>
+        <Gateway>
+          <ConnectionsToLocalNetwork>
+            <LocalNetworkSiteRef name="vnetuswest">
+              <Connection type="IPsec" />
+            </LocalNetworkSiteRef>
+          </ConnectionsToLocalNetwork>
+        </Gateway>
+      </VirtualNetworkSite>
+      <VirtualNetworkSite name="vnetuswest" Location="West US">
+        <AddressSpace>
+          <AddressPrefix>10.1.0.0/16</AddressPrefix>
+        </AddressSpace>
+        <Subnets>
+          <Subnet name="GatewaySubnet">
+            <AddressPrefix>10.1.0.0/29</AddressPrefix>
+          </Subnet>
+        </Subnets>
+        <DnsServersRef>
+          <DnsServerRef name="DNS1" />
+        </DnsServersRef>
+        <Gateway>
+          <ConnectionsToLocalNetwork>
+            <LocalNetworkSiteRef name="vneteurope">
+              <Connection type="IPsec" />
+            </LocalNetworkSiteRef>
+          </ConnectionsToLocalNetwork>
+        </Gateway>
+      </VirtualNetworkSite>
+    </VirtualNetworkSites>
+  </VirtualNetworkConfiguration>
+</NetworkConfiguration>

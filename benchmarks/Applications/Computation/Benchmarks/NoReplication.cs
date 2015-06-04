@@ -73,9 +73,17 @@ namespace Computation.Benchmark
             // check robot responses
             for (int i = 0; i < numRobots; i++)
             {
-                string response = robotrequests[i].Result;
-                string[] res = response.Split('-');
-                totalOps += int.Parse(res[0]);
+                string response = "";
+                try
+                {
+                    response = robotrequests[i].Result;
+                    string[] res = response.Split('-');
+                    totalOps += int.Parse(res[0]);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Robot failed to return totOps value " + response + " " + e.ToString());
+                }
             }
             throughput = totalOps / runTime;
             return throughput.ToString();

@@ -85,9 +85,17 @@ namespace Computation.Benchmark
             // check robot responses
             for (int i = 0; i < numRobots; i++)
             {
-                string response = robotrequests[i].Result;
-                string[] res = response.Split('-');
-                totalOps += int.Parse(res[0]);
+                string response = "";
+                try
+                {
+                    response = robotrequests[i].Result;
+                    string[] res = response.Split('-');
+                    totalOps += int.Parse(res[0]);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Robot failed to return totOps value " + response + " " + e.ToString());
+                }
             }
             throughput = totalOps / runTime;
             return throughput.ToString();
@@ -209,10 +217,6 @@ namespace Computation.Benchmark
 
             } // end for loop
 
-            Util.Assert(totAsyncReads == (percentAsyncRead * totOps / 100), "Incorrect Number Async Reads " + totAsyncReads);
-            Util.Assert(totAsyncWrites == (percentAsyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totAsyncWrites);
-            Util.Assert(totSyncReads == (percentSyncRead * totOps / 100), "Incorrect Number Sync Reads " + totSyncReads);
-            Util.Assert(totSyncWrites == (percentSyncWrite * totOps / 100), "Incorrect Number Sync Writes " + totSyncWrites);
 
 
             Console.Write("Executed {0} sync reads, {1} sync writes, {2} async reads, {3} async writes Throughput {4}\n", totSyncReads, totSyncWrites, totAsyncReads, totAsyncWrites);

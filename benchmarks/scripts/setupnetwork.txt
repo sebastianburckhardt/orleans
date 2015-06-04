@@ -1,0 +1,29 @@
+## Set up two different networks in europe and US
+Set-AzureVNetConfig -ConfigurationPath defaultvnet.netcfg
+### Set Gateways
+## PowerSHell does not support dynamic gateways
+## so this has to be done in the portal
+## by going into networks, dashboard where
+## something will appear that says "new gateway"
+## one must create one for each network, and make
+## sure to select the option dynamic.
+## This takes up to 30 minutes
+## Check if gateway is up
+Get-AzureVNetGateway -VNetName vnetuswest
+Get-AzureVNetGateway -VNetName vneteurope
+
+### When it up, obtain the gateway ip address
+Get-AzureVNetGateway -VNetName vnetuswest | ft VIPAddress
+Get-AzureVNetGateway -VNetName vneteurope | ft VIPAddress
+### Update that in the config, under VPNGatewayAddress
+### Reupload the config file
+Set-AzureVNetConfig -ConfigurationPath defaultvnet.netcfg
+
+## Set shared keys
+Set-AzureVNetGatewayKey -VNetName vnetuswest -LocalNetworkSiteName vneteurope -SharedKey A1B1C23
+Set-AzureVNetGatewayKey -VNetName vneteurope -LocalNetworkSiteName vnetuswest -SharedKey A1B1C23
+
+## Check status
+Get-AzureVNetConnection -VNetName vnetuswest 
+Get-AzureVNetConnection -VNetName vneteurope 
+
