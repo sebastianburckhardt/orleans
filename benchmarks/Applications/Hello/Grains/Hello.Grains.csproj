@@ -53,6 +53,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TCPSenderGrain.cs" />
+    <Compile Include="TCPReceiverGrain.cs" />
     <Compile Include="ReplicatedHelloGrain.cs" />
     <Compile Include="HelloGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -18,14 +18,14 @@
 
 namespace Hello.Grains
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
     using Orleans.CodeGeneration;
     using Orleans;
-    using ReplicatedGrains;
+    using System;
     using System.Runtime.InteropServices;
     using System.Runtime.Serialization;
+    using System.Collections;
+    using System.Collections.Generic;
+    using ReplicatedGrains;
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]

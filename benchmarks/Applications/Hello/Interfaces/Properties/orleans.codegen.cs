@@ -31,6 +31,352 @@ namespace Hello.Interfaces
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    public class TCPReceiverGrainFactory
+    {
+        
+
+                        public static Hello.Interfaces.ITCPReceiverGrain GetGrain(long primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPReceiverGrain), 607480204, primaryKey));
+                        }
+
+                        public static Hello.Interfaces.ITCPReceiverGrain GetGrain(long primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPReceiverGrain), 607480204, primaryKey, grainClassNamePrefix));
+                        }
+
+                        public static Hello.Interfaces.ITCPReceiverGrain GetGrain(System.Guid primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPReceiverGrain), 607480204, primaryKey));
+                        }
+
+                        public static Hello.Interfaces.ITCPReceiverGrain GetGrain(System.Guid primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPReceiverGrain), 607480204, primaryKey, grainClassNamePrefix));
+                        }
+
+            public static Hello.Interfaces.ITCPReceiverGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return TCPReceiverGrainReference.Cast(grainRef);
+            }
+        
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+        [System.SerializableAttribute()]
+        [global::Orleans.CodeGeneration.GrainReferenceAttribute("Hello.Interfaces.Hello.Interfaces.ITCPReceiverGrain")]
+        internal class TCPReceiverGrainReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, Hello.Interfaces.ITCPReceiverGrain
+        {
+            
+
+            public static Hello.Interfaces.ITCPReceiverGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return (Hello.Interfaces.ITCPReceiverGrain) global::Orleans.Runtime.GrainReference.CastInternal(typeof(Hello.Interfaces.ITCPReceiverGrain), (global::Orleans.Runtime.GrainReference gr) => { return new TCPReceiverGrainReference(gr);}, grainRef, 607480204);
+            }
+            
+            protected internal TCPReceiverGrainReference(global::Orleans.Runtime.GrainReference reference) : 
+                    base(reference)
+            {
+            }
+            
+            protected internal TCPReceiverGrainReference(SerializationInfo info, StreamingContext context) : 
+                    base(info, context)
+            {
+            }
+            
+            protected override int InterfaceId
+            {
+                get
+                {
+                    return 607480204;
+                }
+            }
+            
+            public override string InterfaceName
+            {
+                get
+                {
+                    return "Hello.Interfaces.Hello.Interfaces.ITCPReceiverGrain";
+                }
+            }
+            
+            [global::Orleans.CodeGeneration.CopierMethodAttribute()]
+            public static object _Copier(object original)
+            {
+                TCPReceiverGrainReference input = ((TCPReceiverGrainReference)(original));
+                return ((TCPReceiverGrainReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
+            }
+            
+            [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
+            public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+            {
+                TCPReceiverGrainReference input = ((TCPReceiverGrainReference)(original));
+                global::Orleans.Runtime.GrainReference.SerializeGrainReference(input, stream, expected);
+            }
+            
+            [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
+            public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+            {
+                return TCPReceiverGrainReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
+            }
+            
+            public override bool IsCompatible(int interfaceId)
+            {
+                return (interfaceId == this.InterfaceId);
+            }
+            
+            protected override string GetMethodName(int interfaceId, int methodId)
+            {
+                return TCPReceiverGrainMethodInvoker.GetMethodName(interfaceId, methodId);
+            }
+            
+            System.Threading.Tasks.Task<string> Hello.Interfaces.ITCPReceiverGrain.listenMessages()
+            {
+
+                return base.InvokeMethodAsync<System.String>(1179553192, null );
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.MethodInvokerAttribute("Hello.Interfaces.Hello.Interfaces.ITCPReceiverGrain", 607480204)]
+    internal class TCPReceiverGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
+    {
+        
+        int global::Orleans.CodeGeneration.IGrainMethodInvoker.InterfaceId
+        {
+            get
+            {
+                return 607480204;
+            }
+        }
+        
+        global::System.Threading.Tasks.Task<object> global::Orleans.CodeGeneration.IGrainMethodInvoker.Invoke(global::Orleans.Runtime.IAddressable grain, int interfaceId, int methodId, object[] arguments)
+        {
+
+            try
+            {                    if (grain == null) throw new System.ArgumentNullException("grain");
+                switch (interfaceId)
+                {
+                    case 607480204:  // ITCPReceiverGrain
+                        switch (methodId)
+                        {
+                            case 1179553192: 
+                                return ((ITCPReceiverGrain)grain).listenMessages().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                        }
+                    default:
+                        throw new System.InvalidCastException("interfaceId="+interfaceId);
+                }
+            }
+            catch(Exception ex)
+            {
+                var t = new System.Threading.Tasks.TaskCompletionSource<object>();
+                t.SetException(ex);
+                return t.Task;
+            }
+        }
+        
+        public static string GetMethodName(int interfaceId, int methodId)
+        {
+
+            switch (interfaceId)
+            {
+                
+                case 607480204:  // ITCPReceiverGrain
+                    switch (methodId)
+                    {
+                        case 1179553192:
+                            return "listenMessages";
+                    
+                        default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                    }
+
+                default:
+                    throw new System.InvalidCastException("interfaceId="+interfaceId);
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    public class TCPSenderGrainFactory
+    {
+        
+
+                        public static Hello.Interfaces.ITCPSenderGrain GetGrain(long primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPSenderGrain), -1687327068, primaryKey));
+                        }
+
+                        public static Hello.Interfaces.ITCPSenderGrain GetGrain(long primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPSenderGrain), -1687327068, primaryKey, grainClassNamePrefix));
+                        }
+
+                        public static Hello.Interfaces.ITCPSenderGrain GetGrain(System.Guid primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPSenderGrain), -1687327068, primaryKey));
+                        }
+
+                        public static Hello.Interfaces.ITCPSenderGrain GetGrain(System.Guid primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(Hello.Interfaces.ITCPSenderGrain), -1687327068, primaryKey, grainClassNamePrefix));
+                        }
+
+            public static Hello.Interfaces.ITCPSenderGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return TCPSenderGrainReference.Cast(grainRef);
+            }
+        
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+        [System.SerializableAttribute()]
+        [global::Orleans.CodeGeneration.GrainReferenceAttribute("Hello.Interfaces.Hello.Interfaces.ITCPSenderGrain")]
+        internal class TCPSenderGrainReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, Hello.Interfaces.ITCPSenderGrain
+        {
+            
+
+            public static Hello.Interfaces.ITCPSenderGrain Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return (Hello.Interfaces.ITCPSenderGrain) global::Orleans.Runtime.GrainReference.CastInternal(typeof(Hello.Interfaces.ITCPSenderGrain), (global::Orleans.Runtime.GrainReference gr) => { return new TCPSenderGrainReference(gr);}, grainRef, -1687327068);
+            }
+            
+            protected internal TCPSenderGrainReference(global::Orleans.Runtime.GrainReference reference) : 
+                    base(reference)
+            {
+            }
+            
+            protected internal TCPSenderGrainReference(SerializationInfo info, StreamingContext context) : 
+                    base(info, context)
+            {
+            }
+            
+            protected override int InterfaceId
+            {
+                get
+                {
+                    return -1687327068;
+                }
+            }
+            
+            public override string InterfaceName
+            {
+                get
+                {
+                    return "Hello.Interfaces.Hello.Interfaces.ITCPSenderGrain";
+                }
+            }
+            
+            [global::Orleans.CodeGeneration.CopierMethodAttribute()]
+            public static object _Copier(object original)
+            {
+                TCPSenderGrainReference input = ((TCPSenderGrainReference)(original));
+                return ((TCPSenderGrainReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
+            }
+            
+            [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
+            public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+            {
+                TCPSenderGrainReference input = ((TCPSenderGrainReference)(original));
+                global::Orleans.Runtime.GrainReference.SerializeGrainReference(input, stream, expected);
+            }
+            
+            [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
+            public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+            {
+                return TCPSenderGrainReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
+            }
+            
+            public override bool IsCompatible(int interfaceId)
+            {
+                return (interfaceId == this.InterfaceId);
+            }
+            
+            protected override string GetMethodName(int interfaceId, int methodId)
+            {
+                return TCPSenderGrainMethodInvoker.GetMethodName(interfaceId, methodId);
+            }
+            
+            System.Threading.Tasks.Task<string> Hello.Interfaces.ITCPSenderGrain.SayHello(string @s)
+            {
+
+                return base.InvokeMethodAsync<System.String>(-510773597, new object[] {@s} );
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.MethodInvokerAttribute("Hello.Interfaces.Hello.Interfaces.ITCPSenderGrain", -1687327068)]
+    internal class TCPSenderGrainMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
+    {
+        
+        int global::Orleans.CodeGeneration.IGrainMethodInvoker.InterfaceId
+        {
+            get
+            {
+                return -1687327068;
+            }
+        }
+        
+        global::System.Threading.Tasks.Task<object> global::Orleans.CodeGeneration.IGrainMethodInvoker.Invoke(global::Orleans.Runtime.IAddressable grain, int interfaceId, int methodId, object[] arguments)
+        {
+
+            try
+            {                    if (grain == null) throw new System.ArgumentNullException("grain");
+                switch (interfaceId)
+                {
+                    case -1687327068:  // ITCPSenderGrain
+                        switch (methodId)
+                        {
+                            case -510773597: 
+                                return ((ITCPSenderGrain)grain).SayHello((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                        }
+                    default:
+                        throw new System.InvalidCastException("interfaceId="+interfaceId);
+                }
+            }
+            catch(Exception ex)
+            {
+                var t = new System.Threading.Tasks.TaskCompletionSource<object>();
+                t.SetException(ex);
+                return t.Task;
+            }
+        }
+        
+        public static string GetMethodName(int interfaceId, int methodId)
+        {
+
+            switch (interfaceId)
+            {
+                
+                case -1687327068:  // ITCPSenderGrain
+                    switch (methodId)
+                    {
+                        case -510773597:
+                            return "SayHello";
+                    
+                        default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                    }
+
+                default:
+                    throw new System.InvalidCastException("interfaceId="+interfaceId);
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     public class HelloGrainFactory
     {
         

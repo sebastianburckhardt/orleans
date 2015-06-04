@@ -48,6 +48,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ITCPReceiverGrain.cs" />
+    <Compile Include="ITCPSenderGrain.cs" />
     <Compile Include="IHelloGrain.cs" />
     <Compile Include="IReplicatedHelloGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

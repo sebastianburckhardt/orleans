@@ -46,9 +46,10 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-   </ItemGroup>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Benchmark.cs" />
+    <Compile Include="TCPHello.cs" />
     <Compile Include="ReplicatedOrleansHello.cs" />
     <Compile Include="OrleansHello.cs" />
     <Compile Include="HttpHello.cs" />

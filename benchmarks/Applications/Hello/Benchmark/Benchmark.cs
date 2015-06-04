@@ -30,6 +30,8 @@ namespace Hello.Benchmark
             new OrleansHello(4,10),
             new ReplicatedOrleansHello(1,1),
             new ReplicatedOrleansHello(4,10),
+            new TCPHello(4,10),
+
         };
 
         // parsing of http requests
@@ -48,6 +50,10 @@ namespace Hello.Benchmark
                 else if (arguments["command"] == "replicatedorleans")
                 {
                     return new ReplicatedOrleansHelloRequest(int.Parse(arguments["nr"]));
+                }
+                else if (arguments["command"] == "tcp")
+                {
+                    return new HelloTcpRequest(int.Parse(arguments["nr"]),int.Parse(arguments["wr"]));
                 }
             }
 
