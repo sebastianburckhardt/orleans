@@ -98,20 +98,20 @@ namespace Azure.Storage
         }
 
 
-        private AzureCommon.OperationType generateOperationType()
+        private AzureUtils.OperationType generateOperationType()
         {
-            AzureCommon.OperationType retType;
+            AzureUtils.OperationType retType;
             int nextInt;
 
             nextInt = rnd.Next(1, 100);
 
             if (nextInt <= percentReads)
             {
-                retType = AzureCommon.OperationType.READ;
+                retType = AzureUtils.OperationType.READ;
             }
             else
             {
-                retType = AzureCommon.OperationType.UPDATE;
+                retType = AzureUtils.OperationType.UPDATE;
             }
             return retType;
         }
@@ -124,7 +124,7 @@ namespace Azure.Storage
             }
             else
             {
-                return AzureCommon.generateKey(PARTITION_KEY_SIZE);
+                return AzureUtils.generateKey(PARTITION_KEY_SIZE);
             }
             throw new Exception("Parameter out of bound" + samePartition);
         }
@@ -137,7 +137,7 @@ namespace Azure.Storage
             }
             else
             {
-                return AzureCommon.generateKey(PARTITION_KEY_SIZE);
+                return AzureUtils.generateKey(PARTITION_KEY_SIZE);
             }
             throw new Exception("Parameter out of bound" + sameRow);
         }
@@ -148,7 +148,7 @@ namespace Azure.Storage
         {
             Console.Write("PARAMETERS {0} \n", parameters);
 
-            AzureCommon.OperationType nextOp;
+            AzureUtils.OperationType nextOp;
             int totReads = 0;
             int totWrites = 0;
             byte[] nextPayload = new byte[payloadSize];
@@ -157,7 +157,7 @@ namespace Azure.Storage
             string nextResult = null;
             int totOps = 0;
 
-            nextResult = await context.ServiceRequest(new HttpRequestAzureTable(AzureCommon.OperationType.CREATE, totOps * robotnumber, testTable, null, null, null));
+            nextResult = await context.ServiceRequest(new HttpRequestAzureTable(AzureUtils.OperationType.CREATE, totOps * robotnumber, testTable, null, null, null));
 
             Stopwatch s = new Stopwatch();
             s.Start();
@@ -173,7 +173,7 @@ namespace Azure.Storage
               
                 switch (nextOp)
                 {
-                    case AzureCommon.OperationType.READ:
+                    case AzureUtils.OperationType.READ:
                         nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, totOps * robotnumber, testTable, generatePartitionKey(), generateRowKey(), null));
                         totReads++;
                         if (nextResult.Equals("404"))
@@ -190,7 +190,7 @@ namespace Azure.Storage
                         }
                         totOps++;
                         break;
-                    case AzureCommon.OperationType.UPDATE:
+                    case AzureUtils.OperationType.UPDATE:
                         rnd.NextBytes(nextPayload);
                         nextEntity = new ByteEntity(generatePartitionKey(), generateRowKey(), nextPayload);
                         nextResult = await context.ServiceRequest(new HttpRequestAzureTable(nextOp, totOps * robotnumber, testTable, generatePartitionKey(), generateRowKey(), nextEntity));
@@ -227,7 +227,7 @@ namespace Azure.Storage
         /// Constructor for HTTP Calls
         /// </summary>
         /// <param name="pNumReq"></param>
-        public HttpRequestAzureTable(AzureCommon.OperationType pRequestType, int pNumReq, string pTable, string pPartitionKey, string pRowKey, ByteEntity pEntity)
+        public HttpRequestAzureTable(AzureUtils.OperationType pRequestType, int pNumReq, string pTable, string pPartitionKey, string pRowKey, ByteEntity pEntity)
         {
 
             this.requestType = pRequestType;
@@ -244,7 +244,7 @@ namespace Azure.Storage
         // Request number
         private int numReq;
         // Request type
-        private AzureCommon.OperationType requestType;
+        private AzureUtils.OperationType requestType;
         // Payload type (used in UPDATE requests)
         private ByteEntity payload;
         // Desired partition key 
@@ -258,38 +258,38 @@ namespace Azure.Storage
         {
             get
             {
-                if (requestType == AzureCommon.OperationType.CREATE)
+                if (requestType == AzureUtils.OperationType.CREATE)
                 {
                     return "GET azure?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&table=" + tableName;
                 }
-                if (requestType == AzureCommon.OperationType.READ)
+                if (requestType == AzureUtils.OperationType.READ)
                 {
                     return "GET azure?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&table=" + tableName + "&pkey=" + partitionKey + "&rkey=" + rowKey;
                 }
-                else if (requestType == AzureCommon.OperationType.READ_RANGE)
+                else if (requestType == AzureUtils.OperationType.READ_RANGE)
                 {
                     return "GET azure?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&table=" + tableName + "&pkey=" + partitionKey;
 
                 }
-                else if (requestType == AzureCommon.OperationType.READ_BATCH)
+                else if (requestType == AzureUtils.OperationType.READ_BATCH)
                 {
                     throw new NotImplementedException();
                 }
-                else if (requestType == AzureCommon.OperationType.INSERT)
-                {
-                    throw new NotImplementedException();
-
-                }
-                else if (requestType == AzureCommon.OperationType.INSERT_BATCH)
+                else if (requestType == AzureUtils.OperationType.INSERT)
                 {
                     throw new NotImplementedException();
 
                 }
-                else if (requestType == AzureCommon.OperationType.UPDATE)
+                else if (requestType == AzureUtils.OperationType.INSERT_BATCH)
+                {
+                    throw new NotImplementedException();
+
+                }
+                else if (requestType == AzureUtils.OperationType.UPDATE)
                 {
                     return "POST azure?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&table=" + tableName;
                 }
-                else if (requestType == AzureCommon.OperationType.UPDATE_BATCH)
+                else if (requestType == AzureUtils.OperationType.UPDATE_BATCH)
                 {
                     throw new NotImplementedException();
 
@@ -315,21 +315,21 @@ namespace Azure.Storage
         {
             Console.Write("ProcessRequestOnServer {0}  {1} ", numReq, requestType);
 
-            CloudTableClient tableClient = AzureCommon.getTableClient();
+            CloudTableClient tableClient = AzureUtils.getTableClient();
             string result = "ok";
 
             //TODO(natacha): don't know how costly retrieving this is for
             // every request. Make this persistent somehow?
-            if (requestType == AzureCommon.OperationType.CREATE)
+            if (requestType == AzureUtils.OperationType.CREATE)
             {
-                CloudTable table = AzureCommon.createTable(tableClient, tableName);
+                CloudTable table = AzureUtils.createTable(tableClient, tableName);
                 //todo : handle error
                 return "ok";
             }
-            if (requestType == AzureCommon.OperationType.READ)
+            if (requestType == AzureUtils.OperationType.READ)
             {
                 TableResult res =
-                    await AzureCommon.findEntity<ByteEntity>(tableClient, tableName, partitionKey, rowKey);
+                    await AzureUtils.findEntity<ByteEntity>(tableClient, tableName, partitionKey, rowKey);
                 if (res.HttpStatusCode == 404)
                 {
                     result = "";
@@ -342,29 +342,29 @@ namespace Azure.Storage
                 return result;
 
             }
-            else if (requestType == AzureCommon.OperationType.READ_RANGE)
+            else if (requestType == AzureUtils.OperationType.READ_RANGE)
             {
                 return "Unimplemented";
             }
-            else if (requestType == AzureCommon.OperationType.READ_BATCH)
+            else if (requestType == AzureUtils.OperationType.READ_BATCH)
             {
                 return "Unimplemented";
             }
-            else if (requestType == AzureCommon.OperationType.INSERT)
+            else if (requestType == AzureUtils.OperationType.INSERT)
             {
                 return "Unimplemented";
             }
-            else if (requestType == AzureCommon.OperationType.INSERT_BATCH)
+            else if (requestType == AzureUtils.OperationType.INSERT_BATCH)
             {
                 return "Unimplemented";
             }
-            else if (requestType == AzureCommon.OperationType.UPDATE)
+            else if (requestType == AzureUtils.OperationType.UPDATE)
             {
                 TableResult res =
-                        await AzureCommon.updateEntity<ByteEntity>(tableClient, tableName, payload);
+                        await AzureUtils.updateEntity<ByteEntity>(tableClient, tableName, payload);
                 return res.HttpStatusCode.ToString();
             }
-            else if (requestType == AzureCommon.OperationType.UPDATE_BATCH)
+            else if (requestType == AzureUtils.OperationType.UPDATE_BATCH)
             {
                 return "Unimplemented";
             }

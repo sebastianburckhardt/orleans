@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using System;
 
+
+
 namespace Hello.Grains
 {
     /// <summary>
@@ -16,25 +18,39 @@ namespace Hello.Grains
     public class TCPReceiverGrain : Grain, ITCPReceiverGrain
     {
 
+        bool tcpActive = false;
+
         public override Task OnActivateAsync()
         {
-
-            IPHostEntry host;
-            string localIp = "?";
-            host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
+            try
             {
-                if (ip.AddressFamily.ToString() == "InterNetwork")
+                Console.WriteLine("OnActivateAsync");
+                if (!tcpActive)
                 {
-                    localIp = ip.ToString();
-                    Console.WriteLine("IP is {0} ", localIp);
+                    IPHostEntry host;
+                    IPAddress localIp = null;
+                    host = Dns.GetHostEntry(Dns.GetHostName());
+                    foreach (IPAddress ip in host.AddressList)
+                    {
+                        if (ip.AddressFamily.ToString() == "InterNetwork")
+                        {
+                            localIp = ip;
+                            Console.WriteLine("IP is {0} ", localIp);
+                        }
+                    }
+
+                    tcpListener = new TcpListener(localIp, 15000);
+                    tcpListener.Start();
+                    tcpClient = tcpListener.AcceptTcpClient();
+                    Util.register(this, 15000, "mygrain");
+                    tcpActive = true;
+
                 }
             }
-            Console.WriteLine("IPAddress.Any {0} ",IPAddress.Any);
-            
-            tcpListener = new TcpListener(IPAddress.Any, 3000);
-            tcpClient = tcpListener.AcceptTcpClient();
-           
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
             return base.OnActivateAsync();
         }
 
@@ -70,6 +86,11 @@ namespace Hello.Grains
         private TcpClient tcpClient;
 
 
+        public override Task OnDeactivateAsync()
+        {
+            tcpListener.Stop();
+            return base.OnDeactivateAsync();
+        }
     }
 
 

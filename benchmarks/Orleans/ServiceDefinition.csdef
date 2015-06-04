@@ -9,6 +9,7 @@
       <Setting name="DataConnectionString" />
       <Setting name="InCloud" />
       <Setting name="StorageConnectionString" />
+      <Setting name="Region" />
     </ConfigurationSettings>
   </WorkerRole>
   <WorkerRole name="Orleans.Silos" vmsize="ExtraLarge">
@@ -23,10 +24,12 @@
     <ConfigurationSettings>
       <Setting name="DataConnectionString" />
       <Setting name="StorageConnectionString" />
+      <Setting name="Region" />
     </ConfigurationSettings>
     <Endpoints>
       <InternalEndpoint name="OrleansSiloEndpoint" protocol="tcp" port="11111" />
       <InternalEndpoint name="OrleansProxyEndpoint" protocol="tcp" port="30000" />
+      <InternalEndpoint name="TestEndpoint" protocol="tcp" port="15000" />
     </Endpoints>
   </WorkerRole>
 </ServiceDefinition>

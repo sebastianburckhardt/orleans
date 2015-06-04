@@ -79,8 +79,8 @@ namespace Conductor.Webrole
                     continue;
                 }
 
-                CloudTableClient tableClient = AzureCommon.getTableClient("DataConnectionString");
-                AzureCommon.createTableCheck(tableClient, STAT_TABLE);
+                CloudTableClient tableClient = AzureUtils.getTableClient("DataConnectionString");
+                AzureUtils.createTableCheck(tableClient, STAT_TABLE);
 
                 foreach (var scenario in scenarios)
                 {
@@ -123,7 +123,7 @@ namespace Conductor.Webrole
                     Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result, stats);
                  //   Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result);
 
-                    TableResult logResult =  AzureCommon.updateEntity<Azure.Storage.StatEntity>(tableClient, STAT_TABLE, statEntity).Result;
+                    TableResult logResult =  AzureUtils.updateEntity<Azure.Storage.StatEntity>(tableClient, STAT_TABLE, statEntity).Result;
                     if (logResult.HttpStatusCode != 204)
                     {
                         Console.WriteLine("Failed to write results to storage {0}", logResult.HttpStatusCode);

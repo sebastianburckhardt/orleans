@@ -4,6 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.WindowsAzure;
+using Microsoft.Azure;
+using System.Net;
 
 namespace Common
 {
@@ -98,6 +104,9 @@ namespace Common
             }
         }
 
+
+
+
         public static bool RunningInAzureSimulator()
         {
             return Util.MyInstanceName.Contains("deployment");
@@ -116,5 +125,86 @@ namespace Common
                 }
             return b.ToString();
         }
+
+
+
+        public static  string GRAIN_TABLE = "georepgrains";
+
+        public static Endpoints.ServiceDeployments GetRegion()
+        {
+            string region = RoleEnvironment.GetConfigurationSettingValue("region");
+            if (region == null) throw new Exception("Region property not found");
+            switch (region)
+            {
+                case "uswest":
+                    return Endpoints.ServiceDeployments.OrleansGeoUsWest;
+                case "europewest":
+                    return Endpoints.ServiceDeployments.OrleansGeoEuropeWest;
+                default:
+                    throw new Exception("Unknown Region property");
+            }
+        }
+
+        // todo change when more than one silo. 
+        public static async Task<Tuple<IPAddress,int>> getGrainAddress(Endpoints.ServiceDeployments pSiloEndpoint, Type pGrainType, string pGrainId)
+        {
+            string connectionKey = "";
+            IPAddress grainIP = null;
+            int grainPort = 0;
+            GrainEntity registerEntity = null;
+
+            switch (pSiloEndpoint)
+            {
+                case Endpoints.ServiceDeployments.OrleansGeoUsWest:
+                    connectionKey = StorageAccounts.GetConnectionString(StorageAccounts.Account.OrleansGeoUsWest);
+                    break;
+                case Endpoints.ServiceDeployments.OrleansGeoEuropeWest:
+                    connectionKey = StorageAccounts.GetConnectionString(StorageAccounts.Account.OrleansGeoEuropeWest);
+
+                    break;
+                default:
+                    connectionKey = StorageAccounts.GetConnectionString(StorageAccounts.Account.DevStorage);
+                    break;
+            }
+            CloudTableClient tableClient = AzureUtils.getTableClient(CloudStorageAccount.Parse(connectionKey));
+            CloudTable table = tableClient.GetTableReference(GRAIN_TABLE);
+            TableResult result = await AzureUtils.findEntity<GrainEntity>(tableClient,GRAIN_TABLE, pGrainType.ToString(), pGrainId);
+            if (result == null)
+            {
+                throw new Exception("Failed to retrieve grain");
+            }
+            else
+            {
+                registerEntity = (GrainEntity) result.Result;
+                grainIP = registerEntity.payload;
+                grainPort = registerEntity.port;
+            }
+            return new Tuple<IPAddress,int>(grainIP, grainPort);
+
+        }
+
+        public static async void register(Orleans.Grain pGrain, int port, string pKey)
+        {
+            IPHostEntry host;
+            IPAddress localIp = null;
+            host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily.ToString() == "InterNetwork")
+                {
+                    localIp = ip;
+                    Console.WriteLine("IP is {0} ", localIp);
+                }
+            }
+            GrainEntity grain = new GrainEntity(pGrain, localIp, port, pKey);
+            CloudTableClient tableClient = AzureUtils.getTableClient();
+            AzureUtils.createTable(tableClient, GRAIN_TABLE);
+            await AzureUtils.updateEntity<GrainEntity>(tableClient, GRAIN_TABLE, grain);
+        }
+
+
     }
+
+
+
 }

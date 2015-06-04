@@ -18,6 +18,7 @@ namespace Common
             OrleansGeoEuropeWest
         }
 
+
  
         public static string GetConnectionString(Account account)
         {

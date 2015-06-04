@@ -26,7 +26,7 @@ namespace Hello.Benchmark
 
         public int NumRobots { get { return numworkers; } }
 
-        public async Task<string> ConductorScript(IConductorContext context)
+        public async Task<string> ConductorScript(IConductorContext context)    
         {
             var workerrequests = new Task<string>[numworkers];
             for (int i = 0; i < numworkers; i++)
@@ -39,12 +39,11 @@ namespace Hello.Benchmark
 
         public async Task<string> RobotScript(IRobotContext context, int workernumber, string parameters)
         {
-            Task<string>[] requests = new Task<string>[numreqs];
+            string[] requests = new string[numreqs];
 
             for (int i = 0; i < numreqs; i++)
-                requests[i] = context.ServiceRequest(new HelloTcpRequest(numreqs * workernumber + i, workernumber));
+                requests[i] = await context.ServiceRequest(new HelloTcpRequest(numreqs * workernumber + i, workernumber));
 
-            Task.WaitAll(requests);
 
             //verify that all responses are same. this wont work with current implementation. 
             /*string r0 = responses[0];
@@ -56,7 +55,7 @@ namespace Hello.Benchmark
                 }
             }*/
 
-            var responses = string.Join(",", requests.Select((t) => t.Result));
+            var responses = string.Join(",", requests);
 
             return "ok:" + workernumber + ":" + responses;
         }

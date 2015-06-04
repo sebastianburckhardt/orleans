@@ -107,24 +107,24 @@ namespace Azure.Storage
 
 
                 Console.Write("{0}", arguments);
-                AzureCommon.OperationType requestType = (AzureCommon.OperationType)int.Parse(arguments["reqtype"]);
+                AzureUtils.OperationType requestType = (AzureUtils.OperationType)int.Parse(arguments["reqtype"]);
                 int numReq = int.Parse(arguments["numreq"]);
                 string partitionKey = arguments["pkey"];
                 string table = arguments["table"];
 
                 HttpRequestAzureTable request = null;
-                if (requestType == AzureCommon.OperationType.READ)
+                if (requestType == AzureUtils.OperationType.READ)
                 {
                     // READ type
                     string rowKey = arguments["rkey"];
                     request = new HttpRequestAzureTable(requestType, numReq, table, partitionKey, rowKey, null);
                 }
-                else if (requestType == AzureCommon.OperationType.READ_RANGE)
+                else if (requestType == AzureUtils.OperationType.READ_RANGE)
                 {
                     // READ RANGE type
                     request = new HttpRequestAzureTable(requestType, numReq, table, partitionKey, null, null);
                 }
-                else if (requestType == AzureCommon.OperationType.CREATE)
+                else if (requestType == AzureUtils.OperationType.CREATE)
                 {
                     // CREATE type
                     request = new HttpRequestAzureTable(requestType, numReq, table, null, null, null);
@@ -139,12 +139,12 @@ namespace Azure.Storage
             else if (verb == "POST" && string.Join("/", urlpath) == "azure")
             {
                 Console.Write("{0}", arguments);
-                AzureCommon.OperationType requestType = (AzureCommon.OperationType)int.Parse(arguments["reqtype"]);
+                AzureUtils.OperationType requestType = (AzureUtils.OperationType)int.Parse(arguments["reqtype"]);
                 int numReq = int.Parse(arguments["numreq"]);
                 string table = arguments["table"];
 
                 HttpRequestAzureTable request = null;
-                if (requestType == AzureCommon.OperationType.UPDATE)
+                if (requestType == AzureUtils.OperationType.UPDATE)
                 {
                     ByteEntity entity = Azure.Storage.ByteEntity.FromJsonToEntity(body);
                     request = new HttpRequestAzureTable(requestType, numReq, table, null, null, entity);

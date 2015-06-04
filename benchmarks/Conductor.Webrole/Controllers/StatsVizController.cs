@@ -17,8 +17,8 @@ namespace Conductor.Webrole.Controllers
 
         public ActionResult VizBenchmark(string benchmark = "hello")
         {
-            var tableClient = AzureCommon.getTableClient("DataConnectionString");
-            var entity = AzureCommon.findEntitiesInPartition<StatEntity>(tableClient, "results", benchmark);
+            var tableClient = Common.AzureUtils.getTableClient("DataConnectionString");
+            var entity = Common.AzureUtils.findEntitiesInPartition<StatEntity>(tableClient, "results", benchmark);
             
             return View(entity);
         }

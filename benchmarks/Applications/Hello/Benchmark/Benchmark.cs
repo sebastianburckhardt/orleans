@@ -30,7 +30,7 @@ namespace Hello.Benchmark
             new OrleansHello(4,10),
             new ReplicatedOrleansHello(1,1),
             new ReplicatedOrleansHello(4,10),
-            new TCPHello(2,5),
+            new TCPHello(1,5),
 
         };
 
