@@ -17,13 +17,16 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 namespace LoadGenerator.WorkerRole
 {
     public class WorkerRole : RoleEntryPoint
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
-        private readonly BenchmarkList benchmarks = new BenchmarkList();
+        private readonly BenchmarkList benchmarks = new BenchmarkList();        
+        private readonly BlockingCollection<String> lgToConductorMessages = new BlockingCollection<string>();
+        private ClientWebSocket ws = null;
 
         public override void Run()
         {
@@ -68,6 +71,29 @@ namespace LoadGenerator.WorkerRole
 
         private byte[] receiveBuffer = new byte[512];
 
+        
+        private async Task sendPendingMessages()
+        {
+            string msg;
+            while(true)
+            {
+                bool taken = lgToConductorMessages.TryTake(out msg, 100);
+                if (taken)
+                {
+                    var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg));
+                    if (ws != null && ws.State == WebSocketState.Open)
+                    {
+                        await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                    else
+                    {
+                        await Task.Delay(100);
+                        lgToConductorMessages.Add(msg);
+                    }
+                }
+            }
+        }
+
         private async Task StartRobotAsync(string content, WebSocket ws, Func<string, Task> tracer, CancellationToken cancellationToken)
         {
             JObject testdata = JObject.Parse(content);
@@ -98,7 +124,7 @@ namespace LoadGenerator.WorkerRole
             String retval;
             var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
 
-            await tracer("Starting robot: " + robotnr + DateTime.Now.ToString());
+            await tracer("Starting robot: " + robotnr + " at " + DateTime.Now.ToString());
             //Should catch exceptions from the robot script and notify the conductor of the failure. Which may decide to retry if required.
             //no need to disconnect from the conductor since this is the FE error.
             bool success = true;
@@ -111,7 +137,7 @@ namespace LoadGenerator.WorkerRole
                 success = false;
                 retval = ex.Message + " " + ex.StackTrace;
             }
-
+            await tracer("Finished robot: " + robotnr + " at " + DateTime.Now.ToString());
             //  LoadGenerator -> Conductor : DONE robotnr stats retval
 
             var stats = client.Stats;
@@ -145,19 +171,30 @@ namespace LoadGenerator.WorkerRole
                 stats = statsBase64,
                 retval = retval
             });
-            var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
 
-            await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
+            enqueueMessageToConductor(message.ToString());
+            //var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
 
-            Trace.TraceInformation("Sent " + message);
+            //await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
+
+            //Trace.TraceInformation("Sent " + message);
         }
 
+        private void enqueueMessageToConductor(string msg)
+        {
+            lgToConductorMessages.Add(msg);
+        }
 
         private async Task RunAsync(CancellationToken cancellationToken)
         {
             var deployment = RoleEnvironment.DeploymentId;
             var instance = RoleEnvironment.CurrentRoleInstance.Id;
             int connectioncount = 0;
+
+            Task.Run(() => sendPendingMessages());
+            
+            //t.Start();
+
 
             // TODO: Replace the following with your own logic.
             while (!cancellationToken.IsCancellationRequested)
@@ -169,7 +206,7 @@ namespace LoadGenerator.WorkerRole
 
                 Func<string, Task> tracer = null;
 
-                using (var ws = new ClientWebSocket())
+                ws = new ClientWebSocket();
                 {
 
                     try
@@ -194,7 +231,7 @@ namespace LoadGenerator.WorkerRole
 
                             Trace.TraceInformation(string.Format("Sent {0}", message));
                         }
-
+                        
                         // define trace function
                         tracer = async (string s) =>
                         {
@@ -206,12 +243,12 @@ namespace LoadGenerator.WorkerRole
                                     type = "TRACE",
                                     message = s
                                 });
-                                var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
-                                await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
-                                Trace.TraceInformation("Sent " + message);
+                                enqueueMessageToConductor(message.ToString());
+                                //var outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
+                                //await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
+                                //Trace.TraceInformation("Sent " + message);
                             }
                         };
-
 
                         // receive loop
                         while (ws.State == WebSocketState.Open || ws.State == WebSocketState.CloseSent)
@@ -221,8 +258,7 @@ namespace LoadGenerator.WorkerRole
                             int bufsize = receiveBuffer.Length;
                             try
                             {
-                                //receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
-                                receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);
+                                receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), cancellationToken);                                
                             }
                             catch (Exception ex)
                             {
