@@ -110,48 +110,52 @@ namespace LoadGenerator.WorkerRole
 
             var benchmark = benchmarks.ByName(benchmarkName);
             var scenarios = benchmark.Scenarios.Where(s => s.Name.Equals(scenarioName, StringComparison.CurrentCultureIgnoreCase));
-
-            if (scenarios.Count() != 1) //i.e. no scenorio or more than one scenario with same name.
+            String retval = "";
+            bool success = true;
+            string statsBase64 = "";
+            if (scenarios.Count() == 0) //i.e. no scenorio or more than one scenario with same name.
             {
                 //TODO: Ask sebastian about error handling.
-                await tracer("No such scenario found");
+                await tracer("No such scenario found: " + scenarioName);
                 Trace.TraceInformation("No such scenario found");
-                return;
-            }
-
-            var scenario = scenarios.First();
-            string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
-            String retval;
-            var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
-
-            await tracer("Starting robot: " + robotnr + " at " + DateTime.Now.ToString());
-            //Should catch exceptions from the robot script and notify the conductor of the failure. Which may decide to retry if required.
-            //no need to disconnect from the conductor since this is the FE error.
-            bool success = true;
-            try
-            {
-                retval = await scenario.RobotScript(client, robotnr, args);
-            }
-            catch (Exception ex)
-            {
+                retval = "Scenario not found: " + scenarioName;
                 success = false;
-                retval = ex.Message + " " + ex.StackTrace;
             }
-            await tracer("Finished robot: " + robotnr + " at " + DateTime.Now.ToString());
-            //  LoadGenerator -> Conductor : DONE robotnr stats retval
-
-            var stats = client.Stats;
-            BinaryFormatter bf = new BinaryFormatter();
-            string statsBase64 = null;
-            using (MemoryStream ms = new MemoryStream())
+            else
             {
-                bf.Serialize(ms, stats);
-                ms.Flush();
-                statsBase64 = System.Convert.ToBase64String(ms.ToArray());
-                byte[] converted = System.Convert.FromBase64String(statsBase64);
-                Array.Equals(converted, ms.ToArray());
-            }
+                var scenario = scenarios.First();
+                string serviceEndpoint = scenario.RobotServiceEndpoint(robotnr);
+                
+                var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
 
+                await tracer("Starting robot: " + robotnr + " at " + DateTime.Now.ToString());
+                //Should catch exceptions from the robot script and notify the conductor of the failure. Which may decide to retry if required.
+                //no need to disconnect from the conductor since this is the FE error.
+                
+                try
+                {
+                    retval = await scenario.RobotScript(client, robotnr, args);
+                }
+                catch (Exception ex)
+                {
+                    success = false;
+                    retval = ex.Message + " " + ex.StackTrace;
+                }
+                await tracer("Finished robot: " + robotnr + " at " + DateTime.Now.ToString());
+                //  LoadGenerator -> Conductor : DONE robotnr stats retval
+
+                var stats = client.Stats;
+                BinaryFormatter bf = new BinaryFormatter();
+                
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    bf.Serialize(ms, stats);
+                    ms.Flush();
+                    statsBase64 = System.Convert.ToBase64String(ms.ToArray());
+                    byte[] converted = System.Convert.FromBase64String(statsBase64);
+                    Array.Equals(converted, ms.ToArray());
+                }
+            }
             string messagetype;
             if (success)
             {

@@ -67,25 +67,30 @@ namespace Azure.Storage
             base.ReadEntity(properties, operationContext);
             this.latency = new Common.LatencyDistribution();
             latency.Init();
-
-            latency.Max = properties["MaxLatency"].Int64Value.GetValueOrDefault(-1);
-            latency.Min = properties["MinLatency"].Int64Value.GetValueOrDefault(-1);
-            latency.Total = properties["TotalLatency"].Int32Value.GetValueOrDefault(-1);
-                
-            /*results.Add(, new EntityProperty(latency.Max));
-            results.Add("", new EntityProperty(latency.Min));
-            results.Add("", new EntityProperty(latency.Total));*/
-
-            foreach (var prop in properties)
+            try
             {
-                if(prop.Key.StartsWith("L_"))
+                latency.Max = properties["MaxLatency"].Int64Value.GetValueOrDefault(-1);
+                latency.Min = properties["MinLatency"].Int64Value.GetValueOrDefault(-1);
+                latency.Total = properties["TotalLatency"].Int32Value.GetValueOrDefault(-1);
+
+                /*results.Add(, new EntityProperty(latency.Max));
+                results.Add("", new EntityProperty(latency.Min));
+                results.Add("", new EntityProperty(latency.Total));*/
+
+                foreach (var prop in properties)
                 {
-                    int upos = prop.Key.IndexOf("_");
-                    int idx = int.Parse(prop.Key.Substring(upos + 1));
-                    latency.Counts[idx] = prop.Value.Int32Value.GetValueOrDefault(-1);
+                    if (prop.Key.StartsWith("L_"))
+                    {
+                        int upos = prop.Key.IndexOf("_");
+                        int idx = int.Parse(prop.Key.Substring(upos + 1));
+                        latency.Counts[idx] = prop.Value.Int32Value.GetValueOrDefault(-1);
+                    }
                 }
             }
-
+            catch(Exception e)
+            {
+                //?
+            }
             /*var latencyEntity = properties["Latencies"];
             if (latencyEntity != null)
             {
