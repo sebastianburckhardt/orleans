@@ -143,17 +143,18 @@ namespace Conductor.Webrole.Controllers
                             var statsBase64 = (string)message["stats"];
                             var rval = (string)message["retval"];
 
-                            Dictionary<string, LatencyDistribution> stats;
+                            Dictionary<string, LatencyDistribution> stats = null;
 
                             byte[] statsBinary = null;
-
-                            statsBinary = System.Convert.FromBase64String(statsBase64);
-                            BinaryFormatter bf = new BinaryFormatter();
-                            using (MemoryStream ms = new MemoryStream(statsBinary))
+                            if (statsBase64 != null && statsBase64.Trim().Length != 0)
                             {
-                                stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
+                                statsBinary = System.Convert.FromBase64String(statsBase64);
+                                BinaryFormatter bf = new BinaryFormatter();
+                                using (MemoryStream ms = new MemoryStream(statsBinary))
+                                {
+                                    stats = (Dictionary<string, LatencyDistribution>)bf.Deserialize(ms);
+                                }
                             }
-
                             if (messageType.StartsWith("EXCEPTION"))
                             {
                                 rval = "Exception occurred on FrontEnd: (skipping the scenario):" + rval;
