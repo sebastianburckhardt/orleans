@@ -16,6 +16,8 @@ namespace Common
 
         IEnumerable<IScenario> Scenarios { get; }
 
+        IEnumerable<IScenario> generateScenariosFromJSON(string pJsonFile);
+
     }
 
     public interface IScenario
@@ -29,6 +31,7 @@ namespace Common
         Task<string> RobotScript(IRobotContext context, int workernumber, string parameters);
 
         String RobotServiceEndpoint(int workernumber);
+
     }
 
 

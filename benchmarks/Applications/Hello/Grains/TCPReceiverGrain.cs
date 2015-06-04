@@ -47,8 +47,7 @@ namespace Hello.Grains
 
             bytesRead = 0;
 
-            int messagesReceived = 0;
-            while (messagesReceived++ < 5) { 
+
             try
             {
                 bytesRead = await clientStream.ReadAsync(message, 0 , 4096 );
@@ -59,15 +58,11 @@ namespace Hello.Grains
                 throw new Exception(e.ToString());
             }
 
-            if (bytesRead == 0)
-            {
-                break;
-            }
 
             //message has successfully been received
             ASCIIEncoding encoder = new ASCIIEncoding();
 
-            }
+            
             return "Done";
         }
 

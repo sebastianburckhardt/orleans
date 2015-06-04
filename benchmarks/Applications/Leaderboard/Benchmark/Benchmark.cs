@@ -5,9 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 using Common;
+using Newtonsoft.Json;
 using Leaderboard.Interfaces;
-
+using Newtonsoft.Json.Linq;
 #pragma warning disable 1998
 
 namespace Leaderboard.Benchmark
@@ -521,6 +523,14 @@ namespace Leaderboard.Benchmark
              // Sequenced Grain Local Reads, 50/50 Local/Global Writes
              new SequencedLeaderboard(500,60,0,50,25,25,0),
         };
+
+        public IEnumerable<IScenario> generateScenariosFromJSON(string pJsonFile)
+        {
+            JObject jsonObj = (JObject)JsonConvert.DeserializeObject(pJsonFile);
+
+            throw new NotImplementedException();
+        }
+
 
         // parsing of http requests
         public IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body)

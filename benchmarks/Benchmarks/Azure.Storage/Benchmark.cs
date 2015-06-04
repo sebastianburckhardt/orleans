@@ -88,6 +88,11 @@ namespace Azure.Storage
            
         };
 
+        public IEnumerable<IScenario> generateScenariosFromJSON(string pJsonFile)
+        {
+            throw new NotImplementedException();
+        }
+
         // parsing of http requests
         public IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body)
         {

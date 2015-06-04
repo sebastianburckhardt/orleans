@@ -30,9 +30,15 @@ namespace Hello.Benchmark
             new OrleansHello(4,10),
             new ReplicatedOrleansHello(1,1),
             new ReplicatedOrleansHello(4,10),
-            new TCPHello(4,10),
+            new TCPHello(2,5),
 
         };
+
+        public IEnumerable<IScenario> generateScenariosFromJSON(string pJsonFile)
+        {
+            throw new NotImplementedException();
+        }
+
 
         // parsing of http requests
         public IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body)

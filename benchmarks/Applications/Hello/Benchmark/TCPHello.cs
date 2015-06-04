@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
+
 #pragma warning disable 1998
 
 namespace Hello.Benchmark
@@ -90,14 +92,16 @@ namespace Hello.Benchmark
         public async Task<string> ProcessRequestOnServer()
         {
 
-            string endpoint = Common.Endpoints.GetService(wr);
-            if (endpoint.Equals(Common.Endpoints.ServiceDeployments.OrleansGeoUsWest.ToString()))
+            if (wr%2==1)
             {
                 var senderGrain = TCPSenderGrainFactory.GetGrain(0);
+                Console.Write("Say Hello");
                 await senderGrain.SayHello("Hello there");
             }
             else
             {
+                Console.Write("ListenMessages");
+                Thread.Sleep(100);
                 var receiverGrain = TCPReceiverGrainFactory.GetGrain(0);
                 await receiverGrain.listenMessages();
             }

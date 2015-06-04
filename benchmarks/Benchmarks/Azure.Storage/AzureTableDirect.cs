@@ -176,18 +176,13 @@ namespace Azure.Storage
                     case AzureCommon.OperationType.READ:
                         nextResult = await AzureCommon.findEntity<ByteEntity>(azureClient, testTable, generatePartitionKey(), generateRowKey());
                         totReads++;
-                        if (!nextResult.HttpStatusCode.Equals(200))
-                        {
-                            throw new Exception("HTTP Return Code " + nextResult);
-                        }
-                        else
-                        {
+ 
                             ByteEntity b = (ByteEntity)nextResult.Result;
                             if (b != null)
                             {
                                 Console.Write("READ: {0} {1} {2} ", b.PartitionKey, b.RowKey, Encoding.ASCII.GetString(b.payload));
                             }
-                        }
+ 
                         totOps++;
                         break;
                     case AzureCommon.OperationType.UPDATE:
