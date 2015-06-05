@@ -31,8 +31,8 @@ namespace Azure.Storage
             this.date = pDate.ToString();
             this.throughput = pThroughput;
             this.latency = pLatency;
-            this.PartitionKey = AzureCommon.ToAzureKeyString(benchmarkName);
-            this.RowKey = AzureCommon.ToAzureKeyString(scenarioName + pDate.ToString());
+            this.PartitionKey = Common.AzureUtils.ToAzureKeyString(benchmarkName);
+            this.RowKey = Common.AzureUtils.ToAzureKeyString(scenarioName + pDate.ToString());
         }
 
 

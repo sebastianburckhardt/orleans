@@ -94,20 +94,20 @@ namespace Azure.Storage
         }
 
 
-        private AzureCommon.OperationType generateOperationType()
+        private AzureUtils.OperationType generateOperationType()
         {
-            AzureCommon.OperationType retType;
+            AzureUtils.OperationType retType;
             int nextInt;
 
             nextInt = rnd.Next(1, 100);
 
             if (nextInt <= percentReads)
             {
-                retType = AzureCommon.OperationType.READ;
+                retType = AzureUtils.OperationType.READ;
             }
             else
             {
-                retType = AzureCommon.OperationType.UPDATE;
+                retType = AzureUtils.OperationType.UPDATE;
             }
             return retType;
         }
@@ -120,7 +120,7 @@ namespace Azure.Storage
             }
             else
             {
-                return AzureCommon.generateKey(PARTITION_KEY_SIZE);
+                return AzureUtils.generateKey(PARTITION_KEY_SIZE);
             }
             throw new Exception("Parameter out of bound" + samePartition);
         }
@@ -133,7 +133,7 @@ namespace Azure.Storage
             }
             else
             {
-                return AzureCommon.generateKey(PARTITION_KEY_SIZE);
+                return AzureUtils.generateKey(PARTITION_KEY_SIZE);
             }
             throw new Exception("Parameter out of bound" + sameRow);
         }
@@ -145,7 +145,7 @@ namespace Azure.Storage
             Console.Write("PARAMETERS {0} \n", parameters);
 
             string[] param = parameters.Split('-');
-            AzureCommon.OperationType nextOp;
+            AzureUtils.OperationType nextOp;
             int totReads = 0;
             int totWrites = 0;
             int totOps = 0;
@@ -156,8 +156,8 @@ namespace Azure.Storage
             TableResult nextResult = null;
 
 
-            CloudTableClient azureClient = AzureCommon.getTableClient();
-            bool created = AzureCommon.createTableCheck(azureClient, testTable);
+            CloudTableClient azureClient = AzureUtils.getTableClient();
+            bool created = AzureUtils.createTableCheck(azureClient, testTable);
 
             Stopwatch s = new Stopwatch();
             s.Start();
@@ -173,8 +173,8 @@ namespace Azure.Storage
               
                 switch (nextOp)
                 {
-                    case AzureCommon.OperationType.READ:
-                        nextResult = await AzureCommon.findEntity<ByteEntity>(azureClient, testTable, generatePartitionKey(), generateRowKey());
+                    case AzureUtils.OperationType.READ:
+                        nextResult = await AzureUtils.findEntity<ByteEntity>(azureClient, testTable, generatePartitionKey(), generateRowKey());
                         totReads++;
  
                             ByteEntity b = (ByteEntity)nextResult.Result;
@@ -185,11 +185,11 @@ namespace Azure.Storage
  
                         totOps++;
                         break;
-                    case AzureCommon.OperationType.UPDATE:
+                    case AzureUtils.OperationType.UPDATE:
                         rnd.NextBytes(nextPayload);
                         nextEntity = new ByteEntity(generatePartitionKey(), generateRowKey(), nextPayload);
                         Console.Write("UPDATE: {0} {1} {2} ", nextEntity.PartitionKey, nextEntity.RowKey, Encoding.ASCII.GetString(nextEntity.payload));
-                        nextResult = await AzureCommon.updateEntity<ByteEntity>(azureClient, "testTable", nextEntity);
+                        nextResult = await AzureUtils.updateEntity<ByteEntity>(azureClient, "testTable", nextEntity);
                         totWrites++;
                         if (nextResult == null || nextResult.HttpStatusCode != 204)
                         {

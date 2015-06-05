@@ -9,12 +9,12 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure;
 using Microsoft.Azure;
 
-namespace Azure.Storage
+namespace Common
 {
     /// <summary>
     /// Utility class for Azure Storage
     /// </summary>
-    public class AzureCommon
+    public class AzureUtils
     {
         /// <summary>
         /// Returns Storage account associated with specific StorageConnectionString
@@ -36,7 +36,7 @@ namespace Azure.Storage
         }
 
 
-   
+        
 
         public static CloudTableClient getTableClient(string pConnectionKey)
         {
@@ -95,6 +95,13 @@ namespace Azure.Storage
             return ret;
         }
 
+        public static Task<TableResult> dumpExceptions(CloudTableClient pClient, string pPartitionKey, string pRowKey, Exception e)
+        {
+            CloudTable table = createTable(pClient, "exceptions");
+            TextEntity text = new TextEntity(pPartitionKey, pRowKey, e.ToString());
+            var retValue = updateEntity<TextEntity>(pClient, "Exceptions", text);
+            return retValue;
+        }
 
         public static void deleteTable(CloudTableClient pClient, string pName)
         {

@@ -22,9 +22,9 @@ namespace Leaderboard.Grains
         #region Queries
 
         // public Task<Score[]> GetTopTen()
-        public Task<Score[]> GetTopTen(string post)
+        public Task<List<Score>> GetTopTen(string post)
         {
-            return Task.FromResult(topTenScores_.ToArray());
+            return Task.FromResult(topTenScores_);
 
         }
 

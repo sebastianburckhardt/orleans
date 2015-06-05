@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Leaderboard.Interfaces
 {
@@ -8,7 +9,7 @@ namespace Leaderboard.Interfaces
     public interface ILeaderboardGrain : Orleans.IGrain
     {
         Task Post(Score score);
-        Task<Score[]> GetTopTen(string reqId);
+        Task<List<Score>> GetTopTen(string reqId);
 
     }
 

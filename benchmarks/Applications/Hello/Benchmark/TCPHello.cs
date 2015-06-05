@@ -26,25 +26,28 @@ namespace Hello.Benchmark
 
         public int NumRobots { get { return numworkers; } }
 
-        public async Task<string> ConductorScript(IConductorContext context)
+        public async Task<string> ConductorScript(IConductorContext context)    
         {
             var workerrequests = new Task<string>[numworkers];
             for (int i = 0; i < numworkers; i++)
+            {
+                
                 workerrequests[i] = context.RunRobot(i, "");
+                Thread.Sleep(10000);
+            }
 
             await Task.WhenAll(workerrequests);
 
-            return string.Join(",", workerrequests.Select((t) => t.Result));
+            return string.Join("\n\n\n\n", workerrequests.Select((t) => t.Result));
         }
 
         public async Task<string> RobotScript(IRobotContext context, int workernumber, string parameters)
         {
-            Task<string>[] requests = new Task<string>[numreqs];
+            string[] requests = new string[numreqs];
 
             for (int i = 0; i < numreqs; i++)
-                requests[i] = context.ServiceRequest(new HelloTcpRequest(numreqs * workernumber + i, workernumber));
+                requests[i] = await context.ServiceRequest(new HelloTcpRequest(numreqs * workernumber + i, workernumber));
 
-            Task.WaitAll(requests);
 
             //verify that all responses are same. this wont work with current implementation. 
             /*string r0 = responses[0];
@@ -56,7 +59,7 @@ namespace Hello.Benchmark
                 }
             }*/
 
-            var responses = string.Join(",", requests.Select((t) => t.Result));
+            var responses = string.Join(",", requests);
 
             return "ok:" + workernumber + ":" + responses;
         }
@@ -64,7 +67,7 @@ namespace Hello.Benchmark
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            return Endpoints.GetService(workernumber);
+            return Endpoints.GetService(0);
         }
     }
 
@@ -91,9 +94,10 @@ namespace Hello.Benchmark
 
         public async Task<string> ProcessRequestOnServer()
         {
-
+            string response = "ok";
             if (wr%2==1)
             {
+                Thread.Sleep(100);
                 var senderGrain = TCPSenderGrainFactory.GetGrain(0);
                 Console.Write("Say Hello");
                 await senderGrain.SayHello("Hello there");
@@ -101,12 +105,11 @@ namespace Hello.Benchmark
             else
             {
                 Console.Write("ListenMessages");
-                Thread.Sleep(100);
                 var receiverGrain = TCPReceiverGrainFactory.GetGrain(0);
-                await receiverGrain.listenMessages();
+                response = await receiverGrain.listenMessages();
             }
-            
-            return "ok";
+
+            return response;
         }
 
         public async Task<string> ProcessResponseOnClient(string response)

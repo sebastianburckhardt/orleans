@@ -32,15 +32,15 @@ namespace Leaderboard.Grains
 
         #region Queries
 
-        public async Task<Score[]> GetApproxTopTen(string post)
+        public async Task<List<Score>> GetApproxTopTen(string post)
         {
 
-            return (await GetLocalStateAsync()).topTenScores.ToArray();
+            return (await GetLocalStateAsync()).topTenScores;
         }
 
-        public async Task<Score[]> GetExactTopTen(string post)
+        public async Task<List<Score>> GetExactTopTen(string post)
         {
-            return (await GetGlobalStateAsync()).topTenScores.ToArray();
+            return (await GetGlobalStateAsync()).topTenScores;
         }
 
         #endregion
