@@ -26,11 +26,11 @@ namespace Hello.Grains
 
                 Endpoints.ServiceDeployments myRegion = Util.GetRegion();
               
-                /*Endpoints.ServiceDeployments otherRegion = myRegion == Endpoints.ServiceDeployments.OrleansGeoUsWest ?
+                Endpoints.ServiceDeployments otherRegion = myRegion == Endpoints.ServiceDeployments.OrleansGeoUsWest ?
                     Endpoints.ServiceDeployments.OrleansGeoEuropeWest :
                     (myRegion == Endpoints.ServiceDeployments.OrleansGeoEuropeWest? 
-                        Endpoints.ServiceDeployments.OrleansGeoUsWest:Endpoints.ServiceDeployments.Simulator); */
-                Endpoints.ServiceDeployments otherRegion = myRegion;
+                        Endpoints.ServiceDeployments.OrleansGeoUsWest:Endpoints.ServiceDeployments.Simulator); 
+      //          Endpoints.ServiceDeployments otherRegion = myRegion;
 
                 Tuple<IPAddress, int> address = await Util.getGrainAddress(otherRegion, typeof(TCPReceiverGrain), "mygrain");
 
