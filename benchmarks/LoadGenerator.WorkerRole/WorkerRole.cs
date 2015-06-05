@@ -70,6 +70,8 @@ namespace LoadGenerator.WorkerRole
         }
 
         private byte[] receiveBuffer = new byte[512];
+        
+        private string lgid = "";
 
         
         private async Task sendPendingMessages()
@@ -128,7 +130,7 @@ namespace LoadGenerator.WorkerRole
                 
                 var client = new Benchmarks.Client(serviceEndpoint, testname, robotnr, tracer);
 
-                await tracer("Starting robot: " + robotnr + " at " + DateTime.Now.ToString());
+                await tracer("Starting robot: " + robotnr + " at " + DateTime.Now.ToString() + " on " + lgid);
                 //Should catch exceptions from the robot script and notify the conductor of the failure. Which may decide to retry if required.
                 //no need to disconnect from the conductor since this is the FE error.
                 
@@ -219,6 +221,8 @@ namespace LoadGenerator.WorkerRole
 
                         await ws.ConnectAsync(uri, cancellationToken);
 
+                        lgid = deployment + "." + instance + "." + connectioncount++.ToString();
+
                         if (ws.State == WebSocketState.Open)
                         {
                             Trace.TraceInformation("Connected.");
@@ -228,7 +232,7 @@ namespace LoadGenerator.WorkerRole
                             JObject message = JObject.FromObject(new
                                 {
                                     type = "READY",
-                                    loadgenerator = deployment + "." + instance + "." + connectioncount++.ToString()
+                                    loadgenerator = lgid
                                 });
                             ArraySegment<byte> outputBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message.ToString()));
                             await ws.SendAsync(outputBuffer, WebSocketMessageType.Text, true, cancellationToken);
@@ -313,7 +317,7 @@ namespace LoadGenerator.WorkerRole
 
                                 //NOTE: Do not await
                                 //Task.Run(() => StartRobotAsync(content, ws, tracer, cancellationToken));
-                                StartRobotAsync(content, ws, tracer, cancellationToken);
+                                StartRobotAsync(content, ws, tracer, cancellationToken);                                
 
                                 //  Conductor -> LoadGenerator : START testname robotnr args
 
