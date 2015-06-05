@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Leaderboard.Interfaces
 {
@@ -10,8 +11,8 @@ namespace Leaderboard.Interfaces
         Task PostNow(Score score);
         Task PostLater(Score score);
 
-        Task<Score[]> GetExactTopTen(string reqId);
-        Task<Score[]> GetApproxTopTen(string reqId);
+        Task<List<Score>> GetExactTopTen(string reqId);
+        Task<List<Score>> GetApproxTopTen(string reqId);
 
 
     }

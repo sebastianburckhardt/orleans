@@ -95,6 +95,13 @@ namespace Common
             return ret;
         }
 
+        public static Task<TableResult> dumpExceptions(CloudTableClient pClient, string pPartitionKey, string pRowKey, Exception e)
+        {
+            CloudTable table = createTable(pClient, "exceptions");
+            TextEntity text = new TextEntity(pPartitionKey, pRowKey, e.ToString());
+            var retValue = updateEntity<TextEntity>(pClient, "Exceptions", text);
+            return retValue;
+        }
 
         public static void deleteTable(CloudTableClient pClient, string pName)
         {

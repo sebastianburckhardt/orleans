@@ -140,6 +140,8 @@ namespace Common
                     return Endpoints.ServiceDeployments.OrleansGeoUsWest;
                 case "europewest":
                     return Endpoints.ServiceDeployments.OrleansGeoEuropeWest;
+                case "emulator":
+                    return Endpoints.ServiceDeployments.Simulator;
                 default:
                     throw new Exception("Unknown Region property");
             }
@@ -160,7 +162,6 @@ namespace Common
                     break;
                 case Endpoints.ServiceDeployments.OrleansGeoEuropeWest:
                     connectionKey = StorageAccounts.GetConnectionString(StorageAccounts.Account.OrleansGeoEuropeWest);
-
                     break;
                 default:
                     connectionKey = StorageAccounts.GetConnectionString(StorageAccounts.Account.DevStorage);
@@ -176,7 +177,7 @@ namespace Common
             else
             {
                 registerEntity = (GrainEntity) result.Result;
-                grainIP = registerEntity.payload;
+                grainIP = IPAddress.Parse(registerEntity.ipAddress);
                 grainPort = registerEntity.port;
             }
             return new Tuple<IPAddress,int>(grainIP, grainPort);

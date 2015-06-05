@@ -146,16 +146,16 @@ namespace Leaderboard.Interfaces
                 return base.InvokeMethodAsync<object>(1325047215, new object[] {@score} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.IDummySequencedLeaderboardGrain.GetExactTopTen(string @reqId)
+            System.Threading.Tasks.Task<System.Collections.Generic.List<Leaderboard.Interfaces.Score>> Leaderboard.Interfaces.IDummySequencedLeaderboardGrain.GetExactTopTen(string @reqId)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(-1258319511, new object[] {@reqId} );
+                return base.InvokeMethodAsync<System.Collections.Generic.List<Leaderboard.Interfaces.Score>>(-1258319511, new object[] {@reqId} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.IDummySequencedLeaderboardGrain.GetApproxTopTen(string @reqId)
+            System.Threading.Tasks.Task<System.Collections.Generic.List<Leaderboard.Interfaces.Score>> Leaderboard.Interfaces.IDummySequencedLeaderboardGrain.GetApproxTopTen(string @reqId)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1502759998, new object[] {@reqId} );
+                return base.InvokeMethodAsync<System.Collections.Generic.List<Leaderboard.Interfaces.Score>>(1502759998, new object[] {@reqId} );
             }
         }
     }
@@ -349,16 +349,16 @@ namespace Leaderboard.Interfaces
                 return base.InvokeMethodAsync<object>(1325047215, new object[] {@score} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ISequencedLeaderboardGrain.GetExactTopTen(string @reqId)
+            System.Threading.Tasks.Task<System.Collections.Generic.List<Leaderboard.Interfaces.Score>> Leaderboard.Interfaces.ISequencedLeaderboardGrain.GetExactTopTen(string @reqId)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(-1258319511, new object[] {@reqId} );
+                return base.InvokeMethodAsync<System.Collections.Generic.List<Leaderboard.Interfaces.Score>>(-1258319511, new object[] {@reqId} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ISequencedLeaderboardGrain.GetApproxTopTen(string @reqId)
+            System.Threading.Tasks.Task<System.Collections.Generic.List<Leaderboard.Interfaces.Score>> Leaderboard.Interfaces.ISequencedLeaderboardGrain.GetApproxTopTen(string @reqId)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1502759998, new object[] {@reqId} );
+                return base.InvokeMethodAsync<System.Collections.Generic.List<Leaderboard.Interfaces.Score>>(1502759998, new object[] {@reqId} );
             }
         }
     }
@@ -546,10 +546,10 @@ namespace Leaderboard.Interfaces
                 return base.InvokeMethodAsync<object>(-763693036, new object[] {@score} );
             }
             
-            System.Threading.Tasks.Task<Leaderboard.Interfaces.Score[]> Leaderboard.Interfaces.ILeaderboardGrain.GetTopTen(string @reqId)
+            System.Threading.Tasks.Task<System.Collections.Generic.List<Leaderboard.Interfaces.Score>> Leaderboard.Interfaces.ILeaderboardGrain.GetTopTen(string @reqId)
             {
 
-                return base.InvokeMethodAsync<Leaderboard.Interfaces.Score[]>(1207813380, new object[] {@reqId} );
+                return base.InvokeMethodAsync<System.Collections.Generic.List<Leaderboard.Interfaces.Score>>(1207813380, new object[] {@reqId} );
             }
         }
     }

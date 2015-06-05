@@ -36,13 +36,47 @@ namespace Azure.Storage
             new AzureTableStorage(1,60,0,1,0,100),
             new AzureTableStorage(1,60,0,0,0,100),
 
-            new AzureTableStorage(1,30,100,1,1,100),
-            new AzureTableStorage(1,30,100,1,0,100),
-            new AzureTableStorage(1,30,100,0,0,100),
-            new AzureTableStorage(1,30,0,1,1,100),
-            new AzureTableStorage(1,30,0,1,0,100),
-            new AzureTableStorage(1,30,0,0,0,100),
+            new AzureTableStorage(5,60,100,1,1,100),
+            new AzureTableStorage(5,60,100,1,0,100),
+            new AzureTableStorage(5,60,100,0,0,100),
+            new AzureTableStorage(5,60,0,1,1,100),
+            new AzureTableStorage(5,60,0,1,0,100),
+            new AzureTableStorage(5,60,0,0,0,100),
 
+            new AzureTableStorage(10,60,100,1,1,100),
+            new AzureTableStorage(10,60,100,1,0,100),
+            new AzureTableStorage(10,60,100,0,0,100),
+            new AzureTableStorage(10,60,0,1,1,100),
+            new AzureTableStorage(10,60,0,1,0,100),
+            new AzureTableStorage(10,60,0,0,0,100),
+
+            new AzureTableStorage(20,60,100,1,1,100),
+            new AzureTableStorage(20,60,100,1,0,100),
+            new AzureTableStorage(20,60,100,0,0,100),
+            new AzureTableStorage(20,60,0,1,1,100),
+            new AzureTableStorage(20,60,0,1,0,100),
+            new AzureTableStorage(20,60,0,0,0,100),
+
+            new AzureTableStorage(50,60,100,1,1,100),
+            new AzureTableStorage(50,60,100,1,0,100),
+            new AzureTableStorage(50,60,100,0,0,100),
+            new AzureTableStorage(50,60,0,1,1,100),
+            new AzureTableStorage(50,60,0,1,0,100),
+            new AzureTableStorage(50,60,0,0,0,100),
+
+              new AzureTableStorage(100,60,100,1,1,100),
+            new AzureTableStorage(100,60,100,1,0,100),
+            new AzureTableStorage(100,60,100,0,0,100),
+            new AzureTableStorage(100,60,0,1,1,100),
+            new AzureTableStorage(100,60,0,1,0,100),
+            new AzureTableStorage(100,60,0,0,0,100),
+
+               new AzureTableStorage(500,60,100,1,1,100),
+            new AzureTableStorage(500,60,100,1,0,100),
+            new AzureTableStorage(500,60,100,0,0,100),
+            new AzureTableStorage(500,60,0,1,1,100),
+            new AzureTableStorage(500,60,0,1,0,100),
+            new AzureTableStorage(500,60,0,0,0,100),
 
             new AzureTableDirect(1,60,100,1,1,100),
             new AzureTableDirect(1,60,100,1,0,100),
@@ -85,6 +119,14 @@ namespace Azure.Storage
             new AzureTableDirect(100,60,0,1,1,100),
             new AzureTableDirect(100,60,0,1,0,100),
             new AzureTableDirect(100,60,0,0,0,100),
+
+               new AzureTableDirect(500,60,100,1,1,100),
+            new AzureTableDirect(500,60,100,1,0,100),
+            new AzureTableDirect(500,60,100,0,0,100),
+            new AzureTableDirect(500,60,0,1,1,100),
+            new AzureTableDirect(500,60,0,1,0,100),
+            new AzureTableDirect(500,60,0,0,0,100),
+
            
         };
 

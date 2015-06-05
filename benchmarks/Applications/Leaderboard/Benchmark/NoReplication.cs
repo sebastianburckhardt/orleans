@@ -237,13 +237,14 @@ namespace Leaderboard.Benchmark
 
             var leaderboard = LeaderboardGrainFactory.GetGrain(0);
             string posts;
-            Score[] scores;
+            List<Score> scores;
 
             if (requestType == LeaderboardRequestT.GET_SYNC)
             {
                 Console.Write("Get \n");
                 scores = leaderboard.GetTopTen("hello").Result;
-                posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                // posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                posts = "";
                 Console.Write("{0}\n", posts);
                 return posts;
             }
@@ -252,6 +253,7 @@ namespace Leaderboard.Benchmark
                 Util.Assert(requestType == LeaderboardRequestT.POST_SYNC);
                 Console.Write("Post{0} \n ", score.ToString());
                 await leaderboard.Post(score);
+                posts = "";
                 return "ok";
             }
 

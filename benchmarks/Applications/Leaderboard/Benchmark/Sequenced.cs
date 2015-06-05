@@ -344,7 +344,7 @@ namespace Leaderboard.Benchmark
         public async Task<string> ProcessRequestOnServer()
         {
             string posts;
-            Score[] scores;
+            List<Score> scores;
 
             if (dummyGrain == 1)
             {
@@ -361,7 +361,8 @@ namespace Leaderboard.Benchmark
                     using (new TraceInterval("Leaderboard FE - dummy - get - sync", 1))
                     {
                         scores = leaderboard.GetExactTopTen("hello").Result;
-                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                      //  posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                        posts = "";
                     }
                     //            Console.Write("{0}\n", posts);
                     return posts;
@@ -372,7 +373,8 @@ namespace Leaderboard.Benchmark
                     using (new TraceInterval("Leaderboard FE - dummy - get - Async", 2))
                     {
                         scores = leaderboard.GetApproxTopTen("hello").Result;
-                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+            //            posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                        posts = "";
                     }
                     //              Console.Write("{0}\n", posts);
                     return posts;
@@ -409,7 +411,8 @@ namespace Leaderboard.Benchmark
                     using (new TraceInterval("Leaderboard FE - get - sync", 1))
                     {
                         scores = leaderboard.GetExactTopTen("hello").Result;
-                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                    //    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                        posts = "";
                     }
                     //            Console.Write("{0}\n", posts);
                     return posts;
@@ -420,7 +423,8 @@ namespace Leaderboard.Benchmark
                     using (new TraceInterval("Leaderboard FE - get - Async", 2))
                     {
                         scores = leaderboard.GetApproxTopTen("hello").Result;
-                        posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                 //       posts = Leaderboard.Interfaces.Score.PrintScores(scores);
+                        posts = "";
                     }
                     //              Console.Write("{0}\n", posts);
                     return posts;

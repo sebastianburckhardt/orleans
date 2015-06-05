@@ -17,14 +17,15 @@ namespace Common
     {
         // assume no . in partition key
 
-        public IPAddress payload { get; set; }
+        public string ipAddress { get; set; }
         public int port { get; set; }
 
         public GrainEntity(Orleans.Grain pGrain, IPAddress pAddress, int pListeningPort, string pKey)
         {
-            this.payload = pAddress;
+            this.ipAddress = pAddress.ToString();
             this.PartitionKey = pGrain.GetType().ToString();
             this.RowKey = pKey;
+            this.port = pListeningPort;
         }
 
         public GrainEntity()

@@ -22,8 +22,7 @@ namespace Hello.Grains
 
         public override Task OnActivateAsync()
         {
-            try
-            {
+
                 Console.WriteLine("OnActivateAsync");
                 if (!tcpActive)
                 {
@@ -39,18 +38,15 @@ namespace Hello.Grains
                         }
                     }
 
-                    tcpListener = new TcpListener(localIp, 15000);
+                    tcpListener = new TcpListener(localIp, 15001);
                     tcpListener.Start();
-                    tcpClient = tcpListener.AcceptTcpClient();
-                    Util.register(this, 15000, "mygrain");
+                    Util.register(this, 15001, "mygrain");
                     tcpActive = true;
+                    tcpClient = tcpListener.AcceptTcpClient();
+                    
 
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+
             return base.OnActivateAsync();
         }
 
@@ -64,22 +60,17 @@ namespace Hello.Grains
             bytesRead = 0;
 
 
-            try
-            {
+
                 bytesRead = await clientStream.ReadAsync(message, 0 , 4096 );
                 Console.WriteLine("Echo {0} ", message);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.ToString());
-            }
+
 
 
             //message has successfully been received
             ASCIIEncoding encoder = new ASCIIEncoding();
 
             
-            return "Done";
+            return encoder.GetString(message);
         }
 
         private TcpListener tcpListener;

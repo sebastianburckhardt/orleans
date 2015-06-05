@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="AzureCommon.cs" />
     <Compile Include="BenchmarkInterfaces.cs" />
+    <Compile Include="TextEntity.cs" />
     <Compile Include="Endpoints.cs" />
     <Compile Include="GrainEntity.cs" />
     <Compile Include="LatencyDistribution.cs" />

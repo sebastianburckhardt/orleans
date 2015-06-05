@@ -20,7 +20,8 @@ namespace Common
         public enum ServiceDeployments
         {
             OrleansGeoUsWest,
-            OrleansGeoEuropeWest
+            OrleansGeoEuropeWest,
+            Simulator
         }
          public enum LoadGenerators
         {

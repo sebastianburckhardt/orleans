@@ -25,9 +25,12 @@ namespace Hello.Grains
             {
 
                 Endpoints.ServiceDeployments myRegion = Util.GetRegion();
-                Endpoints.ServiceDeployments otherRegion = myRegion == Endpoints.ServiceDeployments.OrleansGeoUsWest ?
+              
+                /*Endpoints.ServiceDeployments otherRegion = myRegion == Endpoints.ServiceDeployments.OrleansGeoUsWest ?
                     Endpoints.ServiceDeployments.OrleansGeoEuropeWest :
-                    Endpoints.ServiceDeployments.OrleansGeoUsWest;
+                    (myRegion == Endpoints.ServiceDeployments.OrleansGeoEuropeWest? 
+                        Endpoints.ServiceDeployments.OrleansGeoUsWest:Endpoints.ServiceDeployments.Simulator); */
+                Endpoints.ServiceDeployments otherRegion = myRegion;
 
                 Tuple<IPAddress, int> address = await Util.getGrainAddress(otherRegion, typeof(TCPReceiverGrain), "mygrain");
 
@@ -44,10 +47,12 @@ namespace Hello.Grains
 
                 await clientStream.WriteAsync(buffer, 0, buffer.Length);
                 clientStream.Flush();
+                retries = 0;
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception {0} ", e.ToString());
+                
+                if (retries == 0) throw e;
             }
             }
             return "sent";
