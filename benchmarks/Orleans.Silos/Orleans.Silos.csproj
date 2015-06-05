@@ -64,8 +64,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CounterControl">
-      <HintPath>$(OrleansSDK)\Binaries\OrleansServer\CounterControl.exe</HintPath>
-      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.Orleans.CounterControl.1.0.8\lib\net45\CounterControl.exe</HintPath>
     </Reference>
     <Reference Include="Microsoft.Data.Edm, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -80,35 +79,37 @@
       <HintPath>..\packages\Microsoft.Data.Services.Client.5.6.2\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic" />
-    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.3.1.0\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.2.0.0.0\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Diagnostics, Version=2.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.ServiceRuntime, Version=2.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <Private>False</Private>
+      <Private>True</Private>
       <HintPath>..\packages\Unofficial.Microsoft.WindowsAzure.ServiceRuntime.2.5.0.0\lib\net40\Microsoft.WindowsAzure.ServiceRuntime.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Storage, Version=4.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WindowsAzure.Storage.4.3.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Orleans">
-      <HintPath>$(OrleansSDK)\Binaries\OrleansClient\Orleans.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Orleans.Core.1.0.8\lib\net45\Orleans.dll</HintPath>
     </Reference>
     <Reference Include="OrleansAzureUtils">
-      <HintPath>$(OrleansSDK)\Binaries\OrleansClient\OrleansAzureUtils.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Orleans.OrleansAzureUtils.1.0.8\lib\net45\OrleansAzureUtils.dll</HintPath>
     </Reference>
-    <Reference Include="OrleansRuntime">
-      <HintPath>$(OrleansSDK)\Binaries\OrleansServer\OrleansRuntime.dll</HintPath>
+    <Reference Include="OrleansHost">
+      <HintPath>..\packages\Microsoft.Orleans.OrleansHost.1.0.8\lib\net45\OrleansHost.exe</HintPath>
     </Reference>
     <Reference Include="OrleansProviders">
-      <HintPath>$(OrleansSDK)\Binaries\OrleansServer\OrleansProviders.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Orleans.OrleansProviders.1.0.8\lib\net45\OrleansProviders.dll</HintPath>
+    </Reference>
+    <Reference Include="OrleansRuntime">
+      <HintPath>..\packages\Microsoft.Orleans.OrleansRuntime.1.0.8\lib\net45\OrleansRuntime.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -144,7 +145,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="OrleansConfiguration.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
   </ItemGroup>

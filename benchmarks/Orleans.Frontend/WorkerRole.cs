@@ -14,7 +14,6 @@ using System.IO;
 using Orleans;
 using Orleans.Runtime.Host;
 
-
 namespace Orleans.Frontend
 {
     public class WorkerRole : RoleEntryPoint
