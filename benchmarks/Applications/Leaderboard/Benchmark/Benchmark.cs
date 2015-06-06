@@ -578,8 +578,7 @@ namespace Leaderboard.Benchmark
 
                     return request;
                 }
-
-                else
+                else if (int.Parse(arguments["rep"]) == 1)
                 {
                     Console.Write("{0}", arguments);
                     LeaderboardRequestT requestType = (LeaderboardRequestT)int.Parse(arguments["reqtype"]);
@@ -608,6 +607,38 @@ namespace Leaderboard.Benchmark
                     {
                         // Post Later Type
                         request = new HttpRequestSequencedLeaderboard(numReq, Score.fromString(arguments["score"]), true, dummyGrain);
+                    }
+
+                    return request;
+                } else if (int.Parse(arguments["rep"]) == 2)
+                {
+                    Console.Write("{0}", arguments);
+                    LeaderboardRequestT requestType = (LeaderboardRequestT)int.Parse(arguments["reqtype"]);
+                    int numReq = int.Parse(arguments["numreq"]);
+                    int dummyGrain = int.Parse(arguments["dummy"]);
+
+                    HttpRequestPersistentLeaderboard request = null;
+                    if (requestType == LeaderboardRequestT.GET_SYNC)
+                    {
+                        // GetCurrentTop10 type
+                        request = new HttpRequestPersistentLeaderboard(numReq, false);
+                    }
+                    else if (requestType == LeaderboardRequestT.GET_ASYNC)
+                    {
+
+                        // GetApproxTop10 type
+                        request = new HttpRequestPersistentLeaderboard(numReq, true);
+
+                    }
+                    else if (requestType == LeaderboardRequestT.POST_SYNC)
+                    {
+                        // Post Now Type
+                        request = new HttpRequestPersistentLeaderboard(numReq, Score.fromString(arguments["score"]), false);
+                    }
+                    else if (requestType == LeaderboardRequestT.POST_ASYNC)
+                    {
+                        // Post Later Type
+                        request = new HttpRequestPersistentLeaderboard(numReq, Score.fromString(arguments["score"]), true);
                     }
 
                     return request;

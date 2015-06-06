@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Benchmark.cs" />
+    <Compile Include="PersistentOrleans.cs" />
     <Compile Include="Sequenced.cs" />
     <Compile Include="NoReplication.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

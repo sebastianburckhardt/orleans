@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PersistentLeaderGrain.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
     <Compile Include="DummySequencedLeaderGrain.cs" />
     <Compile Include="SequencedLeaderGrain.cs" />

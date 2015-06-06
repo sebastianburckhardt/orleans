@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IDummySequencedLeaderGrain.cs" />
+    <Compile Include="IPersistentLeaderboardGrain.cs" />
     <Compile Include="ISequencedLeaderGrain.cs" />
     <Compile Include="ILeaderGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
