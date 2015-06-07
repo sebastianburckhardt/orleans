@@ -87,7 +87,7 @@ namespace Azure.Storage
                     }
                 }
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 //?
             }

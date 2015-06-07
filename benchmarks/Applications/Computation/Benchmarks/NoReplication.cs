@@ -105,7 +105,6 @@ namespace Computation.Benchmark
             int totReads;
             int totWrites;
             int totOps;
-            double throughput;
 
             rnd = new Random();
             reads = percentRead;

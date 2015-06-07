@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Diagnostics;
 
 
 #pragma warning disable 1998
@@ -31,6 +30,7 @@ namespace Computation.Benchmark
             this.percentSyncWrite = pPercentSyncWrites;
             this.percentAsyncWrite = pPercentAsyncWrites;
             this.timeUpdate = pTimeUpdate;
+            this.rnd = new Random();
         }
 
         private int numRobots;
@@ -144,18 +144,16 @@ namespace Computation.Benchmark
 
             Random rnd;
 
-            int nextRandom;
             OperationType nextOp;
             byte[] nextWrite;
-            Boolean executed;
-
+            
             /* stats */
             int totSyncReads;
             int totAsyncReads;
             int totSyncWrites;
             int totAsyncWrites;
             int totOps;
-            double throughput;
+            
 
             rnd = new Random();
             nextWrite = new byte[100];
@@ -163,7 +161,6 @@ namespace Computation.Benchmark
             asyncReads = percentAsyncRead;
             syncWrites = percentSyncWrite;
             asyncWrites = percentAsyncWrite;
-            executed = false;
             nextOp = OperationType.READ_SYNC;
 
             /* Debug */
@@ -172,7 +169,7 @@ namespace Computation.Benchmark
             totSyncWrites = 0;
             totAsyncWrites = 0;
             totOps = 0;
-            throughput = 0.0;
+            
 
             rnd.NextBytes(nextWrite);
 
@@ -212,8 +209,7 @@ namespace Computation.Benchmark
                         totAsyncWrites++;
                         totOps++;
                         break;
-                } // end switch
-                executed = false;
+                } // end switch                
 
             } // end for loop
 

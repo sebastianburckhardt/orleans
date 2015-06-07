@@ -164,7 +164,7 @@ namespace Orleans.Frontend
         internal string instance;
         internal string instanceid;
         internal bool runningincloud;
-        internal string certificateThumbprint;
+        
 
         internal Benchmarks.Server currentserver;
 

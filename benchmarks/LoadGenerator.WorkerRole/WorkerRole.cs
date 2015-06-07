@@ -270,7 +270,7 @@ namespace LoadGenerator.WorkerRole
                             }
                             catch (Exception ex)
                             {
-                                Trace.TraceInformation("Connection to conductor possibly timedout. Trying again");
+                                Trace.TraceInformation("Connection to conductor possibly timedout. Trying again. Error: " +  ex.Message);
                                 continue;
                             }
 
