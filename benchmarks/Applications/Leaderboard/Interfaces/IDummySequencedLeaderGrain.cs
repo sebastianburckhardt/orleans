@@ -12,6 +12,8 @@ namespace Leaderboard.Interfaces
         Task PostNow(Score score);
         Task PostLater(Score score);
 
+        Task DummyCall();
+
         Task<List<Score>> GetExactTopTen(string reqId);
         Task<List<Score>> GetApproxTopTen(string reqId);
 

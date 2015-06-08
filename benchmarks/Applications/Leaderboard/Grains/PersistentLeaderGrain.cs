@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using Orleans;
+using Orleans.Providers;
 
 #pragma warning disable 1998
 
@@ -19,6 +20,7 @@ namespace Leaderboard.Grains
     /// An implementation of a non-persistent, non-sequenced leaderboard grain
     /// To be used for reference performance
     /// </summary>
+    [StorageProvider(ProviderName = "AzureStore")]
     public class PersistentLeaderGrain : Grain<ILeaderboardGrainState>, Leaderboard.Interfaces.IPersistentLeaderboardGrain
     {
         public async Task Post(Score score, bool persist)

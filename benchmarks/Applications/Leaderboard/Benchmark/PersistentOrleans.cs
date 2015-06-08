@@ -51,7 +51,7 @@ namespace Leaderboard.Benchmark
             return Endpoints.GetDefaultService();
         }
 
-        public string Name { get { return string.Format("rep-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}", numRobots, runTime, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite); } }
+        public string Name { get { return string.Format("persistentorleans-robots{0}xnr{1}xsreads{2}xasreads{3}xswrites{4}xaswrites{5}", numRobots, runTime, percentSyncRead, percentAsyncRead, percentSyncWrite, percentAsyncWrite); } }
 
         public int NumRobots { get { return numRobots; } }
 
@@ -275,11 +275,11 @@ namespace Leaderboard.Benchmark
             {
                 if (requestType == LeaderboardRequestT.GET_SYNC || requestType == LeaderboardRequestT.GET_ASYNC)
                 {
-                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=1";
+                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&rep=2";
                 }
                 else
                 {
-                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=1";
+                    return "GET leaderboard?reqtype=" + Convert.ToInt32(requestType) + "&" + "numreq=" + numReq + "&score=" + score.ToString() + "&rep=2";
                 }
             }
         }
