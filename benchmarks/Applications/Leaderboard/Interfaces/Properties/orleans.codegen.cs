@@ -146,6 +146,12 @@ namespace Leaderboard.Interfaces
                 return base.InvokeMethodAsync<object>(1325047215, new object[] {@score} );
             }
             
+            System.Threading.Tasks.Task Leaderboard.Interfaces.IDummySequencedLeaderboardGrain.DummyCall()
+            {
+
+                return base.InvokeMethodAsync<object>(-1505384750, null );
+            }
+            
             System.Threading.Tasks.Task<System.Collections.Generic.List<Leaderboard.Interfaces.Score>> Leaderboard.Interfaces.IDummySequencedLeaderboardGrain.GetExactTopTen(string @reqId)
             {
 
@@ -188,6 +194,8 @@ namespace Leaderboard.Interfaces
                                 return ((IDummySequencedLeaderboardGrain)grain).PostNow((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
                             case 1325047215: 
                                 return ((IDummySequencedLeaderboardGrain)grain).PostLater((Score)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case -1505384750: 
+                                return ((IDummySequencedLeaderboardGrain)grain).DummyCall().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
                             case -1258319511: 
                                 return ((IDummySequencedLeaderboardGrain)grain).GetExactTopTen((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
                             case 1502759998: 
@@ -220,6 +228,8 @@ namespace Leaderboard.Interfaces
                             return "PostNow";
                     case 1325047215:
                             return "PostLater";
+                    case -1505384750:
+                            return "DummyCall";
                     case -1258319511:
                             return "GetExactTopTen";
                     case 1502759998:

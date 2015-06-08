@@ -7,6 +7,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure;
+using Microsoft.Azure;
 
 namespace Common
 {
@@ -22,6 +23,7 @@ namespace Common
         public static CloudStorageAccount getStorageAccount()
         {
             string connectionKey = CloudConfigurationManager.GetSetting("StorageConnectionString");
+            
             if (connectionKey == null)
             {
                 throw new Exception("No connection key specified");
