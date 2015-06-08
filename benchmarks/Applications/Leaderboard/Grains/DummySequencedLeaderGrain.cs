@@ -32,6 +32,8 @@ namespace Leaderboard.Grains
 
         #region Queries
 
+
+
         public async Task<List<Score>> GetApproxTopTen(string post)
         {
 
@@ -46,6 +48,11 @@ namespace Leaderboard.Grains
         #endregion
 
         #region Updates
+
+        public async Task DummyCall()
+        {
+
+        }
 
         public async Task PostNow(Score score)
         {

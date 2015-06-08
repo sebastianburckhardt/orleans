@@ -31,6 +31,27 @@ namespace Leaderboard.Benchmark
              * Staleness bound is set to int.maxValue
              */ 
             
+            /* For persistent orleans grain*/
+            new PersistentOrleans(1, 1, 100, 0, 0, 0),
+            new PersistentOrleans(100, 60, 100, 0, 0, 0),
+            new PersistentOrleans(100, 60, 0, 100, 0, 0),
+            new PersistentOrleans(100, 60, 0, 0, 100, 0),
+            new PersistentOrleans(100, 60, 0, 0, 0, 100),
+            
+            new PersistentOrleans(500, 60, 100, 0, 0, 0),
+            new PersistentOrleans(500, 60, 0, 100, 0, 0),
+            new PersistentOrleans(500, 60, 0, 0, 100, 0),
+            new PersistentOrleans(500, 60, 0, 0, 0, 100),
+            
+            new PersistentOrleans(750, 60, 100, 0, 0, 0),
+            new PersistentOrleans(750, 60, 0, 100, 0, 0),
+            new PersistentOrleans(750, 60, 0, 0, 100, 0),
+            new PersistentOrleans(750, 60, 0, 0, 0, 100),
+            
+            new PersistentOrleans(999, 60, 100, 0, 0, 0),
+            new PersistentOrleans(999, 60, 0, 100, 0, 0),
+            new PersistentOrleans(999, 60, 0, 0, 100, 0),
+            new PersistentOrleans(999, 60, 0, 0, 0, 100),
             /* 1. FOR 1 ROBOT */
 
             /* 1.1 Read-Only Benchmarks */
@@ -340,6 +361,7 @@ namespace Leaderboard.Benchmark
             new SequencedLeaderboard(100,60,100,0,0,0,0),
             // Sequenced Grain, All Local Reads
             new SequencedLeaderboard(100,60,0,100,0,0,0),
+            new SequencedLeaderboard(100,60,0,100,0,0,1),
             // Sequenced Grain. 75 Global / 25 Local
             new SequencedLeaderboard(100,60,75,25,0,0,0),
               // Sequenced Grain. 50 Global / 50 Local
@@ -615,7 +637,7 @@ namespace Leaderboard.Benchmark
                     Console.Write("{0}", arguments);
                     LeaderboardRequestT requestType = (LeaderboardRequestT)int.Parse(arguments["reqtype"]);
                     int numReq = int.Parse(arguments["numreq"]);
-                    int dummyGrain = int.Parse(arguments["dummy"]);
+                    //int dummyGrain = int.Parse(arguments["dummy"]);
 
                     HttpRequestPersistentLeaderboard request = null;
                     if (requestType == LeaderboardRequestT.GET_SYNC)

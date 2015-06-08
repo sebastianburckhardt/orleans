@@ -360,7 +360,7 @@ namespace Leaderboard.Benchmark
 
                     using (new TraceInterval("Leaderboard FE - dummy - get - sync", 1))
                     {
-                        scores = leaderboard.GetExactTopTen("hello").Result;
+                        scores = await leaderboard.GetExactTopTen("hello");
                       //  posts = Leaderboard.Interfaces.Score.PrintScores(scores);
                         posts = "";
                     }
@@ -370,12 +370,14 @@ namespace Leaderboard.Benchmark
                 else if (requestType == LeaderboardRequestT.GET_ASYNC)
                 {
                     //            Console.Write("Get Approx \n");
-                    using (new TraceInterval("Leaderboard FE - dummy - get - Async", 2))
+                    posts = "";
+                    await leaderboard.DummyCall();
+                    /*using (new TraceInterval("Leaderboard FE - dummy - get - Async", 2))
                     {
                         scores = leaderboard.GetApproxTopTen("hello").Result;
             //            posts = Leaderboard.Interfaces.Score.PrintScores(scores);
                         posts = "";
-                    }
+                    }*/
                     //              Console.Write("{0}\n", posts);
                     return posts;
                 }
@@ -410,7 +412,7 @@ namespace Leaderboard.Benchmark
                     //              Console.Write("Get Cuurent \n");
                     using (new TraceInterval("Leaderboard FE - get - sync", 1))
                     {
-                        scores = leaderboard.GetExactTopTen("hello").Result;
+                        scores = await leaderboard.GetExactTopTen("hello");
                     //    posts = Leaderboard.Interfaces.Score.PrintScores(scores);
                         posts = "";
                     }
@@ -422,7 +424,7 @@ namespace Leaderboard.Benchmark
                     //            Console.Write("Get Approx \n");
                     using (new TraceInterval("Leaderboard FE - get - Async", 2))
                     {
-                        scores = leaderboard.GetApproxTopTen("hello").Result;
+                        scores = await leaderboard.GetApproxTopTen("hello");
                  //       posts = Leaderboard.Interfaces.Score.PrintScores(scores);
                         posts = "";
                     }

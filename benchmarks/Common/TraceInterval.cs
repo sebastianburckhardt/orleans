@@ -35,7 +35,7 @@ namespace Common
         private static long offset = 0;
 
         // use this to globally switch tracing on/off
-        public static bool CollectPerfTraces = true;
+        public static bool CollectPerfTraces = false;
 
         private static long ReadWatch()
         {
