@@ -14,7 +14,6 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,13 +45,14 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IGenericGrain.cs" />
+    <Compile Include="IGenericInterfaces.cs" />
     <Compile Include="IMultipleSubscriptionConsumerGrain.cs" />
     <Compile Include="ISampleStreamingGrain.cs" />
     <Compile Include="ISimpleGenericGrain.cs" />
     <Compile Include="ISimpleObserverableGrain.cs" />
     <Compile Include="IObserverGrain.cs" />
     <Compile Include="ISimpleGrain.cs" />
+    <Compile Include="ISimplePersistentGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\Build\GlobalAssemblyInfo.cs">
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
@@ -80,13 +80,13 @@
   <Choose>
     <When Condition="'$(builduri)' != ''">
       <PropertyGroup>
-	    <!-- TFS build -->
+        <!-- TFS build -->
         <OrleansReferencesBase>$(TargetDir)</OrleansReferencesBase>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-	    <!-- Visual Studio or MsBuild .sln build -->
+        <!-- Visual Studio or MsBuild .sln build -->
         <OrleansReferencesBase>$(ProjectDir)..\ClientGenerator\$(OutputPath)</OrleansReferencesBase>
       </PropertyGroup>
     </Otherwise>

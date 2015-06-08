@@ -447,6 +447,7 @@ namespace Orleans
         Catalog_DeactivateStreamResources_Exception     = CatalogBase + 42,
         Catalog_FinishDeactivateActivation_Exception    = CatalogBase + 43,
         Catalog_FinishGrainDeactivateAndCleanupStreams_Exception = CatalogBase + 44,
+        Catalog_DeactivateAllActivations = CatalogBase + 45,
 
         MembershipBase                         = Runtime + 600,
         MembershipCantWriteLivenessDisabled    = Runtime_Error_100225, // Backward compatability
@@ -966,6 +967,7 @@ namespace Orleans
         Provider_IgnoringExplicitSet            = ProviderManagerBase + 10,
         Provider_NotLoaded                      = ProviderManagerBase + 11,
         Provider_Manager_Already_Loaded         = ProviderManagerBase + 12,
+        Provider_CatalogNoStorageProvider_3     = ProviderManagerBase + 13,
 
         AzureQueueBase = Runtime + 3200,
         AzureQueue_01 = AzureQueueBase + 1,

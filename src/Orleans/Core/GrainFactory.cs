@@ -23,7 +23,9 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Orleans.CodeGeneration;
+using Orleans.Core;
 using Orleans.Runtime;
 
 namespace Orleans
@@ -33,20 +35,26 @@ namespace Orleans
     /// <summary>
     /// Factory for accessing grains.
     /// </summary>
-    public static class GrainFactory
+    public class GrainFactory : IGrainFactory
     {
         /// <summary>
         /// The collection of <see cref="IGrainObserver"/> <c>CreateObjectReference</c> delegates.
         /// </summary>
-        private static readonly ConcurrentDictionary<Type, Delegate> referenceCreators =
+        private readonly ConcurrentDictionary<Type, Delegate> referenceCreators =
             new ConcurrentDictionary<Type, Delegate>();
 
         /// <summary>
         /// The collection of <see cref="IGrainObserver"/> <c>DeleteObjectReference</c> delegates.
         /// </summary>
-        private static readonly ConcurrentDictionary<Type, Delegate> referenceDestoyers =
+        private readonly ConcurrentDictionary<Type, Delegate> referenceDestoyers =
             new ConcurrentDictionary<Type, Delegate>();
 
+        // Make this internal so that client code is forced to access the IGrainFactory using the 
+        // GrainClient (to make sure they don't forget to initialize the client).
+        internal GrainFactory()
+        {
+        }
+
         /// <summary>
         /// Gets a reference to a grain.
         /// </summary>
@@ -54,8 +62,7 @@ namespace Orleans
         /// <param name="primaryKey">The primary key of the grain.</param>
         /// <param name="grainClassNamePrefix">An optional class name prefix used to find the runtime type of the grain.</param>
         /// <returns></returns>
-        public static TGrainInterface GetGrain<TGrainInterface>(Guid primaryKey, string grainClassNamePrefix = null)
-            where TGrainInterface : IGrainWithGuidKey
+        public TGrainInterface GetGrain<TGrainInterface>(Guid primaryKey, string grainClassNamePrefix = null) where TGrainInterface : IGrainWithGuidKey
         {
             return Cast<TGrainInterface>(
                 GrainFactoryBase.MakeGrainReference_FromType(
@@ -71,8 +78,7 @@ namespace Orleans
         /// <param name="primaryKey">The primary key of the grain.</param>
         /// <param name="grainClassNamePrefix">An optional class name prefix used to find the runtime type of the grain.</param>
         /// <returns></returns>
-        public static TGrainInterface GetGrain<TGrainInterface>(long primaryKey, string grainClassNamePrefix = null)
-            where TGrainInterface : IGrainWithIntegerKey
+        public TGrainInterface GetGrain<TGrainInterface>(long primaryKey, string grainClassNamePrefix = null) where TGrainInterface : IGrainWithIntegerKey
         {
             return Cast<TGrainInterface>(
                 GrainFactoryBase.MakeGrainReference_FromType(
@@ -88,8 +94,7 @@ namespace Orleans
         /// <param name="primaryKey">The primary key of the grain.</param>
         /// <param name="grainClassNamePrefix">An optional class name prefix used to find the runtime type of the grain.</param>
         /// <returns></returns>
-        public static TGrainInterface GetGrain<TGrainInterface>(string primaryKey, string grainClassNamePrefix = null)
-            where TGrainInterface : IGrainWithStringKey
+        public TGrainInterface GetGrain<TGrainInterface>(string primaryKey, string grainClassNamePrefix = null) where TGrainInterface : IGrainWithStringKey
         {
             return Cast<TGrainInterface>(
                 GrainFactoryBase.MakeGrainReference_FromType(
@@ -106,7 +111,7 @@ namespace Orleans
         /// <param name="keyExtension">The key extention of the grain.</param>
         /// <param name="grainClassNamePrefix">An optional class name prefix used to find the runtime type of the grain.</param>
         /// <returns></returns>
-        public static TGrainInterface GetGrain<TGrainInterface>(Guid primaryKey, string keyExtension, string grainClassNamePrefix = null)
+        public TGrainInterface GetGrain<TGrainInterface>(Guid primaryKey, string keyExtension, string grainClassNamePrefix = null)
             where TGrainInterface : IGrainWithGuidCompoundKey
         {
             GrainFactoryBase.DisallowNullOrWhiteSpaceKeyExtensions(keyExtension);
@@ -126,7 +131,7 @@ namespace Orleans
         /// <param name="keyExtension">The key extention of the grain.</param>
         /// <param name="grainClassNamePrefix">An optional class name prefix used to find the runtime type of the grain.</param>
         /// <returns></returns>
-        public static TGrainInterface GetGrain<TGrainInterface>(long primaryKey, string keyExtension, string grainClassNamePrefix = null)
+        public TGrainInterface GetGrain<TGrainInterface>(long primaryKey, string keyExtension, string grainClassNamePrefix = null)
             where TGrainInterface : IGrainWithIntegerCompoundKey
         {
             GrainFactoryBase.DisallowNullOrWhiteSpaceKeyExtensions(keyExtension);
@@ -146,7 +151,7 @@ namespace Orleans
         /// </typeparam>
         /// <param name="obj">The object to create a reference to.</param>
         /// <returns>The reference to <paramref name="obj"/>.</returns>
-        public static Task<TGrainObserverInterface> CreateObjectReference<TGrainObserverInterface>(IGrainObserver obj)
+        public Task<TGrainObserverInterface> CreateObjectReference<TGrainObserverInterface>(IGrainObserver obj)
             where TGrainObserverInterface : IGrainObserver
         {
             var interfaceType = typeof(TGrainObserverInterface);
@@ -164,7 +169,7 @@ namespace Orleans
                     string.Format("The provided object must implement '{0}'.", interfaceType.FullName),
                     "obj");
             }
-            
+
             Delegate creator;
 
             if (!referenceCreators.TryGetValue(interfaceType, out creator))
@@ -184,7 +189,7 @@ namespace Orleans
         /// </typeparam>
         /// <param name="obj">The reference being deleted.</param>
         /// <returns>A <see cref="Task"/> representing the work performed.</returns>
-        public static Task DeleteObjectReference<TGrainObserverInterface>(
+        public Task DeleteObjectReference<TGrainObserverInterface>(
             IGrainObserver obj) where TGrainObserverInterface : IGrainObserver
         {
             var interfaceType = typeof(TGrainObserverInterface);
@@ -249,6 +254,39 @@ namespace Orleans
             var delegateType = typeof(Func<IAddressable, object>);
             return (Func<IAddressable, object>)MakeFactoryDelegate(interfaceType, "Cast", delegateType);
         }
+        #endregion
+
+        #region SystemTargets
+
+        private static readonly Dictionary<GrainId, Dictionary<SiloAddress, ISystemTarget>> typedSystemTargetReferenceCache =
+                    new Dictionary<GrainId, Dictionary<SiloAddress, ISystemTarget>>();
+
+        internal static TGrainInterface GetSystemTarget<TGrainInterface>(GrainId grainId, SiloAddress destination)
+            where TGrainInterface : ISystemTarget
+        {
+            Dictionary<SiloAddress, ISystemTarget> cache;
+
+            lock (typedSystemTargetReferenceCache)
+            {
+                if (typedSystemTargetReferenceCache.ContainsKey(grainId))
+                    cache = typedSystemTargetReferenceCache[grainId];
+                else
+                {
+                    cache = new Dictionary<SiloAddress, ISystemTarget>();
+                    typedSystemTargetReferenceCache[grainId] = cache;
+                }
+            }
+            lock (cache)
+            {
+                if (cache.ContainsKey(destination))
+                    return (TGrainInterface)cache[destination];
+
+                var reference = Cast<TGrainInterface>(GrainReference.FromGrainId(grainId, null, destination));
+                cache[destination] = reference;
+                return reference;
+            }
+        }
+
         #endregion
 
         #region Utility functions

@@ -29,6 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Orleans.CodeGeneration;
+using Orleans.Core;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.GrainDirectory;
@@ -82,6 +83,7 @@ namespace Orleans.Runtime
         private readonly CounterStatistic activationsFailedToActivate;
         private readonly IntValueStatistic inProcessRequests;
         private readonly CounterStatistic collectionCounter;
+        private readonly IGrainRuntime grainRuntime;
 
         internal Catalog(
             GrainId grainId, 
@@ -92,6 +94,7 @@ namespace Orleans.Runtime
             OrleansTaskScheduler scheduler, 
             ActivationDirectory activationDirectory, 
             ClusterConfiguration config, 
+            IGrainRuntime grainRuntime,
             out Action<Dispatcher> setDispatcher)
             : base(grainId, silo)
         {
@@ -101,6 +104,7 @@ namespace Orleans.Runtime
             activations = activationDirectory;
             this.scheduler = scheduler;
             GrainTypeManager = typeManager;
+            this.grainRuntime = grainRuntime;
             collectionNumber = 0;
             destroyActivationsNumber = 0;
 
@@ -165,15 +169,17 @@ namespace Orleans.Runtime
                 number, memBefore, activations.Count, ActivationCollector.ToString());
             List<ActivationData> list = scanStale ? ActivationCollector.ScanStale() : ActivationCollector.ScanAll(ageLimit);
             collectionCounter.Increment();
+            var count = 0;
             if (list != null && list.Count > 0)
             {
+                count = list.Count;
                 if (logger.IsVerbose) logger.Verbose("CollectActivations{0}", list.ToStrings(d => d.Grain.ToString() + d.ActivationId));
-                await ShutdownActivation_Collector(list);
+                await DeactivateActivationsFromCollector(list);
             }
             long memAfter = GC.GetTotalMemory(false) / (1024 * 1024);
             watch.Stop();
             logger.Info(ErrorCode.Catalog_AfterCollection, "After collection#{0}: memory={1}MB, #activations={2}, collected {3} activations, collector={4}, collection time={5}.",
-                number, memAfter, activations.Count, list.Count, ActivationCollector.ToString(), watch.Elapsed);
+                number, memAfter, activations.Count, count, ActivationCollector.ToString(), watch.Elapsed);
         }
 
         public List<Tuple<GrainId, string, int>> GetGrainStatistics()
@@ -346,7 +352,7 @@ namespace Orleans.Runtime
                     return result;
                 }
                 
-                if (newPlacement)
+                if (newPlacement && !SiloStatusOracle.CurrentStatus.IsTerminating())
                 {
                     // create a dummy activation that will queue up messages until the real data arrives
                     PlacementStrategy placement;
@@ -541,38 +547,51 @@ namespace Orleans.Runtime
                     grainClassName = grainTypeName;
                 }
             }
+
             GrainTypeData grainTypeData = GrainTypeManager[grainClassName];
 
             Type grainType = grainTypeData.Type;
             Type stateObjectType = grainTypeData.StateObjectType;
             lock (data)
             {
-                data.SetGrainInstance((Grain)Activator.CreateInstance(grainType));
+                var grain = (Grain) Activator.CreateInstance(grainType);
+                grain.Identity = data.Identity;
+                grain.Runtime = grainRuntime;
+                data.SetGrainInstance(grain);
+
                 if (stateObjectType != null)
                 {
+                    SetupStorageProvider(data);
+
                     var state = (GrainState)Activator.CreateInstance(stateObjectType);
                     state.InitState(null);
                     data.GrainInstance.GrainState = state;
+                    data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
                 }
             }
 
             activations.IncrementGrainCounter(grainClassName);
 
             data.GrainInstance.Data = data;
-            SetupStorageProvider(data);
 
             if (logger.IsVerbose) logger.Verbose("CreateGrainInstance {0}{1}", data.Grain, data.ActivationId);
         }
 
         private void SetupStorageProvider(ActivationData data)
         {
-            object[] attrs = data.GrainInstanceType.GetCustomAttributes(typeof(StorageProviderAttribute), true);
-            StorageProviderAttribute attr = attrs.Length > 0 ? attrs[0] as StorageProviderAttribute : null;
-            if (attr == null) return;
+            var grainTypeName = data.GrainInstanceType.FullName;
+
+            var attrs = data.GrainInstanceType.GetCustomAttributes(typeof(StorageProviderAttribute), true);
+            var attr = attrs.Length > 0 ? attrs[0] as StorageProviderAttribute : null;
+            if (attr == null)
+            {
+                var errMsg = string.Format("No storage providers specified for grain type {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_3, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
 
             var storageProviderName = attr.ProviderName;
             IStorageProvider provider;
-            var grainTypeName = data.GrainInstanceType.FullName;
             if (storageProviderManager == null || storageProviderManager.GetNumLoadedProviders() == 0)
             {
                 var errMsg = string.Format("No storage providers found loading grain type {0}", grainTypeName);
@@ -655,9 +674,9 @@ namespace Orleans.Runtime
             return data != null;
         }
 
-        private Task ShutdownActivation_Collector(List<ActivationData> list)
+        private Task DeactivateActivationsFromCollector(List<ActivationData> list)
         {
-            logger.Info(ErrorCode.Catalog_ShutdownActivations_1, "ShutdownActivationCollector: total {0} to promptly Destroy.", list.Count);
+            logger.Info(ErrorCode.Catalog_ShutdownActivations_1, "DeactivateActivationsFromCollector: total {0} to promptly Destroy.", list.Count);
             CounterStatistic.FindOrCreate(StatisticNames.CATALOG_ACTIVATION_SHUTDOWN_VIA_COLLECTION).IncrementBy(list.Count);
             foreach (var activation in list)
             {
@@ -671,7 +690,7 @@ namespace Orleans.Runtime
 
         // To be called fro within Activation context.
         // Cannot be awaitable, since after DestroyActivation is done the activation is in Invalid state and cannot await any Task.
-        internal void ShutdownActivation_DeactivateOnIdle(ActivationData data)
+        internal void DeactivateActivationOnIdle(ActivationData data)
         {
             bool promptly = false;
             bool alreadBeingDestroyed = false;
@@ -695,8 +714,8 @@ namespace Orleans.Runtime
                     alreadBeingDestroyed = true;
                 }
             }
-            logger.Info(ErrorCode.Catalog_ShutdownActivations_2, 
-                "ShutdownActivationDeactivateOnIdle: 1 {0}.", promptly ? "promptly" : (alreadBeingDestroyed ? "already being destroyed or invalid" : "later when become idle"));
+            logger.Info(ErrorCode.Catalog_ShutdownActivations_2,
+                "DeactivateActivationOnIdle: 1 {0}.", promptly ? "promptly" : (alreadBeingDestroyed ? "already being destroyed or invalid" : "later when become idle"));
 
             CounterStatistic.FindOrCreate(StatisticNames.CATALOG_ACTIVATION_SHUTDOWN_VIA_DEACTIVATE_ON_IDLE).Increment();
             if (promptly)
@@ -712,14 +731,14 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        internal async Task ShutdownActivations_DirectShutdown(List<ActivationData> list)
+        internal async Task DeactivateActivations(List<ActivationData> list)
         {
             if (list == null || list.Count == 0) return;
 
-            if (logger.IsVerbose) logger.Verbose("ShutdownActivations_DirectShutdown: {0} activations.", list.Count);
+            if (logger.IsVerbose) logger.Verbose("DeactivateActivations: {0} activations.", list.Count);
             List<ActivationData> destroyNow = null;
             List<MultiTaskCompletionSource> destroyLater = null;
-            int alreadBeingDestroyed = 0;
+            int alreadyBeingDestroyed = 0;
             foreach (var d in list)
             {
                 var activationData = d; // capture
@@ -750,7 +769,7 @@ namespace Orleans.Runtime
                     }
                     else
                     {
-                        alreadBeingDestroyed++;
+                        alreadyBeingDestroyed++;
                     }
                 }
             }
@@ -758,8 +777,8 @@ namespace Orleans.Runtime
             int numDestroyNow = destroyNow == null ? 0 : destroyNow.Count;
             int numDestroyLater = destroyLater == null ? 0 : destroyLater.Count;
             logger.Info(ErrorCode.Catalog_ShutdownActivations_3,
-                "RequestShutdownActivation_DirectShutdown: total {0} to shutdown, out of them {1} promptly, {2} later when become idle and {3} are already being destroyed or invalid.",
-                list.Count, numDestroyNow, numDestroyLater, alreadBeingDestroyed);
+                "DeactivateActivations: total {0} to shutdown, out of them {1} promptly, {2} later when become idle and {3} are already being destroyed or invalid.",
+                list.Count, numDestroyNow, numDestroyLater, alreadyBeingDestroyed);
             CounterStatistic.FindOrCreate(StatisticNames.CATALOG_ACTIVATION_SHUTDOWN_VIA_DIRECT_SHUTDOWN).IncrementBy(list.Count);
 
             if (destroyNow != null && destroyNow.Count > 0)
@@ -770,6 +789,13 @@ namespace Orleans.Runtime
             {
                 await Task.WhenAll(destroyLater.Select(t => t.Task).ToArray());
             }
+        }
+
+        public Task DeactivateAllActivations()
+        {
+            logger.Info(ErrorCode.Catalog_DeactivateAllActivations, "DeactivateAllActivations.");
+            var activationsToShutdown = activations.Select(kv => kv.Value).ToList();
+            return DeactivateActivations(activationsToShutdown);
         }
 
         /// <summary>
@@ -1083,14 +1109,14 @@ namespace Orleans.Runtime
             return addresses != null;
         }
 
-        public List<SiloAddress> AllSilos
+        public List<SiloAddress> AllActiveSilos
         {
             get
             {
                 var result = SiloStatusOracle.GetApproximateSiloStatuses(true).Select(s => s.Key).ToList();
                 if (result.Count > 0) return result;
 
-                logger.Warn(ErrorCode.Catalog_GetApproximateSiloStatuses, "AllSilos SiloStatusOracle.GetApproximateSiloStatuses empty");
+                logger.Warn(ErrorCode.Catalog_GetApproximateSiloStatuses, "AllActiveSilos SiloStatusOracle.GetApproximateSiloStatuses empty");
                 return new List<SiloAddress> { LocalSilo };
             }
         }
@@ -1176,7 +1202,7 @@ namespace Orleans.Runtime
                 // outside the lock.
                 if (activationsToShutdown.Count > 0)
                 {
-                    ShutdownActivations_DirectShutdown(activationsToShutdown).Ignore();
+                    DeactivateActivations(activationsToShutdown).Ignore();
                 }
             }
         }

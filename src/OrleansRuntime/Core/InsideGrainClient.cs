@@ -619,7 +619,7 @@ namespace Orleans.Runtime
                     destination.GetConsistentHashCode(),
                     ConsistentRingProvider.ToString());
             }
-            return ReminderServiceFactory.GetSystemTarget(Constants.ReminderServiceId, destination);
+            return GrainFactory.GetSystemTarget<IReminderService>(Constants.ReminderServiceId, destination);
         }
 
         public async Task ExecAsync(Func<Task> asyncFunction, ISchedulingContext context)
@@ -659,7 +659,7 @@ namespace Orleans.Runtime
             if (!Catalog.TryGetActivationData(id, out data)) return; // already gone
 
             data.ResetKeepAliveRequest(); // DeactivateOnIdle method would undo / override any current “keep alive” setting, making this grain immideately avaliable for deactivation.
-            Catalog.ShutdownActivation_DeactivateOnIdle(data);
+            Catalog.DeactivateActivationOnIdle(data);
         }
 
         #endregion

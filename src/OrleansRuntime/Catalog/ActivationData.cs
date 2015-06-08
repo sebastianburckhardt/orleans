@@ -232,6 +232,18 @@ namespace Orleans.Runtime
 
         #endregion
 
+        public string GrainTypeName
+        {
+            get
+            {
+                if (GrainInstanceType == null)
+                {
+                    throw new ArgumentNullException("GrainInstanceType", "GrainInstanceType has not been set.");
+                }
+                return GrainInstanceType.FullName;
+            }
+        }
+
         internal Type GrainInstanceType { get; private set; }
 
         internal void SetGrainInstance(Grain grainInstance)
@@ -240,6 +252,13 @@ namespace Orleans.Runtime
             if (grainInstance != null)
             {
                 GrainInstanceType = grainInstance.GetType();
+
+                // Don't ever collect system grains or reminder table grain or memory store grains.
+                bool doNotCollect = typeof(IReminderTable).IsAssignableFrom(GrainInstanceType) || typeof(IMemoryStorageGrain).IsAssignableFrom(GrainInstanceType);
+                if (doNotCollect)
+                {
+                    this.collector = null;
+                }
             }
         }
 
@@ -286,21 +305,6 @@ namespace Orleans.Runtime
         public ActivationId ActivationId { get { return Address.Activation; } }
 
         public ActivationAddress Address { get; private set; }
-        
-        public string IdentityString
-        {
-            get { return Grain.ToDetailedString(); }
-        }
-
-        public string RuntimeIdentity
-        {
-            get { return Silo.ToLongString(); }
-        }
-
-        public void DeactivateOnIdle()
-        {
-            RuntimeClient.Current.DeactivateOnIdle(ActivationId);
-        }
 
         public IDisposable RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
         {
@@ -339,7 +343,7 @@ namespace Orleans.Runtime
         /// </summary>
         public ActivationAddress ForwardingAddress { get; set; }
 
-        private readonly IActivationCollector collector;
+        private IActivationCollector collector;
 
         internal bool IsExemptFromCollection
         {
@@ -470,18 +474,6 @@ namespace Orleans.Runtime
             get
             {
                 return waiting == null ? 0 : waiting.Count;
-            }
-        }
-
-        public bool IsUsable
-        {
-            get
-            {
-                if (State == ActivationState.Create) return false;
-                if (State == ActivationState.Activating) return false;
-                if (State == ActivationState.Deactivating) return false;
-                if (State == ActivationState.Invalid) return false;
-                return true;
             }
         }
 
