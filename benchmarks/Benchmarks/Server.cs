@@ -125,21 +125,18 @@ namespace Benchmarks
             return null;
         }
 
-        public void Stop(string reason, bool stoplisteners)
+        public void Stop()
         {
-            if (stoplisteners && listener != null)
+            try
             {
-                try
-                {
-                    diag("Stopping Listener...");
-                    listener.Stop();
-                    diag("OK.");
+                diag("Stopping Listener...");
+                listener.Stop();
+                diag("OK.");
 
-                }
-                catch (Exception e)
-                {
-                    diag("Exception caught while stopping listener:" + e);
-                }
+            }
+            catch (Exception e)
+            {
+                diag("Exception caught while stopping listener:" + e);
             }
         }
 

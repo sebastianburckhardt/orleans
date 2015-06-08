@@ -4,6 +4,7 @@
     <Runtime executionContext="elevated" />
     <Endpoints>
       <InputEndpoint name="frontend" protocol="http" port="80" />
+      <InputEndpoint name="clustermgt" protocol="http" port="12121" />
     </Endpoints>
     <ConfigurationSettings>
       <Setting name="DataConnectionString" />

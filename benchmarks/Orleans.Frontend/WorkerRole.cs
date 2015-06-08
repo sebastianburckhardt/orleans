@@ -22,10 +22,10 @@ namespace Orleans.Frontend
         {
             deploymentid = GetAlphaHash(deployment.GetHashCode(), 5);
             instanceid = deploymentid + instance.Substring(instance.LastIndexOf('_') + 1);
-            
+
             diag("Portal: Starting Server");
 
-            StartNewServer();
+            StartServices();
 
             diag("Portal: Running");
 
@@ -33,30 +33,8 @@ namespace Orleans.Frontend
             {
                 Thread.Sleep(10000);
 
-                CheckHealth();
-                
-                /*
-                if (OrleansAzureClient.IsInitialized)
-                {
-                    diag("Portal: Testing Silo");
+                //CheckHealth();
 
-                    IHello grainRef = HelloFactory.GetGrain(0);
-
-                    try
-                    {
-                        string msg = grainRef.SayHello("hey").Result;
-                        diag("Portal: Silo said: " + msg + " at " + DateTime.UtcNow + " UTC");
-                    }
-                    catch (Exception exc)
-                    {
-                        while (exc is AggregateException) exc = exc.InnerException;
-
-                        diag("Portal: Error connecting to Orleans: " + exc + " at " + DateTime.UtcNow);
-                    }
-
-                }
-                 * */
-                 
             }
         }
 
@@ -69,7 +47,8 @@ namespace Orleans.Frontend
             return b.ToString();
         }
 
-        public void CheckHealth()
+             /*
+       public void CheckHealth()
         {
             if (currentserver == null)
                 return;
@@ -102,7 +81,9 @@ namespace Orleans.Frontend
             {
                 diag("Portal: exception in health check: " + e);
             }
+
         }
+             * */
 
         public override void OnStop()
         {
@@ -112,10 +93,21 @@ namespace Orleans.Frontend
             {
                 var server = currentserver;
                 currentserver = null;
-                server.Stop("Server Role is Stopping", false);
+                server.Stop();
             }
 
+            diag("Portal: Stopping " + (currentcmserver != null ? currentcmserver.GetIdentity() : ""));
+
+            if (currentcmserver != null)
+            {
+                var cmserver = currentcmserver;
+                currentcmserver = null;
+                cmserver.Stop();
+            }
+
+
             diag("Portal: Stopped");
+
 
             base.OnStop();
         }
@@ -148,14 +140,14 @@ namespace Orleans.Frontend
 
             // Set the maximum number of concurrent connections 
             ServicePointManager.DefaultConnectionLimit = 4000; // DOES THIS MAKE SENSE?
-         
+
             // get info
             deployment = RoleEnvironment.DeploymentId;
             instance = RoleEnvironment.CurrentRoleInstance.Id;
 
             // check if we are running in cloud or in simulator
             runningincloud = RoleEnvironment.GetConfigurationSettingValue("InCloud") == "true";
- 
+
             return base.OnStart();
         }
 
@@ -164,54 +156,18 @@ namespace Orleans.Frontend
         internal string instance;
         internal string instanceid;
         internal bool runningincloud;
-        
+ 
 
         internal Benchmarks.Server currentserver;
+        internal ClusterProtocolServer currentcmserver;
 
-        public void StartNewServer()
+        public void StartServices()
         {
-            var endpointdescriptor = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["frontend"];
-            var securehttp = (endpointdescriptor.Protocol == "https");
-            var port = endpointdescriptor.IPEndpoint.Port.ToString();
-            var endpoint = endpointdescriptor.Protocol + "://+:" + port + "/";
-
-            diag("Portal: Launching " + (runningincloud ? "deployed " : "local") + " revision server at " + endpoint);
-   
-            // now we start the server
             try
             {
-
-                // construct server object
-                var server = new Benchmarks.Server(
-                          RoleEnvironment.DeploymentId,
-                          instanceid,
-                          runningincloud,
-                          securehttp,
-                          this.tracer,
-                          this.diag
-                          );
-                currentserver = server;
-
-
-                RoleEnvironment.Stopping += (sender, args) =>
-                {
-                    diag("Portal: Stopping " + (currentserver != null ? currentserver.GetIdentity() : ""));
-                };
-                RoleEnvironment.Changing += (sender, args) =>
-                {
-                    diag("Portal: RoleEnvironment Changing " + (currentserver != null ? currentserver.GetIdentity() : ""));
-                };
-                RoleEnvironment.Changed += (sender, args) =>
-                {
-                    diag("Portal: RoleEnvironment Changed " + (currentserver != null ? currentserver.GetIdentity() : ""));
-                };
-                RoleEnvironment.StatusCheck += (sender, args) =>
-                {
-                   // maybe we need this some day
-                };
-
-               diag("Portal: Starting Orleans Client");
-               if (!AzureClient.IsInitialized)
+                // start orleans client
+                diag("Portal: Starting Orleans Client");
+                if (!AzureClient.IsInitialized)
                 {
                     FileInfo clientConfigFile = AzureConfigUtils.ClientConfigFileLocation;
                     if (!clientConfigFile.Exists)
@@ -222,21 +178,48 @@ namespace Orleans.Frontend
                 }
                 diag("Portal: Orleans Client Started.");
 
-                diag("Portal: Starting server...");
-                server.Start(endpoint);
-                diag("Portal: Server started at endpoint: " + endpoint);
 
+                // start service endpoint
+                var endpointdescriptor = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["frontend"];
+                var securehttp = (endpointdescriptor.Protocol == "https");
+                var port = endpointdescriptor.IPEndpoint.Port.ToString();
+                var endpoint = endpointdescriptor.Protocol + "://+:" + port + "/";
+                diag("Portal: Launching " + (runningincloud ? "deployed " : "local") + " service at " + endpoint);
+                currentserver = new Benchmarks.Server(
+                              RoleEnvironment.DeploymentId,
+                              instanceid,
+                              runningincloud,
+                              securehttp,
+                              this.tracer,
+                              this.diag
+                              );
+                currentserver.Start(endpoint);
+                diag("Portal: Service started at endpoint: " + endpoint);
+
+                // start cluster mgt endpoint
+                var cmendpointdescriptor = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["clustermgt"];
+                var cmsecurehttp = (cmendpointdescriptor.Protocol == "https");
+                var cmport = cmendpointdescriptor.IPEndpoint.Port.ToString();
+                var cmendpoint = cmendpointdescriptor.Protocol + "://+:" + cmport + "/";
+                diag("Portal: Launching cluster mgt service at " + cmendpoint);
+                currentcmserver = new ClusterProtocolServer(
+                      RoleEnvironment.DeploymentId,
+                      instanceid,
+                      runningincloud,
+                      cmsecurehttp,
+                      this.tracer,
+                      this.diag
+                      );
+                currentcmserver.Start(cmendpoint);
+                diag("Portal: CM Service started at endpoint: " + cmendpoint);
+
+                diag("Portal: Startup complete");
             }
             catch (Exception e)
             {
                 diag("Portal: failed to start: " + e.ToString());
             }
         }
-
-
-
-
-     
     }
 }
 
