@@ -472,7 +472,7 @@ namespace Orleans.Runtime
             else if (typeof(Grain).IsAssignableFrom(sourceType))
             {
                 Grain grainClassRef = (Grain)grainRef;
-                GrainReference g = FromGrainId(grainClassRef.Identity);
+                GrainReference g = FromGrainId(grainClassRef.Data.Identity);
                 grainRef = g;
             }
             else if (!typeof(GrainReference).IsAssignableFrom(sourceType))
@@ -518,35 +518,6 @@ namespace Orleans.Runtime
             foreach (var argument in arguments)
                 if (argument is Grain)
                     throw new ArgumentException(String.Format("Cannot pass a grain object {0} as an argument to a method. Pass this.AsReference<GrainInterface>() instead.", argument.GetType().FullName));
-        }
-
-        private static readonly Dictionary<GrainId, Dictionary<SiloAddress, ISystemTarget>> typedReferenceCache =
-            new Dictionary<GrainId, Dictionary<SiloAddress, ISystemTarget>>();
-
-        internal static T GetSystemTarget<T>(GrainId grainId, SiloAddress destination, Func<IAddressable, T> cast)
-            where T : ISystemTarget
-        {
-            Dictionary<SiloAddress, ISystemTarget> cache;
-
-            lock (typedReferenceCache)
-            {
-                if (typedReferenceCache.ContainsKey(grainId))
-                    cache = typedReferenceCache[grainId];
-                else
-                {
-                    cache = new Dictionary<SiloAddress, ISystemTarget>();
-                    typedReferenceCache[grainId] = cache;
-                }
-            }
-            lock (cache)
-            {
-                if (cache.ContainsKey(destination))
-                    return (T)cache[destination];
-
-                var reference = cast(FromGrainId(grainId, null, destination));
-                cache[destination] = reference;
-                return reference;
-            }
         }
 
         /// <summary> Serializer function for grain reference.</summary>

@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Orleans.CodeGeneration;
+using Orleans.Core;
 using Orleans.Providers;
 using Orleans.Concurrency;
 using Orleans.Runtime.Configuration;
@@ -42,15 +43,17 @@ namespace Orleans.Runtime.Providers
 
         private IStreamPubSub pubSub;
         private ImplicitStreamSubscriberTable implicitStreamSubscriberTable;
+        public IGrainFactory GrainFactory { get; private set; }
         public Guid ServiceId { get; private set; }
 
         private SiloProviderRuntime()
         {
         }
 
-        internal static void Initialize(GlobalConfiguration config)
+        internal static void Initialize(GlobalConfiguration config, IGrainFactory grainFactory)
         {
             Instance.ServiceId = config.ServiceId;
+            Instance.GrainFactory = grainFactory;
         }
 
         public static SiloProviderRuntime Instance
@@ -71,10 +74,10 @@ namespace Orleans.Runtime.Providers
 
         public ImplicitStreamSubscriberTable ImplicitStreamSubscriberTable { get { return implicitStreamSubscriberTable; } }
 
-        public static void StreamingInitialize(ImplicitStreamSubscriberTable implicitStreamSubscriberTable) 
+        public static void StreamingInitialize(IGrainFactory grainFactory, ImplicitStreamSubscriberTable implicitStreamSubscriberTable) 
         {
             Instance.implicitStreamSubscriberTable = implicitStreamSubscriberTable;
-            Instance.pubSub = new StreamPubSubImpl(new GrainBasedPubSubRuntime(), implicitStreamSubscriberTable);
+            Instance.pubSub = new StreamPubSubImpl(new GrainBasedPubSubRuntime(grainFactory), implicitStreamSubscriberTable);
         }
 
         public StreamDirectory GetStreamDirectory()

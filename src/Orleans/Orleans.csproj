@@ -35,7 +35,6 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -119,13 +118,18 @@
     <Compile Include="Configuration\LimitNames.cs" />
     <Compile Include="Configuration\LimitValue.cs" />
     <Compile Include="Core\Exceptions.cs" />
+    <Compile Include="Core\GrainStateStorageBridge.cs" />
+    <Compile Include="Core\IGrainIdentity.cs" />
     <Compile Include="Core\IGrainState.cs" />
+    <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="IDs\GuidId.cs" />
     <Compile Include="Messaging\GatewayManager.cs" />
+    <Compile Include="Messaging\IncomingMessageBuffer.cs" />
     <Compile Include="Messaging\RequestInvocationHistory.cs" />
     <Compile Include="Messaging\Response.cs" />
     <Compile Include="Providers\StorageProviderUtils.cs" />
+    <Compile Include="Runtime\GrainRuntime.cs" />
     <Compile Include="Runtime\IAddressable.cs" />
     <Compile Include="Placement\PreferLocalPlacement.cs" />
     <Compile Include="AssemblyLoader\AssemblyLoader.cs" />
@@ -133,8 +137,12 @@
     <Compile Include="AssemblyLoader\CachedReflectionOnlyTypeResolver.cs" />
     <Compile Include="Runtime\IActivationData.cs" />
     <Compile Include="IDs\UniqueKey.cs" />
+    <Compile Include="Core\IGrainFactory.cs" />
+    <Compile Include="Runtime\IGrainRuntime.cs" />
+    <Compile Include="Timers\IReminderRegistry.cs" />
     <Compile Include="Runtime\IRuntimeClient.cs" />
     <Compile Include="Runtime\IGrainExtension.cs" />
+    <Compile Include="Timers\ITimerRegistry.cs" />
     <Compile Include="Statistics\StageAnalysis.cs" />
     <Compile Include="Core\GrainFactory.cs" />
     <Compile Include="Runtime\HashRing.cs" />
@@ -216,6 +224,8 @@
     <Compile Include="Streams\Core\StreamSequenceToken.cs" />
     <Compile Include="Streams\Core\StreamSubscriptionHandle.cs" />
     <Compile Include="Timers\AsyncTaskSafeTimer.cs" />
+    <Compile Include="Timers\ReminderRegistry.cs" />
+    <Compile Include="Timers\TimerRegistry.cs" />
     <Compile Include="Utils\SetExtensions.cs" />
     <Compile Include="Placement\ActivationCountBasedPlacement.cs" />
     <Compile Include="Placement\StatelessWorkerPlacement.cs" />
@@ -440,16 +450,5 @@
     <WriteLinesToFile File="$(ArgsFile)" Lines="/MyType:$(MyType)" />
     <WriteLinesToFile File="$(ArgsFile)" Lines="@(Compile->'/src:%(Identity)')" />
   </Target>
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>
-This project references NuGet package(s) that are missing on this computer. 
-Enable NuGet Package Restore to download them.  
-For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. 
-The missing file is {0}.
-      </ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
 </Project>
+

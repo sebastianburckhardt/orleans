@@ -22,17 +22,15 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
 using Orleans.TestingHost;
-using TestGrainInterfaces;
-using UnitTests.SampleStreaming;
+using UnitTests.GrainInterfaces;
 
-namespace Tester.StreamingTests
+namespace UnitTests.StreamingTests
 {
     class DeactivationTestRunner
     {
@@ -69,8 +67,8 @@ namespace Tester.StreamingTests
         public async Task DeactivationTest(Guid streamGuid, string streamNamespace)
         {
             // get producer and consumer
-            ISampleStreaming_ProducerGrain producer = SampleStreaming_ProducerGrainFactory.GetGrain(Guid.NewGuid());
-            IMultipleSubscriptionConsumerGrain consumer = MultipleSubscriptionConsumerGrainFactory.GetGrain(Guid.NewGuid());
+            var producer = GrainClient.GrainFactory.GetGrain<ISampleStreaming_ProducerGrain>(Guid.NewGuid());
+            var consumer = GrainClient.GrainFactory.GetGrain<IMultipleSubscriptionConsumerGrain>(Guid.NewGuid());
 
             // subscribe (PubSubRendezvousGrain will have one consumer)
             StreamSubscriptionHandle<int> subscriptionHandle = await consumer.BecomeConsumer(streamGuid, streamNamespace, streamProviderName);
@@ -83,7 +81,7 @@ namespace Tester.StreamingTests
             Assert.AreEqual(count[subscriptionHandle], 1, "Consumer grain has not received stream message");
 
             //TODO: trigger deactivation programmatically
-            Thread.Sleep(130000); // wait for the PubSubRendezvousGrain and the SampleStreaming_ProducerGrain to be deactivated
+            await Task.Delay(TimeSpan.FromMilliseconds(130000)); // wait for the PubSubRendezvousGrain and the SampleStreaming_ProducerGrain to be deactivated
 
             // deactivating PubSubRendezvousGrain and SampleStreaming_ProducerGrain during the same GC cycle causes a deadlock
             // resume producing after the PubSubRendezvousGrain and the SampleStreaming_ProducerGrain grains have been deactivated:
@@ -98,7 +96,7 @@ namespace Tester.StreamingTests
         public async Task DeactivationTest_ClientConsumer(Guid streamGuid, string streamNamespace)
         {
             // get producer and consumer
-            ISampleStreaming_ProducerGrain producer = SampleStreaming_ProducerGrainFactory.GetGrain(Guid.NewGuid());
+            var producer = GrainClient.GrainFactory.GetGrain<ISampleStreaming_ProducerGrain>(Guid.NewGuid());
 
             var count = new Counter();
             // get stream and subscribe
@@ -113,7 +111,7 @@ namespace Tester.StreamingTests
             Assert.AreEqual(count.Value, 1, "Client consumer grain has not received stream message");
 
             //TODO: trigger deactivation programmatically
-            Thread.Sleep(130000); // wait for the PubSubRendezvousGrain and the SampleStreaming_ProducerGrain to be deactivated
+            await Task.Delay(TimeSpan.FromMilliseconds(130000)); // wait for the PubSubRendezvousGrain and the SampleStreaming_ProducerGrain to be deactivated
 
             // deactivating PubSubRendezvousGrain and SampleStreaming_ProducerGrain during the same GC cycle causes a deadlock
             // resume producing after the PubSubRendezvousGrain and the SampleStreaming_ProducerGrain grains have been deactivated:
