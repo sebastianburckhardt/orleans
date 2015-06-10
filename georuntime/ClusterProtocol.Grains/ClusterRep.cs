@@ -144,6 +144,9 @@ namespace ClusterProtocol.Grains
                 }
             }
 
+            foreach (var kvp in GlobalInfo)
+                if (!info.ContainsKey(kvp.Key))
+                    returnedentries[kvp.Key] = kvp.Value;
 
             return returnedentries;
         }
@@ -183,6 +186,11 @@ namespace ClusterProtocol.Grains
 
         public async Task Broadcast()
         {
+
+        //    if (Util.MyDeploymentId == "localdeployment")
+                // protocol is no-op in the single-node local simulation
+                return;
+
             var info = JsonConvert.SerializeObject(GlobalInfo).ToString();
             foreach (var e in Endpoints.AllPublicEndpoints())
             {
