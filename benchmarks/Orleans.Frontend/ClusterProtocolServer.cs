@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Specialized;
 using Common;
 using ClusterProtocol.Interfaces;
+using Newtonsoft.Json;
 
 namespace Orleans.Frontend
 {
@@ -80,7 +81,7 @@ namespace Orleans.Frontend
                     }
 
                     //Potential bug. Ask Sebastian 
-                    var urlpath = url.AbsolutePath.Split('/').Select(s => HttpUtility.UrlDecode(s)).Skip(2).ToArray();
+                    var urlpath = url.AbsolutePath.Split('/').Select(s => HttpUtility.UrlDecode(s)).Skip(1).ToArray();
                     //var urlpath = new String[] { url.AbsolutePath.Split('/').Last() };
                     var arguments = HttpUtility.ParseQueryString(url.Query);
 
@@ -99,17 +100,14 @@ namespace Orleans.Frontend
 
                             if (verb == "GET" && cmd == "info")
                             {
-                                responsestring = await clusterrep.GetInfo();
+                                var info = await clusterrep.GetGlobalInfo();
+                                responsestring = JsonConvert.SerializeObject(info).ToString();
                             }
                             else if (verb == "POST" && cmd == "info")
                             {
-                                await clusterrep.PostInfo(body);
-                                responsestring = "\"ok\"";
-                            }
-                            else if (verb == "POST" && cmd == "init")
-                            {
-                                await clusterrep.Init(body);
-                                responsestring = "\"ok\"";
+                                var info = JsonConvert.DeserializeObject<Dictionary<string, DeploymentInfo>>(body);
+                                info = await clusterrep.PostInfo(info);
+                                responsestring = JsonConvert.SerializeObject(info).ToString();
                             }
                             else
                             {

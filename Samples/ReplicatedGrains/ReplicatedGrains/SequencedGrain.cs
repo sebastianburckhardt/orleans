@@ -7,6 +7,7 @@ using Orleans;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using Common;
+using ClusterProtocol;
 
 #pragma warning disable 1998
 
@@ -317,14 +318,25 @@ namespace ReplicatedGrains
 
         }
 
-        
+
         private async Task ReadFromPrimary()
         {
 
             using (new TraceInterval("SequencedGrain - ReadFromPrimary", 0))
             {
-                await this.State.ReadStateAsync();
-                this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
+                try
+                {
+                    await this.State.ReadStateAsync();
+                    this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
+
+                    SiloRep.Instance.RecordActivity("read from primary", false);
+                }
+                catch (Exception e)
+                {
+                    SiloRep.Instance.RecordActivity("read from primary", true);
+
+                    throw e;
+                }
             }
         }
         
@@ -337,9 +349,14 @@ namespace ReplicatedGrains
                 {
                     await this.State.WriteStateAsync();
                     this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
+
+                    SiloRep.Instance.RecordActivity("write to primary", false);
                 }
-                finally
+                catch (Exception e)
                 {
+                    SiloRep.Instance.RecordActivity("write to primary", true);
+
+                    throw e;
                 }
             }
 

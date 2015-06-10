@@ -69,6 +69,10 @@ namespace Common
 
                 return mydeploymentname;
             }
+            set
+            {
+                mydeploymentname = value;
+            }
         }
 
     
@@ -78,6 +82,7 @@ namespace Common
         {
             get
             {
+                // if this has not been set
                 if (myinstancename == null)
                     try
                     {
@@ -101,6 +106,10 @@ namespace Common
 
                 return myinstancename;
             }
+            set
+            {
+                myinstancename = value;
+            }
         }
 
 
@@ -111,6 +120,8 @@ namespace Common
             return Util.MyInstanceName.Contains("deployment");
         }
 
+
+     
 
         public static string PrintStats(Dictionary<string, LatencyDistribution> stats)
         {

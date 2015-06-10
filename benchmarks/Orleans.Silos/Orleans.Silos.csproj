@@ -179,6 +179,14 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\georuntime\ClusterProtocol.Grains\ClusterProtocol.Grains.csproj">
+      <Project>{65c74af4-5ed5-4708-a809-e3f6baba1c59}</Project>
+      <Name>ClusterProtocol.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\georuntime\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
+      <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
+      <Name>ClusterProtocol.Interfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Applications\Computation\Grains\Computation.Grains.csproj">
       <Project>{e90fccbc-c1de-4d28-a093-522a38ed1901}</Project>
       <Name>Computation.Grains</Name>
@@ -210,6 +218,10 @@
     <ProjectReference Include="..\Applications\Size\Interfaces\Size.Interfaces.csproj">
       <Project>{082161e0-3095-4307-bd02-e69cacbb4a39}</Project>
       <Name>Size.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
+      <Name>Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

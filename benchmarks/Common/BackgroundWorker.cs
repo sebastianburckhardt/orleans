@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace ReplicatedGrains
+namespace Common
 {
     /// <summary>
     /// General pattern for a async background worker that performs a task repeatedly when notified.

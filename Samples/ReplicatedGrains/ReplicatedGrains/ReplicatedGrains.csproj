@@ -78,12 +78,19 @@
     <Compile Include="SequencedGrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
-    <Compile Include="BackgroundWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\benchmarks\Common\Common.csproj">
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\georuntime\ClusterProtocol.Grains\ClusterProtocol.Grains.csproj">
+      <Project>{65c74af4-5ed5-4708-a809-e3f6baba1c59}</Project>
+      <Name>ClusterProtocol.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\georuntime\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
+      <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
+      <Name>ClusterProtocol.Interfaces</Name>
     </ProjectReference>
     <ProjectReference Include="..\Examples.Interfaces\Examples.Interfaces.csproj">
       <Project>{163cce80-c506-468c-9b28-e2ff198097e3}</Project>

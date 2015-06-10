@@ -113,6 +113,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\georuntime\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
+      <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
+      <Name>ClusterProtocol.Interfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Benchmarks\BenchmarkList.csproj">
       <Project>{666fcf4a-a67f-4409-afde-8d8b869a804c}</Project>
       <Name>Benchmarks</Name>

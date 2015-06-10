@@ -71,7 +71,18 @@ namespace Common
                 return MakeServiceEndpoint(((Conductor) 0).ToString());
         }
 
-     
+
+        public static IEnumerable<string> AllPublicEndpoints()
+        {
+            foreach (var sd in Enum.GetValues(typeof(ServiceDeployments)))
+                if ((ServiceDeployments)sd == ServiceDeployments.Simulator)
+                {
+                    if (Util.RunningInAzureSimulator())
+                        yield return "localhost";
+                }
+                else
+                    yield return MakeServiceEndpoint(sd.ToString());
+        }
 
       
        

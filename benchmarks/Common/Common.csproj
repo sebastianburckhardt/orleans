@@ -79,7 +79,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsyncTimer.cs" />
     <Compile Include="AzureCommon.cs" />
+    <Compile Include="BackgroundWorker.cs" />
     <Compile Include="BenchmarkInterfaces.cs" />
     <Compile Include="TextEntity.cs" />
     <Compile Include="Endpoints.cs" />
