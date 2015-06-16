@@ -201,7 +201,7 @@ namespace Benchmarks
                     await ws.ConnectAsync(uri, CancellationToken.None);
 
                     var socketwrapper = new SocketWrapper(ws);
-                    await request.ProcessConnectionOnClient(socketwrapper);
+                    result = await request.ProcessConnectionOnClient(socketwrapper);
 
                     // receive loop
                     while (ws.State == WebSocketState.Open || ws.State == WebSocketState.CloseSent)  
@@ -214,7 +214,7 @@ namespace Benchmarks
 
                         if (receiveResult.MessageType == WebSocketMessageType.Close)
                         {
-                            await request.ProcessCloseOnServer(socketwrapper, receiveResult.CloseStatusDescription);
+                            result = await request.ProcessCloseOnClient(socketwrapper, receiveResult.CloseStatusDescription);
                         }
                         else if (receiveResult.MessageType != WebSocketMessageType.Text)
                         {

@@ -90,7 +90,7 @@ namespace Hello.Benchmark
             //send to some grain.
             var replicatedGrain = ReplicatedHelloGrainFactory.GetGrain(0);
             await replicatedGrain.Hello(nr.ToString());
-            return await replicatedGrain.GetTopMessagesAsync(true);
+            return string.Join("", await replicatedGrain.GetTopMessagesAsync(true));
 
             /*var helloGrain = HelloGrainFactory.GetGrain(0);
             return await helloGrain.Hello(nr.ToString());*/
