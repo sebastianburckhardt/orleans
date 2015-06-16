@@ -11,13 +11,14 @@ namespace MultiLingualChat.GrainInterfaces
 
     public interface IChatRoom : IGrainWithStringKey
     {
-        Task<RoomState> joinRoom(string roomName, string userId, string userName, string language);
+        Task<RoomState> joinRoom(string userId, string userName, string language);
         Task leaveRoom(string userId);
         Task<List<UserState>> getUsersInRoom();
         Task<UserState> setName(string userId, string userName);
         Task<UserState> setAvatar(string userId, string url);
         Task<UserState> setLanguage(string userId, string language);
         Task<List<ChatMessage>> sendMessage(string userId, string text);
+        Task<List<ChatMessage>> getMessagesInRoom(string userId, string language);
     }
 
     [Serializable]

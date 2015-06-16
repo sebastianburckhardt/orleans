@@ -26,56 +26,72 @@ namespace MultiLingualChat.Grains
         public new class State
         {
             public Dictionary<string, UserState> users { get; set; }
-            public  List<ChatMessage> messages { get; set; }
+            public List<ChatMessage> messages { get; set; }
 
             public State()
             {
                 users = new Dictionary<string, UserState>();
                 messages = new List<ChatMessage>();
-            } 
+            }
         }
 
         [Serializable]
-        public class StateModifier : IAppliesTo<State>
+        public class AddUserStateModifier : IAppliesTo<State>
         {
-            private int MAX_MESSAGES = 50;
-            public string type { get; set; }
             public string userId { get; set; }
             public UserState chatUser { get; set; }
+            public void Update(State state)
+            {
+                // Should not add duplicates
+                state.users.Add(userId, chatUser);
+            }
+        }
+
+        [Serializable]
+        public class RemoveUserStateModifier : IAppliesTo<State>
+        {
+            public string userId { get; set; }
+            public void Update(State state)
+            {
+                state.users.Remove(userId); ;
+            }
+        }
+
+        [Serializable]
+        public class SetNameStateModifier : IAppliesTo<State>
+        {
+            public string userId { get; set; }
+            public UserState chatUser { get; set; }
+            public void Update(State state)
+            {
+                state.users[userId] = chatUser; //TODO: what if user does not exist? 
+            }
+        }
+
+        [Serializable]
+        public class AddMessageStateModifier : IAppliesTo<State>
+        {
+            private int MAX_MESSAGES = 50;
             public ChatMessage chatMessage { get; set; }
             public void Update(State state)
             {
-                switch (type)
+                state.messages.Add(chatMessage);
+                if (state.messages.Count > MAX_MESSAGES)
                 {
-                    case "addUser":
-                        state.users.Add(userId, chatUser);
-                        break;
-                    case "removeUser":
-                        state.users.Remove(userId);
-                        break;
-                    case "setName":
-                        state.users[userId] = chatUser; //TODO: what if user does not exist?
-                        break;
-                    case "addMessage":
-                        state.messages.Add(chatMessage);
-                        if (state.messages.Count > MAX_MESSAGES) {
-                            state.messages.RemoveAt(0);
-                        }
-                        break;
-                    default:
-                        break;
+                    state.messages.RemoveAt(0);
                 }
             }
         }
         #endregion
 
-        public override Task OnActivateAsync() {
+        public override Task OnActivateAsync()
+        {
             //this.GetPrimaryKeyString();
             return base.OnActivateAsync();
         }
 
         #region JoinRoom
-        public async Task<RoomState> joinRoom(string roomName, string userId, string userName, string language)
+        public async Task<RoomState> joinRoom(string userId, string userName, string language)
         {
             RoomState roomState;
             UserState chatUser;
@@ -88,7 +104,9 @@ namespace MultiLingualChat.Grains
                     Id = Guid.NewGuid().ToString("N"), // TODO: make this globally unique?
                     Name = _getName(userName, new List<UserState>(users.Values)),
                     Language = language,
-                    Avatar = _generateAvatarUrl()
+                    Avatar = _generateAvatarUrl(),
+                    Room = this.GetPrimaryKeyString(),
+                    State = "joined room"
                 };
             }
             else
@@ -100,22 +118,24 @@ namespace MultiLingualChat.Grains
                         Id = userId,
                         Name = _getName(userName, new List<UserState>(users.Values)),
                         Language = language,
-                        Avatar = _generateAvatarUrl()
+                        Avatar = _generateAvatarUrl(),
+                        Room = this.GetPrimaryKeyString(),
+                        State = "joined room"
+
                     };
                 }
             }
-            await UpdateLocallyAsync(new StateModifier() { type = "addUser", userId = chatUser.Id, chatUser = chatUser }, false);
+            await UpdateLocallyAsync(new AddUserStateModifier() { userId = chatUser.Id, chatUser = chatUser }, false);
 
             roomState = new RoomState
             {
                 Id = Guid.NewGuid().ToString("N"), // TODO: make this globally unique
-                Name = roomName,
+                Name = this.GetPrimaryKeyString(),
                 ParticipantCount = users.Count + 1, //TODO: makes sense?
                 UserId = chatUser.Id,
                 UserName = chatUser.Name,
                 UserAvatar = chatUser.Avatar
             };
-            
             return roomState;
         }
 
@@ -124,7 +144,7 @@ namespace MultiLingualChat.Grains
             string prefix = name;
             int i = 1;
             while (existingNames.Contains(prefix + i.ToString()) && i <= 1000)
-                    i++;
+                i++;
             return prefix + i.ToString();
         }
 
@@ -146,11 +166,11 @@ namespace MultiLingualChat.Grains
         //        return name + "1";
         //}
 
-        private List<string> _getTakenNames(List<UserState> users) 
+        private List<string> _getTakenNames(List<UserState> users)
         {
             List<string> existingNames = new List<string>();
 
-            foreach(var item in users)
+            foreach (var item in users)
             {
                 existingNames.Add(item.Name); // TODO: Explore anomaly: adding two users with the same name
             }
@@ -180,7 +200,7 @@ namespace MultiLingualChat.Grains
         #region LeaveRoom
         public async Task leaveRoom(string userId)
         {
-            await UpdateLocallyAsync(new StateModifier() { type = "removeUser", userId = userId }, false);
+            await UpdateLocallyAsync(new RemoveUserStateModifier() { userId = userId }, false);
         }
         #endregion
 
@@ -191,6 +211,7 @@ namespace MultiLingualChat.Grains
         }
         #endregion
 
+        #region SetName
         public async Task<UserState> setName(string userId, string userName)
         {
             var users = (await GetLocalStateAsync()).users;
@@ -198,25 +219,35 @@ namespace MultiLingualChat.Grains
             string name = _getName(userName, new List<UserState>(users.Values));
             UserState chatUser;
 
-            if (users.TryGetValue(userId, out chatUser)) {
+            if (users.TryGetValue(userId, out chatUser))
+            {
                 chatUser.Name = name;
-                await UpdateLocallyAsync(new StateModifier() { type = "setName", userId = userId, chatUser = chatUser }, false);
+                await UpdateLocallyAsync(new SetNameStateModifier() { userId = userId, chatUser = chatUser }, false);
                 return chatUser;
             }
             else
                 // We don't have info about this user
                 return new UserState();
         }
+        #endregion
 
-        public Task<UserState> setAvatar(string userId, string url) {
+        #region SetAvatar
+        public Task<UserState> setAvatar(string userId, string url)
+        {
             return Task.FromResult(new UserState());
         }
+        #endregion
 
-        public Task<UserState> setLanguage(string userId, string language) {
+        #region SetLanguage
+        public Task<UserState> setLanguage(string userId, string language)
+        {
             return Task.FromResult(new UserState());
         }
+        #endregion
 
-        public async Task<List<ChatMessage>> sendMessage(string userId, string text) {
+        #region SendMessage
+        public async Task<List<ChatMessage>> sendMessage(string userId, string text)
+        {
             var messages = await _makeMessages(userId, text);
             System.Diagnostics.Debug.WriteLine("XXX ChatRoom : awaited messages = " + messages);
             return messages;
@@ -232,14 +263,14 @@ namespace MultiLingualChat.Grains
                 return null; // We have no info about this user (we might have lost state)
             }
             var originalMessage = new ChatMessage
-            { 
+            {
                 Sender = user.Id,
                 SenderLanguage = user.Language,
                 Text = text
             };
 
-            await UpdateLocallyAsync(new StateModifier() { type = "addMessage", chatMessage = originalMessage }, false);
-            
+            await UpdateLocallyAsync(new AddMessageStateModifier() { chatMessage = originalMessage }, false);
+
             List<ChatMessage> translatedMessages = new List<ChatMessage>();
 
             foreach (var u in users)
@@ -281,5 +312,46 @@ namespace MultiLingualChat.Grains
             }
             return translatedMessages;
         }
+        #endregion
+
+        #region GetMessagesInRoom
+        public async Task<List<ChatMessage>> getMessagesInRoom(string userId, string language)
+        {
+            var messages = (await GetLocalStateAsync()).messages;
+
+            List<ChatMessage> translatedMessages = new List<ChatMessage>();
+            foreach (ChatMessage m in messages)
+            {
+                ChatMessage mess = new ChatMessage()
+                {
+                    Sender = m.Sender,
+                    SenderLanguage = m.SenderLanguage,
+                    ReceiverLanguage = language,
+                    Text = m.Text,
+                    TranslatedText = m.TranslatedText
+                };
+
+                if (m.SenderLanguage != language)
+                {
+                    var translations = GrainFactory.GetGrain<ITranslations>(Utils.makeHashKey(m.SenderLanguage, language, m.Text));
+                    var ts = await translations.getAlternativeTranslations();
+
+                    if (ts != null && ts.Count > 0)
+                    {
+                        mess.TranslatedText = ts[0].Text;
+                    }
+                    else
+                    {
+                        mess.TranslatedText = mBing.Translate(mess.Text, mess.SenderLanguage, language);
+                        await translations.addTranslation(mess.SenderLanguage, language, mess.Text, mess.TranslatedText, true, 10);
+                    }
+                }
+                else
+                    mess.TranslatedText = m.Text;
+                translatedMessages.Add(mess);
+            }
+            return new List<ChatMessage>();
+        }
+        #endregion
     }
 }

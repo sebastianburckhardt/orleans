@@ -70,6 +70,9 @@
     <Reference Include="OrleansAzureUtils">
       <HintPath>..\packages\Microsoft.Orleans.OrleansAzureUtils.1.0.8\lib\net45\OrleansAzureUtils.dll</HintPath>
     </Reference>
+    <Reference Include="OrleansProviders">
+      <HintPath>..\..\..\packages\Microsoft.Orleans.OrleansProviders.1.0.8\lib\net45\OrleansProviders.dll</HintPath>
+    </Reference>
     <Reference Include="OrleansRuntime">
       <HintPath>..\packages\Microsoft.Orleans.OrleansRuntime.1.0.8\lib\net45\OrleansRuntime.dll</HintPath>
     </Reference>
@@ -101,6 +104,14 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\georuntime\ClusterProtocol.Grains\ClusterProtocol.Grains.csproj">
+      <Project>{65c74af4-5ed5-4708-a809-e3f6baba1c59}</Project>
+      <Name>ClusterProtocol.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\georuntime\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
+      <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
+      <Name>ClusterProtocol.Interfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MultiLingualChat.Grains\MultiLingualChat.Grains.csproj">
       <Project>{665c51c1-ba91-40c9-b31e-a1cda6dc5ad0}</Project>
       <Name>MultiLingualChat.Grains</Name>

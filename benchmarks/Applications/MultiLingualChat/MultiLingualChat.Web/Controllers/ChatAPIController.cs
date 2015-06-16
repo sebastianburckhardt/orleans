@@ -86,6 +86,26 @@ namespace MultiLingualChat.Web.Controllers
             return u;
         }
 
+        //[HttpGet]
+        //public async Task<ChatMessageModel[]> GetMessagesInRoom(string room, string userId, string language)
+        //{
+        //    var r = GrainFactory.GetGrain<IChatRoom>(room);
+        //    var messages = await r.getMessagesInRoom(userId);
+
+        //    ChatMessageModel[] m = new ChatMessageModel[messages.Count];
+
+        //    for (int i = 0; i < messages.Count; i++)
+        //        m[i] = new ChatMessageModel
+        //        {
+        //            Sender = messages[i].Sender,
+        //            SrcLanguage = messages[i].SenderLanguage,
+        //            TgtLanguage = messages[i].ReceiverLanguage,
+        //            SrclText = messages[i].Text,
+        //            TgtText = messages[i].TranslatedText
+        //        };
+        //    return m;
+        //}
+
         [HttpGet]
         public async Task<MessageTranslationsModel> DisputeTranslation(string srcLang, string tgtLang, string original, string translated, string tag)
         {

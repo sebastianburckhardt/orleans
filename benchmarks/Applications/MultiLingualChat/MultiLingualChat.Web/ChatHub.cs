@@ -89,7 +89,7 @@ namespace MultiLingualChat.Web
             }
             
             var nRoom = GrainFactory.GetGrain<IChatRoom>(room);
-            var roomState = await nRoom.joinRoom(room, userId, userName, language);
+            var roomState = await nRoom.joinRoom(userId, userName, language);
 
             //TODO: get rid of this temp code
             tsr.joinRoom(Context.ConnectionId, oldRoom, room, language, roomState);

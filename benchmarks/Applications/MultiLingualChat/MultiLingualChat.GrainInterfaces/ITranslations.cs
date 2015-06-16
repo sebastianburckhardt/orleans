@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System;
 
 namespace MultiLingualChat.GrainInterfaces
 {
@@ -15,6 +16,7 @@ namespace MultiLingualChat.GrainInterfaces
         Task<List<MessageTranslation>> disputeTranslation();
     }
 
+    [Serializable]
     public struct MessageTranslation {
         public string RowKey { get; set; }
         public string Text { get; set; }

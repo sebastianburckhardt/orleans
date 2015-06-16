@@ -1,5 +1,7 @@
 ﻿using Orleans;
+using Orleans.Providers;
 using System;
+using ReplicatedGrains;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,29 +11,72 @@ using System.Security.Cryptography;
 
 namespace MultiLingualChat.Grains
 {
-    public class Translations : Grain, ITranslations
+    [StorageProvider(ProviderName = "AzureStore")]
+    public class Translations : SequencedGrain<Translations.State>, ITranslations
     {
-        Dictionary<string, MessageTranslation> translations;
+
+        #region State and State Modifiers
+        [Serializable]
+        public new class State
+        {
+            public Dictionary<string, MessageTranslation> translations { get; set; }
+
+            public State()
+            {
+                translations = new Dictionary<string, MessageTranslation>();
+            }
+        }
+
+        [Serializable]
+        public class StateModifier : IAppliesTo<State>
+        {
+            public string type { get; set; }
+            public string rowKey { get; set; }
+            public int offset { get; set; }
+            public MessageTranslation translation { get; set; }
+            public void Update(State state)
+            {
+                switch (type)
+                {
+                    case "addTranslation":
+                        state.translations.Add(rowKey, translation);
+                        break;
+                    case "voteTranslation":
+                        MessageTranslation t;
+                        if (state.translations.TryGetValue(rowKey, out t))
+                        {
+                            t.Rank = t.Rank + offset;
+                            state.translations[rowKey] = t;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        #endregion
+
         private static MD5 md5Hash;
 
         public override Task OnActivateAsync() {
-            translations  = new Dictionary<string, MessageTranslation>();
             md5Hash = MD5.Create();
             return base.OnActivateAsync();
         }
 
         #region AddTranslation
-        public Task<MessageTranslation> addTranslation(string srcLang, string tgtLang, string original, string translated, bool isBing, int rank)
+        public async Task<MessageTranslation> addTranslation(string srcLang, string tgtLang, string original, string translated, bool isBing, int rank)
         {
+            var rowKey = _makeHashKey(srcLang, tgtLang, translated);
             var translation = new MessageTranslation
             {
-                RowKey = _makeHashKey(srcLang, tgtLang, translated),
+                RowKey = rowKey,
                 Text = translated,
                 Rank = rank,
                 IsBing = isBing
             };
-            translations.Add(translation.RowKey, translation);
-            return Task.FromResult(translation);
+
+            await UpdateLocallyAsync(new StateModifier() { type = "addTranslation", rowKey = rowKey, translation = translation }, false);
+            return translation;
         }
 
         private string _makeHashKey(string srcLang, string tgtLang, string original)
@@ -46,26 +91,26 @@ namespace MultiLingualChat.Grains
         }
         #endregion
 
-        public Task<int> voteTranslation(string row, int offset)
+        #region VoteTranslation
+        public async Task<int> voteTranslation(string row, int offset)
         {
-            MessageTranslation translation;
-            if (translations.TryGetValue(row, out translation))
-            {
-                translation.Rank = translation.Rank + offset;
-                // TODO: must update the structure in dictionary?
-                return Task.FromResult(translation.Rank);
-            }
-            return Task.FromResult(0);
+            await UpdateLocallyAsync(new StateModifier() { type = "voteTranslation", rowKey = row, offset = offset }, false);
+            return 0;
         }
+        #endregion
 
-        public Task<List<MessageTranslation>> getAlternativeTranslations()
+        #region GetAlternativeTranslations
+        public async Task<List<MessageTranslation>> getAlternativeTranslations()
         {
-            return Task.FromResult(new List<MessageTranslation>(translations.Values));
+            return new List<MessageTranslation>((await GetLocalStateAsync()).translations.Values);
         }
+        #endregion
 
-        public Task<List<MessageTranslation>> disputeTranslation()
+        #region DisputeTranslation
+        public async Task<List<MessageTranslation>> disputeTranslation()
         {
-            return getAlternativeTranslations();
+            return await getAlternativeTranslations();
         }
+        #endregion
     }
 }

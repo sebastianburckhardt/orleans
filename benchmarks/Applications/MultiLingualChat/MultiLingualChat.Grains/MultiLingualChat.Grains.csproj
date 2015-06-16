@@ -59,6 +59,10 @@
     <Compile Include="Translations.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Samples\ReplicatedGrains\ReplicatedGrains\ReplicatedGrains.csproj">
+      <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
+      <Name>ReplicatedGrains</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MultiLingualChat.GrainInterfaces\MultiLingualChat.GrainInterfaces.csproj">
       <Project>{87cfb534-470f-4ad3-b936-c903c8dace70}</Project>
       <Name>MultiLingualChat.GrainInterfaces</Name>
