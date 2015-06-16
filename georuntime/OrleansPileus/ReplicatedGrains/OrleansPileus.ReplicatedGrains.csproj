@@ -102,10 +102,6 @@
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\PileusAzure\Pileus\Pileus.csproj">
-      <Project>{67e3bfb6-5e23-4d50-bb6b-3d5b5fe752ad}</Project>
-      <Name>Pileus</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Common\OrleansPileus.Common.csproj">
       <Project>{03465169-4a4a-4f85-ab04-a9a2c02cd0e6}</Project>
       <Name>OrleansPileus.Common</Name>
@@ -113,6 +109,10 @@
     <ProjectReference Include="..\Interfaces\OrleansPileus.Interfaces.csproj">
       <Project>{ce57a328-69ef-4828-a144-422fddb4ccc0}</Project>
       <Name>OrleansPileus.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PileusAzure\Pileus\Pileus.csproj">
+      <Project>{67e3bfb6-5e23-4d50-bb6b-3d5b5fe752ad}</Project>
+      <Name>Pileus</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

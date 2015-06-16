@@ -656,10 +656,10 @@ namespace Hello.Interfaces
                 return base.InvokeMethodAsync<object>(532006314, new object[] {@msg} );
             }
             
-            System.Threading.Tasks.Task<string> Hello.Interfaces.IReplicatedHelloGrain.GetTopMessagesAsync(bool @syncGlobal)
+            System.Threading.Tasks.Task<string[]> Hello.Interfaces.IReplicatedHelloGrain.GetTopMessagesAsync(bool @syncGlobal)
             {
 
-                return base.InvokeMethodAsync<System.String>(-284572065, new object[] {@syncGlobal} );
+                return base.InvokeMethodAsync<System.String[]>(-284572065, new object[] {@syncGlobal} );
             }
         }
     }

@@ -91,6 +91,10 @@
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\PileusAzure\Pileus\Pileus.csproj">
+      <Project>{67e3bfb6-5e23-4d50-bb6b-3d5b5fe752ad}</Project>
+      <Name>Pileus</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -87,7 +87,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\PileusAzure\Pileus\Pileus.csproj">
+    <ProjectReference Include="..\PileusAzure\Pileus\Pileus.csproj">
       <Project>{67e3bfb6-5e23-4d50-bb6b-3d5b5fe752ad}</Project>
       <Name>Pileus</Name>
     </ProjectReference>

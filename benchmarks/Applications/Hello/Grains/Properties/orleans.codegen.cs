@@ -36,18 +36,21 @@ namespace Hello.Grains
     {
         
 
+            public Int64 @Version { get; set; }
+
             public Byte[] @Raw { get; set; }
 
             public override void SetAll(System.Collections.Generic.IDictionary<string,object> values)
             {   
                 object value;
                 if (values == null) { InitStateFields(); return; }
+                if (values.TryGetValue("Version", out value)) @Version = value is Int32 ? (Int32)value : (Int64)value;
                 if (values.TryGetValue("Raw", out value)) @Raw = (Byte[]) value;
             }
 
             public override System.String ToString()
             {
-                return System.String.Format("ReplicatedHelloGrainState( Raw={0} )", @Raw);
+                return System.String.Format("ReplicatedHelloGrainState( Version={0} Raw={1} )", @Version, @Raw);
             }
         
         public ReplicatedHelloGrainState() : 
@@ -59,12 +62,14 @@ namespace Hello.Grains
         public override System.Collections.Generic.IDictionary<string, object> AsDictionary()
         {
             System.Collections.Generic.Dictionary<string, object> result = new System.Collections.Generic.Dictionary<string, object>();
+            result["Version"] = this.Version;
             result["Raw"] = this.Raw;
             return result;
         }
         
         private void InitStateFields()
         {
+            this.Version = default(Int64);
             this.Raw = default(Byte[]);
         }
         

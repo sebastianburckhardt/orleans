@@ -52,10 +52,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\PileusAzure\Pileus\Pileus.csproj">
-      <Project>{67e3bfb6-5e23-4d50-bb6b-3d5b5fe752ad}</Project>
-      <Name>Pileus</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Samples\ReplicatedGrains\ReplicatedGrains\ReplicatedGrains.csproj">
       <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
       <Name>ReplicatedGrains</Name>
@@ -71,6 +67,10 @@
     <ProjectReference Include="..\Interfaces\OrleansPileus.Interfaces.csproj">
       <Project>{ce57a328-69ef-4828-a144-422fddb4ccc0}</Project>
       <Name>OrleansPileus.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PileusAzure\Pileus\Pileus.csproj">
+      <Project>{67e3bfb6-5e23-4d50-bb6b-3d5b5fe752ad}</Project>
+      <Name>Pileus</Name>
     </ProjectReference>
     <ProjectReference Include="..\ReplicatedGrains\OrleansPileus.ReplicatedGrains.csproj">
       <Project>{26802bd9-ddf4-48b5-a478-01fd5ec330e3}</Project>
