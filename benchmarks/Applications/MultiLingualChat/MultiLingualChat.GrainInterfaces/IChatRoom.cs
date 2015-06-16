@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Orleans;
 using System.Collections.Generic;
+using System;
 
 namespace MultiLingualChat.GrainInterfaces
 {
@@ -19,6 +20,7 @@ namespace MultiLingualChat.GrainInterfaces
         Task<List<ChatMessage>> sendMessage(string userId, string text);
     }
 
+    [Serializable]
     public struct UserState {
         public string Id {get;set;}
         public string Name { get; set; }
@@ -30,6 +32,7 @@ namespace MultiLingualChat.GrainInterfaces
         public string oldAvatar { get; set; }
     }
 
+    [Serializable]
     public struct ChatMessage
     {
         public string Sender { get; set; }
@@ -39,6 +42,7 @@ namespace MultiLingualChat.GrainInterfaces
         public string TranslatedText { get; set; }
     }
 
+    [Serializable]
     public struct RoomState
     {
         public string Id { get; set; }
