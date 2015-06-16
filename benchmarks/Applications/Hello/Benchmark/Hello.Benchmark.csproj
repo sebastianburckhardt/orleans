@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Benchmark.cs" />
+    <Compile Include="ReactiveOrleansHello.cs" />
     <Compile Include="TCPHello.cs" />
     <Compile Include="ReplicatedOrleansHello.cs" />
     <Compile Include="OrleansHello.cs" />
@@ -58,6 +59,10 @@
     <Compile Include="WorkerHello.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Samples\ReplicatedGrains\ReplicatedGrains\ReplicatedGrains.csproj">
+      <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
+      <Name>ReplicatedGrains</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Common\Common.csproj">
       <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
       <Name>Common</Name>

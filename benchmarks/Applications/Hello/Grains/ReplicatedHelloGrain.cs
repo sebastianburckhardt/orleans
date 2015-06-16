@@ -5,6 +5,7 @@ using ReplicatedGrains;
 using System.Collections.Generic;
 using System;
 using Orleans.Providers;
+using Orleans.Streams;
 #pragma warning disable 1998
 
 namespace Hello.Grains
@@ -45,26 +46,95 @@ namespace Hello.Grains
     /// <summary>
     /// Grain implementation class Grain1.
     /// </summary>
-    [StorageProvider(ProviderName = "AzureStore")] 
+    [StorageProvider(ProviderName = "AzureStore")]
     public class ReplicatedHelloGrain : SequencedGrain<HelloGrainState>, IReplicatedHelloGrain
     {
         public async Task Hello(string arg)
         {
-            await UpdateLocallyAsync(new AddOperation(arg),false);
+            await UpdateLocallyAsync(new AddOperation(arg), false);
         }
 
-        public async Task<string> GetTopMessagesAsync(bool syncGlobal)
+        public async Task<string[]> GetTopMessagesAsync(bool syncGlobal)
         {
-            List<string> messages;
+
             if (syncGlobal)
             {
-                messages = (await GetGlobalStateAsync()).LastTenMessages;
+                return (await GetGlobalStateAsync()).LastTenMessages.ToArray();
             }
             else
             {
-                messages = (await GetLocalStateAsync()).LastTenMessages;
+                return (await GetLocalStateAsync()).LastTenMessages.ToArray();
             }
-            return await Task.FromResult(String.Join("", messages));
+
         }
+
+
+
+
+        /*
+
+        private IAsyncStream<String[]> _notificationstream;
+
+        protected IAsyncStream<String[]> NotificationStream
+        {
+            get
+            {
+                if (_notificationstream == null)
+                {
+                    IStreamProvider streamProvider = base.GetStreamProvider("SimpleMessageStreamProvider");
+                    _notificationstream = streamProvider.GetStream<String[]>(new Guid(), "topmessages-" + this.IdentityString);
+                }
+                return _notificationstream;
+            }
+        }
+
+        public async Task<IViewStream<String[]>> GetTopMessagesStreamAsync()
+        {
+            // make sure to receive from now on
+            ReceiveStateChangeNotifications(true);
+
+            return new TopMessagesStream()
+            {
+                Grain = this,
+                Stream = NotificationStream
+            };
+        }
+
+        public override async Task OnStateChangeAsync(LocalVersion version)
+        {
+            var cur = (await GetLocalStateAsync()).LastTenMessages.ToArray();
+
+            await NotificationStream.OnNextAsync(cur);
+        }
+
+
+        [Serializable]
+        public class TopMessagesStream : IViewStream<String[]>
+        {
+            public IReplicatedHelloGrain Grain { get; set; }
+            public IAsyncStream<String[]> Stream { get; set; }
+
+
+            private bool started;
+
+            public async Task<string[]> Latest()
+            {
+                if (!started)
+                {
+                    started = true;
+                    return await Grain.GetTopMessagesAsync();
+                }
+            }
+
+            public Task Unsubscribe()
+            {
+                throw new NotImplementedException();
+            }
+        }
+         * */
     }
+
+
+     
+ 
 }

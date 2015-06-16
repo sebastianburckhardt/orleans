@@ -32,6 +32,9 @@ namespace Hello.Benchmark
             new ReplicatedOrleansHello(4,10),
             new TCPHello(2,1),
             new TCPHello(1,1),
+            new ReactiveOrleansHello(1, true),
+            new ReactiveOrleansHello(2, true),
+            new ReactiveOrleansHello(10, true)
         };
 
         public IEnumerable<IScenario> generateScenariosFromJSON(string pJsonFile)
@@ -64,8 +67,17 @@ namespace Hello.Benchmark
             }
 
             if (verb == "WS" && string.Join("/", urlpath) == "hello")
-                return new SocketRequest(int.Parse(arguments["numreqs"]));
-
+            {
+                if (arguments["command"] == "reactive")
+                {
+                    return new ReactiveOrleansSocketRequest(int.Parse(arguments["numrobots"]), int.Parse(arguments["robotnr"]), bool.Parse(arguments["poll"]));
+                }
+                else if (arguments["command"] == "ws")
+                {
+                    return new SocketRequest(int.Parse(arguments["numreqs"]));
+                }
+            }
+           
             return null; // URL not recognized
         }
 

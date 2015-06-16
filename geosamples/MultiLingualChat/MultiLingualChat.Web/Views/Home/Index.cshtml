@@ -1,0 +1,109 @@
+﻿<div id="divDisplay" class="chat_display" data-bind="foreach: ChatLines">
+    <div class="chat_line">
+        <div class="avatar_box">
+            <img data-bind="attr: {src: User.Avatar}" class='avatar' />
+        </div>
+        <div class="chat_line_text" data-bind="text: Translated, click: dispute"
+            onmouseover="$(event.target).next().fadeIn('fast')"
+            onmouseout="$(event.target).next().fadeOut('fast')">
+        </div>
+        <div class="chat_line_smalltext" data-bind="text: Original"></div>
+    </div>
+</div>
+<div id="userDisplay" class="user_display" data-bind="foreach: {data: Users, beforeRemove: hideElement}">
+    <div class="chat_user">
+        <div class="avatar_box">
+            <img data-bind="attr: {src: Avatar}" class='avatar' />
+        </div>
+        <div class="chat_user_name" data-bind="text: Name"></div>
+        <div class="chat_user_state" data-bind="text: State"></div>
+    </div>
+</div>
+<!-- Header -->
+<div id="header" class="header">
+    <!-- Header bar-->
+    <table class="header_table">
+        <tr data-bind="with: CurrentUser">
+            <td rowspan="2" style="vertical-align: bottom">
+                <img src="~/Images/room.png" alt="" id="imgRoom" class="avatar" />
+            </td>
+            <td>
+                <input class="inputbox" id="txtChatroom" value="public" style="width: 100px" data-bind="event: { keyup: roomChanged}"/>
+            </td>
+            <td rowspan="2" style="vertical-align: bottom">
+                <img data-bind="attr: {src: Avatar}" alt="" id="imgUser" class="avatar" onclick="changeAvatar()" />
+            </td>
+            <td>
+                <input class="inputbox" id="txtName" data-bind="value: Name, event: { keyup: nameChanged}" style="width: 100px" />
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top">
+                <label id="txtParticipants" class="participants" data-bind="text: RoomParticipantsDisplay"></label>
+            </td>
+            <td style="vertical-align: top">
+                <select id="selLanguages" class="select" data-bind="options: Languages, optionsText: 'Name', optionsValue: 'Code', value: CurrentLanguage">
+                </select>
+            </td>
+        </tr>
+    </table>
+    <!-- Avatar selector -->
+    <div class="imgPopup" id="imgPopup">
+        <table style="width: 100%">
+            <tr>
+                <td style="width: 100%">
+                    <input type="text" id="txtImgSearch" class="inputbox" /></td>
+                <td>
+                    <img id="btnImgSearch" onclick="searchImage()" class="ui_button" src="~/Images/search.png" /></td>
+                <td>
+                    <img id="btnClose" onclick="$('#imgPopup').fadeOut('fast')" class="ui_button" src="~/Images/cross.png" /></td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <div id="imgList">
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div class="footer">
+    <label>Chat:</label>
+    <input class="inputbox" id="txtChat" value="" style="width: 80%" />
+    <div id="footer_text"></div>
+</div>
+<div id="translations" class="translations" data-bind="with: AlternativeTranslations">
+    <table style="width: 100%;">
+        <thead>
+            <tr>
+                <td colspan="5" style="text-align: right">
+                    <img src="~/Images/cross.png" onclick="hideTranslations()" class="ui_button" />
+                </td>
+            </tr>
+        </thead>
+        <tbody data-bind="foreach: Translations">
+            <tr>
+                <td data-bind="text: Text, click: selectText" style="width: 100%">
+                </td>
+                <td><img src="~/Images/bing_logo.png" class="bing_logo" data-bind="visible: IsBing" /></td>
+                <td data-bind="text: Rank"></td>
+                <td>
+                    <img src="~/Images/up.png" class="ui_button" data-bind="click: voteUp" /></td>
+                <td>
+                    <img src="~/Images/down.png" class="ui_button" data-bind="click: voteDown" /></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5">
+                    <input type="text" data-bind="value: NewTranslation" class="inputbox" />
+                    <img data-bind="click: addTranslation" class="ui_button" src="~/Images/add.png" />
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<script src="@Url.Content("~/Scripts/knockout-2.0.0.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.signalR-0.5.3.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/signalr/hubs")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/chat/Home.js")"  type="text/javascript"></script>
