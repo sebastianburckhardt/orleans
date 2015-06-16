@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NetworkConfiguration xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/ServiceHosting/2011/07/NetworkConfiguration">
+  <VirtualNetworkConfiguration>
+<LocalNetworkSites>
+  <LocalNetworkSite name="VNet1">
+    <AddressSpace>
+      <AddressPrefix>10.1.0.0/16</AddressPrefix>
+    </AddressSpace>
+    <VPNGatewayAddress>191.239.49.90</VPNGatewayAddress>
+  </LocalNetworkSite>
+  <LocalNetworkSite name="VNet2">
+    <AddressSpace>
+      <AddressPrefix>10.2.0.0/16</AddressPrefix>
+    </AddressSpace>
+    <VPNGatewayAddress>104.40.144.109</VPNGatewayAddress>
+  </LocalNetworkSite>
+</LocalNetworkSites>
+<VirtualNetworkSites>
+  <VirtualNetworkSite name="VNet1" Location="West US">
+    <AddressSpace>
+      <AddressPrefix>10.1.0.0/16</AddressPrefix>
+    </AddressSpace>
+    <Subnets>
+      <Subnet name="Subnet-1">
+        <AddressPrefix>10.1.0.0/24</AddressPrefix>
+      </Subnet>
+      <Subnet name="GatewaySubnet">
+        <AddressPrefix>10.1.200.0/29</AddressPrefix>
+      </Subnet>
+    </Subnets>
+    <Gateway>
+      <ConnectionsToLocalNetwork>
+        <LocalNetworkSiteRef name="VNet2">
+          <Connection type="IPsec" />
+        </LocalNetworkSiteRef>
+      </ConnectionsToLocalNetwork>
+    </Gateway>
+  </VirtualNetworkSite>
+  <VirtualNetworkSite name="VNet2" Location="West Europe">
+    <AddressSpace>
+      <AddressPrefix>10.2.0.0/16</AddressPrefix>
+    </AddressSpace>
+    <Subnets>
+      <Subnet name="Subnet-1">
+        <AddressPrefix>10.2.0.0/24</AddressPrefix>
+      </Subnet>
+      <Subnet name="GatewaySubnet">
+        <AddressPrefix>10.2.200.0/29</AddressPrefix>
+      </Subnet>
+    </Subnets>
+    <Gateway>
+      <ConnectionsToLocalNetwork>
+        <LocalNetworkSiteRef name="VNet1">
+          <Connection type="IPsec" />
+        </LocalNetworkSiteRef>
+      </ConnectionsToLocalNetwork>
+    </Gateway>
+  </VirtualNetworkSite>
+</VirtualNetworkSites>
+  </VirtualNetworkConfiguration>
+</NetworkConfiguration>
