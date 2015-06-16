@@ -67,7 +67,7 @@ namespace Hello.Benchmark
 
         public string RobotServiceEndpoint(int workernumber)
         {
-            return Endpoints.GetService(0);
+            return Endpoints.GetService(workernumber);
         }
     }
 

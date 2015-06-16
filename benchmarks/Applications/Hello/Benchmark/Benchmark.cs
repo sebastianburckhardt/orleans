@@ -49,7 +49,7 @@ namespace Hello.Benchmark
                 {
                     return new GetRequest(int.Parse(arguments["nr"]));
                 }
-                else if (arguments["command"] == "orleans") 
+                else if (arguments["command"] == "orleans")
                 {
                     return new OrleansHelloRequest(int.Parse(arguments["nr"]));
                 }
@@ -59,7 +59,7 @@ namespace Hello.Benchmark
                 }
                 else if (arguments["command"] == "tcp")
                 {
-                    return new HelloTcpRequest(int.Parse(arguments["nr"]),int.Parse(arguments["wr"]));
+                    return new HelloTcpRequest(int.Parse(arguments["nr"]), int.Parse(arguments["wr"]));
                 }
             }
 

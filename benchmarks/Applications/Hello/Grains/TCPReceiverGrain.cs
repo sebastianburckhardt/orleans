@@ -23,29 +23,29 @@ namespace Hello.Grains
         public override Task OnActivateAsync()
         {
 
-                Console.WriteLine("OnActivateAsync");
-                if (!tcpActive)
+            Console.WriteLine("OnActivateAsync");
+            if (!tcpActive)
+            {
+                IPHostEntry host;
+                IPAddress localIp = null;
+                host = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (IPAddress ip in host.AddressList)
                 {
-                    IPHostEntry host;
-                    IPAddress localIp = null;
-                    host = Dns.GetHostEntry(Dns.GetHostName());
-                    foreach (IPAddress ip in host.AddressList)
+                    if (ip.AddressFamily.ToString() == "InterNetwork")
                     {
-                        if (ip.AddressFamily.ToString() == "InterNetwork")
-                        {
-                            localIp = ip;
-                            Console.WriteLine("IP is {0} ", localIp);
-                        }
+                        localIp = ip;
+                        Console.WriteLine("IP is {0} ", localIp);
                     }
-
-                    tcpListener = new TcpListener(localIp, 15001);
-                    tcpListener.Start();
-                    Util.register(this, 15001, "mygrain");
-                    tcpActive = true;
-                    tcpClient = tcpListener.AcceptTcpClient();
-                    
-
                 }
+
+                tcpListener = new TcpListener(localIp, 15001);
+                tcpListener.Start();
+                Util.register(this, 15001, "mygrain");
+                tcpActive = true;
+                tcpClient = tcpListener.AcceptTcpClient();
+
+
+            }
 
             return base.OnActivateAsync();
         }
@@ -61,15 +61,15 @@ namespace Hello.Grains
 
 
 
-                bytesRead = await clientStream.ReadAsync(message, 0 , 4096 );
-                Console.WriteLine("Echo {0} ", message);
+            bytesRead = await clientStream.ReadAsync(message, 0, 4096);
+            Console.WriteLine("Echo {0} ", message);
 
 
 
             //message has successfully been received
             ASCIIEncoding encoder = new ASCIIEncoding();
 
-            
+
             return encoder.GetString(message);
         }
 

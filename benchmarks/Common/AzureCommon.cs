@@ -89,6 +89,24 @@ namespace Common
             return table;
         }
 
+        public static CloudTable createTableWithException(CloudTableClient pClient, string pName)
+        {
+            IEnumerable<CloudTable> tables = pClient.ListTables();
+
+
+            foreach (CloudTable t in tables)
+            {
+
+                Console.WriteLine(t);
+            }
+            CloudTable table = pClient.GetTableReference(pName);
+            if (!table.CreateIfNotExists())
+            {
+                //     throw new Exception("Table already existed");
+            }
+            return table;
+
+        }
         public static bool createTableCheck(CloudTableClient pClient, string pName)
         {
             CloudTable table = pClient.GetTableReference(pName);

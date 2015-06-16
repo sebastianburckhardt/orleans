@@ -20,40 +20,41 @@ namespace Hello.Grains
             TcpClient client = new TcpClient();
 
             int retries = 100;
-            while (retries-->0 ) {
-            try
+            while (retries-- > 0)
             {
+                try
+                {
 
-                Endpoints.ServiceDeployments myRegion = Util.GetRegion();
-              
-                Endpoints.ServiceDeployments otherRegion = myRegion == Endpoints.ServiceDeployments.OrleansGeoUsWest ?
-                    Endpoints.ServiceDeployments.OrleansGeoEuropeWest :
-                    (myRegion == Endpoints.ServiceDeployments.OrleansGeoEuropeWest? 
-                        Endpoints.ServiceDeployments.OrleansGeoUsWest:Endpoints.ServiceDeployments.Simulator); 
-      //          Endpoints.ServiceDeployments otherRegion = myRegion;
+                    Endpoints.ServiceDeployments myRegion = Util.GetRegion();
 
-                Tuple<IPAddress, int> address = await Util.getGrainAddress(otherRegion, typeof(TCPReceiverGrain), "mygrain");
+                    Endpoints.ServiceDeployments otherRegion = myRegion == Endpoints.ServiceDeployments.OrleansGeoUsWest ?
+                        Endpoints.ServiceDeployments.OrleansGeoEuropeWest :
+                        (myRegion == Endpoints.ServiceDeployments.OrleansGeoEuropeWest ?
+                            Endpoints.ServiceDeployments.OrleansGeoUsWest : Endpoints.ServiceDeployments.Simulator);
+                    //          Endpoints.ServiceDeployments otherRegion = myRegion;
 
-                IPEndPoint serverEndPoint = new IPEndPoint(address.Item1, address.Item2);
+                    Tuple<IPAddress, int> address = await Util.getGrainAddress(otherRegion, typeof(TCPReceiverGrain), "mygrain");
 
-            //    IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse("172.31.46.27"), 15000);
+                    IPEndPoint serverEndPoint = new IPEndPoint(address.Item1, address.Item2);
 
-                client.Connect(serverEndPoint);
+                    //    IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse("172.31.46.27"), 15000);
 
-                NetworkStream clientStream = client.GetStream();
+                    client.Connect(serverEndPoint);
 
-                ASCIIEncoding encoder = new ASCIIEncoding();
-                byte[] buffer = encoder.GetBytes(arg);
+                    NetworkStream clientStream = client.GetStream();
 
-                await clientStream.WriteAsync(buffer, 0, buffer.Length);
-                clientStream.Flush();
-                retries = 0;
-            }
-            catch (Exception e)
-            {
-                
-                if (retries == 0) throw e;
-            }
+                    ASCIIEncoding encoder = new ASCIIEncoding();
+                    byte[] buffer = encoder.GetBytes(arg);
+
+                    await clientStream.WriteAsync(buffer, 0, buffer.Length);
+                    clientStream.Flush();
+                    retries = 0;
+                }
+                catch (Exception e)
+                {
+
+                    if (retries == 0) throw e;
+                }
             }
             return "sent";
         }
