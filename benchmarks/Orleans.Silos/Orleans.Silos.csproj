@@ -187,6 +187,18 @@
       <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
       <Name>ClusterProtocol.Interfaces</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\georuntime\OrleansPileus\Grains\OrleansPileus.Grains.csproj">
+      <Project>{7434dd11-98bf-47c9-b06f-b6e3b73643dc}</Project>
+      <Name>OrleansPileus.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\georuntime\OrleansPileus\Interfaces\OrleansPileus.Interfaces.csproj">
+      <Project>{ce57a328-69ef-4828-a144-422fddb4ccc0}</Project>
+      <Name>OrleansPileus.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\georuntime\OrleansPileus\ReplicatedGrains\OrleansPileus.ReplicatedGrains.csproj">
+      <Project>{26802bd9-ddf4-48b5-a478-01fd5ec330e3}</Project>
+      <Name>OrleansPileus.ReplicatedGrains</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Applications\Computation\Grains\Computation.Grains.csproj">
       <Project>{e90fccbc-c1de-4d28-a093-522a38ed1901}</Project>
       <Name>Computation.Grains</Name>
@@ -202,6 +214,14 @@
     <ProjectReference Include="..\Applications\Hello\Interfaces\Hello.Interfaces.csproj">
       <Project>{c6d426d7-b79e-4f45-a235-a8b359a7dc10}</Project>
       <Name>Hello.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Applications\LeaderboardPileus\Grains\LeaderboardPileus.Grains.csproj">
+      <Project>{8b0d1a8e-4233-4c86-b3d2-0c58cf1e3174}</Project>
+      <Name>LeaderboardPileus.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Applications\LeaderboardPileus\Interfaces\LeaderboardPileus.Interfaces.csproj">
+      <Project>{5c9206ff-03b3-4f96-ad4a-4c7d17dc5825}</Project>
+      <Name>LeaderboardPileus.Interfaces</Name>
     </ProjectReference>
     <ProjectReference Include="..\Applications\Leaderboard\Grains\Leaderboard.Grains.csproj">
       <Project>{90ae8b1c-d7f2-4fc2-a7fd-2086671b3cda}</Project>

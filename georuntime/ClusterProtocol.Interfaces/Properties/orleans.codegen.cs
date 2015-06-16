@@ -24,6 +24,9 @@ namespace ClusterProtocol.Interfaces
     using System.Runtime.Serialization.Formatters.Binary;
     using System.IO;
     using System.Collections.Generic;
+    using System.Reflection;
+    using Orleans.Serialization;
+    using ClusterProtocol.Interfaces;
     using Orleans;
     using Orleans.Runtime;
     using System.Collections;
@@ -122,22 +125,22 @@ namespace ClusterProtocol.Interfaces
                 return ClusterRepMethodInvoker.GetMethodName(interfaceId, methodId);
             }
             
-            System.Threading.Tasks.Task<string> ClusterProtocol.Interfaces.IClusterRep.GetInfo()
+            System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, ClusterProtocol.Interfaces.DeploymentInfo>> ClusterProtocol.Interfaces.IClusterRep.GetGlobalInfo()
             {
 
-                return base.InvokeMethodAsync<System.String>(-1168913303, null );
+                return base.InvokeMethodAsync<System.Collections.Generic.Dictionary<System.String,ClusterProtocol.Interfaces.DeploymentInfo>>(-1181674556, null );
             }
             
-            System.Threading.Tasks.Task ClusterProtocol.Interfaces.IClusterRep.PostInfo(string @info)
+            System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, ClusterProtocol.Interfaces.DeploymentInfo>> ClusterProtocol.Interfaces.IClusterRep.PostInfo(Dictionary<String,DeploymentInfo> @globalinfo)
             {
 
-                return base.InvokeMethodAsync<object>(-126448525, new object[] {@info} );
+                return base.InvokeMethodAsync<System.Collections.Generic.Dictionary<System.String,ClusterProtocol.Interfaces.DeploymentInfo>>(-680118242, new object[] {@globalinfo} );
             }
             
-            System.Threading.Tasks.Task ClusterProtocol.Interfaces.IClusterRep.Init(string @info)
+            System.Threading.Tasks.Task ClusterProtocol.Interfaces.IClusterRep.ReportActivity(string @instance, ClusterProtocol.Interfaces.InstanceInfo @instanceinfo, Dictionary<String,ActivityCounts> @counts)
             {
 
-                return base.InvokeMethodAsync<object>(-151816209, new object[] {@info} );
+                return base.InvokeMethodAsync<object>(1131637684, new object[] {@instance, @instanceinfo, @counts} );
             }
         }
     }
@@ -166,12 +169,12 @@ namespace ClusterProtocol.Interfaces
                     case 1264905006:  // IClusterRep
                         switch (methodId)
                         {
-                            case -1168913303: 
-                                return ((IClusterRep)grain).GetInfo().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
-                            case -126448525: 
-                                return ((IClusterRep)grain).PostInfo((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
-                            case -151816209: 
-                                return ((IClusterRep)grain).Init((String)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case -1181674556: 
+                                return ((IClusterRep)grain).GetGlobalInfo().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            case -680118242: 
+                                return ((IClusterRep)grain).PostInfo((System.Collections.Generic.Dictionary<String,DeploymentInfo>)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            case 1131637684: 
+                                return ((IClusterRep)grain).ReportActivity((String)arguments[0], (InstanceInfo)arguments[1], (System.Collections.Generic.Dictionary<String,ActivityCounts>)arguments[2]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
                             default: 
                             throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
                         }case 1928988877:  // IGrainWithIntegerKey
@@ -201,12 +204,12 @@ namespace ClusterProtocol.Interfaces
                 case 1264905006:  // IClusterRep
                     switch (methodId)
                     {
-                        case -1168913303:
-                            return "GetInfo";
-                    case -126448525:
+                        case -1181674556:
+                            return "GetGlobalInfo";
+                    case -680118242:
                             return "PostInfo";
-                    case -151816209:
-                            return "Init";
+                    case 1131637684:
+                            return "ReportActivity";
                     
                         default: 
                             throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
@@ -222,6 +225,178 @@ namespace ClusterProtocol.Interfaces
                 default:
                     throw new System.InvalidCastException("interfaceId="+interfaceId);
             }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class ClusterProtocol_Interfaces_DeploymentInfoSerialization
+    {
+        
+        static ClusterProtocol_Interfaces_DeploymentInfoSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            ClusterProtocol.Interfaces.DeploymentInfo input = ((ClusterProtocol.Interfaces.DeploymentInfo)(original));
+            ClusterProtocol.Interfaces.DeploymentInfo result = new ClusterProtocol.Interfaces.DeploymentInfo();
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            result.Deployment = input.Deployment;
+            result.Instances = ((System.Collections.Generic.Dictionary<System.String,ClusterProtocol.Interfaces.InstanceInfo>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.Instances)));
+            result.ResourceAvailability = ((System.Collections.Generic.Dictionary<System.String,System.String>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.ResourceAvailability)));
+            result.Timestamp = input.Timestamp;
+            return result;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            ClusterProtocol.Interfaces.DeploymentInfo input = ((ClusterProtocol.Interfaces.DeploymentInfo)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Deployment, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Instances, stream, typeof(System.Collections.Generic.Dictionary<System.String,ClusterProtocol.Interfaces.InstanceInfo>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.ResourceAvailability, stream, typeof(System.Collections.Generic.Dictionary<System.String,System.String>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Timestamp, stream, typeof(System.DateTime));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            ClusterProtocol.Interfaces.DeploymentInfo result = new ClusterProtocol.Interfaces.DeploymentInfo();
+            result.Deployment = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            result.Instances = ((System.Collections.Generic.Dictionary<System.String,ClusterProtocol.Interfaces.InstanceInfo>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.Dictionary<System.String,ClusterProtocol.Interfaces.InstanceInfo>), stream)));
+            result.ResourceAvailability = ((System.Collections.Generic.Dictionary<System.String,System.String>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.Dictionary<System.String,System.String>), stream)));
+            result.Timestamp = ((System.DateTime)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.DateTime), stream)));
+            return result;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(ClusterProtocol.Interfaces.DeploymentInfo), DeepCopier, Serializer, Deserializer);
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class ClusterProtocol_Interfaces_InstanceInfoSerialization
+    {
+        
+        static ClusterProtocol_Interfaces_InstanceInfoSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            ClusterProtocol.Interfaces.InstanceInfo input = ((ClusterProtocol.Interfaces.InstanceInfo)(original));
+            ClusterProtocol.Interfaces.InstanceInfo result = new ClusterProtocol.Interfaces.InstanceInfo();
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            result.Address = input.Address;
+            result.Timestamp = input.Timestamp;
+            return result;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            ClusterProtocol.Interfaces.InstanceInfo input = ((ClusterProtocol.Interfaces.InstanceInfo)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Address, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Timestamp, stream, typeof(System.DateTime));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            ClusterProtocol.Interfaces.InstanceInfo result = new ClusterProtocol.Interfaces.InstanceInfo();
+            result.Address = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            result.Timestamp = ((System.DateTime)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.DateTime), stream)));
+            return result;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(ClusterProtocol.Interfaces.InstanceInfo), DeepCopier, Serializer, Deserializer);
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class ClusterProtocol_Interfaces_ActivityCountsSerialization
+    {
+        
+        static ClusterProtocol_Interfaces_ActivityCountsSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            return original;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            ClusterProtocol.Interfaces.ActivityCounts input = ((ClusterProtocol.Interfaces.ActivityCounts)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Fails, stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Uses, stream, typeof(int));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            ClusterProtocol.Interfaces.ActivityCounts result = default(ClusterProtocol.Interfaces.ActivityCounts);
+            result.Fails = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            result.Uses = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            return result;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(ClusterProtocol.Interfaces.ActivityCounts), DeepCopier, Serializer, Deserializer);
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class ClusterProtocol_Interfaces_ResourceInfoSerialization
+    {
+        
+        static ClusterProtocol_Interfaces_ResourceInfoSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            ClusterProtocol.Interfaces.ResourceInfo input = ((ClusterProtocol.Interfaces.ResourceInfo)(original));
+            ClusterProtocol.Interfaces.ResourceInfo result = new ClusterProtocol.Interfaces.ResourceInfo();
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            result.Dictionary = input.Dictionary;
+            result.Join = input.Join;
+            result.Name = input.Name;
+            return result;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            ClusterProtocol.Interfaces.ResourceInfo input = ((ClusterProtocol.Interfaces.ResourceInfo)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Dictionary, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Join, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Name, stream, typeof(string));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            ClusterProtocol.Interfaces.ResourceInfo result = new ClusterProtocol.Interfaces.ResourceInfo();
+            result.Dictionary = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            result.Join = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            result.Name = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            return result;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(ClusterProtocol.Interfaces.ResourceInfo), DeepCopier, Serializer, Deserializer);
         }
     }
 }

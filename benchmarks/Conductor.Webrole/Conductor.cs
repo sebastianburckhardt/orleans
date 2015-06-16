@@ -64,7 +64,7 @@ namespace Conductor.Webrole
             console.Welcome();
 
             while (true)
-            {
+            {   
                 var kvp = console.SelectScenario();
 
                 if (!kvp.HasValue)

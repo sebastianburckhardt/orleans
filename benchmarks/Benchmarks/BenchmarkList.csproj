@@ -91,6 +91,10 @@
       <Project>{139e86e5-0fd6-4ab2-855a-fd30ea5c1021}</Project>
       <Name>Hello.Benchmark</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Applications\LeaderboardPileus\Benchmark\LeaderboardPileus.Benchmark.csproj">
+      <Project>{5c04eb5f-f9ea-4ba1-9fbe-5a31cf842378}</Project>
+      <Name>LeaderboardPileus.Benchmark</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Applications\Leaderboard\Benchmark\Leaderboard.Benchmark.csproj">
       <Project>{cfcca2ac-8483-422c-9cb3-c59091b99bf2}</Project>
       <Name>Leaderboard.Benchmark</Name>

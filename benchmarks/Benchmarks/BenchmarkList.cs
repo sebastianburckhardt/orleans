@@ -26,6 +26,7 @@ namespace Benchmarks
 
             Register(new Computation.Benchmark.Benchmark());
             Register(new Azure.Storage.Benchmark());
+            Register(new LeaderboardPileus.Benchmark.Benchmark());
 
             //Register(new Computation.Benchmark.Benchmark());
 
@@ -57,7 +58,7 @@ namespace Benchmarks
         }
 
 
-        public IRequest ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body = null)
+        public IRequest     ParseRequest(string verb, IEnumerable<string> urlpath, NameValueCollection arguments, string body = null)
         {
             var benchmark = benchmarks[urlpath.ElementAt(0)];
             return benchmark.ParseRequest(verb, urlpath, arguments, body);
