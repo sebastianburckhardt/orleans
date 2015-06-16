@@ -126,7 +126,10 @@ namespace OrleansPileus.ReplicatedGrains
                 }
                     foreach (string site in storageAccounts.Keys)
                 {
-                    CloudBlobClient blobClient = storageAccounts[site].CreateCloudBlobClient();
+                    CloudBlobClient blobClient = ClientRegistry.GetAccount(site).CreateCloudBlobClient();
+
+//                    CloudBlobClient blobClient = storageAccounts[site].CreateCloudBlobClient();
+
                     CloudBlobContainer blobContainer = blobClient.GetContainerReference(globalContainerName);
 
                     blobContainer.SetPermissions(new BlobContainerPermissions()
