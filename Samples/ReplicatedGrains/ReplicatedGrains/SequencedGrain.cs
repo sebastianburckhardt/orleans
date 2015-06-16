@@ -8,6 +8,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using Common;
 using ClusterProtocol;
+using Orleans.Streams;
 
 #pragma warning disable 1998
 
@@ -19,7 +20,8 @@ namespace ReplicatedGrains
     {
         void Update(StateObject state);
     }
-     
+
+    
     /// <summary>
     /// A generic grain API for eventually consistent replication.  
     /// </summary>
@@ -62,6 +64,8 @@ namespace ReplicatedGrains
             }
         }
 
+        
+
         /// <summary>
         /// Staleness bound: if greater than zero, allows the local state to be stale up to the specified number of milliseconds.
         /// The default setting is long.MaxValue (no staleness bound).
@@ -94,6 +98,7 @@ namespace ReplicatedGrains
                 {
                     await ReadFromPrimary();
                     UpdateCacheFromRaw();
+
                 }
             }
         }
@@ -134,7 +139,7 @@ namespace ReplicatedGrains
                     pending.Add(update);
                     using (new TraceInterval("SequencedGrain - Update locally notify", 0))
                     {
-                        worker.Notify();
+                        writebackworker.Notify();
                     }
 
                     using (new TraceInterval("SequencedGrain - Update locally save", 0))
@@ -148,7 +153,8 @@ namespace ReplicatedGrains
                     // Actually update globally if isSynchronous flag is set
                     await UpdateGloballyAsync(update);
                 }
-            }
+
+           }
         }
       
         private Task SaveLocallyAsync()
@@ -156,7 +162,7 @@ namespace ReplicatedGrains
             //note: in current impl, this save is going to master, thus not any faster than global update
             // in future impl, this will go to local storage and thus be faster
             using (new TraceInterval("SaveLocallyAsync")) {
-            return worker.WaitForCompletion();
+            return writebackworker.WaitForCompletion();
         }
         }
 
@@ -168,7 +174,7 @@ namespace ReplicatedGrains
         protected async Task SynchronizeStateAsync()
         {
             using (new TraceInterval("SynchronizeStateAsync")) { 
-            await worker.WaitForCompletion();
+            await writebackworker.WaitForCompletion();
 
             await this.RefreshLocalStateAsync(true);
         }
@@ -183,7 +189,7 @@ namespace ReplicatedGrains
 
             using (new TraceInterval("SequencedGrain - Update Globally", 0))
             {
-                await worker.WaitForCompletion(); // wait for pending stores to complete
+                await writebackworker.WaitForCompletion(); // wait for pending stores to complete
 
                 await UpdatePrimaryStorage<bool>((StateObject state) =>
                 {
@@ -199,15 +205,19 @@ namespace ReplicatedGrains
         /// </summary>
         protected async Task UpdateGloballyAsync<ResultType>(Action<StateObject> update)
         {
-    using (new TraceInterval("UpdateGloballyAsync")) {
-            await worker.WaitForCompletion(); // wait for pending stores to complete
-
-            await UpdatePrimaryStorage<bool>((StateObject state) =>
+            using (new TraceInterval("UpdateGloballyAsync"))
             {
-                update(state);
-                return true; // dummy return value
-            });
-    }
+                await writebackworker.WaitForCompletion(); // wait for pending stores to complete
+
+                await UpdatePrimaryStorage<bool>((StateObject state) =>
+                {
+                    update(state);
+                    return true; // dummy return value
+                });
+
+                if (notificationworker != null)
+                    notificationworker.Notify();
+            }
         }
       
 
@@ -216,11 +226,17 @@ namespace ReplicatedGrains
         /// </summary>
         protected async Task<ResultType> UpdateGloballyAsync<ResultType>(Func<StateObject, ResultType> update)
         {
-            using (new TraceInterval("UpdateGloballyAsync")) { 
-            await worker.WaitForCompletion(); // wait for pending stores to complete
+            using (new TraceInterval("UpdateGloballyAsync"))
+            {
+                await writebackworker.WaitForCompletion(); // wait for pending stores to complete
 
-            return await UpdatePrimaryStorage<ResultType>(update);
-        }
+                var result = await UpdatePrimaryStorage<ResultType>(update);
+
+                if (notificationworker != null)
+                    notificationworker.Notify();
+
+                return result;
+            }
         }
       
 
@@ -236,25 +252,34 @@ namespace ReplicatedGrains
             }
         }
 
+    
+
         #endregion
 
 
         #region Implementation 
 
+
+        private BackgroundWorker writebackworker;
+
+        private BackgroundWorker notificationworker;
+        private LocalVersion? lastnotification;
+
+ 
         public override async System.Threading.Tasks.Task OnActivateAsync()
         {
             Timestamp = DateTime.UtcNow;
             await base.OnActivateAsync();
             StalenessBound = int.MaxValue ;
-            worker = new BackgroundWorker(() => WriteQueuedUpdatesToStorage());
+            writebackworker = new BackgroundWorker(() => WriteQueuedUpdatesToStorage());
             UpdateCacheFromRaw();
         }
 
         public override async System.Threading.Tasks.Task OnDeactivateAsync()
         {
-            var t = worker.CurrentTask();
+            var t = writebackworker.CurrentTask();
             if (t != null) await t;
-            await worker.WaitForCompletion();
+            await writebackworker.WaitForCompletion();
             await base.OnDeactivateAsync();
         }
 
@@ -283,6 +308,7 @@ namespace ReplicatedGrains
 
 
         private StateObject LocalState;
+        private long Version;
         private DateTime Timestamp;
 
         
@@ -294,6 +320,7 @@ namespace ReplicatedGrains
 
                 if (this.State.Raw == null)
                     return new StateObject();
+                
                 var formatter = new BinaryFormatter();
                 using (var ms = new MemoryStream(this.State.Raw))
                 {
@@ -318,7 +345,6 @@ namespace ReplicatedGrains
 
         }
 
-
         private async Task ReadFromPrimary()
         {
 
@@ -328,6 +354,7 @@ namespace ReplicatedGrains
                 {
                     await this.State.ReadStateAsync();
                     this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
+                    this.Version = this.State.Version;
 
                     SiloRep.Instance.RecordActivity("read from primary", false);
                 }
@@ -349,6 +376,7 @@ namespace ReplicatedGrains
                 {
                     await this.State.WriteStateAsync();
                     this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
+                    this.Version = this.State.Version;
 
                     SiloRep.Instance.RecordActivity("write to primary", false);
                 }
@@ -364,7 +392,6 @@ namespace ReplicatedGrains
         
         private async Task WriteQueuedUpdatesToStorage()
         {
-
 
             using (new TraceInterval("SequencedGrain - WriteQueuedUpdatesToStorage")) { 
             if (pending.Count == 0)
@@ -386,16 +413,16 @@ namespace ReplicatedGrains
                 // remove committed updates, and apply new updates to cache
                 pending.RemoveRange(0, numupdates);
                 UpdateCacheFromRaw();
+
+                if (notificationworker != null)
+                    notificationworker.Notify();
             }
         }
         
 
         private async Task<ResultType> UpdatePrimaryStorage<ResultType>(Func<StateObject,ResultType> update)
         {
-
-
             using (new TraceInterval("UpdatePrimaryStorage"))
-
             {
                 int retries = 10;
                 while (retries-- > 0)
@@ -406,13 +433,19 @@ namespace ReplicatedGrains
                     // apply the update function  (or take an exception)
                     var rval = update(s);
 
+                    // increment version
+                    State.Version++;
+
                     // try to update master
                     try
                     {
                         WriteRawState(s);
                         await WriteToPrimary();
+
                         // we succeededed
                         LocalState = s;
+
+                        // return result
                         return rval;
                     }
                     catch (Exception e)
@@ -427,13 +460,71 @@ namespace ReplicatedGrains
                 }
 
                 throw new Exception("could not update primary storage");
-
             }
         }
 
-     
+       /*
 
-        private BackgroundWorker worker;
+        public void AddOrConfirmListener(IViewMaintenanceListener<StateObject> listener)
+        {
+            //TODO
+            if (listeners == null)
+            {
+                ReceiveStateChangeNotifications(true);
+            }
+        }
+
+        public bool RemoveListener(IViewMaintenanceListener listener)
+        {
+            //TODO
+        }
+        
+        private Dictionary<string,IViewMaintenanceListener<StateObject>> listeners;
+        * */
+   
+        private void ReceiveStateChangeNotifications(bool enable)
+        {
+            if (enable & notificationworker == null)
+            {
+                notificationworker = new BackgroundWorker(() => TalkToListeners());
+                var bg = StartNotificationsOnNextTurn();
+            }
+            else if (!enable && notificationworker != null)
+                notificationworker = null;
+        }
+
+        private async Task StartNotificationsOnNextTurn()
+        {
+            await Task.Delay(0);
+            if (notificationworker != null)
+                notificationworker.Notify();
+        }
+
+        private async Task TalkToListeners()
+        {
+            var currentversion = new LocalVersion()
+            {
+                GlobalVersion = Version,
+                NumLocalUpdates = this.pending.Count()
+            };
+
+            // if the current version is not newer than the last sent version, we are done
+            if (lastnotification.HasValue
+                && lastnotification.Value.CompareTo(currentversion) >= 0)
+                return;
+
+            try
+            {
+                // TODO OnStateChangeAsync(currentversion);
+                lastnotification = currentversion;
+            }
+            catch (Exception e)
+            {
+                // TODO handle better
+                Console.Write("NotifyNewStateVersion() Error {0}", e.ToString());
+            }
+        }
+
 
         #endregion
     }
@@ -441,7 +532,41 @@ namespace ReplicatedGrains
        // for now, we use a single storage account as the backing store for all activations
     public interface IGlobalState : IGrainState
     {
+        long Version { get; set; }
         byte[] Raw { get; set; }
+    }
+
+    public struct LocalVersion : IComparable<LocalVersion>
+    {
+        public long GlobalVersion;
+        public long NumLocalUpdates;
+
+        public override string ToString()
+        {
+            if (NumLocalUpdates == 0)
+                return GlobalVersion.ToString();
+            else
+                return string.Format("{0}.{1}", GlobalVersion, NumLocalUpdates);
+        }
+
+        public int CompareTo(LocalVersion other)
+        {
+            int x = GlobalVersion.CompareTo(other.GlobalVersion);
+            if (x == 0)
+                x = NumLocalUpdates.CompareTo(other.NumLocalUpdates);
+            return x;
+        }
+ 
+    }
+
+    public interface IViewMaintenanceListener<ViewType>
+    {
+        string Identity { get; }
+        Task OnInit(ViewType state);
+        Task OnDelta(IAppliesTo<ViewType> delta);
+        Task OnUndo(IAppliesTo<ViewType> delta);
+        Task OnEnd(Exception e = null);
+
     }
 
 }

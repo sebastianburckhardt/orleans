@@ -64,7 +64,7 @@ namespace Hello.Benchmark
 
         public string Signature
         {
-            get { return "WS hello?numreqs=" + numreqs; }
+            get { return "WS hello?command=ws&numreqs=" + numreqs; }
         }
 
         public async Task ProcessConnectionOnServer(ISocket socket)
@@ -85,10 +85,11 @@ namespace Hello.Benchmark
             await socket.Close("ack");
         }
 
-        public async Task ProcessConnectionOnClient(ISocket socket)
+        public async Task<string> ProcessConnectionOnClient(ISocket socket)
         {
             Util.Assert(count == 0);
             await socket.Send("Hello #" + count);
+            return "connected";
         }
 
         public async Task<string> ProcessMessageOnClient(ISocket socket, string message)
@@ -101,9 +102,9 @@ namespace Hello.Benchmark
             return await Task.FromResult(message);
         }
 
-        public async Task ProcessCloseOnClient(ISocket socket, string message)
+        public async Task<string> ProcessCloseOnClient(ISocket socket, string message)
         {
-            Util.Fail("connection closed by server");
+            return "error: connection closed by server";
         }
     }
 

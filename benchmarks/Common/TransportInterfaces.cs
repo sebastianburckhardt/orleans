@@ -56,11 +56,11 @@ namespace Common
 
         Task ProcessCloseOnServer(ISocket socket, string message);
 
-        Task ProcessConnectionOnClient(ISocket socket);
+        Task<string> ProcessConnectionOnClient(ISocket socket);
 
         Task<string> ProcessMessageOnClient(ISocket socket, string message);
 
-        Task ProcessCloseOnClient(ISocket socket, string message);
+        Task<string> ProcessCloseOnClient(ISocket socket, string message);
 
     }
  

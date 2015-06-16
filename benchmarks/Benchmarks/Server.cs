@@ -325,6 +325,7 @@ namespace Benchmarks
         {
             try
             {
+                await sr.ProcessConnectionOnServer(this);
 
                 while (webSocket.State == WebSocketState.Open || webSocket.State == WebSocketState.CloseSent)
                 {
