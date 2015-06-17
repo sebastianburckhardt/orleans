@@ -1,4 +1,6 @@
 ﻿using GeoOrleans.Runtime.Common;
+using GeoOrleans.Benchmarks.Common;
+
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using Newtonsoft.Json.Linq;

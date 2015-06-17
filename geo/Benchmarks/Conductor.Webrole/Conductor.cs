@@ -1,8 +1,7 @@
-﻿using GeoOrleans.Runtime.Common;
+﻿using System;
+using GeoOrleans.Runtime.Common;
 using GeoOrleans.Benchmarks.Common;
-using GeoOrleans.Benchmarks;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
@@ -13,8 +12,9 @@ using System.Web;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
+using Conductor.Webrole;
 
-namespace GeoOrleans.Benchmarks.Conductor.Webrole
+namespace Conductor.Webrole
 {
     public class Conductor : IConductorContext
     {
@@ -60,7 +60,7 @@ namespace GeoOrleans.Benchmarks.Conductor.Webrole
 
         private void Run()
         {
-            console = new Benchmarks.Console(WriteLine, ReadLine);
+            console = new GeoOrleans.Benchmarks.Console(WriteLine, ReadLine);
 
             console.Welcome();
 
@@ -121,7 +121,7 @@ namespace GeoOrleans.Benchmarks.Conductor.Webrole
                     {
                         stats = overallstats.First().Value;
                     }
-                    Azure.Storage.StatEntity statEntity = new StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result, stats);
+                    GeoOrleans.Benchmarks.Common.StatEntity statEntity = new StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result, stats);
                  //   Azure.Storage.StatEntity statEntity = new Azure.Storage.StatEntity(benchmark.Name, scenario.Name, DateTime.Now, result);
 
                     try
@@ -129,17 +129,17 @@ namespace GeoOrleans.Benchmarks.Conductor.Webrole
                         TableResult logResult = AzureUtils.updateEntity<StatEntity>(tableClient, STAT_TABLE, statEntity).Result;
                         if (logResult.HttpStatusCode != 204)
                         {
-                            Console.WriteLine("Failed to write results to storage {0}", logResult.HttpStatusCode);
+                            System.Console.WriteLine("Failed to write results to storage {0}", logResult.HttpStatusCode);
 
                         }
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Failed to write results to storage {0}", e.ToString());
+                        System.Console.WriteLine("Failed to write results to storage {0}", e.ToString());
                     }
 
                     if (overallstats.Count > 0)
-                        Console.WriteLine("Stats", Util.PrintStats(overallstats));
+                        System.Console.WriteLine("Stats", GeoOrleans.Benchmarks.Common.Util.PrintStats(overallstats));
                 }
             }
 

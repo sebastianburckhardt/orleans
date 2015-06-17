@@ -2,7 +2,7 @@
 using Owin;
 
 [assembly: OwinStartupAttribute(typeof(Conductor.Webrole.Startup))]
- namespace GeoOrleans.Benchmarks.Conductor.Webrole
+ namespace Conductor.Webrole
 
 {
     public partial class Startup

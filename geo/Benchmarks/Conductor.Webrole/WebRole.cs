@@ -5,7 +5,7 @@ using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 
-namespace GeoOrleans.Benchmarks.Conductor.Webrole
+namespace Conductor.Webrole
 
 {
     public class WebRole : RoleEntryPoint
