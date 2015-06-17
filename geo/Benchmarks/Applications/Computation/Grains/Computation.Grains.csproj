@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props" Condition="Exists('..\..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{E90FCCBC-C1DE-4D28-A093-522A38ED1901}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>GeoOrleans.Benchmarks.Computation.Grains</RootNamespace>
+    <AssemblyName>GeoOrleans.Benchmarks.Computation.Grains</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <NuGetPackageImportStamp>75945df8</NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(OrleansSDK)' != '' ">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(OrleansSDK)\LocalSilo\OrleansHost.exe</StartProgram>
+    <StartWorkingDirectory>$(OrleansSDK)\LocalSilo</StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Orleans, Version=1.0.0.0, Culture=neutral, PublicKeyToken=070f47935e3ed133, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\packages\Microsoft.Orleans.Core.1.0.8\lib\net45\Orleans.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\orleans.codegen.cs" />
+    <Compile Include="SequencedComputationGrain.cs" />
+    <Compile Include="ComputationGrain.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Runtime\Common\Common.csproj">
+      <Project>{b401b968-9501-4db3-8b6a-71f227518e75}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Runtime\Strawman\ReplicatedGrains\ReplicatedGrains.csproj">
+      <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
+      <Name>ReplicatedGrains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Common\BenchmarkCommon.csproj">
+      <Project>{821b5607-bf7f-4c50-8aec-61f4afefda1b}</Project>
+      <Name>BenchmarkCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Interfaces\Computation.Interfaces.csproj">
+      <Project>{33ffda3e-a966-4015-bdcc-3bc79e166653}</Project>
+      <Name>Computation.Interfaces</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+      if exist "$(OrleansSDK)\LocalSilo" (
+      if not exist "$(OrleansSDK)\LocalSilo\Applications" (md "$(OrleansSDK)\LocalSilo\Applications")
+      if not exist  "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)" (md "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)")
+      copy /y *.dll  "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)\"
+      copy /y *.pdb  "$(OrleansSDK)\LocalSilo\Applications\$(RootNamespace)\"
+      )
+    </PostBuildEvent>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets'))" />
+  </Target>
+  <Import Project="..\..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets" Condition="Exists('..\..\..\packages\Microsoft.Orleans.Templates.Grains.1.0.8\build\Microsoft.Orleans.Templates.Grains.targets')" />
+</Project>

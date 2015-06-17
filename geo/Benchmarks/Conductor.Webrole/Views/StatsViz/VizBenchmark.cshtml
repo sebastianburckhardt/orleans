@@ -1,0 +1,43 @@
+﻿@model IEnumerable<Azure.Storage.StatEntity>
+@{
+    ViewBag.Title = "VizBenchmark";
+}
+
+<h2>VizBenchmark</h2>
+
+<ul>    
+    @foreach (var item in Model) {
+        
+        
+        var latency = item.latency;
+        
+        //@Html.DisplayText(Common.Util.PrintStats(latDict));
+
+        var counts = latency.Counts;
+        int cnt = 0;        
+        while(counts[cnt] < latency.Total)
+        {
+            counts[++cnt] += counts[cnt - 1];
+        }
+        double[] perc = new double[cnt];
+        for (int i = 0; i < cnt; i++)
+        {
+            perc[i] = counts[i] * 100.0 / latency.Total;
+        }
+        
+        var myChart = new Chart(width: 500, height: 400)
+        .AddTitle(item.benchmarkName + "\n" + item.scenarioName)
+        .AddSeries(
+        name: "Latency",
+        xValue: Common.LatencyDistribution.buckets.Take(cnt).ToArray(),
+        yValues: perc
+        ).GetBytes();
+        string imageBase64 = Convert.ToBase64String(myChart);
+        var imgSrc = string.Format("data:image/gif;base64,{0}", imageBase64);
+        <p>
+            <img src="@imgSrc" />
+        </p>
+    }
+
+    
+</ul>

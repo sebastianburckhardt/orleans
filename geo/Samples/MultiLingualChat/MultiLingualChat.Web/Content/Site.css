@@ -1,0 +1,217 @@
+﻿body {
+    font-family: 'Segoe UI';
+    font-size: 18px;
+    background-color: #404040;
+    color:#fff;
+}
+.header {
+    position: fixed;
+    width: 100%;
+    top: 0px;
+    background-color: #404040;
+    color: #fff;
+    margin: 0px;
+    padding: 10px;
+    background-image: url('../Images/header_back.png');
+    left: 0px;
+    height: 58px;
+    background-repeat: repeat-x;
+    font-family: 'Segoe UI Semibold';
+}
+
+.header_table {
+    margin-left:20px;
+    border-collapse: collapse;
+    border-spacing: 0px;   
+}
+.footer {
+    position:fixed;
+    left:0px;
+    bottom:0px;
+    width: 100%;
+    background-color: #404040;
+    color: #fff;
+    margin: 0px;
+    padding: 10px;
+    background-image: url('../Images/header_back.png');
+    left: 0px;
+    height: 56px;
+    background-repeat: repeat-x;
+    font-family: 'Segoe UI Semibold';
+}
+.chat_line {
+    height:60px;
+    overflow:hidden;
+    margin-left:26px;
+    z-index:0;
+}
+.avatar_box{
+    position: relative; 
+    left: 5px; 
+    top: 0px; 
+    display: block;
+}
+.chat_line_text {
+    position: relative;
+    left: 71px;
+    top: -45px;
+    display: block;
+    cursor: pointer;
+}
+.chat_line_smalltext {
+    position: relative;
+    left: 71px;
+    top: -45px;
+    display: none;
+    font-size:12px;
+}
+.chat_user {
+    background-color: #808080;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #FFFFFF #000000 #000000 #FFFFFF;
+    width:160px;
+    height:60px;
+    overflow:hidden;
+}
+.chat_user_name {
+    position: relative; left: 60px; top: -55px; display: block;
+}
+.chat_user_state {
+    position: relative; left: 60px; top: -55px; display: block;
+    font-size:12px;
+}
+.ui_button {
+    width:17px;
+    height:16px;
+    cursor:pointer;
+}
+a:link, a:visited, a:active
+{
+    padding-left: 5px;
+    padding-right: 5px;
+    font-style: normal;
+    color: #C0C0C0;
+    text-decoration: none;
+}
+    a:hover
+    {
+        color: #808080;
+    }
+
+.inputbox {
+    background-position: 0px -13px;
+    margin-left: 10px;
+    margin-bottom:0px;
+    border-style: none;
+    font-family: 'Segoe UI Light';
+    font-size: 18px;
+    color: #FFFFFF;
+    background-image: url('../Images/header_back.png');
+    background-repeat: repeat-x;
+}
+    .inputbox:hover {
+    color:#FFFF00;
+}
+.select {
+    background-position: 0px -5px;
+    margin-left: 10px;
+    border-style: none;
+    font-family: 'Segoe UI Light';
+    font-size: 14px;
+    color: #FFFFFF;
+    background-image: url('../Images/header_back.png');
+}
+    .select option {
+        background-color: #404040;
+    }
+
+.chat_display
+{
+    display:block;
+    margin-top:79px;
+    margin-bottom:77px;
+    margin-right:162px;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    height:auto;
+    background-color: #404040;
+    text-align: left;
+    overflow: auto;
+    position:fixed;
+}
+.user_display {
+    background-color: #404040;
+    text-align: left;
+    position:absolute;
+    display:block;
+    top:0;
+    right:0;
+    bottom:0;
+    height:auto;
+    margin-top:79px;
+    margin-bottom:77px;
+    overflow:auto;
+    position:fixed;
+}
+hr
+{
+    border-width: thin;
+    border-color: #E4E4E4;
+    border-style: solid none none none;
+}
+.participants {
+    margin-left: 10px;
+    margin-right: 20px;    
+    color: #00FFFF;
+    font-size: 14px;
+}
+.chatuser
+{
+    float: left;
+    width: 100px;
+    text-align: right;
+    font-weight: bold;
+    margin-right: 10px;
+}
+.hiddentext {
+    visibility:hidden;
+    font-size:8px;
+}
+.translations {
+    position:absolute;
+    display:none;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #FFFFFF #000000 #000000 #FFFFFF;
+    padding: 8px;
+    background-color: #1d1d1d;
+    z-index:9998;
+    width:527px;
+}
+.imgPopup {
+    background-color: #1d1d1d;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #FFFFFF #000000 #000000 #FFFFFF;
+    position: absolute;
+    display: none;
+    padding: 8px;
+    z-index:9999;
+    width:527px;
+}
+.imgList {
+    overflow:auto;
+    height:200px;
+}
+.avatar {
+    width: 50px;
+    height: 50px;
+    margin-top: 5px;
+}
+.bing_logo {
+    width:37px;
+    height:16px;
+}
