@@ -12,7 +12,7 @@
       <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="UseDevelopmentStorage=true" />
     </StorageProviders>
     <BootstrapProviders>
-      <Provider Type="ClusterProtocol.SiloRep" Name="SiloRep" />
+      <Provider Type="GeoOrleans.Runtime.ClusterProtocol.Grains.SiloRep" Name="SiloRep" />
     </BootstrapProviders>
   </Globals>
   <Defaults>

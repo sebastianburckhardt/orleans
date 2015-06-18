@@ -1,7 +1,7 @@
 ﻿using Orleans;
 using System;
 using System.Linq;
-using ReplicatedGrains;
+using GeoOrleans.Runtime.Strawman.ReplicatedGrains;
 using Orleans.Providers;
 using MultiLingualChat.GrainInterfaces;
 using System.Threading.Tasks;

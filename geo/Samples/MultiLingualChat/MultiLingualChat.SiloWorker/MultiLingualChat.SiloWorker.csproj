@@ -104,11 +104,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\georuntime\ClusterProtocol.Grains\ClusterProtocol.Grains.csproj">
+    <ProjectReference Include="..\..\..\Runtime\ClusterProtocol\ClusterProtocol.Grains\ClusterProtocol.Grains.csproj">
       <Project>{65c74af4-5ed5-4708-a809-e3f6baba1c59}</Project>
       <Name>ClusterProtocol.Grains</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\georuntime\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
+    <ProjectReference Include="..\..\..\Runtime\ClusterProtocol\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
       <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
       <Name>ClusterProtocol.Interfaces</Name>
     </ProjectReference>
