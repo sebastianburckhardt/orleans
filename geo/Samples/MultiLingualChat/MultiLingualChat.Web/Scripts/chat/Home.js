@@ -139,7 +139,7 @@ function roomJoined(room) {
         txtParticipants.innerText = '(' + room.ParticipantCount + ')';
     }
     updateStatus('Welcome ' + room.UserName + ' to chat room: ' + room.Name, true);
-    setTimeout(refreshRoomUsers, 3000);
+    setTimeout(refreshRoom(), 3000);
 }
 function nameChanged(user) {
     txtName.value = user.Name;
@@ -222,11 +222,24 @@ $('#txtImgSearch').keyup(function (e) {
 function joinRoom() {
     chat.joinRoom(roomId, txtChatroom.value, viewModel.CurrentUser.Id(), txtName.value, selLanguages.value);
 }
+function refreshRoom() {
+    refreshRoomUsers();
+    refreshRoomMessages();
+}
 function refreshRoomUsers() {
     $.getJSON('/api/chatapi/getusersinroom?room=' + roomId, function (data) {
         viewModel.Users.removeAll();
         $.each(data, function (key, val) {
             userStateChanged(val);
+        });
+    });
+}
+function refreshRoomMessages() {
+    //alert("Get messages; userId = " + viewModel.CurrentUser.Id() + "; language = " + viewModel.CurrentUser.Language());
+    $.getJSON('/api/chatapi/getmessagesinroom?room=' + roomId + '&userId=' + viewModel.CurrentUser.Id() + '&language=' + viewModel.CurrentUser.Language(), function (data) {
+        viewModel.ChatLines.removeAll();
+        $.each(data, function (key, val) {
+            messageReceived(val);
         });
     });
 }

@@ -350,7 +350,15 @@ namespace MultiLingualChat.Grains
                     mess.TranslatedText = m.Text;
                 translatedMessages.Add(mess);
             }
-            return new List<ChatMessage>();
+            return translatedMessages;
+        }
+        #endregion
+
+        #region GetOriginalMessagesInRoom
+        public async Task<List<ChatMessage>> getOriginalMessagesInRoom()
+        {
+            var messages = (await GetLocalStateAsync()).messages;
+            return messages;
         }
         #endregion
     }
