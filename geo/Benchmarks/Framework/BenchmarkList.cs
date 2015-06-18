@@ -22,14 +22,14 @@ namespace GeoOrleans.Benchmarks
             // - add a reference for both interface and grain dll to the Orleans.Silos project
 
             Register(new Hello.Benchmark.Benchmark());
-      //      Register(new Leaderboard.Benchmark.Benchmark());
-      //      Register(new Size.Benchmark.Benchmark());
+            Register(new Leaderboard.Benchmark.Benchmark());
+            Register(new Size.Benchmark.Benchmark());
 
             Register(new Computation.Benchmark.Benchmark());
             Register(new Azure.Benchmark());
-      //      Register(new LeaderboardPileus.Benchmark.Benchmark());
+            Register(new LeaderboardPileus.Benchmark.Benchmark());
 
-            //Register(new Computation.Benchmark.Benchmark());
+            Register(new Computation.Benchmark.Benchmark());
 
             //----------------------------------------------------------------------------------
         }
