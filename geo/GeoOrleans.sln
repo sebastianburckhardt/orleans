@@ -116,6 +116,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Size.Grains", "Benchmarks\A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Size.Benchmark", "Benchmarks\Applications\Size\Benchmark\Size.Benchmark.csproj", "{6123FB2F-6DAF-4188-8B43-A97261F0424D}"
 EndProject
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "LoadGenerator", "Benchmarks\LoadGenerator\LoadGenerator.ccproj", "{EAA7013B-179C-4082-82B2-D8BCE365F086}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -270,6 +272,10 @@ Global
 		{6123FB2F-6DAF-4188-8B43-A97261F0424D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6123FB2F-6DAF-4188-8B43-A97261F0424D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6123FB2F-6DAF-4188-8B43-A97261F0424D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAA7013B-179C-4082-82B2-D8BCE365F086}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAA7013B-179C-4082-82B2-D8BCE365F086}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAA7013B-179C-4082-82B2-D8BCE365F086}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAA7013B-179C-4082-82B2-D8BCE365F086}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -326,5 +332,6 @@ Global
 		{082161E0-3095-4307-BD02-E69CACBB4A39} = {BB7CD01F-7684-487D-AB28-C7480CB721DF}
 		{483B3FEA-88E8-4AB2-A3A8-F4CD780660E5} = {BB7CD01F-7684-487D-AB28-C7480CB721DF}
 		{6123FB2F-6DAF-4188-8B43-A97261F0424D} = {BB7CD01F-7684-487D-AB28-C7480CB721DF}
+		{EAA7013B-179C-4082-82B2-D8BCE365F086} = {1343661D-649C-4A5F-BFB7-E4B477A191E6}
 	EndGlobalSection
 EndGlobal
