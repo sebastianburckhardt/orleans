@@ -1,1 +1,1 @@
-﻿<%@ Application Codebehind="Global.asax.cs" Inherits="GeoOrleans.Benchmarks.Conductor.Webrole.MvcApplication" Language="C#" %>
+﻿<%@ Application Codebehind="Global.asax.cs" Inherits="Conductor.Webrole.MvcApplication" Language="C#" %>

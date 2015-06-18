@@ -8,15 +8,12 @@ using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage.Pileus;
-using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage.Pileus.Configuration;
 using Microsoft.WindowsAzure.Storage.Pileus.Utils;
 using Microsoft.WindowsAzure.Storage.Pileus.Configuration.Constraint;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.WindowsAzure.Storage.Pileus.Configuration.Actions;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage;
 using System.Threading;
 
 namespace GeoOrleans.Runtime.OrleansPileus.Common
