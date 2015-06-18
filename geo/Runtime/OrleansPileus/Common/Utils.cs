@@ -112,6 +112,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.Common
             Trace.TraceInformation("PutBlob");
            AccessCondition ac = AccessCondition.GenerateEmptyCondition();
             ICloudBlob blob = pContainer.GetBlobReference(pBlobName);
+     
             using (var ms = new MemoryStream(pData))
             {
                 blob.UploadFromStream(ms,ac);

@@ -131,6 +131,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
 
                     CloudBlobContainer blobContainer = blobClient.GetContainerReference(globalContainerName);
 
+                    
                     blobContainer.SetPermissions(new BlobContainerPermissions()
                     {
                         PublicAccess = BlobContainerPublicAccessType.Container
