@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="LoadGenerator" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="4" osVersion="*" schemaVersion="2014-06.2.4">
+  <Role name="LoadGenerator.WorkerRole">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=orleansgeouswest;AccountKey=pUIT+LRC/GohbXWMSAfKhuo3eLU8dz0LVUxHvb/X1BO7CZPs4aZ712vtwRPDxa388jbWJArz6hvsvIZTl96g0g==" />
+    </ConfigurationSettings>
+  </Role>
+  <!--<NetworkConfiguration>
+    <VirtualNetworkSite name = "VNet2" />
+  </NetworkConfiguration>-->
+</ServiceConfiguration>
