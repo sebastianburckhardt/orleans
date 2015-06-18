@@ -11,9 +11,9 @@
     <StorageProviders>
       <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="DefaultEndpointsProtocol=https;AccountName=orleansgeosharedstorage;AccountKey=xhWdo16SU3RkAwL/WEeFAaJhHQeNApHKL4j1FmBfKRUa7hfAGZylBql9a5BWHmzO6vdmyNG4h9B6nq6fBWQbvg==" />
     </StorageProviders>
-    <BootstrapProviders>
+ <!--   <BootstrapProviders>
       <Provider Type="ClusterProtocol.SiloRep" Name="SiloRep" />
-    </BootstrapProviders>
+    </BootstrapProviders> -->
   </Globals>
   <Defaults>
     <!--
