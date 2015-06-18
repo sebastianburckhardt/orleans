@@ -197,7 +197,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
                 {
 
 
-                    CloudStorageAccount httpAcc = new CloudStorageAccount(GetAccount(serverName).Credentials, false);
+                    CloudStorageAccount httpAcc = GetAccount(serverName); // new CloudStorageAccount(GetAccount(serverName).Credentials, false);
                     BlobContainerPermissions permissions = httpAcc.CreateCloudBlobClient().GetContainerReference(containerName).GetPermissions();
 
                     result = httpAcc.CreateCloudBlobClient().GetContainerReference(containerName).GetBlockBlobReference(blobName);

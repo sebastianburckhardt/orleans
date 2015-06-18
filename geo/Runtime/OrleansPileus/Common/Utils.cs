@@ -21,8 +21,9 @@ namespace GeoOrleans.Runtime.OrleansPileus.Common
     /// <summary>
     /// Grain interface IGrain1
     /// </summary>
-    public class Utils
-    {
+    public class Utils {
+
+        //TODO: remove this and add a proper configuration file
         public static Dictionary<string, CloudStorageAccount> GetStorageAccounts(bool useHttps)
         {
             Dictionary<string, CloudStorageAccount> result = new Dictionary<string, CloudStorageAccount>();
