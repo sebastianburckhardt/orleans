@@ -9,8 +9,8 @@
     <ProjectGuid>{C0B03590-D395-47D0-B3FC-7FC6213C566B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Hello.Grains</RootNamespace>
-    <AssemblyName>Hello.Grains</AssemblyName>
+    <RootNamespace>GeoOrleans.Benchmarks.Hello.Grains</RootNamespace>
+    <AssemblyName>GeoOrleans.Benchmarks.Hello.Grains</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\..\</SolutionDir>
