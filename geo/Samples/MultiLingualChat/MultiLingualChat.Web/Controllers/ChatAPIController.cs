@@ -44,16 +44,12 @@ namespace MultiLingualChat.Web.Controllers
     public class ChatAPIController : ApiController
     {
         private MD5 md5Hash = MD5.Create();
-        //private AlternativeTranslationRepository mRepo = RepositoryCreator.TableStorageInstance;
-        //private RoomRepository mCache = RepositoryCreator.CacheInstance;
         
         private BingCache mBing = new BingCache();
 
         [HttpGet]
         public LanguageModel[] GetLanguages()
         {
-            //System.Diagnostics.Debug.WriteLine("Called getLanguages");
-            //System.Diagnostics.Debug.WriteLine("Available languages: " + mBing.GetLanguages());
             var languages = mBing.GetLanguages();
             var ret = from lan in languages
                       select new LanguageModel { Code = lan.Code, Name = lan.Name };
@@ -71,6 +67,8 @@ namespace MultiLingualChat.Web.Controllers
             var r = GrainFactory.GetGrain<IChatRoom>(room);
             var users = await r.getUsersInRoom();
 
+            System.Diagnostics.Debug.WriteLine("Got users: " + users.Count);
+
             UserStateModel[] u = new UserStateModel[users.Count];
 
             for (int i = 0; i < users.Count; i++)
@@ -86,25 +84,25 @@ namespace MultiLingualChat.Web.Controllers
             return u;
         }
 
-        //[HttpGet]
-        //public async Task<ChatMessageModel[]> GetMessagesInRoom(string room, string userId, string language)
-        //{
-        //    var r = GrainFactory.GetGrain<IChatRoom>(room);
-        //    var messages = await r.getMessagesInRoom(userId);
+        [HttpGet]
+        public async Task<ChatMessageModel[]> GetMessagesInRoom(string room, string userId, string language)
+        {
+            var r = GrainFactory.GetGrain<IChatRoom>(room);
+            var messages = await r.getMessagesInRoom(userId, language);
 
-        //    ChatMessageModel[] m = new ChatMessageModel[messages.Count];
+            ChatMessageModel[] m = new ChatMessageModel[messages.Count];
 
-        //    for (int i = 0; i < messages.Count; i++)
-        //        m[i] = new ChatMessageModel
-        //        {
-        //            Sender = messages[i].Sender,
-        //            SrcLanguage = messages[i].SenderLanguage,
-        //            TgtLanguage = messages[i].ReceiverLanguage,
-        //            SrclText = messages[i].Text,
-        //            TgtText = messages[i].TranslatedText
-        //        };
-        //    return m;
-        //}
+            for (int i = 0; i < messages.Count; i++)
+                m[i] = new ChatMessageModel
+                {
+                    Sender = messages[i].Sender,
+                    SrcLanguage = messages[i].SenderLanguage,
+                    TgtLanguage = messages[i].ReceiverLanguage,
+                    SrclText = messages[i].Text,
+                    TgtText = messages[i].TranslatedText
+                };
+            return m;
+        }
 
         [HttpGet]
         public async Task<MessageTranslationsModel> DisputeTranslation(string srcLang, string tgtLang, string original, string translated, string tag)

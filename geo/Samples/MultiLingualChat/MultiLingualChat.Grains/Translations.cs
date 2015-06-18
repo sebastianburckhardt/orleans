@@ -1,7 +1,7 @@
 ﻿using Orleans;
 using Orleans.Providers;
 using System;
-using ReplicatedGrains;
+using GeoOrleans.Runtime.Strawman.ReplicatedGrains;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

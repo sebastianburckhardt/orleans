@@ -1,7 +1,7 @@
 ﻿using Orleans;
 using System;
 using System.Linq;
-using ReplicatedGrains;
+using GeoOrleans.Runtime.Strawman.ReplicatedGrains;
 using Orleans.Providers;
 using MultiLingualChat.GrainInterfaces;
 using System.Threading.Tasks;
@@ -350,7 +350,15 @@ namespace MultiLingualChat.Grains
                     mess.TranslatedText = m.Text;
                 translatedMessages.Add(mess);
             }
-            return new List<ChatMessage>();
+            return translatedMessages;
+        }
+        #endregion
+
+        #region GetOriginalMessagesInRoom
+        public async Task<List<ChatMessage>> getOriginalMessagesInRoom()
+        {
+            var messages = (await GetLocalStateAsync()).messages;
+            return messages;
         }
         #endregion
     }

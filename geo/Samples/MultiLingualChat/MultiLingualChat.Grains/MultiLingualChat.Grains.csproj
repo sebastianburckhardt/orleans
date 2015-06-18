@@ -59,7 +59,15 @@
     <Compile Include="Translations.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Samples\ReplicatedGrains\ReplicatedGrains\ReplicatedGrains.csproj">
+    <ProjectReference Include="..\..\..\Runtime\ClusterProtocol\ClusterProtocol.Grains\ClusterProtocol.Grains.csproj">
+      <Project>{65c74af4-5ed5-4708-a809-e3f6baba1c59}</Project>
+      <Name>ClusterProtocol.Grains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Runtime\ClusterProtocol\ClusterProtocol.Interfaces\ClusterProtocol.Interfaces.csproj">
+      <Project>{665bffbc-cd60-4d31-852f-9154f59e8c95}</Project>
+      <Name>ClusterProtocol.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Runtime\Strawman\ReplicatedGrains\ReplicatedGrains.csproj">
       <Project>{98d4db83-175e-44d5-a14b-9c66ee89f037}</Project>
       <Name>ReplicatedGrains</Name>
     </ProjectReference>

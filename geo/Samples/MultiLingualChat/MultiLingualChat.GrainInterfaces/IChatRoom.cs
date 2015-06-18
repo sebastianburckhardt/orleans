@@ -19,6 +19,7 @@ namespace MultiLingualChat.GrainInterfaces
         Task<UserState> setLanguage(string userId, string language);
         Task<List<ChatMessage>> sendMessage(string userId, string text);
         Task<List<ChatMessage>> getMessagesInRoom(string userId, string language);
+        Task<List<ChatMessage>> getOriginalMessagesInRoom();
     }
 
     [Serializable]
