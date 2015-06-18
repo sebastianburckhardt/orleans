@@ -122,6 +122,19 @@ namespace Orleans.CodeGeneration
 
         public static GrainInterfaceData FromGrainClass(Type grainType, Language language)
         {
+            IEnumerable<string> grainViolations;
+            IEnumerable<string> systemTargetViolations;
+            if (!TypeUtils.IsConcreteGrainClass(grainType, out grainViolations, true) &&
+                !TypeUtils.IsSystemTargetClass(grainType, out systemTargetViolations, true))
+            {
+                List<string> violations = new List<string>();
+                if (grainViolations != null)
+                    violations.AddRange(grainViolations);
+                else if (systemTargetViolations != null)
+                    violations.AddRange(systemTargetViolations);
+
+                throw new RulesViolationException(String.Format("{0} implements IGrain but is not a concrete Grain Class (Hint: Extend the base Grain or Grain<T> class).", grainType.FullName), violations);
+            }
             var gi = new GrainInterfaceData(language) { Type = grainType };
             gi.DefineClassNames(false);
             return gi;
@@ -131,7 +144,7 @@ namespace Orleans.CodeGeneration
         {
             if (t.IsClass)
                 return false;
-            if (t == typeof (IGrainObserver) || t == typeof (IAddressable))
+            if (t == typeof(IGrainObserver) || t == typeof(IAddressable) || t == typeof(IGrainExtension))
                 return false;
             if (t == typeof (IGrain))
                 return false;
@@ -141,12 +154,12 @@ namespace Orleans.CodeGeneration
             return typeof (IAddressable).IsAssignableFrom(t);
         }
 
-        public static bool IsGrainReference(Type t)
+        public static bool IsAddressable(Type t)
         {
             return typeof(IAddressable).IsAssignableFrom(t);
         }
         
-        public static MethodInfo[] GetMethods(Type grainType, bool bAllMethods = false)
+        public static MethodInfo[] GetMethods(Type grainType, bool bAllMethods = true)
         {
             var methodInfos = new List<MethodInfo>();
             GetMethodsImpl(grainType, grainType, methodInfos);
@@ -267,7 +280,7 @@ namespace Orleans.CodeGeneration
                     methodInfo.DeclaringType.GetInterfaceMap(i).TargetMethods.Contains(methodInfo)));
         }
 
-        public static Dictionary<int, Type> GetRemoteInterfaces(Type type)
+        public static Dictionary<int, Type> GetRemoteInterfaces(Type type, bool checkIsGrainInterface = true)
         {
             var dict = new Dictionary<int, Type>();
 
@@ -275,7 +288,7 @@ namespace Orleans.CodeGeneration
                 dict.Add(ComputeInterfaceId(type), type);
 
             Type[] interfaces = type.GetInterfaces();
-            foreach (Type interfaceType in interfaces.Where(IsGrainInterface))
+            foreach (Type interfaceType in interfaces.Where(i => !checkIsGrainInterface || IsGrainInterface(i)))
                 dict.Add(ComputeInterfaceId(interfaceType), interfaceType);
 
             return dict;
@@ -518,7 +531,7 @@ namespace Orleans.CodeGeneration
         /// <param name="methodInfos">Accumulated </param>
         private static void GetMethodsImpl(Type grainType, Type serviceType, List<MethodInfo> methodInfos)
         {
-            Type[] iTypes = GetRemoteInterfaces(serviceType).Values.ToArray();
+            Type[] iTypes = GetRemoteInterfaces(serviceType, false).Values.ToArray();
             IEqualityComparer<MethodInfo> methodComparer = new MethodInfoComparer();
 
             foreach (Type iType in iTypes)

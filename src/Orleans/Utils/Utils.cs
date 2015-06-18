@@ -34,7 +34,7 @@ namespace Orleans.Runtime
     /// <summary>
     /// The Utils class contains a variety of utility methods for use in application and grain code.
     /// </summary>
-    internal static class Utils
+    public static class Utils
     {
         /// <summary>
         /// Returns a human-readable text string that describes an IEnumerable collection of objects.
@@ -192,20 +192,7 @@ namespace Orleans.Runtime
             return new Uri(string.Format("gwy.tcp://{0}:{1}/{2}", address.Endpoint.Address, address.Endpoint.Port, address.Generation));
         }
 
-        /// <summary>
-        /// Represent a silo instance entry in the gateway URI format.
-        /// </summary>
-        /// <param name="address">The input silo instance</param>
-        /// <returns></returns>
-        internal static Uri ToGatewayUri(this AzureUtils.SiloInstanceTableEntry gateway)
-        {
-            int proxyPort = 0;
-            if (!string.IsNullOrEmpty(gateway.ProxyPort))
-                int.TryParse(gateway.ProxyPort, out proxyPort);
-
-            return new Uri(string.Format("gwy.tcp://{0}:{1}/{2}", gateway.Address, proxyPort, gateway.Generation));
-        }
-
+        
         /// <summary>
         /// Calculates an integer hash value based on the consistent identity hash of a string.
         /// </summary>
@@ -381,6 +368,44 @@ namespace Orleans.Runtime
             {
                 yield return batch; //batch.ToArray();
             }
+        }
+
+        internal static MethodInfo GetStaticMethodThroughReflection(string assemblyName, string className, string methodName, Type[] argumentTypes)
+        {
+            var asm = Assembly.Load(assemblyName);
+            if (asm == null)
+                throw new InvalidOperationException(string.Format("Cannot find assembly {0}", assemblyName));
+
+            var cl = asm.GetType(className);
+            if (cl == null)
+                throw new InvalidOperationException(string.Format("Cannot find class {0} in assembly {1}", className, assemblyName));
+
+            MethodInfo method;
+            method = argumentTypes == null
+                ? cl.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                : cl.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, argumentTypes, null);
+
+            if (method == null)
+                throw new InvalidOperationException(string.Format("Cannot find static method {0} of class {1} in assembly {2}", methodName, className, assemblyName));
+
+            return method;
+        }
+
+        internal static object InvokeStaticMethodThroughReflection(string assemblyName, string className, string methodName, Type[] argumentTypes, object[] arguments)
+        {
+            var method = GetStaticMethodThroughReflection(assemblyName, className, methodName, argumentTypes);
+            return method.Invoke(null, arguments);
+        }
+
+        internal static Type LoadTypeThroughReflection(string assemblyName, string className)
+        {
+            var asm = Assembly.Load(assemblyName);
+            if (asm == null) throw new InvalidOperationException(string.Format("Cannot find assembly {0}", assemblyName));
+
+            var cl = asm.GetType(className);
+            if (cl == null) throw new InvalidOperationException(string.Format("Cannot find class {0} in assembly {1}", className, assemblyName));
+
+            return cl;
         }
     }
 }

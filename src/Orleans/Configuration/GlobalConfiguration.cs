@@ -28,7 +28,6 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using System.Xml;
-using Orleans.AzureUtils;
 using Orleans.Providers;
 using Orleans.Streams;
 using Orleans.Storage;
@@ -71,6 +70,9 @@ namespace Orleans.Runtime.Configuration
             /// <summary>SQL Server is used to store membership information. 
             /// This option can be used in production.</summary>
             SqlServer,
+            /// <summary>Apache ZooKeeper is used to store membership information. 
+            /// This option can be used in production.</summary>
+            ZooKeeper,
         }
 
         /// <summary>
@@ -193,7 +195,7 @@ namespace Orleans.Runtime.Configuration
         /// </summary>
         public string DeploymentId { get; set; }
         /// <summary>
-        /// Connection string for Azure Storage or SQL Server.
+        /// Connection string for Azure Storage or SQL Server or Apache ZooKeeper.
         /// </summary>
         public string DataConnectionString { get; set; }
 
@@ -215,6 +217,10 @@ namespace Orleans.Runtime.Configuration
         /// The TTLExtensionFactor attribute specifies the factor by which cache entry TTLs should be extended when they are found to be stable.
         /// </summary>
         public double CacheTTLExtensionFactor { get; set; }
+        /// <summary>
+        /// Retry count for Azure Table operations. 
+        /// </summary>
+        public int MaxStorageBusyRetries { get; private set; }
 
         /// <summary>
         /// The DirectoryCachingStrategy attribute specifies the caching strategy to use.
@@ -316,6 +322,19 @@ namespace Orleans.Runtime.Configuration
         }
 
         /// <summary>
+        /// Determines if ZooKeeper should be used for storage of Membership and Reminders info.
+        /// True if LivenessType is set to ZooKeeper, false otherwise.
+        /// </summary>
+        internal bool UseZooKeeperSystemStore
+        {
+            get
+            {
+                return !String.IsNullOrWhiteSpace(DataConnectionString) && (
+                    (LivenessEnabled && LivenessType == LivenessProviderType.ZooKeeper));
+            }
+        }
+
+        /// <summary>
         /// Determines if Azure Storage should be used for storage of Membership and Reminders info.
         /// True if either or both of LivenessType and ReminderServiceType are set to AzureTable, false otherwise.
         /// </summary>
@@ -324,7 +343,7 @@ namespace Orleans.Runtime.Configuration
             get
             {
                 return !String.IsNullOrWhiteSpace(DataConnectionString)
-                    && !UseSqlSystemStore;
+                       && !UseSqlSystemStore && !UseZooKeeperSystemStore;
             }
         }
 
@@ -573,7 +592,10 @@ namespace Orleans.Runtime.Configuration
                             if (!"None".Equals(sst, StringComparison.InvariantCultureIgnoreCase))
                             {
                                 LivenessType = (LivenessProviderType)Enum.Parse(typeof(LivenessProviderType), sst);
-                                SetReminderServiceType((ReminderServiceProviderType)Enum.Parse(typeof(ReminderServiceProviderType), sst));
+                                ReminderServiceProviderType reminderServiceProviderType;
+                                SetReminderServiceType(Enum.TryParse(sst, out reminderServiceProviderType)
+                                    ? reminderServiceProviderType
+                                    : ReminderServiceProviderType.ReminderTableGrain);
                             }
                         }
                         if (child.HasAttribute("ServiceId"))
@@ -595,9 +617,8 @@ namespace Orleans.Runtime.Configuration
                         }
                         if (child.HasAttribute("MaxStorageBusyRetries"))
                         {
-                            int maxBusyRetries = ConfigUtilities.ParseInt(child.GetAttribute("MaxStorageBusyRetries"),
+                            MaxStorageBusyRetries = ConfigUtilities.ParseInt(child.GetAttribute("MaxStorageBusyRetries"),
                                 "Invalid integer value for the MaxStorageBusyRetries attribute on the SystemStore element");
-                            AzureTableDefaultPolicies.MaxBusyRetries = maxBusyRetries;
                         }
                         if (child.HasAttribute("UseMockReminderTable"))
                         {

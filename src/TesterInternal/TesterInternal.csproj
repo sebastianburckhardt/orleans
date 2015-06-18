@@ -81,8 +81,13 @@
     <Compile Include="StorageTests\AzureTableDataManagerTests.cs" />
     <Compile Include="StorageTests\SiloInstanceTableManagerTests.cs" />
     <Compile Include="StorageTests\AzureQueueDataManagerTests.cs" />
+    <Compile Include="StorageTests\ZookeeperMembershipTableTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\OrleansAzureUtils\OrleansAzureUtils.csproj">
+      <Project>{792818ef-b3f8-4ce2-9886-4808713b15c4}</Project>
+      <Name>OrleansAzureUtils</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OrleansRuntime\OrleansRuntime.csproj">
       <Project>{6ff2004c-cdf8-479c-bf27-c6bfe8ef93e0}</Project>
       <Name>OrleansRuntime</Name>
@@ -90,6 +95,10 @@
     <ProjectReference Include="..\OrleansTestingHost\OrleansTestingHost.csproj">
       <Project>{40ee3b00-d381-485f-9c69-ff706837deed}</Project>
       <Name>OrleansTestingHost</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\OrleansZooKeeperUtils\OrleansZooKeeperUtils.csproj">
+      <Project>{45918dd2-53d9-4b27-bc6b-17c197dbc645}</Project>
+      <Name>OrleansZooKeeperUtils</Name>
     </ProjectReference>
     <ProjectReference Include="..\Orleans\Orleans.csproj">
       <Project>{bc1bd60c-e7d8-4452-a21c-290aec8e2e74}</Project>
@@ -155,4 +164,3 @@ call "$(SolutionDir)Build\PostBuild.cmd"
   </Target>
   -->
 </Project>
-
