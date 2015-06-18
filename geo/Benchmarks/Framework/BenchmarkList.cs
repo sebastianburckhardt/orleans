@@ -29,7 +29,6 @@ namespace GeoOrleans.Benchmarks
             Register(new Azure.Benchmark());
             Register(new LeaderboardPileus.Benchmark.Benchmark());
 
-            Register(new Computation.Benchmark.Benchmark());
 
             //----------------------------------------------------------------------------------
         }

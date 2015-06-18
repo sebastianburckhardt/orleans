@@ -137,6 +137,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                     });
 
                     blobContainer.CreateIfNotExists();
+
                     globalContainers.Add(site, blobContainer);
                 }
 
