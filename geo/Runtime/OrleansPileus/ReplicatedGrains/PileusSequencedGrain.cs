@@ -617,6 +617,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
 
                 /* Create Containers */
 
+                // Create Local Containers
  /*               foreach (string site in storageAccounts.Keys)
                 {
                     CloudBlobClient blobClient = storageAccounts[site].CreateCloudBlobClient();
@@ -629,6 +630,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                     });
                 }
   * */
+                // Create Global Containers
                 foreach (string site in storageAccounts.Keys)
                 {
                     CloudBlobClient blobClient = ClientRegistry.GetAccount(site).CreateCloudBlobClient();
@@ -643,17 +645,17 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                 Trace.TraceInformation("Get Containers obtained");
 
                 /* Reads Replica Config which should have already been initialised by Configurator */
-                localReplicaConfig = new ReplicaConfiguration(localContainerName);
-                localBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], localReplicaConfig,false);
+     //           localReplicaConfig = new ReplicaConfiguration(localContainerName);
+     //           localBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], localReplicaConfig,false);
 
                 globalReplicaConfig = new ReplicaConfiguration(globalContainerName);
                 globalBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], globalReplicaConfig,false);
 
-                localReplicaConfig = localBackingStore.getCachedConfiguration();
+     //           localReplicaConfig = localBackingStore.getCachedConfiguration();
                 globalReplicaConfig = globalBackingStore.getCachedConfiguration();
 
                 /* Creates Pileus Container Wrappers */
-                localCapContainer = new CapCloudBlobContainer(localContainers, localReplicaConfig);
+     //           localCapContainer = new CapCloudBlobContainer(localContainers, localReplicaConfig);
                 globalCapContainer = new CapCloudBlobContainer(globalContainers, globalReplicaConfig);
 
                 Trace.TraceInformation("Initialise Configurations");
