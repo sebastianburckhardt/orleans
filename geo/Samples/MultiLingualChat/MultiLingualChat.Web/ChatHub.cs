@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -44,7 +45,7 @@ namespace MultiLingualChat.Web
     [HubName("chathub")]
     public class ChatHub : Hub, IDisconnect, IConnected
     {
-        private TemporarySignalRHub tsr = new TemporarySignalRHub();
+        private TemporarySignalRHub tsr = TemporarySignalRHub.getInstance();
 
         #region Client connect status changes
 
@@ -78,18 +79,24 @@ namespace MultiLingualChat.Web
         {
             System.Diagnostics.Debug.WriteLine("Called join room: " + room + "; " + userId);
             // user belonged to a different room, needs to remove her from old room.
-
-            if (!string.IsNullOrEmpty(oldRoom) && oldRoom != room)
+            try
             {
-                var oRoom = GrainFactory.GetGrain<IChatRoom>(oldRoom);
-                await oRoom.leaveRoom(userId);
-            }
-            
-            var nRoom = GrainFactory.GetGrain<IChatRoom>(room);
-            var roomState = await nRoom.joinRoom(userId, userName, language);
+                if (!string.IsNullOrEmpty(oldRoom) && oldRoom != room)
+                {
+                    var oRoom = GrainFactory.GetGrain<IChatRoom>(oldRoom);
+                    await oRoom.leaveRoom(userId);
+                }
 
-            //TODO: get rid of this temp code
-            tsr.joinRoom(Context.ConnectionId, oldRoom, room, language, roomState);
+                var nRoom = GrainFactory.GetGrain<IChatRoom>(room);
+                var roomState = await nRoom.joinRoom(userId, userName, language);
+
+                //TODO: get rid of this temp code
+                tsr.joinRoom(Context.ConnectionId, oldRoom, room, language, roomState);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+            }
         }
 
         public async Task<ChatUserModel> SetName(string room, string userId, string userName)
@@ -155,14 +162,31 @@ namespace MultiLingualChat.Web
 
     public class TemporarySignalRHub
     {
-        private Dictionary<string, UserStateModel> _users = new Dictionary<string, UserStateModel>();
+        private ConcurrentDictionary<string, UserStateModel> _users;
         private readonly RoomStatePollingService _pollingService;
+        private static TemporarySignalRHub _instance = null;
+        private static readonly object padlock = new object();
 
-        public TemporarySignalRHub()
+        private TemporarySignalRHub()
         {
-            _users = new Dictionary<string, UserStateModel>();
+            _users = new ConcurrentDictionary<string, UserStateModel>();
             _pollingService = new RoomStatePollingService();
             _pollingService.startPolling();
+        }
+
+        public static TemporarySignalRHub getInstance()
+        {
+            if (_instance == null)
+            {
+                lock (padlock)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = new TemporarySignalRHub();
+                    }
+                }
+            }
+            return _instance;
         }
 
         private string LanguageRoom = "{0}-{1}";
@@ -177,12 +201,14 @@ namespace MultiLingualChat.Web
         }
 
         public void addUser(string connectionId, UserStateModel user) {
-            _users.Add(connectionId, user);
+            _users.TryAdd(connectionId, user);
+            _users[connectionId] = user;
             _pollingService.addRoom(user.Room);
         }
 
         public void removeUser(string connectionId, UserStateModel user) {
-            _users.Remove(connectionId);
+            UserStateModel value;
+            _users.TryRemove(connectionId, out value);
             _pollingService.removeRoom(user.Room);
         }
 
@@ -211,7 +237,8 @@ namespace MultiLingualChat.Web
         public Task userConnected(string connectionId)
         {
             var hub = GlobalHost.ConnectionManager.GetHubContext<ChatHub>();
-            return hub.Clients.joined(connectionId, DateTime.Now.ToString());
+            hub.Clients.joined(connectionId, DateTime.Now.ToString());
+            return hub.Clients[connectionId].joinRoom();
         }
 
         public Task userReconnected(string connectionId)
@@ -334,21 +361,19 @@ namespace MultiLingualChat.Web
         private Thread _workerThread;
         private AutoResetEvent _finished;
         private const int _timeout =  1 * 1000;
-        private Dictionary<string, CompleteRoomState> _rooms; // TODO: is this concurrent?
+        private ConcurrentDictionary<string, CompleteRoomState> _rooms; 
 
         public void startPolling()
         {
-            _rooms = new Dictionary<string, CompleteRoomState>();
+            _rooms = new ConcurrentDictionary<string, CompleteRoomState>();
             _workerThread = new Thread(poll);
             _finished = new AutoResetEvent(false);
             _workerThread.Start();
         }
 
-        public void addRoom(string room) {
-            if (!_rooms.ContainsKey(room))
-            {
-                _rooms.Add(room, new CompleteRoomState {connectedUsers = 0});
-            }
+        public void addRoom(string room)
+        {
+            _rooms.TryAdd(room, new CompleteRoomState { connectedUsers = 0 });
 
             var state = _rooms[room];
             state.connectedUsers++;
@@ -358,8 +383,9 @@ namespace MultiLingualChat.Web
         public void removeRoom(string room)
         {
             var state = _rooms[room];
+            CompleteRoomState value;
             if (state.connectedUsers == 1)
-                _rooms.Remove(room);
+                _rooms.TryRemove(room, out value);
             else
             {
                 state.connectedUsers--;
