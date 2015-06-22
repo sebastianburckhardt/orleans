@@ -40,31 +40,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         where StateObject : class, new()
     {
 
-        protected string containerName;
-        protected string localContainerName;
-        protected string globalContainerName;
 
-        protected CapCloudBlobContainer localCapContainer = null;
-        protected IConfigurator configuratorLocalGrain = null;
-        protected Dictionary<string, CloudBlobContainer> localContainers = new Dictionary<string,CloudBlobContainer>();
-
-        protected CapCloudBlobContainer globalCapContainer = null;
-        protected IConfigurator configuratorGlobalGrain = null;
-        protected Dictionary<string,CloudBlobContainer> globalContainers = new Dictionary<string,CloudBlobContainer>();
-
-        /* This is duplicate state with Configurator */
-        private Dictionary<string, CloudStorageAccount> storageAccounts;
-        private ConfigurationCloudStore localBackingStore;
-        private ConfigurationCloudStore globalBackingStore;
-        private string configStorageSite = "devstoreaccount1";
-
-        private ServiceLevelAgreement slaGlobal = null;
-        private ServiceLevelAgreement slaLocal = null;
-
-        private ReplicaConfiguration localReplicaConfig = null;
-        private ReplicaConfiguration globalReplicaConfig = null;
-
-        private bool isInitialisedConfig = false;
 
         #region Interface
 
@@ -77,7 +53,9 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                 localContainerName = containerName + "local";
                 globalContainerName = containerName + "global";
 
-                /* Initialise accounts TODO: duplicate code*/
+                /* TODO  Parametrise configStorageSite */
+
+                /* Initialise accounts*/
 
                 Trace.TraceInformation("Initialise storage accounts");
                 storageAccounts = OrleansPileus.Common.Utils.GetStorageAccounts(false);
@@ -85,8 +63,6 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                 Trace.TraceInformation("Initialise Configuration Cache");
                 /* Initialises Configuration Cache */
                 ClientRegistry.Init(storageAccounts, storageAccounts[configStorageSite]);
-
-
 
             }
             catch (Exception e)
@@ -97,98 +73,15 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
 
         }
 
-        protected async Task initialiseGrain()
-        {
-            try
-            {
-                /* Create configurations */
-                Trace.TraceInformation("Initialise Configurator");
-                configuratorLocalGrain = ConfiguratorFactory.GetGrain(localContainerName);
-                configuratorGlobalGrain = ConfiguratorFactory.GetGrain(globalContainerName);
-                await configuratorGlobalGrain.startConfigurator();
-                await configuratorLocalGrain.startConfigurator();
-
-                Trace.TraceInformation("Initialise Containers");
-
-                /* Create Containers */
-       
-                    foreach (string site in storageAccounts.Keys)
-                {
-                    CloudBlobClient blobClient = storageAccounts[site].CreateCloudBlobClient();
-                    CloudBlobContainer blobContainer = blobClient.GetContainerReference(localContainerName);
-                    blobContainer.CreateIfNotExists();
-                    localContainers.Add(site, blobContainer);
-                    blobContainer.SetPermissions(new BlobContainerPermissions()
-                    {
-                        PublicAccess = BlobContainerPublicAccessType.Container
-                    });
-                }
-                    foreach (string site in storageAccounts.Keys)
-                {
-                    CloudBlobClient blobClient = ClientRegistry.GetAccount(site).CreateCloudBlobClient();
-
-//                    CloudBlobClient blobClient = storageAccounts[site].CreateCloudBlobClient();
-
-                    CloudBlobContainer blobContainer = blobClient.GetContainerReference(globalContainerName);
-
-                    
-                    blobContainer.SetPermissions(new BlobContainerPermissions()
-                    {
-                        PublicAccess = BlobContainerPublicAccessType.Container
-                    });
-
-                    blobContainer.CreateIfNotExists();
-
-                    globalContainers.Add(site, blobContainer);
-                }
-
-                Trace.TraceInformation("Get Containers obtained");
-                /* Todo fix to other. Currently sets the first one as primary*/
-                localCapContainer = new CapCloudBlobContainer(localContainers, "devstoreaccount1");
-                globalCapContainer = new CapCloudBlobContainer(globalContainers, "devstoreaccount1");
-
-                Trace.TraceInformation("Initialise Configurations");
-
-                localReplicaConfig = new ReplicaConfiguration(localContainerName);
-                localBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], localReplicaConfig);
-                localBackingStore.ReadConfiguration(false);
-
-                // Register reminder here
-
-                globalReplicaConfig = new ReplicaConfiguration(globalContainerName);
-                globalBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], globalReplicaConfig);
-                globalBackingStore.ReadConfiguration(false);
 
 
-                Trace.TraceInformation("Initialise Consistency SLA");
-
-                slaGlobal = Utils.CreateConsistencySla(Consistency.Strong);
-                slaLocal = Utils.CreateConsistencySla(Consistency.Strong);
-                localCapContainer.SLA = slaLocal;
-                globalCapContainer.SLA = slaGlobal;
-
-                Trace.TraceInformation("Initialise sequenced code");
-
-                /* Replicated Grain Code */
-                Timestamp = DateTime.UtcNow;
-                StalenessBound = int.MaxValue;
-                worker = new BackgroundWorker(() => WriteQueuedUpdatesToStorage());
-                UpdateCacheFromRaw();
-
-                isInitialisedConfig = true;
-            }
-            catch (Exception e)
-            {
-                Trace.TraceError(e.ToString());
-            }
-        }
 
         /// Returns the current global state of this grain. May require global coordination.
         protected async Task<StateObject> GetGlobalStateAsync()
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
             using (new TraceInterval("SequencedGrain - GetGlobalState", 0))
@@ -207,7 +100,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
 
@@ -272,7 +165,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
 
@@ -340,7 +233,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
 
@@ -360,7 +253,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
 
@@ -384,7 +277,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
 
@@ -408,7 +301,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         {
             if (!isInitialisedConfig)
             {
-                await initialiseGrain();
+                await initialiseGrainForPileus();
             }
 
 
@@ -513,7 +406,7 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
 
             using (new TraceInterval("SequencedGrain - ReadFromPrimary", 0))
             {
-         //       await this.State.ReadStateAsync();
+                //       await this.State.ReadStateAsync();
                 byte[] data = await Task.Run(() => Utils.GetBlob(globalContainerName, globalCapContainer));
                 if (data != null)
                 {
@@ -530,14 +423,14 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
             {
                 try
                 {
-                     await Task.Run(() => Utils.PutBlob(globalContainerName, this.State.Raw, globalCapContainer));
-        //            await this.State.WriteStateAsync();
+                    await Task.Run(() => Utils.PutBlob(globalContainerName, this.State.Raw, globalCapContainer));
+                    //            await this.State.WriteStateAsync();
                     this.Timestamp = DateTime.UtcNow; // would be better to use Azure time stamp here
                 }
                 finally
                 {
                 }
-            }   
+            }
 
         }
 
@@ -573,10 +466,11 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
         private async Task<ResultType> UpdatePrimaryStorage<ResultType>(Func<StateObject, ResultType> update)
         {
 
-
+            int failures = 0;
+            List<string> failedServers = new List<string>();
             using (new TraceInterval("UpdatePrimaryStorage"))
             {
-                int retries = 10;
+                int retries = 100;
                 while (retries-- > 0)
                 {
                     // get master state
@@ -594,15 +488,21 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                         LocalState = s;
                         return rval;
                     }
-                    catch (StorageException e)
+                    catch (FailedOpException foe)
                     {
-
-                        Console.Write("Error {0}", e.ToString());
-
+                        StorageException es = foe.initialException;
+                         if (Microsoft.WindowsAzure.Storage.Pileus.Utils.StorageExceptionCode.PreconditionFailed(es)) {
+                             Trace.TraceInformation("Etag failure");
+                         } else {
+                             failures++;
+                         }
+                        Console.Write("Error {0}", es.ToString());
                     }
+
                     catch (Exception e)
                     {
                         Console.Write("Error {0}", e.ToString());
+                        throw e;
                     } //TODO perhaps be more selective on what to catch here
 
                     // TODO perhaps add backoff delay
@@ -611,7 +511,8 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
                     await ReadFromPrimary();
                 }
 
-                throw new Exception("could not update primary storage");
+                await configuratorGlobalGrain.forceReconfigure(failedServers);
+                throw new Exception("could not update primary storage, forcing reconfiguration");
 
             }
         }
@@ -619,6 +520,177 @@ namespace GeoOrleans.Runtime.OrleansPileus.ReplicatedGrains
 
 
         private BackgroundWorker worker;
+
+        #endregion
+
+        #region Pileus
+
+        protected string containerName;
+        protected string localContainerName;
+        protected string globalContainerName;
+
+        protected CapCloudBlobContainer localCapContainer = null;
+        protected IConfigurator configuratorLocalGrain = null;
+        protected Dictionary<string, CloudBlobContainer> localContainers = new Dictionary<string, CloudBlobContainer>();
+
+        protected CapCloudBlobContainer globalCapContainer = null;
+        protected IConfigurator configuratorGlobalGrain = null;
+        protected Dictionary<string, CloudBlobContainer> globalContainers = new Dictionary<string, CloudBlobContainer>();
+
+        /* This is duplicate state with Configurator */
+        private Dictionary<string, CloudStorageAccount> storageAccounts;
+        private ConfigurationCloudStore localBackingStore;
+        private ConfigurationCloudStore globalBackingStore;
+        private string configStorageSite = "devstoreaccount1";
+
+        private ServiceLevelAgreement slaGlobal = null;
+        private ServiceLevelAgreement slaLocal = null;
+
+        private ReplicaConfiguration localReplicaConfig = null;
+        private ReplicaConfiguration globalReplicaConfig = null;
+
+        private bool isInitialisedConfig = false;
+
+        string localContainerEtag = null;
+        string globalContainerEtag = null;
+        
+        /// <summary>
+        /// Call Back function which periodically updates configuration
+        /// </summary>
+        /// <param name="pCloudStore"></param>
+        /// <returns></returns>
+        public async Task RefreshPeriodicallyAsync(object pCloudStore)
+        {
+            Trace.TraceInformation("Refreshing Configuration: Times {0} ", ++configRefreshed);
+            ConfigurationCloudStore currentReplicaConfig = pCloudStore as ConfigurationCloudStore;
+            await Task.Factory.StartNew(() => currentReplicaConfig.RefreshConfiguration());
+        }
+
+
+        /// <summary>
+        /// Call Back function which periodically sends data about reads/writes to containers
+        /// </summary>
+        /// <param name="pCloudStore"></param>
+        /// <returns></returns>
+        public async Task SendUsageData(object pContainer)
+        {
+            Trace.TraceInformation("Updating Data: Times {0} ", ++configDataSent);
+            CapCloudBlobContainer container = pContainer as CapCloudBlobContainer;
+            var configurator = ConfiguratorFactory.GetGrain(container.Name);
+            ClientUsageData clientUsage = new ClientUsageData(GeoOrleans.Runtime.Common.Util.MyDeploymentId + container.Name);
+            /// Optimise for default SLA
+            clientUsage.SLAs.Add(container.SLA);
+            // Currently there is a single session per sequence grain
+            clientUsage.NumberOfWrites = container.Sessions["default"].GetNumberOfWritesPerMonth();
+            clientUsage.NumberOfReads = container.Sessions["default"].GetNumberOfReadsPerMonth();
+            clientUsage.ServerRTTs = new Dictionary<string, LatencyDistribution>();
+            foreach (ServerState server in container.Monitor.GetAllServersState())
+            {
+                clientUsage.ServerRTTs.Add(server.Name, server.RTTs);
+            }
+            await configurator.receiveUsageData(clientUsage);
+        }
+
+        private int configRefreshed = 0;
+        private int configDataSent = 0;
+
+        /// <summary>
+        /// Initialisation code for the Pileus part of the code
+        /// 1) Creates a configurator for this grain (local and global)
+        /// 2) Creates a CapBlobContainer for this grain
+        /// 3) Registers a timer for the configuration to be periodically updated
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        protected async Task initialiseGrainForPileus()
+        {
+            try
+            {
+                /* Create configurations */
+                Trace.TraceInformation("Initialise Configurator");
+        //        configuratorLocalGrain = ConfiguratorFactory.GetGrain(localContainerName);
+                configuratorGlobalGrain = ConfiguratorFactory.GetGrain(globalContainerName);
+                await configuratorGlobalGrain.startConfigurator();
+    //            await configuratorLocalGrain.startConfigurator();
+
+                Trace.TraceInformation("Initialise Containers");
+
+                /* Create Containers */
+
+ /*               foreach (string site in storageAccounts.Keys)
+                {
+                    CloudBlobClient blobClient = storageAccounts[site].CreateCloudBlobClient();
+                    CloudBlobContainer blobContainer = blobClient.GetContainerReference(localContainerName);
+                    blobContainer.CreateIfNotExists();
+                    localContainers.Add(site, blobContainer);
+                    blobContainer.SetPermissions(new BlobContainerPermissions()
+                    {
+                        PublicAccess = BlobContainerPublicAccessType.Container
+                    });
+                }
+  * */
+                foreach (string site in storageAccounts.Keys)
+                {
+                    CloudBlobClient blobClient = ClientRegistry.GetAccount(site).CreateCloudBlobClient();
+
+                    CloudBlobContainer blobContainer = blobClient.GetContainerReference(globalContainerName);
+
+                    blobContainer.CreateIfNotExists();
+
+                    globalContainers.Add(site, blobContainer);
+                }
+
+                Trace.TraceInformation("Get Containers obtained");
+
+                /* Reads Replica Config which should have already been initialised by Configurator */
+                localReplicaConfig = new ReplicaConfiguration(localContainerName);
+                localBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], localReplicaConfig,false);
+
+                globalReplicaConfig = new ReplicaConfiguration(globalContainerName);
+                globalBackingStore = new ConfigurationCloudStore(storageAccounts[configStorageSite], globalReplicaConfig,false);
+
+                localReplicaConfig = localBackingStore.getCachedConfiguration();
+                globalReplicaConfig = globalBackingStore.getCachedConfiguration();
+
+                /* Creates Pileus Container Wrappers */
+                localCapContainer = new CapCloudBlobContainer(localContainers, localReplicaConfig);
+                globalCapContainer = new CapCloudBlobContainer(globalContainers, globalReplicaConfig);
+
+                Trace.TraceInformation("Initialise Configurations");
+
+                // Register reminder here
+     //           RegisterTimer(RefreshPeriodicallyAsync, localBackingStore, TimeSpan.FromMilliseconds(Utils.CLIENT_CONFIG_REFRESH_TIME), TimeSpan.FromMilliseconds(Utils.CLIENT_CONFIG_REFRESH_TIME));
+     //           RegisterTimer(RefreshPeriodicallyAsync, globalBackingStore, TimeSpan.FromMilliseconds(Utils.CLIENT_CONFIG_REFRESH_TIME), TimeSpan.FromMilliseconds(Utils.CLIENT_CONFIG_REFRESH_TIME));
+
+                     
+
+
+                Trace.TraceInformation("Initialise Consistency SLA");
+
+                // Initialises the default consistency SLA
+                slaGlobal = Utils.CreateConsistencySla(Consistency.Strong);
+                slaLocal = Utils.CreateConsistencySla(Consistency.Strong);
+                localCapContainer.SLA = slaLocal;
+                globalCapContainer.SLA = slaGlobal;
+
+                // TODO, add reminder to send usage data here
+
+
+                Trace.TraceInformation("Initialise sequenced code");
+
+                /* Replicated Grain Code */
+                Timestamp = DateTime.UtcNow;
+                StalenessBound = int.MaxValue;
+                worker = new BackgroundWorker(() => WriteQueuedUpdatesToStorage());
+                UpdateCacheFromRaw();
+
+                isInitialisedConfig = true;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.ToString());
+            }
+        }
 
         #endregion
     }

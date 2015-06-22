@@ -10,19 +10,24 @@ using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Orleans;
+using Microsoft.WindowsAzure.Storage.Pileus.Configuration;
+
 
 namespace GeoOrleans.Runtime.OrleansPileus.Interfaces
 {
     /// <summary>
-    /// Grain interface IGrain1
+    /// Grain interface IConfigurator
     /// </summary>
     public interface IConfigurator : IGrainWithStringKey
     {
-        Task forceReconfigure();
+        Task<bool> forceReconfigure(List<string> pServers);
 
 
         Task startConfigurator();
 
         Task<Dictionary<string, CloudBlobContainer>> getContainers();
+
+        Task receiveUsageData(ClientUsageData pClientData);
+
     }
 }

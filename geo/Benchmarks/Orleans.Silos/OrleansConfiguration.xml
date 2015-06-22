@@ -14,6 +14,8 @@
  <!--   <BootstrapProviders>
       <Provider Type="ClusterProtocol.SiloRep" Name="SiloRep" />
     </BootstrapProviders> -->
+   <!-- <SystemStore SystemStoreType="AzureTable" /> -->
+    <ReminderService ReminderServiceType="ReminderTableGrain"/>
   </Globals>
   <Defaults>
     <!--
@@ -29,5 +31,6 @@
 	    -->
       <TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />
     </Tracing>
+    
   </Defaults>
 </OrleansConfiguration>

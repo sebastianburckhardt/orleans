@@ -62,12 +62,12 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
         // from the cloud, and the client must be prepared to deal with dynamic reconfigurations.
         // Note: if the configuration is stable and not cloud backed, then the client must ensure that its local
         // configuration is correct, i.e. that it matches the actual configuration of replicas.
-        [NonSerialized()]
-        private bool isStable = true;
+        public bool isStable { get; set; }
 
         // If set, then a copy of this configuration resides in the cloud where it can be shared with other clients.
         [NonSerialized()]
-        private ConfigurationCloudStore backingStore = null;
+        public ConfigurationCloudStore backingStore = null;
+
 
         #endregion
 
@@ -120,6 +120,21 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
                 // get configuration from cloud (or write configuration to cloud if it does not exist)
                 bool autoRefresh = (!isStable);
                 SyncWithCloud(ClientRegistry.GetConfigurationAccount(), autoRefresh);
+            }
+        }
+
+        // This method is necessary for Orleans
+        public ReplicaConfiguration(string name, bool isCloudBacked = true, bool isStable = false)
+            : this(name)
+        {
+
+            this.isStable = isStable;
+            if (isCloudBacked)
+            {
+                // get configuration from cloud (or write configuration to cloud if it does not exist)
+                SyncWithCloud(ClientRegistry.GetConfigurationAccount(), false);
+
+
             }
         }
 

@@ -44,7 +44,6 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
 
             // Convert args into client data
             usage.SLAs.Add(sla);
-            usage.NumberOfReads = ss.GetNumberOfReadsPerMonth();
             usage.NumberOfWrites = ss.GetNumberOfWritesPerMonth();
             usage.ServerRTTs = new Dictionary<string, LatencyDistribution>();
             foreach (ServerState server in monitor.GetAllServersState())
@@ -77,7 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
             return result;
         }
 
-        private List<ConfigurationAction> ChooseReconfigActions(Dictionary<string, ClientUsageData> clientData, List<ConfigurationConstraint> constraints, ReplicaConfiguration config)
+        public List<ConfigurationAction> ChooseReconfigActions(Dictionary<string, ClientUsageData> clientData, List<ConfigurationConstraint> constraints, ReplicaConfiguration config)
         {
              Dictionary<string, ConfigurationAction> actions = new Dictionary<string, ConfigurationAction>();
             

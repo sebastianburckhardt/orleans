@@ -90,14 +90,17 @@
     <Compile Include="CapCloudBlobContainer.cs" />
     <Compile Include="CapCloudBlob.cs" />
     <Compile Include="CapCloudStorageAccount.cs" />
+    <Compile Include="FailedOpException.cs" />
     <Compile Include="Configuration\Action\AddPrimaryServer.cs" />
     <Compile Include="Configuration\Action\AddSecondaryServer.cs" />
     <Compile Include="Configuration\Action\AdjustSyncPeriod.cs" />
     <Compile Include="Configuration\Action\DowngradePrimary.cs" />
     <Compile Include="Configuration\Action\MakeSoloPrimaryServer.cs" />
     <Compile Include="Configuration\Action\ActionSelector.cs" />
+    <Compile Include="Configuration\Action\RemovePrimaryServer.cs" />
     <Compile Include="Configuration\ClientUsageCloudStore.cs" />
     <Compile Include="Configuration\Constraint\FixedPrimaryConstraint.cs" />
+    <Compile Include="Configuration\Constraint\PrimaryReplicationFactorConstraint.cs" />
     <Compile Include="Configuration\Constraint\SinglePrimaryConstraint.cs" />
     <Compile Include="Configuration\ReplicaConfiguration.cs" />
     <Compile Include="Configuration\ConfigurationCloudStore.cs" />

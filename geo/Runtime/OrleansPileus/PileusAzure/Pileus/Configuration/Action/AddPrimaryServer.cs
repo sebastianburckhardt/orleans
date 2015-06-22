@@ -13,7 +13,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration.Actions
     /// Makes the given server, primary.
     /// Hence, upon execution of this action, there will be at least 2 primary servers in the system.
     /// </summary>
-    internal class AddPrimaryServer : ConfigurationAction
+    public class AddPrimaryServer : ConfigurationAction
     {
 
 

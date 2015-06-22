@@ -32,11 +32,15 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
         // Blob storing the current configuration
         private ICloudBlob configurationBlob;
 
+        // Blob storing the current usage data
+        private ICloudBlob usageDataBlob;
+
+
         /// <summary>
         /// Constructor for ConfigurationCloudStore
         /// </summary>
         /// <param name="account">the Azure account where configuration data is stored</param>
-        public ConfigurationCloudStore(CloudStorageAccount account, ReplicaConfiguration configuration)
+   /*     public ConfigurationCloudStore(CloudStorageAccount account, ReplicaConfiguration configuration)
         {
             config = configuration;
             try
@@ -44,11 +48,50 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
                 configurationCloudBlobClient = account.CreateCloudBlobClient();
                 configurationContainer = configurationCloudBlobClient.GetContainerReference(ConstPool.CONFIGURATION_CONTAINER_PREFIX + config.Name);
                 configurationContainer.CreateIfNotExists();
+
                 configurationBlob = configurationContainer.GetBlockBlobReference(ConstPool.CURRENT_CONFIGURATION_BLOB_NAME);
                 if (!configurationBlob.Exists())
                 {
                     CreateConfiguration(false);
                 }
+                // In Orleans, there are multiple configurator instances, they communicate the client usage via a container here
+                usageDataBlob = configurationContainer.GetBlockBlobReference(ConstPool.CURRENT_USAGE_DATA_BLOB_NAME);
+               
+            }
+            catch (StorageException ex)
+            {
+                Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        } */
+
+        /// <summary>
+        /// Constructor for ConfigurationCloudStore
+        /// Takes an extra parameter "replace" to determine whether or not whatever configuration
+        /// that already exists should be replaced
+        /// </summary>
+        /// <param name="account">the Azure account where configuration data is stored</param>
+        public ConfigurationCloudStore(CloudStorageAccount pAccount, ReplicaConfiguration pNewConfig, bool replace=true)
+        {
+            if (replace) config = pNewConfig;
+            try
+            {
+                configurationCloudBlobClient = pAccount.CreateCloudBlobClient();
+                configurationContainer = configurationCloudBlobClient.GetContainerReference(ConstPool.CONFIGURATION_CONTAINER_PREFIX + pNewConfig);
+                configurationContainer.CreateIfNotExists();
+
+                configurationBlob = configurationContainer.GetBlockBlobReference(ConstPool.CURRENT_CONFIGURATION_BLOB_NAME);
+                if (!configurationBlob.Exists())
+                {
+                    config = pNewConfig;
+                    CreateConfiguration(false);
+                }
+                else
+                {
+                    if (!replace) config = DownloadFullConfig();
+                }
+                // In Orleans, there are multiple configurator instances, they communicate the client usage via a container here
+                usageDataBlob = configurationContainer.GetBlockBlobReference(ConstPool.CURRENT_USAGE_DATA_BLOB_NAME);
             }
             catch (StorageException ex)
             {
@@ -58,6 +101,8 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
         }
 
         #region Public Methods
+
+
 
         /// <summary>
         /// Create in Azure a configuration blob to store the local configuration.
@@ -73,6 +118,8 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
                 refreshConfigurationTask = Task.Factory.StartNew(() => RefreshConfigurationPeriodically());
             }
         }
+
+
 
         /// <summary>
         /// Save the local configuration in the Azure's configuration blob.
@@ -96,6 +143,15 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
         public void DeleteConfiguration()
         {
             configurationContainer.DeleteIfExists();
+        }
+
+        /// <summary>
+        /// Check if configuration exists
+        /// </summary>
+        /// <returns></returns>
+        public bool checkIfExists()
+        {
+            return configurationContainer.Exists();
         }
 
         /// <summary>
@@ -144,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
         /// <summary>
         /// Periodically refresh the configuration.
         /// </summary>
-        private void RefreshConfigurationPeriodically()
+        public void RefreshConfigurationPeriodically()
         {
             Stopwatch w = new Stopwatch();
             int timeToSleep;
@@ -192,9 +248,25 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
             }
         }
 
+
         #endregion
 
         #region Internal methods to download/upload configurations
+
+        internal ReplicaConfiguration DownloadFullConfig()
+        {
+            
+            ReplicaConfiguration config = null;
+            using (MemoryStream stream = new MemoryStream())
+            {
+                configurationBlob.DownloadToStream(stream);
+                stream.Seek(0, 0);
+                BinaryFormatter formatter = new BinaryFormatter();
+                config = (ReplicaConfiguration)formatter.Deserialize(stream);
+            }
+            return config;
+
+        }
 
         /// <summary>
         /// Read the configuration blob from Azure storage and update the local configuration.
@@ -342,6 +414,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
             }
         }
 
+        
         /// <summary>
         /// Uploads the configuration to the cloud
         /// </summary>
@@ -449,6 +522,161 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
             TimeSpan remaining = expirationTime - DateTime.Now;
             return (int) remaining.TotalMilliseconds;
         }
+
+        #endregion
+
+        #region orleans
+
+        /// <summary>
+        /// Reads Usage data from data blob. This is the information that is pushed
+        /// by configurator in each datacentre, and which is used for the reconfiguration
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Dictionary<string, ClientUsageData>> readUsageData()
+        {
+            Trace.TraceInformation("ReadUsageData");
+
+            Dictionary<string, ClientUsageData> clientUsage = null;
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                await configurationBlob.DownloadToStreamAsync(stream);
+                stream.Seek(0, 0);
+                BinaryFormatter formatter = new BinaryFormatter();
+                clientUsage = (Dictionary<string,ClientUsageData>)formatter.Deserialize(stream);
+            }
+
+            return clientUsage;
+        }
+
+        /// <summary>
+        /// Writes incoming block of usage data. Reads data and checks for etag
+        /// to make sure that there is no etag conflict.
+        /// 
+        /// TODO: check whether or not data needs to be "merged" and where it gets
+        /// deleted, otherwise risks growing very large
+        /// 
+        /// </summary>
+        /// <param name="pData"></param>
+        public async Task writeUsageData(ClientUsageData pData)
+        {
+            Trace.TraceInformation("WriteUsageData {0} " + pData.ClientName);
+            Dictionary<string, ClientUsageData> clientUsage = null;
+            bool success = false;
+
+            while (!success)
+            {
+                try
+                {
+                    // First read config
+                    await configurationBlob.FetchAttributesAsync();
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        await configurationBlob.DownloadToStreamAsync(stream);
+                        stream.Seek(0, 0);
+                        BinaryFormatter formatter = new BinaryFormatter();
+                        clientUsage = (Dictionary<string, ClientUsageData>)formatter.Deserialize(stream);
+                    }
+
+                    // Add new data
+                    clientUsage.Add(pData.ClientName, pData);
+
+                    // Generate Access condition (will fail if has been concurrently updated)
+
+                    AccessCondition condition = AccessCondition.GenerateIfMatchCondition(configurationBlob.Properties.ETag);
+
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        BinaryFormatter formatter = new BinaryFormatter();
+                        formatter.Serialize(stream, clientUsage);
+                        await configurationBlob.UploadFromStreamAsync(stream, condition, null, null);
+                    }
+                    success = true ; 
+                } catch (StorageException e) {
+                    if (StorageExceptionCode.PreconditionFailed(e)) { 
+                        // ETAG CONFICT
+                        success = false;
+                    } else throw e;
+
+                } catch (Exception e) { 
+                    // Something went wrong that wasn't expected.
+                    throw e;
+                    //TODO handle better
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Periodically refresh the configuration.
+        /// </summary>
+        public void RefreshConfiguration()
+        {
+            Stopwatch w = new Stopwatch();
+            int timeToSleep;
+
+            while (true)
+            {
+                // start a clock to determine the time spent refreshing the configuration
+                w.Restart();
+
+                // renew the lease if possible
+                int currentEpoch = RenewLease();
+                if (currentEpoch > 0)
+                {
+                    // renewal succeeded
+                    Console.WriteLine("Lease refresh succeeded.");
+                    timeToSleep = ConstPool.CACHED_CONFIGURATION_VALIDITY_DURATION;
+                }
+                else
+                {
+                    // cached configuration is changing, we need to wait for the meantime. 
+                    timeToSleep = ConstPool.CONFIGURATION_ACTION_DURATION;
+                    Console.WriteLine("Lease refresh waiting for reconfiguration in progress...");
+
+                    // check that the reconfiguration is not taking too long, 
+                    // i.e. that the configurator did not crash in the middle
+                    TimeSpan waiting = DateTime.Now - expirationTime;
+                    if (waiting.TotalMilliseconds > ConstPool.CONFIGURATION_ACTION_TIMEOUT)
+                    {
+                        // start a new epoch number but do not upload a new configuration
+                        // this allows all clients to reacquire leases
+                        StartNewEpoch(false);
+                        Console.WriteLine("Lease refresh detected failed reconfiguration after " + waiting.TotalMilliseconds + "ms and is starting new epoch...");
+                        timeToSleep = ConstPool.CACHED_CONFIGURATION_VALIDITY_DURATION;
+                    }
+                }
+
+                // sleep until just before the new lease expires
+                // we double the time taken to renew the lease just to have some room for variance in the execution time
+                w.Stop();
+                timeToSleep = timeToSleep - 2 * Convert.ToInt32(w.ElapsedMilliseconds);
+                if (timeToSleep > 0)
+                {
+                    Thread.Sleep(timeToSleep);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// This is needed in Orleans for two reasons:
+        /// 1) to minimise changes to Pileus code the initial configuration
+        /// is set to isStable so that no background thread is created,
+        /// we need the explicit pointer afterwards
+        /// 2) if a silo crashes, it needs to recover the previous configuration,
+        /// and only start if the configuration doesn't exist. So to minimise the
+        /// changes to the code, it creates a "default config" which is only used
+        /// if no configurations already existed. This call is needed to 
+        /// acquire the "actual configuration".
+        /// </summary>
+        /// <returns></returns>
+        public ReplicaConfiguration getCachedConfiguration()
+        {
+            return config;
+
+        }
+
 
         #endregion
 

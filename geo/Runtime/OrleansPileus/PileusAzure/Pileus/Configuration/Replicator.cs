@@ -37,6 +37,63 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Configuration
             task = Task.Factory.StartNew(StartReplicating);
         }
 
+
+        public void Replicate()
+        {
+            Dictionary<string, SynchronizeContainer> syncing = new Dictionary<string, SynchronizeContainer>();
+            Dictionary<string, DateTimeOffset> lastSynced = new Dictionary<string, DateTimeOffset>();
+            int alreadySleep = 0;
+
+          
+                if (configuration.IsInFastMode() && configuration.SecondaryServers.Count > 0)
+                {
+                    alreadySleep = 0;
+                    syncing.Clear();
+
+                    // compute shortest sync period
+                    int sleepTime = ConstPool.DEFAULT_SYNC_INTERVAL;
+                    foreach (string server in configuration.SecondaryServers)
+                    {
+                        if (configuration.GetSyncPeriod(server) < sleepTime)
+                        {
+                            sleepTime = configuration.GetSyncPeriod(server);
+                        }
+                    }
+
+                    foreach (string server in configuration.SecondaryServers)
+                    {
+                        //server should not exist in primary servers. This case happens during first phase of MakeSoloPrimaryServer action
+                        //where a secondary server also exist in primary server set.
+                        if (configuration.GetSyncPeriod(server) == sleepTime && !configuration.PrimaryServers.Contains(server))
+                        {
+                            Console.WriteLine("Starting to sync " + configuration.Name + " with " + server);
+
+                            DateTimeOffset? tmpOffset = null;
+                            if (lastSynced.ContainsKey(server))
+                                tmpOffset = lastSynced[server];
+                            lastSynced[server] = DateTimeOffset.Now;
+                            SynchronizeContainer synchronizer = new SynchronizeContainer(ClientRegistry.GetMainPrimaryContainer(name), ClientRegistry.GetCloudBlobContainer(server, name), tmpOffset);
+                            synchronizer.BeginSyncContainers();
+                            syncing[server] = synchronizer;
+                        }
+                    }
+                    foreach (string syncedServer in syncing.Keys)
+                    {
+                        syncing[syncedServer].EndSyncContainers();
+                    }
+                    Console.WriteLine("Finished synchronization. ");
+                    alreadySleep = sleepTime;
+                }
+                else
+                {
+                    lock (configuration)
+                        Monitor.Wait(configuration, ConstPool.CONFIGURATION_ACTION_DURATION);
+                }
+
+            
+        }
+
+
         private void StartReplicating()
         {
             Dictionary<string, SynchronizeContainer> syncing = new Dictionary<string, SynchronizeContainer>();

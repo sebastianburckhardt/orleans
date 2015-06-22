@@ -32,6 +32,185 @@ namespace GeoOrleans.Runtime.OrleansPileus.Interfaces
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    public class ReplicatorFactory
+    {
+        
+
+                        public static GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator GetGrain(System.String primaryKey)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator), 1225262913, primaryKey));
+                        }
+
+                        public static GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator GetGrain(System.String primaryKey, string grainClassNamePrefix)
+                        {
+                            return Cast(global::Orleans.CodeGeneration.GrainFactoryBase.MakeGrainReferenceInternal(typeof(GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator), 1225262913, primaryKey, grainClassNamePrefix));
+                        }
+
+            public static GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return ReplicatorReference.Cast(grainRef);
+            }
+        
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+        [System.SerializableAttribute()]
+        [global::Orleans.CodeGeneration.GrainReferenceAttribute("GeoOrleans.Runtime.OrleansPileus.Interfaces.GeoOrleans.Runtime.OrleansPileus.Inte" +
+            "rfaces.IReplicator")]
+        internal class ReplicatorReference : global::Orleans.Runtime.GrainReference, global::Orleans.Runtime.IAddressable, GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator
+        {
+            
+
+            public static GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator Cast(global::Orleans.Runtime.IAddressable grainRef)
+            {
+                
+                return (GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator) global::Orleans.Runtime.GrainReference.CastInternal(typeof(GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator), (global::Orleans.Runtime.GrainReference gr) => { return new ReplicatorReference(gr);}, grainRef, 1225262913);
+            }
+            
+            protected internal ReplicatorReference(global::Orleans.Runtime.GrainReference reference) : 
+                    base(reference)
+            {
+            }
+            
+            protected internal ReplicatorReference(SerializationInfo info, StreamingContext context) : 
+                    base(info, context)
+            {
+            }
+            
+            protected override int InterfaceId
+            {
+                get
+                {
+                    return 1225262913;
+                }
+            }
+            
+            public override string InterfaceName
+            {
+                get
+                {
+                    return "GeoOrleans.Runtime.OrleansPileus.Interfaces.GeoOrleans.Runtime.OrleansPileus.Inte" +
+                        "rfaces.IReplicator";
+                }
+            }
+            
+            [global::Orleans.CodeGeneration.CopierMethodAttribute()]
+            public static object _Copier(object original)
+            {
+                ReplicatorReference input = ((ReplicatorReference)(original));
+                return ((ReplicatorReference)(global::Orleans.Runtime.GrainReference.CopyGrainReference(input)));
+            }
+            
+            [global::Orleans.CodeGeneration.SerializerMethodAttribute()]
+            public static void _Serializer(object original, global::Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+            {
+                ReplicatorReference input = ((ReplicatorReference)(original));
+                global::Orleans.Runtime.GrainReference.SerializeGrainReference(input, stream, expected);
+            }
+            
+            [global::Orleans.CodeGeneration.DeserializerMethodAttribute()]
+            public static object _Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+            {
+                return ReplicatorReference.Cast(((global::Orleans.Runtime.GrainReference)(global::Orleans.Runtime.GrainReference.DeserializeGrainReference(expected, stream))));
+            }
+            
+            public override bool IsCompatible(int interfaceId)
+            {
+                return ((interfaceId == this.InterfaceId) 
+                            || (interfaceId == -1277021679));
+            }
+            
+            protected override string GetMethodName(int interfaceId, int methodId)
+            {
+                return ReplicatorMethodInvoker.GetMethodName(interfaceId, methodId);
+            }
+            
+            System.Threading.Tasks.Task<string> GeoOrleans.Runtime.OrleansPileus.Interfaces.IReplicator.replicate(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration @pConfiguration)
+            {
+
+                return base.InvokeMethodAsync<System.String>(-729074412, new object[] {@pConfiguration} );
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.MethodInvokerAttribute("GeoOrleans.Runtime.OrleansPileus.Interfaces.GeoOrleans.Runtime.OrleansPileus.Inte" +
+        "rfaces.IReplicator", 1225262913)]
+    internal class ReplicatorMethodInvoker : global::Orleans.CodeGeneration.IGrainMethodInvoker
+    {
+        
+        int global::Orleans.CodeGeneration.IGrainMethodInvoker.InterfaceId
+        {
+            get
+            {
+                return 1225262913;
+            }
+        }
+        
+        global::System.Threading.Tasks.Task<object> global::Orleans.CodeGeneration.IGrainMethodInvoker.Invoke(global::Orleans.Runtime.IAddressable grain, int interfaceId, int methodId, object[] arguments)
+        {
+
+            try
+            {                    if (grain == null) throw new System.ArgumentNullException("grain");
+                switch (interfaceId)
+                {
+                    case 1225262913:  // IReplicator
+                        switch (methodId)
+                        {
+                            case -729074412: 
+                                return ((IReplicator)grain).replicate((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                        }case -1277021679:  // IGrainWithStringKey
+                        switch (methodId)
+                        {
+                            default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                        }
+                    default:
+                        throw new System.InvalidCastException("interfaceId="+interfaceId);
+                }
+            }
+            catch(Exception ex)
+            {
+                var t = new System.Threading.Tasks.TaskCompletionSource<object>();
+                t.SetException(ex);
+                return t.Task;
+            }
+        }
+        
+        public static string GetMethodName(int interfaceId, int methodId)
+        {
+
+            switch (interfaceId)
+            {
+                
+                case 1225262913:  // IReplicator
+                    switch (methodId)
+                    {
+                        case -729074412:
+                            return "replicate";
+                    
+                        default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                    }
+                case -1277021679:  // IGrainWithStringKey
+                    switch (methodId)
+                    {
+                        
+                        default: 
+                            throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
+                    }
+
+                default:
+                    throw new System.InvalidCastException("interfaceId="+interfaceId);
+            }
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
     public class ConfiguratorFactory
     {
         
@@ -125,10 +304,10 @@ namespace GeoOrleans.Runtime.OrleansPileus.Interfaces
                 return ConfiguratorMethodInvoker.GetMethodName(interfaceId, methodId);
             }
             
-            System.Threading.Tasks.Task GeoOrleans.Runtime.OrleansPileus.Interfaces.IConfigurator.forceReconfigure()
+            System.Threading.Tasks.Task<bool> GeoOrleans.Runtime.OrleansPileus.Interfaces.IConfigurator.forceReconfigure(List<String> @pServers)
             {
 
-                return base.InvokeMethodAsync<object>(-351531848, null );
+                return base.InvokeMethodAsync<System.Boolean>(-1642305041, new object[] {@pServers} );
             }
             
             System.Threading.Tasks.Task GeoOrleans.Runtime.OrleansPileus.Interfaces.IConfigurator.startConfigurator()
@@ -141,6 +320,12 @@ namespace GeoOrleans.Runtime.OrleansPileus.Interfaces
             {
 
                 return base.InvokeMethodAsync<System.Collections.Generic.Dictionary<System.String,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer>>(-2085797267, null );
+            }
+            
+            System.Threading.Tasks.Task GeoOrleans.Runtime.OrleansPileus.Interfaces.IConfigurator.receiveUsageData(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData @pClientData)
+            {
+
+                return base.InvokeMethodAsync<object>(-1709140728, new object[] {@pClientData} );
             }
         }
     }
@@ -170,12 +355,14 @@ namespace GeoOrleans.Runtime.OrleansPileus.Interfaces
                     case 1444308113:  // IConfigurator
                         switch (methodId)
                         {
-                            case -351531848: 
-                                return ((IConfigurator)grain).forceReconfigure().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
+                            case -1642305041: 
+                                return ((IConfigurator)grain).forceReconfigure((List<String>)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
                             case -1713106890: 
                                 return ((IConfigurator)grain).startConfigurator().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
                             case -2085797267: 
                                 return ((IConfigurator)grain).getContainers().ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)t.Result; });
+                            case -1709140728: 
+                                return ((IConfigurator)grain).receiveUsageData((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData)arguments[0]).ContinueWith(t => {if (t.Status == System.Threading.Tasks.TaskStatus.Faulted) throw t.Exception; return (object)null; });
                             default: 
                             throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
                         }case -1277021679:  // IGrainWithStringKey
@@ -205,12 +392,14 @@ namespace GeoOrleans.Runtime.OrleansPileus.Interfaces
                 case 1444308113:  // IConfigurator
                     switch (methodId)
                     {
-                        case -351531848:
+                        case -1642305041:
                             return "forceReconfigure";
                     case -1713106890:
                             return "startConfigurator";
                     case -2085797267:
                             return "getContainers";
+                    case -1709140728:
+                            return "receiveUsageData";
                     
                         default: 
                             throw new NotImplementedException("interfaceId="+interfaceId+",methodId="+methodId);
@@ -235,19 +424,137 @@ namespace GeoOrleans.Runtime.OrleansPileus.InterfacesSerializers
     using System.Collections.Generic;
     using System.Reflection;
     using Orleans.Serialization;
+    using Microsoft.WindowsAzure.Storage.Pileus.Configuration;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.WindowsAzure.Storage.Pileus;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using System.Runtime.Serialization;
     using System.Collections;
+    using System.Runtime.Serialization;
+    using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using System.Threading;
     using System.Xml.Serialization;
-    using System.Runtime.InteropServices;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_Pileus_Configuration_ReplicaConfigurationSerialization
+    {
+        
+        private static System.Reflection.FieldInfo fieldInfo3;
+        
+        private static System.Reflection.FieldInfo fieldInfo4;
+        
+        private static System.Reflection.FieldInfo fieldInfo5;
+        
+        private static System.Reflection.FieldInfo fieldInfo6;
+        
+        private static System.Reflection.FieldInfo fieldInfo7;
+        
+        private static System.Reflection.FieldInfo fieldInfo8;
+        
+        private static System.Reflection.FieldInfo fieldInfo9;
+        
+        private static System.Reflection.FieldInfo fieldInfo10;
+        
+        static Microsoft_WindowsAzure_Storage_Pileus_Configuration_ReplicaConfigurationSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration input = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration)(original));
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration result = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration))));
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            result.Epoch = input.Epoch;
+            result.EpochModifiedTime = ((System.DateTimeOffset)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.EpochModifiedTime)));
+            object objResult = ((object)(result));
+            object temp3 = input.Name;
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.NonReplicaServers)));
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.PrimaryServers)));
+            fieldInfo5.SetValue(objResult, temp5);
+            object temp6 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.ReadOnlySecondaryServers)));
+            fieldInfo6.SetValue(objResult, temp6);
+            object temp7 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.SecondaryServers)));
+            fieldInfo7.SetValue(objResult, temp7);
+            object temp8 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.WriteOnlyPrimaryServers)));
+            fieldInfo8.SetValue(objResult, temp8);
+            object temp9 = input.isStable;
+            fieldInfo9.SetValue(objResult, temp9);
+            object temp10 = ((System.Collections.Generic.Dictionary<System.String,System.Int32>)(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo10.GetValue(input))));
+            fieldInfo10.SetValue(objResult, temp10);
+            return objResult;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration input = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Epoch, stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.EpochModifiedTime, stream, typeof(System.DateTimeOffset));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Name, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.NonReplicaServers, stream, typeof(System.Collections.Generic.List<System.String>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.PrimaryServers, stream, typeof(System.Collections.Generic.List<System.String>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.ReadOnlySecondaryServers, stream, typeof(System.Collections.Generic.List<System.String>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.SecondaryServers, stream, typeof(System.Collections.Generic.List<System.String>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.WriteOnlyPrimaryServers, stream, typeof(System.Collections.Generic.List<System.String>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.isStable, stream, typeof(bool));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo10.GetValue(input), stream, typeof(System.Collections.Generic.Dictionary<System.String,System.Int32>));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration result = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration))));
+            result.Epoch = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            result.EpochModifiedTime = ((System.DateTimeOffset)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.DateTimeOffset), stream)));
+            object objResult = ((object)(result));
+            object temp3 = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<System.String>), stream)));
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<System.String>), stream)));
+            fieldInfo5.SetValue(objResult, temp5);
+            object temp6 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<System.String>), stream)));
+            fieldInfo6.SetValue(objResult, temp6);
+            object temp7 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<System.String>), stream)));
+            fieldInfo7.SetValue(objResult, temp7);
+            object temp8 = ((System.Collections.Generic.List<System.String>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<System.String>), stream)));
+            fieldInfo8.SetValue(objResult, temp8);
+            object temp9 = ((bool)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(bool), stream)));
+            fieldInfo9.SetValue(objResult, temp9);
+            object temp10 = ((System.Collections.Generic.Dictionary<System.String,System.Int32>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.Dictionary<System.String,System.Int32>), stream)));
+            fieldInfo10.SetValue(objResult, temp10);
+            return objResult;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration), DeepCopier, Serializer, Deserializer);
+            fieldInfo3 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<Name>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo4 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<NonReplicaServers>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo5 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<PrimaryServers>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo6 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<ReadOnlySecondaryServers>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo7 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<SecondaryServers>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo8 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<WriteOnlyPrimaryServers>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo9 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("<isStable>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo10 = typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ReplicaConfiguration).GetField("syncPeriod", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+        }
+    }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
@@ -328,89 +635,6 @@ namespace GeoOrleans.Runtime.OrleansPileus.InterfacesSerializers
             fieldInfo4 = typeof(Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer).GetField("<ServiceClient>k__BackingField", (System.Reflection.BindingFlags.Instance 
                             | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
             fieldInfo5 = typeof(Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer).GetField("<StorageUri>k__BackingField", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-        }
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
-    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
-    internal class Microsoft_WindowsAzure_Storage_Blob_BlobContainerPropertiesSerialization
-    {
-        
-        private static System.Reflection.FieldInfo fieldInfo1;
-        
-        private static System.Reflection.FieldInfo fieldInfo2;
-        
-        private static System.Reflection.FieldInfo fieldInfo3;
-        
-        private static System.Reflection.FieldInfo fieldInfo4;
-        
-        private static System.Reflection.FieldInfo fieldInfo5;
-        
-        static Microsoft_WindowsAzure_Storage_Blob_BlobContainerPropertiesSerialization()
-        {
-            Register();
-        }
-        
-        public static object DeepCopier(object original)
-        {
-            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties input = ((Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties)(original));
-            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties result = new Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties();
-            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
-            object objResult = ((object)(result));
-            object temp1 = input.ETag;
-            fieldInfo1.SetValue(objResult, temp1);
-            object temp2 = ((System.Nullable<System.DateTimeOffset>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.LastModified)));
-            fieldInfo2.SetValue(objResult, temp2);
-            object temp3 = input.LeaseDuration;
-            fieldInfo3.SetValue(objResult, temp3);
-            object temp4 = input.LeaseState;
-            fieldInfo4.SetValue(objResult, temp4);
-            object temp5 = input.LeaseStatus;
-            fieldInfo5.SetValue(objResult, temp5);
-            return objResult;
-        }
-        
-        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
-        {
-            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties input = ((Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties)(untypedInput));
-            Orleans.Serialization.SerializationManager.SerializeInner(input.ETag, stream, typeof(string));
-            Orleans.Serialization.SerializationManager.SerializeInner(input.LastModified, stream, typeof(System.Nullable<System.DateTimeOffset>));
-            Orleans.Serialization.SerializationManager.SerializeInner(input.LeaseDuration, stream, typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseDuration));
-            Orleans.Serialization.SerializationManager.SerializeInner(input.LeaseState, stream, typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseState));
-            Orleans.Serialization.SerializationManager.SerializeInner(input.LeaseStatus, stream, typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseStatus));
-        }
-        
-        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
-        {
-            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties result = new Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties();
-            object objResult = ((object)(result));
-            object temp1 = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
-            fieldInfo1.SetValue(objResult, temp1);
-            object temp2 = ((System.Nullable<System.DateTimeOffset>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Nullable<System.DateTimeOffset>), stream)));
-            fieldInfo2.SetValue(objResult, temp2);
-            object temp3 = ((Microsoft.WindowsAzure.Storage.Blob.LeaseDuration)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseDuration), stream)));
-            fieldInfo3.SetValue(objResult, temp3);
-            object temp4 = ((Microsoft.WindowsAzure.Storage.Blob.LeaseState)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseState), stream)));
-            fieldInfo4.SetValue(objResult, temp4);
-            object temp5 = ((Microsoft.WindowsAzure.Storage.Blob.LeaseStatus)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseStatus), stream)));
-            fieldInfo5.SetValue(objResult, temp5);
-            return objResult;
-        }
-        
-        public static void Register()
-        {
-            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties), DeepCopier, Serializer, Deserializer);
-            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<ETag>k__BackingField", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LastModified>k__BackingField", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-            fieldInfo3 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LeaseDuration>k__BackingField", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-            fieldInfo4 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LeaseState>k__BackingField", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-            fieldInfo5 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LeaseStatus>k__BackingField", (System.Reflection.BindingFlags.Instance 
                             | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
         }
     }
@@ -515,6 +739,454 @@ namespace GeoOrleans.Runtime.OrleansPileus.InterfacesSerializers
             fieldInfo7 = typeof(Microsoft.WindowsAzure.Storage.Blob.CloudBlobClient).GetField("authenticationScheme", (System.Reflection.BindingFlags.Instance 
                             | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
             fieldInfo8 = typeof(Microsoft.WindowsAzure.Storage.Blob.CloudBlobClient).GetField("defaultDelimiter", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_Blob_BlobContainerPropertiesSerialization
+    {
+        
+        private static System.Reflection.FieldInfo fieldInfo1;
+        
+        private static System.Reflection.FieldInfo fieldInfo2;
+        
+        private static System.Reflection.FieldInfo fieldInfo3;
+        
+        private static System.Reflection.FieldInfo fieldInfo4;
+        
+        private static System.Reflection.FieldInfo fieldInfo5;
+        
+        static Microsoft_WindowsAzure_Storage_Blob_BlobContainerPropertiesSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties input = ((Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties)(original));
+            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties result = new Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties();
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            object objResult = ((object)(result));
+            object temp1 = input.ETag;
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((System.Nullable<System.DateTimeOffset>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.LastModified)));
+            fieldInfo2.SetValue(objResult, temp2);
+            object temp3 = input.LeaseDuration;
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = input.LeaseState;
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = input.LeaseStatus;
+            fieldInfo5.SetValue(objResult, temp5);
+            return objResult;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties input = ((Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.ETag, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.LastModified, stream, typeof(System.Nullable<System.DateTimeOffset>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.LeaseDuration, stream, typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseDuration));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.LeaseState, stream, typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseState));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.LeaseStatus, stream, typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseStatus));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties result = new Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties();
+            object objResult = ((object)(result));
+            object temp1 = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((System.Nullable<System.DateTimeOffset>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Nullable<System.DateTimeOffset>), stream)));
+            fieldInfo2.SetValue(objResult, temp2);
+            object temp3 = ((Microsoft.WindowsAzure.Storage.Blob.LeaseDuration)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseDuration), stream)));
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = ((Microsoft.WindowsAzure.Storage.Blob.LeaseState)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseState), stream)));
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = ((Microsoft.WindowsAzure.Storage.Blob.LeaseStatus)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Blob.LeaseStatus), stream)));
+            fieldInfo5.SetValue(objResult, temp5);
+            return objResult;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties), DeepCopier, Serializer, Deserializer);
+            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<ETag>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LastModified>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo3 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LeaseDuration>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo4 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LeaseState>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo5 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobContainerProperties).GetField("<LeaseStatus>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_Pileus_Configuration_ClientUsageDataSerialization
+    {
+        
+        static Microsoft_WindowsAzure_Storage_Pileus_Configuration_ClientUsageDataSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData input = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData)(original));
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData result = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData))));
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            result.ClientName = input.ClientName;
+            result.NumberOfReads = input.NumberOfReads;
+            result.NumberOfWrites = input.NumberOfWrites;
+            result.SLAs = ((System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.SLAs)));
+            result.ServerRTTs = ((System.Collections.Generic.Dictionary<System.String,Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution>)(Orleans.Serialization.SerializationManager.DeepCopyInner(input.ServerRTTs)));
+            return result;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData input = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.ClientName, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.NumberOfReads, stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.NumberOfWrites, stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.SLAs, stream, typeof(System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement>));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.ServerRTTs, stream, typeof(System.Collections.Generic.Dictionary<System.String,Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution>));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData result = ((Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData))));
+            result.ClientName = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            result.NumberOfReads = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            result.NumberOfWrites = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            result.SLAs = ((System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement>), stream)));
+            result.ServerRTTs = ((System.Collections.Generic.Dictionary<System.String,Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.Dictionary<System.String,Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution>), stream)));
+            return result;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Pileus.Configuration.ClientUsageData), DeepCopier, Serializer, Deserializer);
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_Pileus_LatencyDistributionSerialization
+    {
+        
+        private static System.Reflection.FieldInfo fieldInfo1;
+        
+        private static System.Reflection.FieldInfo fieldInfo2;
+        
+        private static System.Reflection.FieldInfo fieldInfo3;
+        
+        private static System.Reflection.FieldInfo fieldInfo4;
+        
+        private static System.Reflection.FieldInfo fieldInfo5;
+        
+        private static System.Reflection.FieldInfo fieldInfo6;
+        
+        private static System.Reflection.FieldInfo fieldInfo7;
+        
+        private static System.Reflection.FieldInfo fieldInfo8;
+        
+        static Microsoft_WindowsAzure_Storage_Pileus_LatencyDistributionSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution input = ((Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution)(original));
+            Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution result = ((Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution))));
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            object objResult = ((object)(result));
+            object temp1 = ((int[])(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo1.GetValue(input))));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = fieldInfo2.GetValue(input);
+            fieldInfo2.SetValue(objResult, temp2);
+            object temp3 = fieldInfo3.GetValue(input);
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = fieldInfo4.GetValue(input);
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = fieldInfo5.GetValue(input);
+            fieldInfo5.SetValue(objResult, temp5);
+            object temp6 = fieldInfo6.GetValue(input);
+            fieldInfo6.SetValue(objResult, temp6);
+            object temp7 = fieldInfo7.GetValue(input);
+            fieldInfo7.SetValue(objResult, temp7);
+            object temp8 = fieldInfo8.GetValue(input);
+            fieldInfo8.SetValue(objResult, temp8);
+            return objResult;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution input = ((Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo1.GetValue(input), stream, typeof(int[]));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo2.GetValue(input), stream, typeof(long));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo3.GetValue(input), stream, typeof(long));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo4.GetValue(input), stream, typeof(long));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo5.GetValue(input), stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo6.GetValue(input), stream, typeof(long));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo7.GetValue(input), stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo8.GetValue(input), stream, typeof(int));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution result = ((Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution))));
+            object objResult = ((object)(result));
+            object temp1 = ((int[])(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int[]), stream)));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((long)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(long), stream)));
+            fieldInfo2.SetValue(objResult, temp2);
+            object temp3 = ((long)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(long), stream)));
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = ((long)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(long), stream)));
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo5.SetValue(objResult, temp5);
+            object temp6 = ((long)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(long), stream)));
+            fieldInfo6.SetValue(objResult, temp6);
+            object temp7 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo7.SetValue(objResult, temp7);
+            object temp8 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo8.SetValue(objResult, temp8);
+            return objResult;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution), DeepCopier, Serializer, Deserializer);
+            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_distribution", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_intervalLength", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo3 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_max", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo4 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_min", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo5 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_numIntervals", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo6 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_total", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo7 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_totalEntries", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo8 = typeof(Microsoft.WindowsAzure.Storage.Pileus.LatencyDistribution).GetField("m_windowSize", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_Pileus_ServiceLevelAgreementSerialization
+    {
+        
+        private static System.Reflection.FieldInfo fieldInfo1;
+        
+        private static System.Reflection.FieldInfo fieldInfo2;
+        
+        static Microsoft_WindowsAzure_Storage_Pileus_ServiceLevelAgreementSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement input = ((Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement)(original));
+            Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement result = ((Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement))));
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            object objResult = ((object)(result));
+            object temp1 = input.Id;
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.SubSLA>)(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo2.GetValue(input))));
+            fieldInfo2.SetValue(objResult, temp2);
+            return objResult;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement input = ((Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.Id, stream, typeof(string));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo2.GetValue(input), stream, typeof(System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.SubSLA>));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement result = ((Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement))));
+            object objResult = ((object)(result));
+            object temp1 = ((string)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(string), stream)));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.SubSLA>)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Collections.Generic.List<Microsoft.WindowsAzure.Storage.Pileus.SubSLA>), stream)));
+            fieldInfo2.SetValue(objResult, temp2);
+            return objResult;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement), DeepCopier, Serializer, Deserializer);
+            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement).GetField("<Id>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.Pileus.ServiceLevelAgreement).GetField("subSLAs", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_Pileus_SubSLASerialization
+    {
+        
+        private static System.Reflection.FieldInfo fieldInfo1;
+        
+        private static System.Reflection.FieldInfo fieldInfo2;
+        
+        private static System.Reflection.FieldInfo fieldInfo3;
+        
+        private static System.Reflection.FieldInfo fieldInfo4;
+        
+        private static System.Reflection.FieldInfo fieldInfo5;
+        
+        private static System.Reflection.FieldInfo fieldInfo6;
+        
+        static Microsoft_WindowsAzure_Storage_Pileus_SubSLASerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.SubSLA input = ((Microsoft.WindowsAzure.Storage.Pileus.SubSLA)(original));
+            Microsoft.WindowsAzure.Storage.Pileus.SubSLA result = ((Microsoft.WindowsAzure.Storage.Pileus.SubSLA)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA))));
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            object objResult = ((object)(result));
+            object temp1 = input.NumberOfHits;
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = input.NumberOfMisses;
+            fieldInfo2.SetValue(objResult, temp2);
+            object temp3 = fieldInfo3.GetValue(input);
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = fieldInfo4.GetValue(input);
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = fieldInfo5.GetValue(input);
+            fieldInfo5.SetValue(objResult, temp5);
+            object temp6 = fieldInfo6.GetValue(input);
+            fieldInfo6.SetValue(objResult, temp6);
+            return objResult;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.SubSLA input = ((Microsoft.WindowsAzure.Storage.Pileus.SubSLA)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.NumberOfHits, stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(input.NumberOfMisses, stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo3.GetValue(input), stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo4.GetValue(input), stream, typeof(Microsoft.WindowsAzure.Storage.Pileus.Consistency));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo5.GetValue(input), stream, typeof(int));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo6.GetValue(input), stream, typeof(float));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.Pileus.SubSLA result = ((Microsoft.WindowsAzure.Storage.Pileus.SubSLA)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA))));
+            object objResult = ((object)(result));
+            object temp1 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo2.SetValue(objResult, temp2);
+            object temp3 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo3.SetValue(objResult, temp3);
+            object temp4 = ((Microsoft.WindowsAzure.Storage.Pileus.Consistency)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(Microsoft.WindowsAzure.Storage.Pileus.Consistency), stream)));
+            fieldInfo4.SetValue(objResult, temp4);
+            object temp5 = ((int)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(int), stream)));
+            fieldInfo5.SetValue(objResult, temp5);
+            object temp6 = ((float)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(float), stream)));
+            fieldInfo6.SetValue(objResult, temp6);
+            return objResult;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA), DeepCopier, Serializer, Deserializer);
+            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA).GetField("<NumberOfHits>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA).GetField("<NumberOfMisses>k__BackingField", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo3 = typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA).GetField("bound", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo4 = typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA).GetField("consistency", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo5 = typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA).GetField("latency", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo6 = typeof(Microsoft.WindowsAzure.Storage.Pileus.SubSLA).GetField("utility", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+        }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
+    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
+    internal class Microsoft_WindowsAzure_Storage_StorageUriSerialization
+    {
+        
+        private static System.Reflection.FieldInfo fieldInfo1;
+        
+        private static System.Reflection.FieldInfo fieldInfo2;
+        
+        static Microsoft_WindowsAzure_Storage_StorageUriSerialization()
+        {
+            Register();
+        }
+        
+        public static object DeepCopier(object original)
+        {
+            Microsoft.WindowsAzure.Storage.StorageUri input = ((Microsoft.WindowsAzure.Storage.StorageUri)(original));
+            Microsoft.WindowsAzure.Storage.StorageUri result = ((Microsoft.WindowsAzure.Storage.StorageUri)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.StorageUri))));
+            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
+            object objResult = ((object)(result));
+            object temp1 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo1.GetValue(input))));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo2.GetValue(input))));
+            fieldInfo2.SetValue(objResult, temp2);
+            return objResult;
+        }
+        
+        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
+        {
+            Microsoft.WindowsAzure.Storage.StorageUri input = ((Microsoft.WindowsAzure.Storage.StorageUri)(untypedInput));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo1.GetValue(input), stream, typeof(System.Uri));
+            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo2.GetValue(input), stream, typeof(System.Uri));
+        }
+        
+        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
+        {
+            Microsoft.WindowsAzure.Storage.StorageUri result = ((Microsoft.WindowsAzure.Storage.StorageUri)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.StorageUri))));
+            object objResult = ((object)(result));
+            object temp1 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Uri), stream)));
+            fieldInfo1.SetValue(objResult, temp1);
+            object temp2 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Uri), stream)));
+            fieldInfo2.SetValue(objResult, temp2);
+            return objResult;
+        }
+        
+        public static void Register()
+        {
+            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.StorageUri), DeepCopier, Serializer, Deserializer);
+            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.StorageUri).GetField("primaryUri", (System.Reflection.BindingFlags.Instance 
+                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
+            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.StorageUri).GetField("secondaryUri", (System.Reflection.BindingFlags.Instance 
                             | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
         }
     }
@@ -637,62 +1309,6 @@ namespace GeoOrleans.Runtime.OrleansPileus.InterfacesSerializers
             fieldInfo9 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobRequestOptions).GetField("storeBlobContentMD5", (System.Reflection.BindingFlags.Instance 
                             | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
             fieldInfo10 = typeof(Microsoft.WindowsAzure.Storage.Blob.BlobRequestOptions).GetField("useTransactionalMD5", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-        }
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Orleans-CodeGenerator", "1.0.8.0")]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute()]
-    [global::Orleans.CodeGeneration.RegisterSerializerAttribute()]
-    internal class Microsoft_WindowsAzure_Storage_StorageUriSerialization
-    {
-        
-        private static System.Reflection.FieldInfo fieldInfo1;
-        
-        private static System.Reflection.FieldInfo fieldInfo2;
-        
-        static Microsoft_WindowsAzure_Storage_StorageUriSerialization()
-        {
-            Register();
-        }
-        
-        public static object DeepCopier(object original)
-        {
-            Microsoft.WindowsAzure.Storage.StorageUri input = ((Microsoft.WindowsAzure.Storage.StorageUri)(original));
-            Microsoft.WindowsAzure.Storage.StorageUri result = ((Microsoft.WindowsAzure.Storage.StorageUri)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.StorageUri))));
-            Orleans.Serialization.SerializationContext.Current.RecordObject(original, result);
-            object objResult = ((object)(result));
-            object temp1 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo1.GetValue(input))));
-            fieldInfo1.SetValue(objResult, temp1);
-            object temp2 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeepCopyInner(fieldInfo2.GetValue(input))));
-            fieldInfo2.SetValue(objResult, temp2);
-            return objResult;
-        }
-        
-        public static void Serializer(object untypedInput, Orleans.Serialization.BinaryTokenStreamWriter stream, System.Type expected)
-        {
-            Microsoft.WindowsAzure.Storage.StorageUri input = ((Microsoft.WindowsAzure.Storage.StorageUri)(untypedInput));
-            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo1.GetValue(input), stream, typeof(System.Uri));
-            Orleans.Serialization.SerializationManager.SerializeInner(fieldInfo2.GetValue(input), stream, typeof(System.Uri));
-        }
-        
-        public static object Deserializer(System.Type expected, global::Orleans.Serialization.BinaryTokenStreamReader stream)
-        {
-            Microsoft.WindowsAzure.Storage.StorageUri result = ((Microsoft.WindowsAzure.Storage.StorageUri)(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Microsoft.WindowsAzure.Storage.StorageUri))));
-            object objResult = ((object)(result));
-            object temp1 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Uri), stream)));
-            fieldInfo1.SetValue(objResult, temp1);
-            object temp2 = ((System.Uri)(Orleans.Serialization.SerializationManager.DeserializeInner(typeof(System.Uri), stream)));
-            fieldInfo2.SetValue(objResult, temp2);
-            return objResult;
-        }
-        
-        public static void Register()
-        {
-            global::Orleans.Serialization.SerializationManager.Register(typeof(Microsoft.WindowsAzure.Storage.StorageUri), DeepCopier, Serializer, Deserializer);
-            fieldInfo1 = typeof(Microsoft.WindowsAzure.Storage.StorageUri).GetField("primaryUri", (System.Reflection.BindingFlags.Instance 
-                            | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
-            fieldInfo2 = typeof(Microsoft.WindowsAzure.Storage.StorageUri).GetField("secondaryUri", (System.Reflection.BindingFlags.Instance 
                             | (System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)));
         }
     }

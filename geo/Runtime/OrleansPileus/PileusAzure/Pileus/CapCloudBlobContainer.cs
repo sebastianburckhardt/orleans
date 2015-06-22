@@ -75,6 +75,42 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
             this.Sessions["default"] = new SessionState();
         }
 
+        public CapCloudBlobContainer(Dictionary<string, CloudBlobContainer> replicas)
+        {
+            this.containers = replicas;
+            this.Name = replicas.First().Value.Name;
+
+            this.Configuration = new ReplicaConfiguration(this.Name, false, true);
+
+            // Create default SLA requesting strong consistency
+            this.SLA = new ServiceLevelAgreement("strong", new SubSLA(5000, Consistency.Strong));
+
+            // Create a server monitor to be shared by all operations from this client
+            this.Monitor = new ServerMonitor(Configuration);
+
+            // Create default session state
+            this.Sessions = new Dictionary<string, SessionState>();
+            this.Sessions["default"] = new SessionState();
+        }
+
+        public CapCloudBlobContainer(Dictionary<string, CloudBlobContainer> replicas, ReplicaConfiguration pReplicaConfiguration)
+        {
+            this.containers = replicas;
+            this.Name = replicas.First().Value.Name;
+
+            this.Configuration = pReplicaConfiguration;
+
+            // Create default SLA requesting strong consistency
+            this.SLA = new ServiceLevelAgreement("strong", new SubSLA(500, Consistency.Strong));
+
+            // Create a server monitor to be shared by all operations from this client
+            this.Monitor = new ServerMonitor(Configuration);
+
+            // Create default session state
+            this.Sessions = new Dictionary<string, SessionState>();
+            this.Sessions["default"] = new SessionState();
+        }
+
         /// <summary>
         /// Initializes a new instance of a <see cref="CapCloudBlobContainer"/> class that encapsulates a single
         /// blob container.

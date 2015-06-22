@@ -16,6 +16,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus.Utils
         /// </summary>
         public static readonly string CURRENT_CONFIGURATION_BLOB_NAME = "currentconfig";
 
+        public static readonly string CURRENT_USAGE_DATA_BLOB_NAME = "currentusagedata";
         /// <summary>
         /// The table name used for storing the SLAs.
         /// </summary>

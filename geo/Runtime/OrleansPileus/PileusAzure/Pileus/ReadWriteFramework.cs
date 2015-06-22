@@ -212,27 +212,35 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
 
         private void FastWrite(WriteOp op, List<SessionState> sessions = null, ServerMonitor monitor = null)
         {
-            // there should only be one primary server since we are in fast mode
-            string server = configuration.PrimaryServers.First();
-            ICloudBlob blob = ClientRegistry.GetCloudBlob(server, configuration.Name, blobName, false);
-            
-            watch.Start();
-            op(blob);
-            watch.Stop();
+            string server = null;
+            try
+            {
+                // there should only be one primary server since we are in fast mode
+                 server = configuration.PrimaryServers.First();
+                ICloudBlob blob = ClientRegistry.GetCloudBlob(server, configuration.Name, blobName, false);
 
-            // update server and session state
-            ServerState ss = (monitor == null) ? slaEngine.Monitor.GetServerState(server) : monitor.GetServerState(server);
-            ss.AddRtt(watch.ElapsedMilliseconds);
-            if (sessions == null)
-            {
-                slaEngine.Session.RecordObjectWritten(blobName, Timestamp(blob), ss);
-            }
-            else
-            {
-                foreach (SessionState session in sessions)
+                watch.Start();
+                op(blob);
+                watch.Stop();
+
+                // update server and session state
+                ServerState ss = (monitor == null) ? slaEngine.Monitor.GetServerState(server) : monitor.GetServerState(server);
+                ss.AddRtt(watch.ElapsedMilliseconds);
+                if (sessions == null)
                 {
-                    session.RecordObjectWritten(blobName, Timestamp(blob), ss);
+                    slaEngine.Session.RecordObjectWritten(blobName, Timestamp(blob), ss);
                 }
+                else
+                {
+                    foreach (SessionState session in sessions)
+                    {
+                        session.RecordObjectWritten(blobName, Timestamp(blob), ss);
+                    }
+                }
+            }
+            catch (StorageException e)
+            {
+                throw new FailedOpException(server,e);
             }
         }
 
@@ -295,7 +303,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
                 {
                     op(blob);
                 }
-                catch (StorageException)
+                catch (StorageException e)
                 {
                     // If writing fails at some primary, then abort the protocol
                     // It could be that a concurrent writer is in progress
@@ -307,7 +315,8 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
                     {
                         ClearWiPFlags(eTags);
                     }
-                    return;
+  //                  return null;
+                    throw new FailedOpException(server, e);
                 }                
                 watch.Stop();
                 eTags[server] = blob.Properties.ETag;
@@ -353,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
                     blob.SetMetadata();
                     didAtLeastOne = true;
                 }
-                catch (StorageException)
+                catch (StorageException e)
                 {
                     // If setting the flag fails at some primary, then abort the protocol
                     // Note that some WiP flags may have already been set, so we first try to clear them
@@ -361,7 +370,7 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
                     {
                         ClearWiPFlags();
                     }
-                    return null;
+                    throw new FailedOpException(server, e);
                 }
                 eTags[server] = blob.Properties.ETag;
             }
@@ -390,11 +399,15 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
                 {
                     blob.SetMetadata(access);
                 }
-                catch (StorageException)
+                catch (StorageException e)
                 {
                     // Ignore failures since the only consequence is that the Wip flag remains set
                     // It could be that another write is still in progress
                     // The flag will be cleared eventually by another writer or by the recovery process
+                    if (!Utils.StorageExceptionCode.PreconditionFailed(e))
+                    {
+                        throw new FailedOpException(server, e);
+                    }
                 }
             }
 
@@ -409,9 +422,13 @@ namespace Microsoft.WindowsAzure.Storage.Pileus
             {
                 blob.SetMetadata(access);
             }
-            catch (StorageException)
+            catch (StorageException e)
             {
                 // Ignore
+                if (!Utils.StorageExceptionCode.PreconditionFailed(e))
+                {
+                    throw new FailedOpException(configuration.PrimaryServers.First(), e);
+                }
             }
         }
 

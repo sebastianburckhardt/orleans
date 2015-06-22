@@ -19,9 +19,16 @@ using System.Threading;
 namespace GeoOrleans.Runtime.OrleansPileus.Common
 {
     /// <summary>
-    /// Grain interface IGrain1
+    /// Utility methods and constants for Pileus
+    /// 
+    /// TODO Some overlap with Common + need to parametrise all that
     /// </summary>
     public class Utils {
+
+
+        // Refresh time for clients and replicator
+        public static int CLIENT_CONFIG_REFRESH_TIME = 60000;
+        public static int REPLICATOR_CONFIG_REFRESH_TIME = 60000;
 
         //TODO: remove this and add a proper configuration file
         public static Dictionary<string, CloudStorageAccount> GetStorageAccounts(bool useHttps)
@@ -51,6 +58,8 @@ namespace GeoOrleans.Runtime.OrleansPileus.Common
             result.Add(httpAcc.Credentials.AccountName, httpAcc);
 
             */
+
+
             #endregion
 
             #region local
@@ -90,59 +99,57 @@ namespace GeoOrleans.Runtime.OrleansPileus.Common
 
         }
 
-        /// <summary>
-        /// Acquires Blob
-        /// </summary>
-        /// <param name="blobName"></param>
-        /// <param name="cont"></param>
-        /// <returns></returns>
-        public static byte[] GetBlob(string pBlobName, CapCloudBlobContainer pContainer, ReadWriteFramework pReadWriteFramework)
+        public static Tuple<byte[],string> GetBlobWithEtag(string pBlobName, CapCloudBlobContainer pContainer)
         {
-            Trace.TraceInformation("GetBlob");
-
-           MemoryStream ms = new MemoryStream();
-           pReadWriteFramework.Read(blob => blob.DownloadToStream(ms));
-            byte[] data = ms.GetBuffer();
-            ms.Close();
-            return data;
+            try
+            {
+                MemoryStream ms = new MemoryStream();
+                string etag = null;
+                ICloudBlob blob = pContainer.GetBlobReference(pBlobName);
+                blob.DownloadToStream(ms);
+                etag = blob.Properties.ETag;
+                byte[] data = ms.GetBuffer();
+                ms.Close();
+                return new Tuple<byte[],string>(data,etag);
+            }
+            catch (StorageException se)
+            {
+                if (StorageExceptionCode.NotFound(se))
+                {
+                    return null;
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.ToString());
+                throw e;
+            }
+            return null;
 
         }
 
-        public static void PutBlob(string pBlobName, byte[] pData, CapCloudBlobContainer pContainer)
+
+        public static void PutBlob(string pBlobName, byte[] pData, CapCloudBlobContainer pContainer, string etag = null)
         {
             Trace.TraceInformation("PutBlob");
-           AccessCondition ac = AccessCondition.GenerateEmptyCondition();
+            AccessCondition ac = null;
+
+            if (etag == null) ac = AccessCondition.GenerateEmptyCondition();
+            else ac = AccessCondition.GenerateIfMatchCondition(etag);
+
             ICloudBlob blob = pContainer.GetBlobReference(pBlobName);
-     
+
             using (var ms = new MemoryStream(pData))
             {
-                blob.UploadFromStream(ms,ac);
-              //  AccessCondition ac = AccessCondition.GenerateEmptyCondition();
-            //    pReadWriteFramework.Write(blob => blob.UploadFromStream(ms, ac), ac, sessions, pContainer.Monitor);
+                blob.UploadFromStream(ms, ac);
+                //  AccessCondition ac = AccessCondition.GenerateEmptyCondition();
+                //    pReadWriteFramework.Write(blob => blob.UploadFromStream(ms, ac), ac, sessions, pContainer.Monitor);
             }
 
         }
 
 
-        /// <summary>
-        /// Puts Bob into appropariate container
-        /// </summary>
-        /// <param name="blobName"></param>
-        /// <param name="data"></param>
-        /// <param name="cont"></param>
-        /// <returns></returns>
-        public static  void PutBlob(string pBlobName, byte[] pData, CapCloudBlobContainer pContainer, ReadWriteFramework pReadWriteFramework)
-        {
-            List<SessionState> sessions = new List<SessionState>();
-            sessions.Add(pContainer.Sessions["strong"]);
 
-            using (var ms = new MemoryStream(pData))
-            {
-                AccessCondition ac = AccessCondition.GenerateEmptyCondition();
-                pReadWriteFramework.Write(blob => blob.UploadFromStream(ms, ac), ac, sessions, pContainer.Monitor);
-            }
-
-        }
 
 
 
