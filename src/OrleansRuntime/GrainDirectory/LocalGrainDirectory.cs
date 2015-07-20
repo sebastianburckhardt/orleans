@@ -26,7 +26,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Orleans.GrainDirectory;
+using Orleans.Runtime.GrainDirectory.MyTemp;
 using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime.GrainDirectory
@@ -427,7 +428,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        private bool IsValidSilo(SiloAddress silo)
+        internal bool IsValidSilo(SiloAddress silo)
         {
             if (Membership == null)
                 Membership = Silo.CurrentSilo.LocalSiloStatusOracle;
@@ -519,74 +520,15 @@ namespace Orleans.Runtime.GrainDirectory
         public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
         {
             registrationsSingleActIssued.Increment();
-            SiloAddress owner = CalculateTargetSilo(address.Grain);
-            if (owner == null)
-            {
-                // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
-            }
-            if (owner.Equals(MyAddress))
-            {
-                RegistrationsSingleActLocal.Increment();
-                // if I am the owner, store the new activation locally
-                Tuple<ActivationAddress, int> returnedAddress = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
-                return returnedAddress == null ? null : returnedAddress.Item1;
-            }
-            else
-            {
-                RegistrationsSingleActRemoteSent.Increment();
-                // otherwise, notify the owner
-                Tuple<ActivationAddress, int> returnedAddress = await GetDirectoryReference(owner).RegisterSingleActivation(address, NUM_RETRIES);
-
-                // Caching optimization: 
-                // cache the result of a successfull RegisterSingleActivation call, only if it is not a duplicate activation.
-                // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
-                if (returnedAddress == null || returnedAddress.Item1 == null) return null;
-
-                if (!address.Equals(returnedAddress.Item1) || !IsValidSilo(address.Silo)) return returnedAddress.Item1;
-
-                var cached = new List<Tuple<SiloAddress, ActivationId>>( new [] { Tuple.Create(address.Silo, address.Activation) });
-                // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
-                DirectoryCache.AddOrUpdate(address.Grain, cached, returnedAddress.Item2);
-                return returnedAddress.Item1;
-            }
+            var directory = GrainDirectoryManager.Instance.ResolveDirectory(SingleInstanceActivationStrategy.Singleton);
+            return await directory.RegisterAsync(address);
         }
 
         public async Task RegisterAsync(ActivationAddress address)
         {
             registrationsIssued.Increment();
-            SiloAddress owner = CalculateTargetSilo(address.Grain);
-            if (owner == null)
-            {
-                // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
-            }
-            if (owner.Equals(MyAddress))
-            {
-                RegistrationsLocal.Increment();
-                // if I am the owner, store the new activation locally
-                DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
-            }
-            else
-            {
-                RegistrationsRemoteSent.Increment();
-                // otherwise, notify the owner
-                int eTag = await GetDirectoryReference(owner).Register(address, NUM_RETRIES);
-                if (IsValidSilo(address.Silo))
-                {
-                    // Caching optimization:
-                    // cache the result of a successfull RegisterActivation call, only if it is not a duplicate activation.
-                    // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
-                    List<Tuple<SiloAddress, ActivationId>> cached;
-                    if (!DirectoryCache.LookUp(address.Grain, out cached))
-                    {
-                        cached = new List<Tuple<SiloAddress, ActivationId>>(1);
-                    }
-                    cached.Add(Tuple.Create(address.Silo, address.Activation));
-                    // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
-                    DirectoryCache.AddOrUpdate(address.Grain, cached, eTag);
-                }
-            }
+            var directory = GrainDirectoryManager.Instance.ResolveDirectory(StatelessWorkerActivationStrategy.Singleton);
+            await directory.RegisterAsync(address);
         }
 
         public Task UnregisterAsync(ActivationAddress addr)

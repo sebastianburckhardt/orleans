@@ -24,6 +24,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 using System;
 using System.Collections.Generic;
 using Orleans.Concurrency;
+using Orleans.GrainDirectory;
 using Orleans.Placement;
 
 
@@ -125,6 +126,24 @@ namespace Orleans.Runtime
             }
 
             return PlacementStrategy.GetDefault();
+        }
+
+        internal static ActivationStrategy GetActivationStrategy(Type grainClass)
+        {
+            ActivationStrategy strategy;
+            //TODO: update the logic to allow for class attribute to specify activation strategy.
+
+            var placement = GetPlacementStrategy(grainClass);
+            if (placement is StatelessWorkerPlacement)
+            {
+                strategy = StatelessWorkerActivationStrategy.Singleton;
+            }
+            else
+            {
+                strategy = SingleInstanceActivationStrategy.Singleton;
+            }
+
+            return strategy;
         }
     }
 }

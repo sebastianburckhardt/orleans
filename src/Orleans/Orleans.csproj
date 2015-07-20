@@ -97,6 +97,10 @@
     <Compile Include="Core\IGrainState.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="GrainDirectory\ActivationStrategy.cs" />
+    <Compile Include="GrainDirectory\IGrainRegistrar.cs" />
+    <Compile Include="GrainDirectory\SingleInstanceActivationStrategy.cs" />
+    <Compile Include="GrainDirectory\StatelessWorkerActivationStrategy.cs" />
     <Compile Include="IDs\GuidId.cs" />
     <Compile Include="Messaging\GatewayManager.cs" />
     <Compile Include="Messaging\IncomingMessageBuffer.cs" />

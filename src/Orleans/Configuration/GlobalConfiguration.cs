@@ -28,6 +28,7 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using System.Xml;
+using Orleans.GrainDirectory;
 using Orleans.Providers;
 using Orleans.Streams;
 using Orleans.Storage;
@@ -304,6 +305,8 @@ namespace Orleans.Runtime.Configuration
 
         public string DefaultPlacementStrategy { get; set; }
 
+        public string DefaultActivationStrategy { get; set; }
+
         public TimeSpan DeploymentLoadPublisherRefreshTime { get; set; }
 
         public int ActivationCountBasedPlacementChooseOutOf { get; set; }
@@ -349,7 +352,7 @@ namespace Orleans.Runtime.Configuration
             }
         }
 
-        internal bool RunsInAzure { get { return UseAzureSystemStore && !String.IsNullOrWhiteSpace(DeploymentId); } }
+        internal bool RunsInAzure { get { return UseAzureSystemStore && !String.IsNullOrWhiteSpace(DeploymentId); } }        
 
         private static readonly TimeSpan DEFAULT_LIVENESS_PROBE_TIMEOUT = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan DEFAULT_LIVENESS_TABLE_REFRESH_TIMEOUT = TimeSpan.FromSeconds(60);
@@ -374,12 +377,13 @@ namespace Orleans.Runtime.Configuration
         private static readonly TimeSpan DEFAULT_CLIENT_REGISTRATION_REFRESH = TimeSpan.FromMinutes(5);
         public const bool DEFAULT_PERFORM_DEADLOCK_DETECTION = false;
         public static readonly string DEFAULT_PLACEMENT_STRATEGY = typeof(RandomPlacement).Name;
+        public static readonly string DEFAILT_ACTIVATION_STRATEGY = typeof(SingleInstanceActivationStrategy).Name;
         private static readonly TimeSpan DEFAULT_DEPLOYMENT_LOAD_PUBLISHER_REFRESH_TIME = TimeSpan.FromSeconds(1);
         private const int DEFAULT_ACTIVATION_COUNT_BASED_PLACEMENT_CHOOSE_OUT_OF = 2;
 
         private const bool DEFAULT_USE_VIRTUAL_RING_BUCKETS = true;
         private const int DEFAULT_NUM_VIRTUAL_RING_BUCKETS = 30;
-        private static readonly TimeSpan DEFAULT_MOCK_REMINDER_TABLE_TIMEOUT = TimeSpan.FromMilliseconds(50);
+        private static readonly TimeSpan DEFAULT_MOCK_REMINDER_TABLE_TIMEOUT = TimeSpan.FromMilliseconds(50);        
 
         internal GlobalConfiguration()
             : base(true)
@@ -416,6 +420,7 @@ namespace Orleans.Runtime.Configuration
             PerformDeadlockDetection = DEFAULT_PERFORM_DEADLOCK_DETECTION;
             reminderServiceType = ReminderServiceProviderType.NotSpecified;
             DefaultPlacementStrategy = DEFAULT_PLACEMENT_STRATEGY;
+            DefaultActivationStrategy = DEFAILT_ACTIVATION_STRATEGY;
             DeploymentLoadPublisherRefreshTime = DEFAULT_DEPLOYMENT_LOAD_PUBLISHER_REFRESH_TIME;
             ActivationCountBasedPlacementChooseOutOf = DEFAULT_ACTIVATION_COUNT_BASED_PLACEMENT_CHOOSE_OUT_OF;
             UseVirtualBucketsConsistentRing = DEFAULT_USE_VIRTUAL_RING_BUCKETS;

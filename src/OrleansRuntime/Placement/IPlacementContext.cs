@@ -23,6 +23,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.Placement
 {
@@ -54,7 +55,7 @@ namespace Orleans.Runtime.Placement
         /// <returns></returns>
         bool TryGetActivationData(ActivationId id, out ActivationData activationData);
 
-        void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, string genericArguments = null);
+        void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, out ActivationStrategy strategy, string genericArguments = null);
     }
 
     internal static class PlacementContextExtensions
@@ -69,7 +70,8 @@ namespace Orleans.Runtime.Placement
         {
             string unused;
             PlacementStrategy placement;
-            @this.GetGrainTypeInfo(typeCode, out unused, out placement, genericArguments);
+            ActivationStrategy unusedActivationStrategy;
+            @this.GetGrainTypeInfo(typeCode, out unused, out placement, out unusedActivationStrategy, genericArguments);
             return placement;
         }
 
@@ -82,7 +84,8 @@ namespace Orleans.Runtime.Placement
         {
             string grainClass;
             PlacementStrategy unused;
-            @this.GetGrainTypeInfo(typeCode, out grainClass, out unused, genericArguments);
+            ActivationStrategy unusedActivationStrategy;
+            @this.GetGrainTypeInfo(typeCode, out grainClass, out unused, out unusedActivationStrategy, genericArguments);
             return grainClass;
         }
 
@@ -91,9 +94,9 @@ namespace Orleans.Runtime.Placement
             return @this.GetGrainTypeName(grainId.GetTypeCode(), genericArguments);
         }
 
-        public static void GetGrainTypeInfo(this IPlacementContext @this, GrainId grainId, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
+        public static void GetGrainTypeInfo(this IPlacementContext @this, GrainId grainId, out string grainClass, out PlacementStrategy placement, out ActivationStrategy activationStrategy, string genericArguments = null)
         {
-            @this.GetGrainTypeInfo(grainId.GetTypeCode(), out grainClass, out placement, genericArguments);
+            @this.GetGrainTypeInfo(grainId.GetTypeCode(), out grainClass, out placement, out activationStrategy, genericArguments);
         }
     }
 }

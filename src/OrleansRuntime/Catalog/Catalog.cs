@@ -30,6 +30,7 @@ using System.Threading.Tasks;
 
 using Orleans.CodeGeneration;
 using Orleans.Core;
+using Orleans.GrainDirectory;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.GrainDirectory;
@@ -231,8 +232,9 @@ namespace Orleans.Runtime
             try
             {
                 PlacementStrategy unused;
+                ActivationStrategy unusedActivationStrategy;
                 string grainClassName;
-                GrainTypeManager.GetTypeInfo(grain.GetTypeCode(), out grainClassName, out unused);
+                GrainTypeManager.GetTypeInfo(grain.GetTypeCode(), out grainClassName, out unused, out unusedActivationStrategy);
                 report.GrainClassTypeName = grainClassName;
             }
             catch (Exception exc)
@@ -312,9 +314,9 @@ namespace Orleans.Runtime
                 data.IsReentrant;
         }
 
-        public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
+        public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, out ActivationStrategy activationStrategy, string genericArguments = null)
         {
-            GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, genericArguments);
+            GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, out activationStrategy, genericArguments);
         }
 
         #endregion
@@ -356,11 +358,13 @@ namespace Orleans.Runtime
                 {
                     // create a dummy activation that will queue up messages until the real data arrives
                     PlacementStrategy placement;
+                    ActivationStrategy activationStrategy;
+
                     int typeCode = address.Grain.GetTypeCode();
                     string actualGrainType = null;
 
                     if (typeCode != 0) // special case for Membership grain.
-                        GetGrainTypeInfo(typeCode, out actualGrainType, out placement);
+                        GetGrainTypeInfo(typeCode, out actualGrainType, out placement, out activationStrategy);
                     else
                         placement = SystemPlacement.Singleton;
 
@@ -540,7 +544,8 @@ namespace Orleans.Runtime
                 if (typeCode != 0)
                 {
                     PlacementStrategy unused;
-                    GetGrainTypeInfo(typeCode, out grainClassName, out unused, genericArguments);
+                    ActivationStrategy unusedActivationStrategy;
+                    GetGrainTypeInfo(typeCode, out grainClassName, out unused, out unusedActivationStrategy, genericArguments);
                 }
                 else
                 {

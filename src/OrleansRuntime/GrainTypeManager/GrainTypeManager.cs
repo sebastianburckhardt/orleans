@@ -27,6 +27,7 @@ using System.Linq;
 
 using Orleans.CodeGeneration;
 using Orleans.Core;
+using Orleans.GrainDirectory;
 using Orleans.Runtime.Providers;
 using Orleans.Serialization;
 
@@ -140,9 +141,9 @@ namespace Orleans.Runtime
             }
         }
 
-        internal void GetTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
+        internal void GetTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, out ActivationStrategy activationStrategy, string genericArguments = null)
         {
-            if (!grainInterfaceMap.TryGetTypeInfo(typeCode, out grainClass, out placement, genericArguments))
+            if (!grainInterfaceMap.TryGetTypeInfo(typeCode, out grainClass, out placement, out activationStrategy, genericArguments))
                 throw new OrleansException(String.Format("Unexpected: Cannot find an implementation class for grain interface {0}", typeCode));
         }
 
@@ -174,6 +175,7 @@ namespace Orleans.Runtime
             var isGenericGrainClass = grainClass.ContainsGenericParameters;
             var grainClassTypeCode = CodeGeneration.GrainInterfaceData.GetGrainClassTypeCode(grainClass);
             var placement = GrainTypeData.GetPlacementStrategy(grainClass);
+            var activationStrategy = GrainTypeData.GetActivationStrategy(grainClass);
 
             foreach (var iface in grainInterfaces)
             {
@@ -182,7 +184,7 @@ namespace Orleans.Runtime
                 var isPrimaryImplementor = IsPrimaryImplementor(grainClass, iface);
                 var ifaceId = CodeGeneration.GrainInterfaceData.GetGrainInterfaceId(iface);
                 grainInterfaceMap.AddEntry(ifaceId, iface, grainClassTypeCode, ifaceName, grainClassCompleteName, 
-                    grainClass.Assembly.CodeBase, isGenericGrainClass, placement, isPrimaryImplementor);
+                    grainClass.Assembly.CodeBase, isGenericGrainClass, placement, activationStrategy, isPrimaryImplementor);
             }
 
             if (isUnordered)

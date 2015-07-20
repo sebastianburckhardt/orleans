@@ -31,12 +31,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Core;
+using Orleans.GrainDirectory;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Placement;
 using Orleans.Runtime.Counters;
 using Orleans.Runtime.GrainDirectory;
+using Orleans.Runtime.GrainDirectory.MyTemp;
 using Orleans.Runtime.MembershipService;
 using Orleans.Runtime.Messaging;
 using Orleans.Runtime.Providers;
@@ -170,7 +172,7 @@ namespace Orleans.Runtime
                 TraceLogger.Initialize(nodeConfig);
 
             config.OnConfigChange("Defaults/Tracing", () => TraceLogger.Initialize(nodeConfig, true), false);
-
+            ActivationStrategy.Initialize();
             ActivationData.Init(config, nodeConfig);
             StatisticsCollector.Initialize(nodeConfig);
             SerializationManager.Initialize(globalConfig.UseStandardSerializer);
@@ -234,7 +236,9 @@ namespace Orleans.Runtime
 
             // Now the router/directory service
             // This has to come after the message center //; note that it then gets injected back into the message center.;
-            localGrainDirectory = new LocalGrainDirectory(this); 
+            localGrainDirectory = new LocalGrainDirectory(this);
+
+            GrainDirectoryManager.InitializeGrainDirectoryManager(localGrainDirectory);
 
             // Now the activation directory.
             // This needs to know which router to use so that it can keep the global directory in synch with the local one.
