@@ -98,6 +98,7 @@
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GrainDirectory\ActivationStrategy.cs" />
+    <Compile Include="GrainDirectory\IGrainDirectory.cs" />
     <Compile Include="GrainDirectory\IGrainRegistrar.cs" />
     <Compile Include="GrainDirectory\SingleInstanceActivationStrategy.cs" />
     <Compile Include="GrainDirectory\StatelessWorkerActivationStrategy.cs" />

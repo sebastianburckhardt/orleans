@@ -16,6 +16,19 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             Router = router;
         }
 
-        public abstract Task<ActivationAddress> RegisterAsync(ActivationAddress address);
+        public abstract Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address);
+
+        public virtual Task UnregisterAsync(ActivationAddress address, bool force)
+        {
+            // if I am the owner, remove the old activation locally
+            Router.DirectoryPartition.RemoveActivation(address.Grain, address.Activation, force);
+            return TaskDone.Done;
+        }
+
+        public Task DeleteAsync(GrainId gid)
+        {
+            Router.DirectoryPartition.RemoveGrain(gid);
+            return TaskDone.Done;
+        }
     }
 }

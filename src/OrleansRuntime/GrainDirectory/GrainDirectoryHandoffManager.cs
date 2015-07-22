@@ -231,8 +231,9 @@ namespace Orleans.Runtime.GrainDirectory
                     if (logger.IsVerbose) logger.Verbose("Sending " + splitPartListSingle.Count + " single activation entries to " + addedSilo);
                     localDirectory.Scheduler.QueueTask(async () =>
                     {
-                        await localDirectory.GetDirectoryReference(successors[0]).RegisterManySingleActivation(
-                            splitPartListSingle, LocalGrainDirectory.NUM_RETRIES);
+                        //await localDirectory.GetDirectoryReference(successors[0]).RegisterManySingleActivation(splitPartListSingle, LocalGrainDirectory.NUM_RETRIES);
+                        //[ALOK] Dont really need to separate out SingleActivation here. Just use RegisterMany since that will take care of single or other types of activations.
+                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListSingle, LocalGrainDirectory.NUM_RETRIES);
                         splitPartListSingle.ForEach(
                             activationAddress =>
                                 localDirectory.DirectoryPartition.RemoveGrain(activationAddress.Grain));

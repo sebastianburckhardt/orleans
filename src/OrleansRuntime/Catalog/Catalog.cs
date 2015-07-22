@@ -490,7 +490,7 @@ namespace Orleans.Runtime
                                     String.Format("Failed to RegisterActivationInGrainDirectory for {0}.",
                                         activation), ex);
                                 // Need to undo the registration we just did earlier
-                                scheduler.RunOrQueueTask(() => directory.UnregisterAsync(address),
+                                scheduler.RunOrQueueTask(() => directory.Unregister(address),
                                     SchedulingContext).Ignore();
 
                                 RerouteAllQueuedMessages(activation, null,
@@ -503,7 +503,7 @@ namespace Orleans.Runtime
                             logger.Warn(ErrorCode.Catalog_Failed_SetupActivationState,
                                 String.Format("Failed to SetupActivationState for {0}.", activation), ex);
                             // Need to undo the registration we just did earlier
-                            scheduler.RunOrQueueTask(() => directory.UnregisterAsync(address),
+                            scheduler.RunOrQueueTask(() => directory.Unregister(address),
                                 SchedulingContext).Ignore();
 
                             RerouteAllQueuedMessages(activation, null, "Failed SetupActivationState", ex);
@@ -514,7 +514,7 @@ namespace Orleans.Runtime
                             logger.Warn(ErrorCode.Catalog_Failed_InvokeActivate,
                                 String.Format("Failed to InvokeActivate for {0}.", activation), ex);
                             // Need to undo the registration we just did earlier
-                            scheduler.RunOrQueueTask(() => directory.UnregisterAsync(address),
+                            scheduler.RunOrQueueTask(() => directory.Unregister(address),
                                 SchedulingContext).Ignore();
 
                             RerouteAllQueuedMessages(activation, null, "Failed InvokeActivate", ex);
@@ -1050,20 +1050,27 @@ namespace Orleans.Runtime
         {
             if (singleActivationMode)
             {
-                ActivationAddress returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterSingleActivationAsync(address), this.SchedulingContext);
-                if (address.Equals(returnedAddress)) return;
+                //ActivationAddress returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterSingleActivationAsync(address), this.SchedulingContext);
+                var returnedAddress = await scheduler.RunOrQueueTask(() => directory.Register(address), this.SchedulingContext);
+
+                if (returnedAddress == null)
+                {
+                    throw new OrleansException(String.Format("Could not register activation {0}", address));
+                }
+
+                if (address.Equals(returnedAddress.Item1)) return;
                 
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
                 var dae = new DuplicateActivationException
                 {
-                    ActivationToUse = returnedAddress,
+                    ActivationToUse = returnedAddress.Item1,
                     PrimaryDirectoryForGrain = primaryDirectoryForGrain
                 };
 
                 throw dae;
             }
             
-            await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext);
+            await scheduler.RunOrQueueTask(() => directory.Register(address), this.SchedulingContext);
         }
 
         #endregion

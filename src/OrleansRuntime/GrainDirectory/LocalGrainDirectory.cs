@@ -23,6 +23,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -47,6 +48,7 @@ namespace Orleans.Runtime.GrainDirectory
         // Consider: move these constants into an apropriate place
         // number of retries to redirect a wrong request (which can get wrong beacuse of membership changes)
         internal const int NUM_RETRIES = 3;
+        private static readonly TimeSpan RETRY_DELAY = TimeSpan.FromSeconds(5); // Pause 5 seconds between forwards to let the membership directory settle down
 
         protected SiloAddress Seed { get { return seed; } }
 
@@ -515,66 +517,132 @@ namespace Orleans.Runtime.GrainDirectory
         /// Otherwise, the passed-in address will be returned.
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
-        /// <param name="address">The address of the potential new activation.</param>
+        /// <param name="param">The address of the potential new activation.</param>
         /// <returns>The address registered for the grain's single activation.</returns>
-        public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
-        {
-            registrationsSingleActIssued.Increment();
-            var directory = GrainDirectoryManager.Instance.ResolveDirectory(SingleInstanceActivationStrategy.Singleton);
-            return await directory.RegisterAsync(address);
-        }
+        //public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
+        //{
+        //    registrationsIssued.Increment();
+        //    var directory = GrainDirectoryManager.Instance.ResolveDirectory(StatelessWorkerActivationStrategy.Singleton);
+        //    var returnedAddress = await directory.RegisterAsync(address);
+        //    //returnedAddress
+        //}
 
-        public async Task RegisterAsync(ActivationAddress address)
+        private async Task<TOut> PerformLocalOrRemoteWithRetry<TIn, TOut>(GrainId grain, TIn param,
+            Func<TIn, Task<TOut>> localAction, Func<TIn, SiloAddress, Task<TOut>> remoteAction, bool withRetry)
         {
-            registrationsIssued.Increment();
-            var directory = GrainDirectoryManager.Instance.ResolveDirectory(StatelessWorkerActivationStrategy.Singleton);
-            await directory.RegisterAsync(address);
-        }
-
-        public Task UnregisterAsync(ActivationAddress addr)
-        {
-            return UnregisterAsyncImpl(addr, true);
-        }
-
-        public Task UnregisterConditionallyAsync(ActivationAddress addr)
-        {
-            // This is a no-op if the lazy registration delay is zero or negative
-            return Silo.CurrentSilo.OrleansConfig.Globals.DirectoryLazyDeregistrationDelay <= TimeSpan.Zero ? 
-                TaskDone.Done : UnregisterAsyncImpl(addr, false);
-        }
-
-        private Task UnregisterAsyncImpl(ActivationAddress addr, bool force)
-        {
-            unregistrationsIssued.Increment();
-            SiloAddress owner = CalculateTargetSilo(addr.Grain);
+            SiloAddress owner = CalculateTargetSilo(grain);
             if (owner == null)
             {
                 // We don't know about any other silos, and we're stopping, so throw
                 throw new InvalidOperationException("Grain directory is stopping");
             }
 
-            if (log.IsVerbose) log.Verbose("Silo {0} is going to unregister grain {1}-->{2} ({3}-->{4})", MyAddress, addr.Grain, owner, addr.Grain.GetUniformHashCode(), owner.GetConsistentHashCode());
-
-            InvalidateCacheEntry(addr);
+            var result = default(TOut);
             if (owner.Equals(MyAddress))
             {
-                UnregistrationsLocal.Increment();
-                // if I am the owner, remove the old activation locally
-                DirectoryPartition.RemoveActivation(addr.Grain, addr.Activation, force);
-                return TaskDone.Done;
+                result = await localAction(param);
             }
-            
-            UnregistrationsRemoteSent.Increment();
-            // otherwise, notify the owner
-            return GetDirectoryReference(owner).Unregister(addr, force, NUM_RETRIES);
+            else if (withRetry)
+            {
+                int i = 0;
+                while (EqualityComparer<TOut>.Default.Equals(result, default(TOut)) && i++ < NUM_RETRIES)
+                {
+                    result = await remoteAction(param, owner);
+                    if (result != null) return result;
+
+                    await Task.Delay(RETRY_DELAY);
+
+                    //check for ownership again before retrying.
+                    owner = CalculateTargetSilo(grain);
+                    if (owner.Equals(MyAddress))
+                    {
+                        result = await localAction(param);
+                    }
+                }
+                if (i >= NUM_RETRIES)
+                {
+                    throw new OrleansException("Silo " + MyAddress + " is not the owner of the grain " + grain + " Owner=" + owner);
+                }
+            }
+            return result;
         }
 
-        public Task UnregisterManyAsync(List<ActivationAddress> addresses)
+        public async Task<Tuple<ActivationAddress, int>> Register(ActivationAddress address, bool withRetry = true)
+        {            
+            registrationsIssued.Increment();
+
+            var returnedAddress = await PerformLocalOrRemoteWithRetry(address.Grain, address, 
+            async (addr) =>
+            {
+                RegistrationsSingleActLocal.Increment();
+                var directory = GrainDirectoryManager.Instance.ResolveDirectory(address.Grain.ActivationStrategy);
+                return await directory.RegisterAsync(addr);
+            }, 
+            async (addr, owner) =>
+            {
+                RegistrationsSingleActRemoteSent.Increment();
+                
+                var result = await GetDirectoryReference(owner).Register(address, false);
+                if (result == null || result.Item1 == null) return null;
+
+                //cache if not duplicate.
+                if (!address.Equals(result.Item1) || !IsValidSilo(address.Silo)) return result;
+
+                var cached = new List<Tuple<SiloAddress, ActivationId>>(new[] { Tuple.Create(address.Silo, address.Activation) });
+
+                DirectoryCache.AddOrUpdate(address.Grain, cached, result.Item2);
+
+                return result;
+            }, withRetry);
+
+            return returnedAddress;
+        }
+
+        public async Task<bool> Unregister(ActivationAddress address, bool force = true, bool withRetry = true)
+        {
+            return await UnregisterAsyncImpl(address, force, withRetry);
+        }
+
+        public Task UnregisterConditionallyAsync(ActivationAddress addr)
+        {
+            // This is a no-op if the lazy registration delay is zero or negative
+            return Silo.CurrentSilo.OrleansConfig.Globals.DirectoryLazyDeregistrationDelay <= TimeSpan.Zero ? 
+                TaskDone.Done : UnregisterAsyncImpl(addr, false, true);
+        }
+
+        private async Task<bool> UnregisterAsyncImpl(ActivationAddress address, bool force, bool withRetry)
+        {
+            unregistrationsIssued.Increment();
+
+            //if (log.IsVerbose) log.Verbose("Silo {0} is going to unregister grain {1}-->{2} ({3}-->{4})", MyAddress, addr.Grain, owner, addr.Grain.GetUniformHashCode(), owner.GetConsistentHashCode());
+
+            InvalidateCacheEntry(address);
+            var success = await PerformLocalOrRemoteWithRetry(address.Grain, address,
+                async (addr) =>
+                {
+                    UnregistrationsLocal.Increment();
+                    var directory = GrainDirectoryManager.Instance.ResolveDirectory(address.Grain.ActivationStrategy);
+                    await directory.UnregisterAsync(address, force);
+                    return true;
+                },
+                async (addr, owner) =>
+                {
+                    UnregistrationsRemoteSent.Increment();
+                    // otherwise, notify the owner
+                    return await GetDirectoryReference(owner).Unregister(addr, force, false);     
+                }, withRetry);
+            return success;
+        }
+
+        public async Task<List<ActivationAddress>> UnregisterManyAsync(List<ActivationAddress> addresses, bool withRetry = true)
         {
             unregistrationsManyIssued.Increment();
-            return Task.WhenAll(
-                addresses.GroupBy(a => CalculateTargetSilo(a.Grain))
-                    .Select(g =>
+            int i = 0;
+            var pending = new List<ActivationAddress>();
+            do
+            {
+                await Task.WhenAll(addresses.GroupBy(a => CalculateTargetSilo(a.Grain))
+                    .Select(async g =>
                     {
                         if (g.Key == null)
                         {
@@ -582,24 +650,39 @@ namespace Orleans.Runtime.GrainDirectory
                             throw new InvalidOperationException("Grain directory is stopping");
                         }
 
-                        foreach (var addr in g)
-                            InvalidateCacheEntry(addr);
-                        
                         if (MyAddress.Equals(g.Key))
                         {
                             // if I am the owner, remove the old activation locally
                             foreach (var addr in g)
                             {
-                                UnregistrationsLocal.Increment();
-                                DirectoryPartition.RemoveActivation(addr.Grain, addr.Activation, true);
+                                await Unregister(addr, true, false);
+                                //UnregistrationsLocal.Increment();
+                                //DirectoryPartition.RemoveActivation(addr.Grain, addr.Activation, true);
                             }
-                            return TaskDone.Done;
+                            return;
                         }
-                        
-                        UnregistrationsManyRemoteSent.Increment();
-                        // otherwise, notify the owner
-                        return GetDirectoryReference(g.Key).UnregisterMany(g.ToList(), NUM_RETRIES);
-                    }));
+
+                        if (withRetry)
+                        {
+                            foreach (var addr in g)
+                                InvalidateCacheEntry(addr);
+
+                            UnregistrationsManyRemoteSent.Increment();
+                            // otherwise, notify the owner
+                            var stillpending = await GetDirectoryReference(g.Key).UnregisterManyAsync(g.ToList(), false);
+
+                            pending.AddRange(stillpending);
+                        }
+                        else
+                        {
+                            pending.AddRange(g);
+                        }
+                    }
+                    ));
+
+            } while (withRetry && pending.Count > 0 && ++i < NUM_RETRIES);
+
+            return pending;
         }
 
         public bool LocalLookup(GrainId grain, out List<ActivationAddress> addresses)
@@ -706,29 +789,27 @@ namespace Orleans.Runtime.GrainDirectory
             return addresses;
         }
 
-        public Task DeleteGrain(GrainId grain)
+        public async Task<bool> DeleteGrain(GrainId grain, bool withRetry = true)
         {
-            SiloAddress silo = CalculateTargetSilo(grain);
-            if (silo == null)
-            {
-                // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
-            }
+            //unregistrationsIssued.Increment();
 
-            if (log.IsVerbose) log.Verbose("Silo {0} tries to lookup for {1}-->{2} ({3}-->{4})", MyAddress, grain, silo, grain.GetUniformHashCode(), silo.GetConsistentHashCode());
+            //if (log.IsVerbose) log.Verbose("Silo {0} tries to lookup for {1}-->{2} ({3}-->{4})", MyAddress, grain, silo, grain.GetUniformHashCode(), silo.GetConsistentHashCode());
 
-            if (silo.Equals(MyAddress))
-            {
-                // remove from our partition
-                DirectoryPartition.RemoveGrain(grain);
-                return TaskDone.Done;
-            }
-
-            // remove from the cache
-            DirectoryCache.Remove(grain);
-
-            // send request to the owner
-            return GetDirectoryReference(silo).DeleteGrain(grain, NUM_RETRIES);
+            var success = await PerformLocalOrRemoteWithRetry(grain, grain,
+                async (gid) =>
+                {                    
+                    var directory = GrainDirectoryManager.Instance.ResolveDirectory(gid.ActivationStrategy);
+                    await directory.DeleteAsync(gid);
+                    return true;
+                },
+                async (gid, owner) =>
+                {
+                    // otherwise, notify the owner
+                    //return await GetDirectoryReference(owner).Unregister(addr, force, false);
+                    DirectoryCache.Remove(grain);
+                    return await GetDirectoryReference(owner).DeleteGrain(gid, false);
+                }, withRetry);
+            return success;
         }
 
         public void InvalidateCacheEntry(ActivationAddress activationAddress)
@@ -827,7 +908,7 @@ namespace Orleans.Runtime.GrainDirectory
             sb.Append(DirectoryCache.ToString());
 
             return sb.ToString();
-        }
+        }        
 
         private long RingDistanceToSuccessor()
         {

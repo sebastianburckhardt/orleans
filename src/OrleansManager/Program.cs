@@ -191,7 +191,7 @@ namespace OrleansManager
             var directory = GrainClient.InternalGrainFactory.GetSystemTarget<IRemoteGrainDirectory>(Constants.DirectoryServiceId, silo);
 
             WriteStatus(string.Format("**Calling DeleteGrain({0}, {1}, {2})", silo, grainId, RETRIES));
-            directory.DeleteGrain(grainId, RETRIES).Wait();
+            directory.DeleteGrain(grainId, true).Wait();
             WriteStatus(string.Format("**DeleteGrain finished OK."));
         }
 

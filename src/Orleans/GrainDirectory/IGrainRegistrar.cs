@@ -15,6 +15,21 @@ namespace Orleans.GrainDirectory
         /// </summary>
         /// <param name="address">The address of the activation to register.</param>
         /// <returns>The address registered for the grain's single activation.</returns>
-        Task<ActivationAddress> RegisterAsync(ActivationAddress address);        
+        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address);
+
+        /// <summary>
+        /// Removes the given activation for the grain.
+        /// <para>This method must be called from a scheduler thread.</para>
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="force"></param>
+        /// <returns></returns>
+        Task UnregisterAsync(ActivationAddress address, bool force);
+
+        /// <summary>
+        /// Deletes the grain activation.
+        /// </summary>
+        /// <returns></returns>
+        Task DeleteAsync(GrainId gid);
     }
 }

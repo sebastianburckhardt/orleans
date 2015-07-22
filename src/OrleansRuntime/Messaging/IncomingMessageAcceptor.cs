@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Orleans.GrainDirectory;
 using Orleans.Messaging;
 
 namespace Orleans.Runtime.Messaging
@@ -170,6 +171,7 @@ namespace Orleans.Runtime.Messaging
                     buffer = ReadFromSocket(socket, size); // Receive the client ID
                     if (buffer == null) return false;
                     grainId = GrainId.FromByteArray(buffer);
+                    grainId.ActivationStrategy = StatelessWorkerActivationStrategy.Singleton;
                 }
                 return true;
             }
