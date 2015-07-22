@@ -41,5 +41,13 @@ namespace Orleans.GrainDirectory
         /// <returns>An acknowledgement that the deletion has completed.
         /// It is safe to ignore this result.</returns>
         Task<bool> DeleteGrain(GrainId grain, bool withRetry = true);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gid"></param>
+        /// <param name="withRetry"></param>
+        /// <returns></returns>
+        Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true);
     }
 }

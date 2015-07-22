@@ -67,7 +67,7 @@ namespace Orleans.Runtime
         /// <param name="grain">The ID of the grain.</param>
         /// <param name="retries">Number of retries to execute the method in case the virtual ring (servers) changes.</param>
         /// <returns></returns>
-        Task<Tuple<List<Tuple<SiloAddress, ActivationId>>, int>> LookUp(GrainId grain, int retries = 0);
+        //Task<Tuple<List<Tuple<SiloAddress, ActivationId>>, int>> LookUp(GrainId grain, int retries = 0);
 
         /// <summary>
         /// Fetch the updated information on the given list of grains.
@@ -79,7 +79,7 @@ namespace Orleans.Runtime
         /// <returns>list of tuples holding a grain, generation number of the list of activations, and the list of activations. 
         /// If the generation number of the invoker matches the number of the destination, the list is null. If the destination does not
         /// hold the information on the grain, generation counter -1 is returned (and the list of activations is null)</returns>
-        Task<List<Tuple<GrainId, int, List<Tuple<SiloAddress, ActivationId>>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList, int retries = 0);
+        Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList, int retries = 0);
 
         /// <summary>
         /// Handoffs the the directory partition from source silo to the destination silo.

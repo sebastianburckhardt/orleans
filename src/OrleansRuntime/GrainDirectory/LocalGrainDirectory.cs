@@ -741,52 +741,62 @@ namespace Orleans.Runtime.GrainDirectory
                 null;
         }
 
-        public async Task<List<ActivationAddress>> FullLookup(GrainId grain)
+        /*public Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true)
+        {
+            throw new NotImplementedException();
+        }*/
+
+        public async Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId grain, bool withRetry = true)
         {
             fullLookups.Increment();
 
-            SiloAddress silo = CalculateTargetSilo(grain, false);
-            // No need to check that silo != null since we're passing excludeThisSiloIfStopping = false
-
-            if (log.IsVerbose) log.Verbose("Silo {0} fully lookups for {1}-->{2} ({3}-->{4})", MyAddress, grain, silo, grain.GetUniformHashCode(), silo.GetConsistentHashCode());
-
-            // We assyme that getting here means the grain was not found locally (i.e., in TryFullLookup()).
-            // We still check if we own the grain locally to avoid races between the time TryFullLookup() and FullLookup() were called.
-            if (silo.Equals(MyAddress))
-            {
-                LocalDirectoryLookups.Increment();
-                var localResult = DirectoryPartition.LookUpGrain(grain);
-                if (localResult == null)
+            return await PerformLocalOrRemoteWithRetry(grain, grain,
+                async (gid) =>
                 {
-                    // it can happen that we cannot find the grain in our partition if there were 
-                    // some recent changes in the membership
-                    if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}=none", grain);
-                    return new List<ActivationAddress>();
-                }
-                var a = localResult.Item1.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList();
-                if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grain, a.ToStrings());
-                LocalDirectorySuccesses.Increment();
-                return a;
-            }
+                    LocalDirectoryLookups.Increment();
+                    var localResult = DirectoryPartition.LookUpGrain(grain);
+                    if (localResult == null)
+                    {
+                        // it can happen that we cannot find the grain in our partition if there were 
+                        // some recent changes in the membership
+                        if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}=none", grain);
+                        return Tuple.Create(new List<ActivationAddress>(), GrainInfo.NO_ETAG);
+                    }
+                    var a = localResult.Item1.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList();
 
-            // Just a optimization. Why sending a message to someone we know is not valid.
-            if (!IsValidSilo(silo))
-            {
-                throw new OrleansException(String.Format("Current directory at {0} is not stable to perform the lookup for grain {1} (it maps to {2}, which is not a valid silo). Retry later.", MyAddress, grain, silo));
-            }
+                    if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grain, a.ToStrings());
+                    LocalDirectorySuccesses.Increment();
+                    return Tuple.Create(a, localResult.Item2);
+                },
+                async (gid, owner) =>
+                {
+                    if (!IsValidSilo(owner))
+                    {
+                        throw new OrleansException(String.Format("Current directory at {0} is not stable to perform the lookup for grain {1} (it maps to {2}, which is not a valid silo). Retry later.", MyAddress, gid, owner));
+                    }
 
-            RemoteLookupsSent.Increment();
-            Tuple<List<Tuple<SiloAddress, ActivationId>>, int> result = await GetDirectoryReference(silo).LookUp(grain, NUM_RETRIES);
+                    RemoteLookupsSent.Increment();
+                    Tuple<List<ActivationAddress>, int> result = await GetDirectoryReference(owner).FullLookUp(grain, false);
 
-            // update the cache
-            List<Tuple<SiloAddress, ActivationId>> entries = result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
-            List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).ToList();
-            if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, addresses.ToStrings());
+                    if (result == null) return null;
 
-            if (entries.Count > 0)
-                DirectoryCache.AddOrUpdate(grain, entries, result.Item2);
-            
-            return addresses;
+                    
+                    //List<Tuple<SiloAddress, ActivationId>> entries =
+                    //    result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
+                    //List<ActivationAddress> addresses =
+                        //entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, //t.Item2)).ToList();
+                    //update the cache.
+                    var addresses = result.Item1.Where(t => IsValidSilo(t.Silo)).ToList();
+                    if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, addresses.ToStrings());
+
+                    var entries = addresses.Select(t => Tuple.Create(t.Silo, t.Activation)).ToList();
+
+                    if (entries.Count > 0)
+                        DirectoryCache.AddOrUpdate(grain, entries, result.Item2);
+
+                    return Tuple.Create(addresses, result.Item2);
+                    
+                }, withRetry);            
         }
 
         public async Task<bool> DeleteGrain(GrainId grain, bool withRetry = true)

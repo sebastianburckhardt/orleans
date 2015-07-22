@@ -77,64 +77,23 @@ namespace Orleans.Runtime.GrainDirectory
             return await router.UnregisterManyAsync(addresses, false);
         }
 
-        public async Task<bool> DeleteGrain(GrainId grain, bool withRetry = true)
+        public async Task<bool> DeleteGrain(GrainId grain, bool withRetry = true /*ignored*/)
         {
             return await router.DeleteGrain(grain, false);
         }
 
-        public async Task<Tuple<List<Tuple<SiloAddress, ActivationId>>, int>> LookUp(GrainId grain, int retries)
+        public async Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true /*ignored*/)
         {
             router.RemoteLookupsReceived.Increment();
-
-            // validate that this grain should be stored in our partition
-            SiloAddress owner = router.CalculateTargetSilo(grain, false);
-            if (router.MyAddress.Equals(owner))
-            {
-                router.LocalDirectoryLookups.Increment();
-                // It can happen that we cannot find the grain in our partition if there were 
-                // some recent changes in the membership. Return empty list in such case (and not null) to avoid
-                // NullReference exceptions in the code of invokers
-                Tuple<List<Tuple<SiloAddress, ActivationId>>, int> res = partition.LookUpGrain(grain);
-                if (res != null)
-                {
-                    router.LocalDirectorySuccesses.Increment();
-                    return res;
-                }
-
-                return new Tuple<List<Tuple<SiloAddress, ActivationId>>, int>(new List<Tuple<SiloAddress, ActivationId>>(), GrainInfo.NO_ETAG);
-            }
-
-            if (retries <= 0)
-                throw new OrleansException("Silo " + router.MyAddress + " is not the owner of the grain " + 
-                    grain + " Owner=" + owner);
-
-            if (logger.IsVerbose2) logger.Verbose2("Retry " + retries + " RemoteGrainDirectory.LookUp for Grain=" + grain + " at Owner=" + owner);
-            
-            PrepareForRetry(retries);
-            await Task.Delay(RETRY_DELAY);
-
-            SiloAddress o = router.CalculateTargetSilo(grain, false);
-            if (router.MyAddress.Equals(o))
-            {
-                router.LocalDirectoryLookups.Increment();
-                var res = partition.LookUpGrain(grain);
-                if (res == null)
-                    return new Tuple<List<Tuple<SiloAddress, ActivationId>>, int>(
-                        new List<Tuple<SiloAddress, ActivationId>>(), GrainInfo.NO_ETAG);
-
-                router.LocalDirectorySuccesses.Increment();
-                return res;
-            }
-            router.RemoteLookupsSent.Increment();
-            return await GetDirectoryReference(o).LookUp(grain, retries - 1);
+            return await router.FullLookUp(gid, false);
         }
 
-        public Task<List<Tuple<GrainId, int, List<Tuple<SiloAddress, ActivationId>>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList, int retries)
+        public async Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList, int retries)
         {
             router.CacheValidationsReceived.Increment();
             if (logger.IsVerbose2) logger.Verbose2("LookUpMany for {0} entries", grainAndETagList.Count);
 
-            var result = new List<Tuple<GrainId, int, List<Tuple<SiloAddress, ActivationId>>>>();
+            var result = new List<Tuple<GrainId, int, List<ActivationAddress>>>();
 
             foreach (Tuple<GrainId, int> tuple in grainAndETagList)
             {
@@ -142,24 +101,24 @@ namespace Orleans.Runtime.GrainDirectory
                 if (curGen == tuple.Item2 || curGen == GrainInfo.NO_ETAG)
                 {
                     // the grain entry either does not exist in the local partition (curGen = -1) or has not been updated
-                    result.Add(new Tuple<GrainId, int, List<Tuple<SiloAddress, ActivationId>>>(tuple.Item1, curGen, null));
+                    result.Add(new Tuple<GrainId, int, List<ActivationAddress>>(tuple.Item1, curGen, null));
                 }
                 else
                 {
                     // the grain entry has been updated -- fetch and return its current version
-                    Tuple<List<Tuple<SiloAddress, ActivationId>>, int> lookupResult = partition.LookUpGrain(tuple.Item1);
+                    var lookupResult = await router.FullLookUp(tuple.Item1, false);
                     // validate that the entry is still in the directory (i.e., it was not removed concurrently)
                     if (lookupResult != null)
                     {
-                        result.Add(new Tuple<GrainId, int, List<Tuple<SiloAddress, ActivationId>>>(tuple.Item1, lookupResult.Item2, lookupResult.Item1));
+                        result.Add(new Tuple<GrainId, int, List<ActivationAddress>>(tuple.Item1, lookupResult.Item2, lookupResult.Item1));
                     }
                     else
                     {
-                        result.Add(new Tuple<GrainId, int, List<Tuple<SiloAddress, ActivationId>>>(tuple.Item1, GrainInfo.NO_ETAG, null));
+                        result.Add(new Tuple<GrainId, int, List<ActivationAddress>>(tuple.Item1, GrainInfo.NO_ETAG, null));
                     }
                 }
             }
-            return Task.FromResult(result);
+            return result;
         }
 
         public Task AcceptHandoffPartition(SiloAddress source, Dictionary<GrainId, IGrainInfo> partition, bool isFullCopy)

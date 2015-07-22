@@ -70,15 +70,6 @@ namespace Orleans.Runtime.GrainDirectory
         bool LocalLookup(GrainId grain, out List<ActivationAddress> addresses);
 
         /// <summary>
-        /// Fetches complete directory information for a grain.
-        /// If there is no local information, then this method will query the appropriate remote directory node.
-        /// <para>This method must be called from a scheduler thread.</para>
-        /// </summary>
-        /// <param name="grain">The ID of the grain to look up.</param>
-        /// <returns>A list of all known activations of the grain.</returns>
-        Task<List<ActivationAddress>> FullLookup(GrainId grain);
-
-        /// <summary>
         /// Invalidates cache entry for the given activation address.
         /// This method is intended to be called whenever a directory client tries to access 
         /// an activation returned from the previous directory lookup and gets a reject from the target silo 

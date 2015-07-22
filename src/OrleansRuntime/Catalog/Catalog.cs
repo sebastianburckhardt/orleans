@@ -1112,7 +1112,7 @@ namespace Orleans.Runtime
 
         public Task<List<ActivationAddress>> FullLookup(GrainId grain)
         {
-            return scheduler.RunOrQueueTask(() => directory.FullLookup(grain), this.SchedulingContext);
+            return scheduler.RunOrQueueTask(() => directory.FullLookUp(grain, true).ContinueWith(t => t.Result.Item1), this.SchedulingContext);
         }
 
         public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)
