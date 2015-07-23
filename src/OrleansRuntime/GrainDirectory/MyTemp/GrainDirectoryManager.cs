@@ -38,11 +38,15 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 
             var typeCode = gid.GetTypeCode();
 
-            if (typeCode != 0) // special case for Membership grain.
+            if (typeCode != 0) // special case for Membership grain or client grain.
                 GrainTypeManager.Instance.GetTypeInfo(gid.GetTypeCode(), out unusedGrainClass, out unusedPlacement, out strategy);
+            else if (gid.IsClient)
+                strategy = StatelessWorkerActivationStrategy.Singleton;
 
-            var strat = strategy ?? SingleInstanceActivationStrategy.Singleton;
-            return directories[strat.GetType()];
+            //use Single instance as default.
+            strategy = strategy ?? SingleInstanceActivationStrategy.Singleton;
+
+            return directories[strategy.GetType()];
         }
     }
 }
