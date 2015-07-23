@@ -31,6 +31,7 @@ using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 using Orleans.Storage;
 using Orleans.CodeGeneration;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime
 {
@@ -166,7 +167,7 @@ namespace Orleans.Runtime
             nodeConfiguration = nodeConfig;
         }
 
-        public ActivationData(ActivationAddress addr, string genericArguments, PlacementStrategy placedUsing, IActivationCollector collector, TimeSpan ageLimit)
+        public ActivationData(ActivationAddress addr, string genericArguments, PlacementStrategy placedUsing, ActivationStrategy activationStrategy, IActivationCollector collector, TimeSpan ageLimit)
         {
             if (null == addr) throw new ArgumentNullException("addr");
             if (null == placedUsing) throw new ArgumentNullException("placedUsing");
@@ -177,7 +178,7 @@ namespace Orleans.Runtime
             Address = addr;
             State = ActivationState.Create;
             PlacedUsing = placedUsing;
-
+            ActivationStrategy = activationStrategy;
             if (!Grain.IsSystemTarget && !Constants.IsSystemGrain(Grain))
             {
                 this.collector = collector;
@@ -395,8 +396,11 @@ namespace Orleans.Runtime
 
         public PlacementStrategy PlacedUsing { get; private set; }
 
+        public ActivationStrategy ActivationStrategy { get; private set; }
+
         // currently, the only supported multi-activation grain is one using the StatelessWorkerPlacement strategy.
-        internal bool IsMultiActivationGrain { get { return PlacedUsing is StatelessWorkerPlacement; } }
+        // This is no longer valid due to the addition of multi cluster activation.
+        //internal bool IsMultiActivationGrain { get { return PlacedUsing is StatelessWorkerPlacement; } }
 
         public Message Running { get; private set; }
 
@@ -822,7 +826,7 @@ namespace Orleans.Runtime
 
         private string GetActivationInfoString()
         {
-            var multi = IsMultiActivationGrain ? " MultiActivationGrain" : String.Empty;
+            var multi = !ActivationStrategy.IsSingleInstance() ? " MultiActivationGrain" : String.Empty;
             return GrainInstanceType == null ? multi : 
                 String.Format(" #GrainType={0}{1}", GrainInstanceType.FullName, multi);
         }

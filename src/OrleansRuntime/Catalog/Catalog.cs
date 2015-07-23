@@ -358,7 +358,7 @@ namespace Orleans.Runtime
                 {
                     // create a dummy activation that will queue up messages until the real data arrives
                     PlacementStrategy placement;
-                    ActivationStrategy activationStrategy;
+                    ActivationStrategy activationStrategy = ActivationStrategy.GetDefault();
 
                     int typeCode = address.Grain.GetTypeCode();
                     string actualGrainType = null;
@@ -378,6 +378,7 @@ namespace Orleans.Runtime
                         address, 
                         genericArguments, 
                         placement, 
+                        activationStrategy,
                         ActivationCollector, 
                         config.Application.GetCollectionAgeLimit(grainType));
                     RegisterMessageTarget(result);
@@ -425,7 +426,7 @@ namespace Orleans.Runtime
             try
             {
                 initStage = 1;
-                await RegisterActivationInGrainDirectory(address, !activation.IsMultiActivationGrain);
+                await RegisterActivationInGrainDirectory(address, activation.ActivationStrategy.IsSingleInstance());
 
                 initStage = 2;
                 await SetupActivationState(activation, grainType);                
