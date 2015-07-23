@@ -20,8 +20,8 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
         public static void InitializeGrainDirectoryManager(LocalGrainDirectory router)
         {
             Instance = new GrainDirectoryManager();
-            Instance.Register<StatelessWorkerActivationStrategy>(new StatelessWorkerRegistrar(router));
-            Instance.Register<SingleInstanceActivationStrategy>(new SingleInstanceRegistrar(router));
+            Instance.Register<StatelessWorkerActivationStrategy>(new StatelessWorkerRegistrar(router.DirectoryPartition));
+            Instance.Register<SingleInstanceActivationStrategy>(new SingleInstanceRegistrar(router.DirectoryPartition));
         }
 
         private void Register<TStrategy>(IGrainRegistrar directory)

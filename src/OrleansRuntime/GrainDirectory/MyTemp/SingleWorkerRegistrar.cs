@@ -9,15 +9,13 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 {
     internal class SingleInstanceRegistrar : GrainRegistrarBase
     {
-        public SingleInstanceRegistrar(LocalGrainDirectory router) : base(router)
+        public SingleInstanceRegistrar(GrainDirectoryPartition partition) : base(partition)
         { }
 
         public override async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address)
         {
-            Router.RegistrationsSingleActLocal.Increment();
-
             //assume you are the owner and perform local operation.
-            var returnedAddress = Router.DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
+            var returnedAddress = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
 
             return returnedAddress;
         }

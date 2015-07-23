@@ -9,17 +9,15 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 {
     internal class StatelessWorkerRegistrar : GrainRegistrarBase
     {
-        public StatelessWorkerRegistrar(LocalGrainDirectory router) : base(router)
+        public StatelessWorkerRegistrar(GrainDirectoryPartition partition) : base(partition)
         {
             
         }
 
         public override async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address)
-        {                                   
-            Router.RegistrationsLocal.Increment();
-
+        {                                               
             // Assume I am the owner, store the new activation locally
-            var eTag = Router.DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
+            var eTag = DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
             
             return Tuple.Create(address, eTag);
         }

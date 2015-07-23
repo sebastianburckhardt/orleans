@@ -9,11 +9,11 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 {
     internal abstract class GrainRegistrarBase : IGrainRegistrar
     {
-        public LocalGrainDirectory Router { get; private set; }
+        public GrainDirectoryPartition DirectoryPartition { get; private set; }
 
-        protected GrainRegistrarBase(LocalGrainDirectory router)
+        protected GrainRegistrarBase(GrainDirectoryPartition partition)
         {
-            Router = router;
+            DirectoryPartition = partition;
         }
 
         public abstract Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address);
@@ -21,13 +21,13 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
         public virtual Task UnregisterAsync(ActivationAddress address, bool force)
         {
             // if I am the owner, remove the old activation locally
-            Router.DirectoryPartition.RemoveActivation(address.Grain, address.Activation, force);
+            DirectoryPartition.RemoveActivation(address.Grain, address.Activation, force);
             return TaskDone.Done;
         }
 
         public Task DeleteAsync(GrainId gid)
         {
-            Router.DirectoryPartition.RemoveGrain(gid);
+            DirectoryPartition.RemoveGrain(gid);
             return TaskDone.Done;
         }
     }
