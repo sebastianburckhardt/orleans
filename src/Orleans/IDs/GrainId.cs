@@ -47,15 +47,9 @@ namespace Orleans.Runtime
 
         public bool IsClient { get { return Category == UniqueKey.Category.Client; } }
 
-        //TODO: Ask Jorgen if this is the right place.
-        //This reduces the changes to the directory API but probably fits better here?
-        public ActivationStrategy ActivationStrategy { get; set; }
-
         private GrainId(UniqueKey key)
             : base(key)
-        {
-            ActivationStrategy = SingleInstanceActivationStrategy.Singleton; //default activation strategy is Single Instance.
-        }
+        { }
 
         public static GrainId NewId()
         {

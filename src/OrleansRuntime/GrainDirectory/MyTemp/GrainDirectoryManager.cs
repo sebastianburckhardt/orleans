@@ -30,8 +30,17 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             directories.Add(typeof(TStrategy), directory);
         }
 
-        public IGrainRegistrar ResolveDirectory(ActivationStrategy strategy)
+        public IGrainRegistrar ResolveDirectory(GrainId gid)
         {
+            string unusedGrainClass;
+            PlacementStrategy unusedPlacement;
+            ActivationStrategy strategy = null;
+
+            var typeCode = gid.GetTypeCode();
+
+            if (typeCode != 0) // special case for Membership grain.
+                GrainTypeManager.Instance.GetTypeInfo(gid.GetTypeCode(), out unusedGrainClass, out unusedPlacement, out strategy);
+
             var strat = strategy ?? SingleInstanceActivationStrategy.Singleton;
             return directories[strat.GetType()];
         }

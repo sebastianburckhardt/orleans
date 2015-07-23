@@ -575,7 +575,7 @@ namespace Orleans.Runtime.GrainDirectory
             async (addr) =>
             {
                 RegistrationsSingleActLocal.Increment();
-                var directory = GrainDirectoryManager.Instance.ResolveDirectory(address.Grain.ActivationStrategy);
+                var directory = GrainDirectoryManager.Instance.ResolveDirectory(address.Grain);
                 return await directory.RegisterAsync(addr);
             }, 
             async (addr, owner) =>
@@ -621,7 +621,7 @@ namespace Orleans.Runtime.GrainDirectory
                 async (addr) =>
                 {
                     UnregistrationsLocal.Increment();
-                    var directory = GrainDirectoryManager.Instance.ResolveDirectory(address.Grain.ActivationStrategy);
+                    var directory = GrainDirectoryManager.Instance.ResolveDirectory(address.Grain);
                     await directory.UnregisterAsync(address, force);
                     return true;
                 },
@@ -808,7 +808,7 @@ namespace Orleans.Runtime.GrainDirectory
             var success = await PerformLocalOrRemoteWithRetry(grain, grain,
                 async (gid) =>
                 {                    
-                    var directory = GrainDirectoryManager.Instance.ResolveDirectory(gid.ActivationStrategy);
+                    var directory = GrainDirectoryManager.Instance.ResolveDirectory(gid);
                     await directory.DeleteAsync(gid);
                     return true;
                 },
