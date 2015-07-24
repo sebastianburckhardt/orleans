@@ -21,6 +21,7 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
@@ -39,7 +40,7 @@ namespace Orleans.Runtime.Placement
         /// <returns>True if remote addresses are complete within freshness constraint</returns>
         bool FastLookup(GrainId grain, out List<ActivationAddress> addresses);
 
-        Task<List<ActivationAddress>> FullLookup(GrainId grain);
+        Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain);
 
         bool LocalLookup(GrainId grain, out List<ActivationData> addresses);
 
@@ -60,10 +61,19 @@ namespace Orleans.Runtime.Placement
 
     internal static class PlacementContextExtensions
     {
-        public static Task<List<ActivationAddress>> Lookup(this IPlacementContext @this, GrainId grainId)
+        public static async Task<List<ActivationAddress>> Lookup(this IPlacementContext @this, GrainId grainId)
         {
             List<ActivationAddress> l;
-            return @this.FastLookup(grainId, out l) ? Task.FromResult(l) : @this.FullLookup(grainId);
+            if (@this.FastLookup(grainId, out l))
+            {
+                return l;
+            }
+            else
+            {
+                var result = await @this.FullLookup(grainId);
+                return result == null ? null : result.Item1;
+            }
+            
         }
 
         public static PlacementStrategy GetGrainPlacementStrategy(this IPlacementContext @this, int typeCode, string genericArguments = null)

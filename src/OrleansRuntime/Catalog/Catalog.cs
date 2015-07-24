@@ -1044,11 +1044,10 @@ namespace Orleans.Runtime
 
         private async Task RegisterActivationInGrainDirectory(ActivationAddress address, bool singleActivationMode)
         {
-            if (singleActivationMode)
-            {
-                //ActivationAddress returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterSingleActivationAsync(address), this.SchedulingContext);
-                var returnedAddress = await scheduler.RunOrQueueTask(() => directory.Register(address), this.SchedulingContext);
+            var returnedAddress = await scheduler.RunOrQueueTask(() => directory.Register(address), this.SchedulingContext);
 
+            if (singleActivationMode)
+            {            
                 if (returnedAddress == null)
                 {
                     throw new OrleansException(String.Format("Could not register activation {0}", address));
@@ -1064,9 +1063,7 @@ namespace Orleans.Runtime
                 };
 
                 throw dae;
-            }
-            
-            await scheduler.RunOrQueueTask(() => directory.Register(address), this.SchedulingContext);
+            }                       
         }
 
         #endregion
@@ -1106,9 +1103,9 @@ namespace Orleans.Runtime
             // thus volaiting the single-activation semantics and not converging even eventualy!
         }
 
-        public Task<List<ActivationAddress>> FullLookup(GrainId grain)
+        public Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain)
         {
-            return scheduler.RunOrQueueTask(() => directory.FullLookUp(grain, true).ContinueWith(t => t.Result.Item1), this.SchedulingContext);
+            return scheduler.RunOrQueueTask(() => directory.FullLookUp(grain, true), this.SchedulingContext);
         }
 
         public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)
