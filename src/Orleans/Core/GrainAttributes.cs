@@ -22,6 +22,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
+using Orleans.GrainDirectory;
 
 namespace Orleans
 {
@@ -90,7 +91,45 @@ namespace Orleans
         {
         }
     }
+    namespace MultiCluster
+    {
+        /// <summary>
+        /// base class for multi cluster activation strategies.
+        /// </summary>
+        public abstract class ActivationAttribute : Attribute
+        {
+            internal ActivationStrategy ActivationStrategy { get; private set; }
 
+            internal ActivationAttribute(ActivationStrategy strategy)
+            {
+                ActivationStrategy = strategy ?? ActivationStrategy.GetDefault();
+            }
+        }
+
+        /// <summary>
+        /// The GlobalSingleInstanceAttribute indicates that instances of the marked grain class will have a single instance across all available clusters. Any requests in any clusters will be forwarded to the single activation instance.
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
+        public class GlobalSingleInstanceAttribute : ActivationAttribute
+        {
+            public GlobalSingleInstanceAttribute()
+                : base(GlobalSingleInstanceActivationStrategy.Singleton)
+            {
+            }
+        }
+
+        /// <summary>
+        /// The Per cluster intance attribute indicates that instances of the marked grain class will have an independent instance for each cluster (if requested) with no state reconciliation/synchronization. This is the defualt, so no need to explicitly specify this attributes for grains.
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
+        public class PerClusterSingleInstanceAttribute : ActivationAttribute
+        {
+            public PerClusterSingleInstanceAttribute()
+                : base(SingleInstanceActivationStrategy.Singleton)
+            {
+            }
+        }
+    }
     namespace Placement
     {
         using Orleans.Runtime;

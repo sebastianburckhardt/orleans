@@ -37,6 +37,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Placement;
 using Orleans.Runtime.Counters;
+using Orleans.Runtime.GossipNetwork;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.GrainDirectory.MyTemp;
 using Orleans.Runtime.MembershipService;
@@ -86,12 +87,14 @@ namespace Orleans.Runtime
         private readonly SiloType siloType;
         private readonly SiloStatisticsManager siloStatistics;
         private readonly MembershipFactory membershipFactory;
+        private readonly GossipOracleFactory clusterGatewayMembershipFactory;
         private StorageProviderManager storageProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private readonly LocalReminderServiceFactory reminderFactory;
         private IReminderService reminderService;
         private ProviderManagerSystemTarget providerManagerSystemTarget;
         private IMembershipOracle membershipOracle;
+        private IGossipOracle clusterGatewayMembershipOracle;
         private ClientObserverRegistrar clientRegistrar;
         private Watchdog platformWatchdog;
         private readonly TimeSpan initTimeout;
@@ -113,6 +116,7 @@ namespace Orleans.Runtime
         internal GrainTypeManager LocalTypeManager { get { return typeManager; } }
         internal ILocalGrainDirectory LocalGrainDirectory { get { return localGrainDirectory; } }
         internal ISiloStatusOracle LocalSiloStatusOracle { get { return membershipOracle; } }
+        internal IGossipOracle LocalClusterMembershipOracle { get { return clusterGatewayMembershipOracle; } }
         internal IConsistentRingProvider RingProvider { get; private set; }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
@@ -286,6 +290,8 @@ namespace Orleans.Runtime
             incomingAgent = new IncomingMessageAgent(Message.Categories.Application, messageCenter, activationDirectory, scheduler, dispatcher);
 
             membershipFactory = new MembershipFactory();
+            clusterGatewayMembershipFactory = new GossipOracleFactory();
+
             reminderFactory = new LocalReminderServiceFactory();
             
             SystemStatus.Current = SystemStatus.Created;
@@ -319,6 +325,12 @@ namespace Orleans.Runtime
 
             logger.Verbose("Creating {0} System Target", "MembershipOracle");
             RegisterSystemTarget((SystemTarget) membershipOracle);
+
+            logger.Verbose("Creating {0} System Target", "ClusterGatewayMembershipOracle");
+            if (clusterGatewayMembershipOracle != null)
+            {
+                RegisterSystemTarget((SystemTarget)clusterGatewayMembershipOracle);
+            }
 
             logger.Verbose("Finished creating System Targets for this silo.");
         }
@@ -420,6 +432,7 @@ namespace Orleans.Runtime
 
             IMembershipTable membershipTable = membershipFactory.GetMembershipTable(this.GlobalConfig.LivenessType);
             membershipOracle = membershipFactory.CreateMembershipOracle(this, membershipTable);
+			clusterGatewayMembershipOracle = clusterGatewayMembershipFactory.CreateClusterGatewayMembershipOracle(this).WaitForResultWithThrow(initTimeout);
             
             // This has to follow the above steps that start the runtime components
             CreateSystemTargets();
@@ -469,6 +482,14 @@ namespace Orleans.Runtime
             scheduler.QueueTask(LocalSiloStatusOracle.BecomeActive, statusOracleContext)
                 .WaitWithThrow(initTimeout);
             if (logger.IsVerbose) { logger.Verbose("Local silo status oracle became active successfully."); }
+
+            //if running in multi cluster scenario, start the ClusterGatewayMembershipOracle
+            if (GlobalConfig.GlobalServiceId != null && GlobalConfig.ClusterId != null /*&& GlobalConfig.TotalClusterSize > 0*/)
+            {
+                ISchedulingContext clusterStatusContex = ((SystemTarget)clusterGatewayMembershipOracle).SchedulingContext;
+                scheduler.QueueTask(() => clusterGatewayMembershipOracle.Start(), clusterStatusContex);
+                if (logger.IsVerbose) { logger.Verbose("Cluster gateway status oracle created successfully."); }
+            }
 
             try
             {

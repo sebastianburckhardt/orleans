@@ -446,6 +446,10 @@ namespace Orleans.Runtime.Configuration
         {
             var sb = new StringBuilder();
             sb.AppendFormat("   System Ids:").AppendLine();
+            if (GlobalServiceId != null)
+                sb.AppendFormat("      Global ServiceId: {0}", GlobalServiceId).AppendLine();
+            if (ClusterId != null)
+                sb.AppendFormat("      Cluster Id: {0}", ClusterId).AppendLine();
             sb.AppendFormat("      ServiceId: {0}", ServiceId).AppendLine();
             sb.AppendFormat("      DeploymentId: {0}", DeploymentId).AppendLine();
             sb.Append("   Subnet: ").Append(Subnet == null ? "" : Subnet.ToStrings(x => x.ToString(CultureInfo.InvariantCulture), ".")).AppendLine();
@@ -644,7 +648,12 @@ namespace Orleans.Runtime.Configuration
                             UseMockReminderTable = true;
                         }
                         break;
-
+                    case "Cluster":
+                        ClusterId = child.GetAttribute("Id");
+                        break;
+                    case "GlobalService":
+                        GlobalServiceId = child.GetAttribute("Id");
+                        break;
                     case "SeedNode":
                         SeedNodes.Add(ConfigUtilities.ParseIPEndPoint(child, Subnet));
                         break;

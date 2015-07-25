@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using Orleans.Concurrency;
 using Orleans.GrainDirectory;
+using Orleans.MultiCluster;
 using Orleans.Placement;
 
 
@@ -133,14 +134,39 @@ namespace Orleans.Runtime
             ActivationStrategy strategy;
             //TODO: update the logic to allow for class attribute to specify activation strategy.
 
+            var attribs = grainClass.GetCustomAttributes(typeof(ActivationAttribute), inherit: true);
+
             var placement = GetPlacementStrategy(grainClass);
             if (placement is StatelessWorkerPlacement)
             {
-                strategy = StatelessWorkerActivationStrategy.Singleton;
+                if (attribs.Length == 0)
+                    strategy = StatelessWorkerActivationStrategy.Singleton;
+                else
+                {
+                    throw new InvalidOperationException(
+                            string.Format(
+                                "More than one {0} cannot be specified for grain interface {1}",
+                                typeof(ActivationStrategy).Name,
+                                grainClass.Name));
+                }
             }
             else
-            {
-                strategy = SingleInstanceActivationStrategy.Singleton;
+            {                
+                switch (attribs.Length)
+                {
+                    case 0:
+                        strategy = SingleInstanceActivationStrategy.Singleton;
+                        break;            
+                    case 1:
+                        strategy = ((ActivationAttribute)attribs[0]).ActivationStrategy;
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            string.Format(
+                                "More than one {0} cannot be specified for grain interface {1}",
+                                typeof(ActivationStrategy).Name,
+                                grainClass.Name));
+                }
             }
 
             return strategy;

@@ -22,6 +22,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             Instance = new GrainDirectoryManager();
             Instance.Register<StatelessWorkerActivationStrategy>(new StatelessWorkerRegistrar(router.DirectoryPartition));
             Instance.Register<SingleInstanceActivationStrategy>(new SingleInstanceRegistrar(router.DirectoryPartition));
+            Instance.Register<GlobalSingleInstanceActivationStrategy>(new GlobalSingleInstanceRegistrar(router.DirectoryPartition));
         }
 
         private void Register<TStrategy>(IGrainRegistrar directory)
@@ -32,6 +33,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 
         public IGrainRegistrar ResolveDirectory(GrainId gid)
         {
+            bool simple = gid.IdentityString.Contains("Simple");
             string unusedGrainClass;
             PlacementStrategy unusedPlacement;
             ActivationStrategy strategy = null;

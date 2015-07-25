@@ -29,6 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections;
 using Orleans;
+using Orleans.MultiCluster;
 using Orleans.Runtime;
 using UnitTests.GrainInterfaces;
 
@@ -38,6 +39,7 @@ namespace UnitTests.Grains
     /// <summary>
     /// A simple grain that allows to set two arguments and then multiply them.
     /// </summary>
+    [GlobalSingleInstance]
     public class SimpleGrain : Grain, ISimpleGrain 
     {
         protected Logger logger;
