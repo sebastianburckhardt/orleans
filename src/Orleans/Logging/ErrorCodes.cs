@@ -1042,6 +1042,12 @@ namespace Orleans
         AzureServiceRuntimeWrapper = Runtime + 3700,
         AzureServiceRuntime_NotLoaded       = AzureServiceRuntimeWrapper +1,
         AzureServiceRuntime_FailedToLoad    = AzureServiceRuntimeWrapper +2,
+
+        GossipBase = Runtime + 3800,
+        Gossip_Starting = GossipBase + 1,
+        Gossip_FailedToStart = GossipBase + 2,
+        Gossip_LocalSubscriberException = GossipBase + 3,
+        Gossip_CommunicationFailure = GossipBase + 4,
     }
 }
 // ReSharper restore InconsistentNaming

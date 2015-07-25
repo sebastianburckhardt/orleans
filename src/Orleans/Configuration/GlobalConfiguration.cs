@@ -193,6 +193,17 @@ namespace Orleans.Runtime.Configuration
         /// Service Id.
         /// </summary>
         public Guid ServiceId { get; set; }
+
+        /// <summary>
+        /// Shared Global service Id between different datacenters/deployments.
+        /// </summary>
+        public string GlobalServiceId { get; set; }
+
+        /// <summary>
+        /// Cluster id (one per deployment, unique across all the deployments/clusters)
+        /// </summary>
+        public string ClusterId { get; set; }
+
         /// <summary>
         /// Deployment Id.
         /// </summary>

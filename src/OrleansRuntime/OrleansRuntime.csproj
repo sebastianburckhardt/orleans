@@ -73,6 +73,12 @@
   <ItemGroup>
     <Compile Include="Catalog\ActivationState.cs" />
     <Compile Include="Counters\PerfCounterConfigData.cs" />
+    <Compile Include="GossipNetwork\GossipOracle.cs" />
+    <Compile Include="GossipNetwork\GossipOracleData.cs" />
+    <Compile Include="GossipNetwork\GossipOracleFactory.cs" />
+    <Compile Include="GossipNetwork\IGossipChannel.cs" />
+    <Compile Include="GossipNetwork\IGossipListener.cs" />
+    <Compile Include="GossipNetwork\IGossipOracle.cs" />
     <Compile Include="GrainDirectory\MyTemp\GrainDirectoryManager.cs" />
     <Compile Include="GrainDirectory\MyTemp\GrainRegistrarBase.cs" />
     <Compile Include="GrainDirectory\MyTemp\SingleWorkerRegistrar.cs" />
