@@ -134,6 +134,7 @@
     <Compile Include="RelationalStorage\RelationalStorageExtensions.cs" />
     <Compile Include="RelationalStorage\RelationalStorageUtilities.cs" />
     <Compile Include="RelationalStorage\SqlFormatProvider.cs" />
+    <Compile Include="SystemTargetInterfaces\IClusterGrainDirectory.cs" />
     <Compile Include="Timers\IReminderRegistry.cs" />
     <Compile Include="Runtime\IRuntimeClient.cs" />
     <Compile Include="Runtime\IGrainExtension.cs" />

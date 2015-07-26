@@ -7,6 +7,21 @@ using Orleans.Runtime;
 
 namespace Orleans.GrainDirectory
 {
+    /// <summary>
+    /// An Activation can be in one of three states:
+    /// OWNED means that the directory which contains the address is the definitive reference for the activation.
+    /// TRY_OWN means that the directory which contains the address is _trying_ to be the definitive reference.
+    /// CACHED means that the directory contains a cached copy of the activation address, but that it is not the owner.
+    /// </summary>
+    internal enum ActivationStatus
+    {
+        OWNED,                      // An activation in state OWNED is definitively owned by a silo.
+        DOUBTFUL,                   // Failed to contact one or more clusters while registering, so may be a duplicate.
+        REQUESTED_OWNERSHIP,        // The silo is in the process of trying to create a grain's activation.
+        CACHED,                     // The activation reference is cached.
+        RACE_LOSER,                 // The activation lost a race condition.
+    }
+
     interface IGrainDirectory
     {
         /// <summary>

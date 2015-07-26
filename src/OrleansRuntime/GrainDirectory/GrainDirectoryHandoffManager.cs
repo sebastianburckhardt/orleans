@@ -64,7 +64,7 @@ namespace Orleans.Runtime.GrainDirectory
                 if (result != null)
                 {
                     // Force the list to be created in order to avoid race conditions
-                    return result.Item1.Select(pair => ActivationAddress.GetAddress(pair.Item1, grain, pair.Item2)).ToList();
+                    return result.Item1.Select(pair => ActivationAddress.GetAddress(pair.Silo, grain, pair.Activation, pair.Status)).ToList();
                 }
             }
             return null;

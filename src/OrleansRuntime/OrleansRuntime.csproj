@@ -79,9 +79,11 @@
     <Compile Include="GossipNetwork\IGossipChannel.cs" />
     <Compile Include="GossipNetwork\IGossipListener.cs" />
     <Compile Include="GossipNetwork\IGossipOracle.cs" />
+    <Compile Include="GrainDirectory\MyTemp\ClusterGrainDirectory.cs" />
     <Compile Include="GrainDirectory\MyTemp\GlobalSingleInstanceRegistrar.cs" />
     <Compile Include="GrainDirectory\MyTemp\GrainDirectoryManager.cs" />
     <Compile Include="GrainDirectory\MyTemp\GrainRegistrarBase.cs" />
+    <Compile Include="GrainDirectory\MyTemp\MultiClusterUtils.cs" />
     <Compile Include="GrainDirectory\MyTemp\SingleWorkerRegistrar.cs" />
     <Compile Include="GrainDirectory\MyTemp\StatelessWorkerRegistrar.cs" />
     <Compile Include="GrainTypeManager\GenericGrainTypeData.cs" />

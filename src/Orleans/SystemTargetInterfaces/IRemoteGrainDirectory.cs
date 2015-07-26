@@ -33,6 +33,7 @@ namespace Orleans.Runtime
     {
         SiloAddress SiloAddress { get; }
         DateTime TimeCreated { get; }
+        ActivationStatus ActivationStatus { get; set; }
     }
 
     internal interface IGrainInfo
@@ -41,10 +42,12 @@ namespace Orleans.Runtime
         int VersionTag { get; }
         bool SingleInstance { get; }
         bool AddActivation(ActivationId act, SiloAddress silo);
-        ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo);
+        ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, ActivationStatus activationStatus = ActivationStatus.OWNED);
         bool RemoveActivation(ActivationAddress addr);
         bool RemoveActivation(ActivationId act, bool force);
         bool Merge(GrainId grain, IGrainInfo other);
+        void CacheOrUpdateRemoteClusterRegistration(GrainId grain, ActivationId oldActivation, ActivationId activation, SiloAddress silo);
+        bool UpdateActivationStatus(ActivationId activationId, ActivationStatus activationStatus);
     }
 
     /// <summary>
