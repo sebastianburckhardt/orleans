@@ -23,7 +23,7 @@ namespace Orleans.Runtime.GossipNetwork
 
             var channels = await GetGossipChannels(silo);
 
-            return channels == null ? null : new GossipOracle(silo.SiloAddress, channels, silo.GlobalConfig);
+            return channels == null ? null : new GossipOracle(silo.SiloAddress, channels, silo.GlobalConfig);            
         }
 
         internal async Task<List<IGossipChannel>> GetGossipChannels(Silo silo)
@@ -45,7 +45,7 @@ namespace Orleans.Runtime.GossipNetwork
             
 
             var defaultchannel = AssemblyLoader.LoadAndCreateInstance<IGossipChannel>(Constants.ORLEANS_AZURE_UTILS_DLL, logger);
-
+            await defaultchannel.Initialize(config);
             channellist.Add(defaultchannel);
 
             return channellist;

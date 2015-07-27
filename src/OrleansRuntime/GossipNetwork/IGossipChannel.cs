@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Orleans.Runtime.Configuration;
 
 
 // should this go into SystemTargetInterfaces?
@@ -16,6 +17,13 @@ namespace Orleans.Runtime.GossipNetwork
     /// </summary>
     internal interface IGossipChannel
     {
+        /// <summary>
+        /// Initialize the channel with given configuration.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        Task Initialize(GlobalConfiguration config);
+
         /// <summary>
         /// One-way small-scale gossip: send partial gossip data to recipient
         /// </summary>

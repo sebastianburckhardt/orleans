@@ -67,6 +67,7 @@ namespace Orleans.Runtime
         static SiloAddress()
         {
             siloAddressInterningCache = new Interner<SiloAddress, SiloAddress>(INTERN_CACHE_INITIAL_SIZE, internCacheCleanupInterval);
+            
             var sa = new SiloAddress(new IPEndPoint(0, 0), 0, null);
             Zero = siloAddressInterningCache.Intern(sa, sa);
         }
@@ -255,8 +256,9 @@ namespace Orleans.Runtime
         /// <summary> IEquatable.Equals method override. </summary>
         public bool Equals(SiloAddress other)
         {
-            return other != null && Endpoint.Address.Equals(other.Endpoint.Address) && (Endpoint.Port == other.Endpoint.Port) &&
-                (Generation == other.Generation) && (ClusterId == other.ClusterId);
+            return other != null && Endpoint.Address.Equals(other.Endpoint.Address) &&
+                   (Endpoint.Port == other.Endpoint.Port) &&
+                   (Generation == other.Generation); //&& (ClusterId == other.ClusterId);
         }
 
         #endregion

@@ -61,6 +61,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         public RemoteGrainDirectory RemGrainDirectory { get; private set; }
         public RemoteGrainDirectory CacheValidator { get; private set; }
+        public ClusterGrainDirectory RemClusterGrainDirectory { get; private set; }
 
         private readonly TaskCompletionSource<bool> stopPreparationResolver;
         public Task StopPreparationCompletion { get { return stopPreparationResolver.Task; } }
@@ -130,7 +131,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             RemGrainDirectory = new RemoteGrainDirectory(this, Constants.DirectoryServiceId);
             CacheValidator = new RemoteGrainDirectory(this, Constants.DirectoryCacheValidatorId);
-
+            RemClusterGrainDirectory = new ClusterGrainDirectory(this, Constants.ClusterDirectoryServiceId);
             // add myself to the list of members
             AddServer(MyAddress);
 

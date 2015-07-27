@@ -60,18 +60,18 @@ namespace Orleans.Runtime.Messaging
 
         public IMessagingConfiguration MessagingConfiguration { get; private set; }
 
-        public MessageCenter(IPEndPoint here, int generation, IMessagingConfiguration config, ISiloPerformanceMetrics metrics = null)
+        public MessageCenter(IPEndPoint here, int generation, string clusterId, IMessagingConfiguration config, ISiloPerformanceMetrics metrics = null)
         {
-            Initialize(here, generation, config, metrics);
+            Initialize(here, generation, clusterId, config, metrics);
         }
 
-        private void Initialize(IPEndPoint here, int generation, IMessagingConfiguration config, ISiloPerformanceMetrics metrics = null)
+        private void Initialize(IPEndPoint here, int generation, string clusterId, IMessagingConfiguration config, ISiloPerformanceMetrics metrics = null)
         {
             if(log.IsVerbose3) log.Verbose3("Starting initialization.");
 
             SocketManager = new SocketManager(config);
             ima = new IncomingMessageAcceptor(this, here, SocketDirection.SiloToSilo);
-            MyAddress = SiloAddress.New((IPEndPoint)ima.AcceptingSocket.LocalEndPoint, generation);
+            MyAddress = SiloAddress.New((IPEndPoint)ima.AcceptingSocket.LocalEndPoint, generation, clusterId);
             MessagingConfiguration = config;
             InboundQueue = new InboundMessageQueue();
             OutboundQueue = new OutboundMessageQueue(this, config);

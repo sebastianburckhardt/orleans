@@ -226,7 +226,9 @@ namespace Orleans.Runtime
             healthCheckParticipants.Add(scheduler);
 
             // Initialize the message center
-            var mc = new MessageCenter(here, generation, globalConfig, siloStatistics.MetricsTable);
+            var clusterId = globalConfig.ClusterId;
+            
+            var mc = new MessageCenter(here, generation, clusterId, globalConfig, siloStatistics.MetricsTable);
             if (nodeConfig.IsGatewayNode)
                 mc.InstallGateway(nodeConfig.ProxyGatewayEndpoint);
             
@@ -317,6 +319,7 @@ namespace Orleans.Runtime
             logger.Verbose("Creating {0} System Target", "RemGrainDirectory + CacheValidator");
             RegisterSystemTarget(LocalGrainDirectory.RemGrainDirectory);
             RegisterSystemTarget(LocalGrainDirectory.CacheValidator);
+            RegisterSystemTarget(LocalGrainDirectory.RemClusterGrainDirectory);
 
             logger.Verbose("Creating {0} System Target", "ClientObserverRegistrar + TypeManager");
             clientRegistrar = new ClientObserverRegistrar(SiloAddress, LocalMessageCenter, LocalGrainDirectory, LocalScheduler, OrleansConfig);

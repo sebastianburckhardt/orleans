@@ -31,7 +31,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             //assume you are the owner and perform local operation.
             var myClusterRegisterdAddress = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, ActivationStatus.REQUESTED_OWNERSHIP);
 
-            if (myClusterRegisterdAddress.Item1.Equals(address)) //This implies that the registration already existed in some state? return the existing activation.
+            if (!myClusterRegisterdAddress.Item1.Equals(address)) //This implies that the registration already existed in some state? return the existing activation.
             {
                 return myClusterRegisterdAddress;
             }
@@ -160,10 +160,15 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                 if (clusterId.Equals(Silo.CurrentSilo.SiloAddress.ClusterId))
                     continue;
 
-                var clusterGatewayAddress = clusterMembershipOracle.GetClusterGateway(clusterId);
+                var addr = clusterMembershipOracle.GetClusterGateway(clusterId);
+
+                //BUG: Wrong generation of silo address is returned.
+                //Temp fix: make generation 0
+                var clusterGatewayAddress = SiloAddress.New(addr.Endpoint, 0, clusterId);
+
                 //get the reference for the system target on the gateway. The gateway will be responsible for forwarding the request to appropriate silo if it is not the owner.
                 //var clusterGrainDir = GetClusterDirectoryReference(clusterGatewayAddress);
-                var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.DirectoryServiceId, clusterGatewayAddress);
+                var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
 
                 activationResonseTasks.Add(clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.SiloAddress.ClusterId, NUM_RETRIES));
             }

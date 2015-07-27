@@ -24,6 +24,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 using Orleans.GrainDirectory;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.Runtime.GrainDirectory.MyTemp;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -42,6 +43,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         RemoteGrainDirectory RemGrainDirectory { get; }
         RemoteGrainDirectory CacheValidator { get; }
+        ClusterGrainDirectory RemClusterGrainDirectory { get; }
         Task StopPreparationCompletion { get; }  // Will be resolved when this directory is prepared to stop
 
         /// <summary>

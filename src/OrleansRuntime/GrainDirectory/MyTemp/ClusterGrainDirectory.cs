@@ -13,12 +13,12 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 
         private readonly LocalGrainDirectory router;
 
-        public ClusterGrainDirectory(GrainId grainId, LocalGrainDirectory r) : base(grainId, r.MyAddress)
+        public ClusterGrainDirectory(LocalGrainDirectory r, GrainId grainId) : base(grainId, r.MyAddress)
         {
             router = r;
         }
 
-        public ClusterGrainDirectory(GrainId grainId, LocalGrainDirectory r, bool lowPriority)
+        public ClusterGrainDirectory(LocalGrainDirectory r, GrainId grainId, bool lowPriority)
             : base(grainId, r.MyAddress, lowPriority)
         {
             router = r;
