@@ -25,8 +25,7 @@ namespace Orleans.Runtime.GossipNetwork
         private string globalServiceId;
 
         BackgroundWorker worker;
-
-
+ 
 
         public GossipOracle(SiloAddress silo, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.GossipOracleId, silo)
@@ -126,6 +125,7 @@ namespace Orleans.Runtime.GossipNetwork
 
         //TODO : make these global parameters
         static TimeSpan ResendActiveStatusAfter = new TimeSpan(hours: 0, minutes: 10, seconds: 0);
+        static TimeSpan CleanupSilentGoneGatewaysAfter = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
         static TimeSpan RefreshInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 10);
         static TimeSpan TimerInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 10);  
 
@@ -133,9 +133,17 @@ namespace Orleans.Runtime.GossipNetwork
         // only one call active at a time
         private async Task Work()
         {
-            var localstatuschanged = InjectLocalStatus();
+            var activelocalgateways = silostatusoracle.GetApproximateGateways();
 
-            if (localstatuschanged || (DateTime.UtcNow - lastrefresh) > RefreshInterval)
+            var iamgateway = activelocalgateways.Contains(Silo);
+
+            var localstatuschanged = InjectLocalStatus(iamgateway);
+
+            var demotesomegateways = (iamgateway) ? DemoteLocalGateways(activelocalgateways) : false;
+
+            if (localstatuschanged ||
+                demotesomegateways ||
+                (DateTime.UtcNow - lastrefresh) > RefreshInterval)
             {
                 await Gossip();
             }
@@ -144,7 +152,10 @@ namespace Orleans.Runtime.GossipNetwork
         private async Task Gossip()
         {
             // gossip with sources
-            var gossiptasks = gossipChannels.Select(s => GossipWith(s));
+            var gossiptasks = new List<Task<bool>>();
+
+            foreach(var c in gossipChannels)
+                gossiptasks.Add(GossipWith(c));
 
             await Task.WhenAll(gossiptasks);
 
@@ -175,9 +186,14 @@ namespace Orleans.Runtime.GossipNetwork
         }
 
 
-        private bool InjectLocalStatus()
+        private bool InjectLocalStatus(bool isgateway)
         {
-            var currentstatus = DetermineLocalStatus();
+            var currentstatus = new GatewayEntry()
+            {
+                SiloAddress = Silo,
+                Status = isgateway ? GatewayStatus.Active : GatewayStatus.Inactive,
+                HeartbeatTimestamp = DateTime.UtcNow
+            };
 
             GatewayEntry whatsthere;
 
@@ -196,25 +212,39 @@ namespace Orleans.Runtime.GossipNetwork
             return false;
         }
 
-        private GatewayEntry DetermineLocalStatus()
+        private bool DemoteLocalGateways(IEnumerable<SiloAddress> activegateways)
         {
-            var allgateways = silostatusoracle.GetApproximateGateways();
+            var now = DateTime.UtcNow;
 
-            return new GatewayEntry()
-            {
-                SiloAddress = Silo,
-                Status = allgateways.Contains(Silo) ? GatewayStatus.Active : GatewayStatus.Inactive,
-                HeartbeatTimestamp = DateTime.UtcNow
-            };
+            // mark gateways as inactive if they have not recently advertised their existence,
+            // and if they are not designated gateways as per membership table
+            var tobeupdated = gossipOracleData.Current.Gateways
+                .Where(g => g.Key.ClusterId == Silo.ClusterId
+                       && g.Value.Status == GatewayStatus.Active
+                       && (now - g.Value.HeartbeatTimestamp > CleanupSilentGoneGatewaysAfter)
+                       && !activegateways.Contains(g.Key))
+                .Select(g => new GatewayEntry()
+                {
+                    SiloAddress = g.Value.SiloAddress,
+                    Status = GatewayStatus.Inactive,
+                    HeartbeatTimestamp = now
+                });
+
+            var data = new GossipData(tobeupdated);
+
+            if (data.IsEmpty)
+                return false;
+             
+            gossipOracleData.ApplyGossipDataAndNotify(data);
+            return true;            
         }
 
+     
 
         public void SiloStatusChangeNotification(SiloAddress updatedSilo, SiloStatus status)
         {
-            if (updatedSilo.Equals(Silo))
-            {
-                worker.Notify();
-            }
+            // any status change can cause changes in gateway list
+            worker.Notify();
         }
 
     }

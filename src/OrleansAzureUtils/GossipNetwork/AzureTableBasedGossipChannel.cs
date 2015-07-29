@@ -73,8 +73,7 @@ namespace Orleans.Runtime.GossipNetwork
         }
 
 
-        // IGossipChannel
-        public async Task<GossipData> DiffAndWriteBack(GossipData pushed, IEnumerable<Tuple<GossipTableEntry, string>> entriesfromstorage)
+        internal async Task<GossipData> DiffAndWriteBack(GossipData pushed, IEnumerable<Tuple<GossipTableEntry, string>> entriesfromstorage)
         {
 
             MultiClusterConfiguration conf1;

@@ -128,7 +128,7 @@ namespace Orleans.Runtime.GossipNetwork
     {
         public string TableName { get { return INSTANCE_TABLE_NAME; } }
 
-        private const string INSTANCE_TABLE_NAME = "GossipTable";
+        private const string INSTANCE_TABLE_NAME = "OrleansGossipTable";
 
         private readonly AzureTableDataManager<GossipTableEntry> storage;
         private readonly TraceLogger logger;
