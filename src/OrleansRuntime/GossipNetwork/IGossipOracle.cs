@@ -10,7 +10,7 @@ namespace Orleans.Runtime.GossipNetwork
     internal interface IGossipOracle
     {
       
-        Task Start();
+        Task Start(ISiloStatusOracle silostatusoracle);
 
         /// <summary>
         /// Get the latest multicluster configuration.
@@ -36,7 +36,7 @@ namespace Orleans.Runtime.GossipNetwork
         /// </summary>
         /// <param name="cluster">the cluster for which we want a gateway</param>
         /// <returns>a gateway address, or null if none is found for the given cluster</returns>
-        SiloAddress GetClusterGateway(string cluster);
+        SiloAddress GetRandomClusterGateway(string cluster);
 
         /// <summary>
         /// Subscribe to gossip data change events.

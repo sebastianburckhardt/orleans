@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Orleans.Runtime.Configuration;
+using System.Diagnostics;
 
 namespace Orleans.Runtime.MembershipService
 {
@@ -35,6 +36,7 @@ namespace Orleans.Runtime.MembershipService
         private Dictionary<SiloAddress, SiloStatus> localTableCopy;            // a cached copy of a local table, including current silo, for fast access
         private Dictionary<SiloAddress, SiloStatus> localTableCopyOnlyActive;  // a cached copy of a local table, for fast access, including only active nodes and current silo (if active)
         private Dictionary<SiloAddress, string> localNamesTableCopy;           // a cached copy of a map from SiloAddress to Silo Name, not including current silo, for fast access
+        private List<SiloAddress> localGatewaysCopy;                           // a cached copy of the silos that are designated gateways
 
         private readonly List<ISiloStatusListener> statusListeners;
         private readonly TraceLogger logger;
@@ -47,6 +49,9 @@ namespace Orleans.Runtime.MembershipService
         internal readonly string MyHostname;
         internal SiloStatus CurrentStatus { get; private set; } // current status of this silo.
         internal string SiloName { get; private set; } // name of this silo.
+ 
+        private readonly string GlobalServiceId; // set by configuration
+        private readonly int NumGatewaysPerCluster; // set by configuration
 
         internal MembershipOracleData(Silo silo, TraceLogger log)
         {
@@ -54,13 +59,16 @@ namespace Orleans.Runtime.MembershipService
             localTable = new Dictionary<SiloAddress, MembershipEntry>();  
             localTableCopy = new Dictionary<SiloAddress, SiloStatus>();       
             localTableCopyOnlyActive = new Dictionary<SiloAddress, SiloStatus>();
-            localNamesTableCopy = new Dictionary<SiloAddress, string>();  
+            localNamesTableCopy = new Dictionary<SiloAddress, string>();
+            localGatewaysCopy = new List<SiloAddress>();
             statusListeners = new List<ISiloStatusListener>();
             
             SiloStartTime = DateTime.UtcNow;
             MyAddress = silo.SiloAddress;
             MyHostname = silo.LocalConfig.DNSHostName;
             SiloName = silo.LocalConfig.SiloName;
+            GlobalServiceId = silo.GlobalConfig.GlobalServiceId;
+            NumGatewaysPerCluster = silo.GlobalConfig.NumGatewaysPerCluster;
             CurrentStatus = SiloStatus.Created;
             clusterSizeStatistic = IntValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER_SIZE, () => localTableCopyOnlyActive.Count);
             clusterStatistic = StringValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER,
@@ -100,6 +108,12 @@ namespace Orleans.Runtime.MembershipService
             Dictionary<SiloAddress, SiloStatus> dict = onlyActive ? localTableCopyOnlyActive : localTableCopy;
             if (logger.IsVerbose3) logger.Verbose3("-GetApproximateSiloStatuses returned {0} silos: {1}", dict.Count, Utils.DictionaryToString(dict));
             return dict;
+        }
+
+        internal List<SiloAddress> GetApproximateGateways()
+        {
+            if (logger.IsVerbose3) logger.Verbose3("-GetApproximateGateways returned {0} silos: {1}", localGatewaysCopy.Count, string.Join(",", localGatewaysCopy));
+            return localGatewaysCopy;
         }
 
         internal bool TryGetSiloName(SiloAddress siloAddress, out string siloName)
@@ -156,6 +170,10 @@ namespace Orleans.Runtime.MembershipService
             localTableCopy = tmpLocalTableCopy;
             localTableCopyOnlyActive = tmpLocalTableCopyOnlyActive;
             localNamesTableCopy = tmpLocalTableNamesCopy;
+
+            if (!string.IsNullOrEmpty(GlobalServiceId))
+                localGatewaysCopy = DetermineGateways();
+
             NotifyLocalSubscribers(MyAddress, CurrentStatus);
         }
 
@@ -221,6 +239,9 @@ namespace Orleans.Runtime.MembershipService
             localTableCopy = GetSiloStatuses(status => true, true); // all the silos including me.
             localTableCopyOnlyActive = GetSiloStatuses(status => status.Equals(SiloStatus.Active), true);    // only active silos including me.
             localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.InstanceName);   // all the silos excluding me.
+            
+            if (!string.IsNullOrEmpty(GlobalServiceId))
+                localGatewaysCopy = DetermineGateways();
 
             if (logger.IsVerbose) logger.Verbose("-Updated my local view of {0} status. It is now {1}.", entry.SiloAddress.ToLongString(), GetSiloStatus(entry.SiloAddress));
 
@@ -271,6 +292,58 @@ namespace Orleans.Runtime.MembershipService
                 }
             }
         }
+
+        private struct UpdateFaultCombo : IComparable<UpdateFaultCombo>
+        {
+            public int UpdateZone;
+            public int FaultZone;
+        
+            public int CompareTo(UpdateFaultCombo other)
+            {
+ 	             var i = UpdateZone.CompareTo(other.UpdateZone);
+                 return (i != 0) ? i : FaultZone.CompareTo(other.FaultZone);
+           }
+        }
+    
+
+        // deterministic function for designating the silos that should act as gateways
+        private List<SiloAddress> DetermineGateways()
+        {
+            Debug.Assert(!string.IsNullOrEmpty(GlobalServiceId)); // call only if this is a multi cluster
+
+            var candidates = localTableCopyOnlyActive.Keys.ToList();
+            candidates.Sort();
+
+            // take all the active silos if their count does not exceed the desired number of gateways
+            if (candidates.Count <= NumGatewaysPerCluster)
+                return candidates;
+
+            // group by fault/update zones
+            var groups = new Dictionary<UpdateFaultCombo,List<MembershipEntry>>();
+            foreach (var e in candidates.Select(c => localTable[c]))
+            {
+                List<MembershipEntry> list;
+                var key = new UpdateFaultCombo { FaultZone = e.FaultZone, UpdateZone = e.UpdateZone };
+                if (!groups.TryGetValue(key, out list))
+                    groups[key] = list = new List<MembershipEntry>();
+                list.Add(e);
+            }
+              
+            var keys = groups.Keys.ToList();
+            keys.Sort();
+
+            // pick round-robin from groups
+            var  result = new List<SiloAddress>();
+            for (int i = 0; result.Count < NumGatewaysPerCluster; i++)
+            {
+                var list = groups[keys[i % keys.Count]];
+                var col = i / keys.Count;
+                if (col < list.Count)
+                    result.Add(list[col].SiloAddress);
+            }
+            return result;
+        }
+
 
         public override string ToString()
         {

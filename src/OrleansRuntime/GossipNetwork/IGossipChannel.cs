@@ -96,14 +96,14 @@ namespace Orleans.Runtime.GossipNetwork
 
 
     /// <summary>
-    /// Gateways are either active (silo is active & a gateway), 
-    /// None (silo is not known to be a gateway), or Dead (silo was authoritatively determined dead)
+    /// Gateways are either active (silo is a gateway), 
+    /// or Inactive (silo is not a gateway)
     /// </summary>
     public enum GatewayStatus
     {
         None,
         Active,
-        Dead
+        Inactive
     }
 
     /// <summary>

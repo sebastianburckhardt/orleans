@@ -160,7 +160,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                 if (clusterId.Equals(Silo.CurrentSilo.SiloAddress.ClusterId))
                     continue;
 
-                var addr = clusterMembershipOracle.GetClusterGateway(clusterId);
+                var addr = clusterMembershipOracle.GetRandomClusterGateway(clusterId);
 
                 //BUG: Wrong generation of silo address is returned.
                 //Temp fix: make generation 0

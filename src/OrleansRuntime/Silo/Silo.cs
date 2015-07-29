@@ -490,7 +490,8 @@ namespace Orleans.Runtime
             if (GlobalConfig.GlobalServiceId != null && GlobalConfig.ClusterId != null /*&& GlobalConfig.TotalClusterSize > 0*/)
             {
                 ISchedulingContext clusterStatusContex = ((SystemTarget)clusterGatewayMembershipOracle).SchedulingContext;
-                scheduler.QueueTask(() => clusterGatewayMembershipOracle.Start(), clusterStatusContex);
+                scheduler.QueueTask(() => clusterGatewayMembershipOracle.Start(LocalSiloStatusOracle), clusterStatusContex)
+                                    .WaitWithThrow(initTimeout);
                 if (logger.IsVerbose) { logger.Verbose("Cluster gateway status oracle created successfully."); }
             }
 

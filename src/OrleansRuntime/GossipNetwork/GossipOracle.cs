@@ -9,23 +9,24 @@ using System.Threading.Tasks;
 
 namespace Orleans.Runtime.GossipNetwork
 {
-    internal class GossipOracle : SystemTarget, IGossipOracle
+    internal class GossipOracle : SystemTarget, IGossipOracle, ISiloStatusListener
     {
 
         private readonly List<IGossipChannel> gossipChannels;
-
-        private GatewayEntry lastinjected; // last local status injected to gossip network
 
         private readonly GossipOracleData gossipOracleData;
         private readonly TraceLogger logger;
         
         private GrainTimer timer;
+        DateTime lastrefresh;
+
+        private ISiloStatusOracle silostatusoracle;
 
         private string globalServiceId;
 
-        //TODO : make these global parameters
-        static TimeSpan ResendActiveStatusAfter = new TimeSpan(hours: 0, minutes: 10, seconds: 0);
-        static TimeSpan TimerInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 10);  
+        BackgroundWorker worker;
+
+
 
         public GossipOracle(SiloAddress silo, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.GossipOracleId, silo)
@@ -34,9 +35,9 @@ namespace Orleans.Runtime.GossipNetwork
             logger = TraceLogger.GetLogger("GossipOracle");
             gossipChannels = sources;
             gossipOracleData = new GossipOracleData(logger);
-            globalServiceId = config.GlobalServiceId; 
+            globalServiceId = config.GlobalServiceId;
+            worker = new BackgroundWorker(() => Work()); 
         }
-
 
         public bool IsFunctionalClusterGateway(SiloAddress siloAddress)
         {
@@ -55,17 +56,19 @@ namespace Orleans.Runtime.GossipNetwork
             return clusters;
         }
 
+        Random randomgenerator = new Random();
 
-        public SiloAddress GetClusterGateway(string cluster)
+        public SiloAddress GetRandomClusterGateway(string cluster)
         {
             //TraceLogger.GetLogger("CMOD").Info("local data {0}", localTable);
             var gateways = gossipOracleData.Current.Gateways.Values
                 .Where(g => g.SiloAddress.ClusterId.Equals(cluster) && g.Status == GatewayStatus.Active)
-                .Select(g => g.SiloAddress);
+                .Select(g => g.SiloAddress)
+                .ToList();
 
-            return gateways.FirstOrDefault();
+
+            return gateways[randomgenerator.Next(gateways.Count)];
         }
-
 
         public MultiClusterConfiguration GetMultiClusterConfiguration()
         {
@@ -84,20 +87,26 @@ namespace Orleans.Runtime.GossipNetwork
         }
     
 
-        public Task Start()
+        public async Task Start(ISiloStatusOracle oracle)
         {
             logger.Info(ErrorCode.Gossip_Starting, "GossipOracle starting on {0} ", Silo);
             try
             {
+                this.silostatusoracle = oracle;
+
+                silostatusoracle.SubscribeToSiloStatusEvents(this);
+
+                await Gossip();
+
                 StartTimer();
+
+                logger.Info(ErrorCode.Gossip_Starting, "GossipOracle started on {0} ", Silo);
             }
             catch (Exception exc)
             {
                 logger.Error(ErrorCode.Gossip_FailedToStart, "GossipOracle failed to start {0}", exc);
                 throw;
             }
-
-            return TaskDone.Done;
         }
 
         private void StartTimer()
@@ -105,22 +114,31 @@ namespace Orleans.Runtime.GossipNetwork
             if (timer != null)
                 timer.Dispose();
 
-            timer = GrainTimer.FromTaskCallback(
-                OnGetTimer, null, TimeSpan.Zero, TimerInterval, "Gossip.GatewayTimer");
+            timer = GrainTimer.FromTimerCallback(
+                (object dummy) => {
+                    if (logger.IsVerbose2)
+                        logger.Verbose2("-timer");
+                    worker.Notify();
+                    }, null, TimeSpan.Zero, TimerInterval, "Gossip.GatewayTimer");
 
             timer.Start();
         }
 
-        private async Task OnGetTimer(object data)
+        //TODO : make these global parameters
+        static TimeSpan ResendActiveStatusAfter = new TimeSpan(hours: 0, minutes: 10, seconds: 0);
+        static TimeSpan RefreshInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 10);
+        static TimeSpan TimerInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 10);  
+
+        // called in response to changed status, and periodically
+        // only one call active at a time
+        private async Task Work()
         {
-            if (logger.IsVerbose2)
-                logger.Verbose2("-heartbeat");
+            var localstatuschanged = InjectLocalStatus();
 
-            timer.CheckTimerDelay();
-
-            InjectLocalStatus();
-
-            await Gossip();
+            if (localstatuschanged || (DateTime.UtcNow - lastrefresh) > RefreshInterval)
+            {
+                await Gossip();
+            }
         }
 
         private async Task Gossip()
@@ -129,6 +147,8 @@ namespace Orleans.Runtime.GossipNetwork
             var gossiptasks = gossipChannels.Select(s => GossipWith(s));
 
             await Task.WhenAll(gossiptasks);
+
+            lastrefresh = DateTime.UtcNow;
 
             if (gossiptasks.All(t => ! t.Result))
                 logger.Error(ErrorCode.Gossip_CommunicationFailure, "All Gossip channels failed");
@@ -159,16 +179,16 @@ namespace Orleans.Runtime.GossipNetwork
         {
             var currentstatus = DetermineLocalStatus();
 
+            GatewayEntry whatsthere;
+
             // send if status is changed, or we are active and haven't said so in a while
-            if (lastinjected == null
-                || currentstatus.Status != lastinjected.Status
+            if (! gossipOracleData.Current.Gateways.TryGetValue(Silo, out whatsthere)
+                || whatsthere.Status != currentstatus.Status
                 || (currentstatus.Status == GatewayStatus.Active 
-                      && currentstatus.HeartbeatTimestamp - lastinjected.HeartbeatTimestamp > ResendActiveStatusAfter))
+                      && currentstatus.HeartbeatTimestamp - whatsthere.HeartbeatTimestamp > ResendActiveStatusAfter))
             {
                 // update current gossip data with status
                 gossipOracleData.ApplyGossipDataAndNotify(new GossipData(currentstatus));
-
-                lastinjected = currentstatus;
 
                 return true;
             }
@@ -178,19 +198,24 @@ namespace Orleans.Runtime.GossipNetwork
 
         private GatewayEntry DetermineLocalStatus()
         {
-            //TODO determine actual gateway status
-            // for now we just assume EVERYBODY is an active gateway
+            var allgateways = silostatusoracle.GetApproximateGateways();
 
             return new GatewayEntry()
             {
                 SiloAddress = Silo,
-                Status = GatewayStatus.Active,
+                Status = allgateways.Contains(Silo) ? GatewayStatus.Active : GatewayStatus.Inactive,
                 HeartbeatTimestamp = DateTime.UtcNow
             };
         }
 
 
-
+        public void SiloStatusChangeNotification(SiloAddress updatedSilo, SiloStatus status)
+        {
+            if (updatedSilo.Equals(Silo))
+            {
+                worker.Notify();
+            }
+        }
 
     }
 }

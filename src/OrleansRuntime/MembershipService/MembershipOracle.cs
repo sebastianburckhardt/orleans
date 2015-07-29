@@ -262,6 +262,12 @@ namespace Orleans.Runtime.MembershipService
             return membershipOracleData.GetApproximateSiloStatuses(onlyActive);
         }
 
+        // ONLY access gatewaysLocalCopy to prevent races
+        public IEnumerable<SiloAddress> GetApproximateGateways()
+        {
+            return membershipOracleData.GetApproximateGateways();
+        }
+
         public bool TryGetSiloName(SiloAddress siloAddress, out string siloName)
         {
             return membershipOracleData.TryGetSiloName(siloAddress, out siloName);

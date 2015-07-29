@@ -190,6 +190,11 @@ namespace Orleans.Runtime.Configuration
         public bool UseLivenessGossip { get; set; }
 
         /// <summary>
+        /// How many silos per cluster should be designated to serve as gateways.
+        /// </summary>
+        public int NumGatewaysPerCluster { get; set; }
+ 
+        /// <summary>
         /// Service Id.
         /// </summary>
         public Guid ServiceId { get; set; }
@@ -375,6 +380,7 @@ namespace Orleans.Runtime.Configuration
         private const int DEFAULT_LIVENESS_NUM_VOTES_FOR_DEATH_DECLARATION = 2;
         private const int DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT = 2;
         private const bool DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP = true;
+        private const int DEFAULT_NUM_GATEWAYS_PER_CLUSTER = 4;
         private const int DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE = 20;
         private const int DEFAULT_CACHE_SIZE = 1000000;
         private static readonly TimeSpan DEFAULT_INITIAL_CACHE_TTL = TimeSpan.FromSeconds(30);
@@ -413,6 +419,7 @@ namespace Orleans.Runtime.Configuration
             NumMissedTableIAmAliveLimit = DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT;
             UseLivenessGossip = DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP;
             MaxJoinAttemptTime = DEFAULT_LIVENESS_MAX_JOIN_ATTEMPT_TIME;
+            NumGatewaysPerCluster = DEFAULT_NUM_GATEWAYS_PER_CLUSTER;
             ExpectedClusterSizeConfigValue = new ConfigValue<int>(DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE, true);
             ServiceId = Guid.Empty;
             DeploymentId = Environment.UserName;

@@ -1045,9 +1045,10 @@ namespace Orleans
 
         GossipBase = Runtime + 3800,
         Gossip_Starting = GossipBase + 1,
-        Gossip_FailedToStart = GossipBase + 2,
-        Gossip_LocalSubscriberException = GossipBase + 3,
-        Gossip_CommunicationFailure = GossipBase + 4,
+        Gossip_Started = GossipBase + 2,
+        Gossip_FailedToStart = GossipBase + 3,
+        Gossip_LocalSubscriberException = GossipBase + 4,
+        Gossip_CommunicationFailure = GossipBase + 5,
     }
 }
 // ReSharper restore InconsistentNaming
