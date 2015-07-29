@@ -149,6 +149,12 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 
             var clusterMembershipOracle = Silo.CurrentSilo.LocalClusterMembershipOracle;
 
+            if (clusterMembershipOracle == null)
+            {
+                //No cluster setup available. will ignore.
+                return new List<RemoteClusterActivationResponse>();
+            }
+
             var activeClusters = clusterMembershipOracle.GetActiveClusters();
 
             List<Task<RemoteClusterActivationResponse>> activationResonseTasks = new List<Task<RemoteClusterActivationResponse>>();
@@ -160,11 +166,11 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                 if (clusterId.Equals(Silo.CurrentSilo.SiloAddress.ClusterId))
                     continue;
 
-                var addr = clusterMembershipOracle.GetRandomClusterGateway(clusterId);
+                var clusterGatewayAddress = clusterMembershipOracle.GetRandomClusterGateway(clusterId);
 
                 //BUG: Wrong generation of silo address is returned.
                 //Temp fix: make generation 0
-                var clusterGatewayAddress = SiloAddress.New(addr.Endpoint, 0, clusterId);
+                //var clusterGatewayAddress = SiloAddress.New(addr.Endpoint, 0, clusterId);
 
                 //get the reference for the system target on the gateway. The gateway will be responsible for forwarding the request to appropriate silo if it is not the owner.
                 //var clusterGrainDir = GetClusterDirectoryReference(clusterGatewayAddress);
