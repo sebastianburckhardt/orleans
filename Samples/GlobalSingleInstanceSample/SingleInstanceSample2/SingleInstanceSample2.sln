@@ -14,9 +14,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloEnvironmentGrains", ".
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloEnvironmentInterfaces", "..\SingleInstanceSample1\HelloEnvironmentInterfaces\HelloEnvironmentInterfaces.csproj", "{163CCE80-C506-468C-9B28-E2FF198097E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansAzureSilos", "..\SingleInstanceSample1\OrleansAzureSilos\OrleansAzureSilos.csproj", "{6B7E7C7D-FCB5-415C-A361-E653CB9EAD72}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansAzureSilos", ".\OrleansAzureSilos\OrleansAzureSilos.csproj", "{6B7E7C7D-FCB5-415C-A361-E653CB9EAD72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRole", "..\SingleInstanceSample1\WebRole\WebRole.csproj", "{313B557F-4B35-4064-BAC7-FDC47845C534}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRole", ".\WebRole\WebRole.csproj", "{313B557F-4B35-4064-BAC7-FDC47845C534}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

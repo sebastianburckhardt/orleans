@@ -12,8 +12,8 @@
       <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="UseDevelopmentStorage=true" />
     </StorageProviders>
     <GlobalService Id ="singleinstancesample"/>
-    <Cluster Id ="0"/>
-  </Globals>  
+    <Cluster Id ="1"/>
+  </Globals>
   <Defaults>
     <!--
 	  To turn tracing off, set DefaultTraceLevel="Off" and have no overrides. To see a minimum of messages, set DefaultTraceLevel="Error".

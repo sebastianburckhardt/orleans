@@ -56,7 +56,7 @@
     <DiagnosticsConfiguration Include="WebRoleContent\diagnostics.wadcfgx" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SingleInstanceSample1\OrleansAzureSilos\OrleansAzureSilos.csproj">
+    <ProjectReference Include="..\OrleansAzureSilos\OrleansAzureSilos.csproj">
       <Name>OrleansAzureSilos</Name>
       <Project>{6b7e7c7d-fcb5-415c-a361-e653cb9ead72}</Project>
       <Private>True</Private>
@@ -64,7 +64,7 @@
       <RoleName>OrleansAzureSilos</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
-    <ProjectReference Include="..\..\SingleInstanceSample1\WebRole\WebRole.csproj">
+    <ProjectReference Include="..\WebRole\WebRole.csproj">
       <Name>WebRole</Name>
       <Project>{313b557f-4b35-4064-bac7-fdc47845c534}</Project>
       <Private>True</Private>
