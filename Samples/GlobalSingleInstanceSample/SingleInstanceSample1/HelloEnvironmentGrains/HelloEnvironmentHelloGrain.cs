@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HelloEnvironmentInterfaces;
+using Orleans;
 using Orleans.MultiCluster;
 namespace HelloEnvironmentGrains
 {
@@ -39,6 +40,12 @@ namespace HelloEnvironmentGrains
         {
             messages.Add(hello);
             return Task.FromResult(string.Join("\n", messages));
+        }
+
+        public Task TryDeactivate()
+        {
+            base.DeactivateOnIdle();
+            return TaskDone.Done;
         }
     }
 }

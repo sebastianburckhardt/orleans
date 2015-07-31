@@ -528,7 +528,7 @@ namespace Orleans.Runtime.GrainDirectory
         //    //returnedAddress
         //}
 
-        private async Task<TOut> PerformLocalOrRemoteWithRetry<TIn, TOut>(GrainId grain, TIn param,
+        public async Task<TOut> PerformLocalOrRemoteWithRetry<TIn, TOut>(GrainId grain, TIn param,
             Func<TIn, Task<TOut>> localAction, Func<TIn, SiloAddress, Task<TOut>> remoteAction, bool withRetry)
         {
             SiloAddress owner = CalculateTargetSilo(grain);

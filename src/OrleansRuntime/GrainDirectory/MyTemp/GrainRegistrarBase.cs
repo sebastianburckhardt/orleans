@@ -25,7 +25,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             return TaskDone.Done;
         }
 
-        public Task DeleteAsync(GrainId gid)
+        public virtual Task DeleteAsync(GrainId gid)
         {
             DirectoryPartition.RemoveGrain(gid);
             return TaskDone.Done;

@@ -24,9 +24,39 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             router = r;
         }
 
-        public async Task<RemoteClusterActivationResponse> ProcessActivationRequest(GrainId grain, string requestClusterId, int retries)
+        public async Task<RemoteClusterActivationResponse> ProcessActivationRequest(GrainId grain, string requestClusterId, bool withRetry = true)
         {
-            var response = new RemoteClusterActivationResponse();
+
+            RemoteClusterActivationResponse response;
+
+            //check if the requesting cluster id is in the current configuration view of this cluster, if not, reject the message.
+            var gossipOracle = Orleans.Runtime.Silo.CurrentSilo.LocalClusterMembershipOracle;
+            if (gossipOracle == null || !gossipOracle.GetActiveClusters().Any(t => t.Equals(requestClusterId)))            
+            {
+                response = new RemoteClusterActivationResponse();
+                response.ResponseStatus = ActivationResponseStatus.FAILED;
+                response.ExistingActivationAddress = null;
+                return response;
+            }
+
+
+            response = await router.PerformLocalOrRemoteWithRetry(grain, grain,
+                async (gid) => await ProcessRequestLocal(gid, requestClusterId),
+                async (gid, owner) =>
+                {
+                    var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, owner);
+                    return await clusterGrainDir.ProcessActivationRequest(gid, requestClusterId, false);
+                }, withRetry);
+
+            return response;
+        }
+
+        private async Task<RemoteClusterActivationResponse> ProcessRequestLocal(GrainId grain, string requestClusterId)
+        {
+            RemoteClusterActivationResponse response = new RemoteClusterActivationResponse();
+            
+            //This function will be called only on the Owner silo.
+    
             //Optimize? Look in the cache first?
             //NOTE: THIS COMMENT IS FROM LOOKUP. HAS IMPLICATIONS ON "OWNED" INVARIANCE.
             //// It can happen that we cannot find the grain in our partition if there were 
@@ -40,12 +70,6 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 
                 if (!foundlocally)
                 {
-                    var result = await router.FullLookUp(grain, withRetry: true);
-                    addresses = result.Item1;
-                }
-
-                if (addresses == null || !addresses.Any())
-                {
                     //If no activation found in the cluster, return response as PASS.
                     response.ResponseStatus = ActivationResponseStatus.PASS;
                 }
@@ -54,7 +78,8 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                     //Find the Activation Status for the entry and return appropriate value.
                     //For now returning the address as is.
 
-                    var act = addresses.FirstOrDefault(); //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
+                    var act = addresses.FirstOrDefault();
+                        //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
 
                     if (act == null)
                     {
@@ -77,7 +102,8 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                                 response.ExistingActivationAddress = null;
                                 break;
                             case ActivationStatus.REQUESTED_OWNERSHIP:
-                                var iWin = MultiClusterUtils.ActivationPrecedenceFunc(grain, router.MyAddress.ClusterId, requestClusterId);
+                                var iWin = MultiClusterUtils.ActivationPrecedenceFunc(grain, router.MyAddress.ClusterId,
+                                    requestClusterId);
                                 if (iWin)
                                 {
                                     response.ResponseStatus = ActivationResponseStatus.FAILED;
@@ -87,7 +113,8 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                                 {
                                     response.ResponseStatus = ActivationResponseStatus.PASS;
                                     response.ExistingActivationAddress = null;
-                                    //await UpdateActivationStatus(grain, act.Item2, ActivationStatus.RACE_LOSER, LocalGrainDirectory.NUM_RETRIES);
+                                    //update own activation status to race looser.
+                                    router.DirectoryPartition.UpdateActivationStatus(grain, act.Activation, act.Status);                                    
                                 }
                                 break;
                         }

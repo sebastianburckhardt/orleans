@@ -49,6 +49,15 @@ namespace Orleans.Azure.Samples.Web {
         protected global::System.Web.UI.WebControls.Button ButtonSayHello;
         
         /// <summary>
+        /// DeactivateButton control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button DeactivateButton;
+        
+        /// <summary>
         /// ReplyText control.
         /// </summary>
         /// <remarks>

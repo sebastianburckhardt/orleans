@@ -30,7 +30,7 @@ namespace Orleans.SystemTargetInterfaces
         Task<RemoteClusterActivationResponse> ProcessActivationRequest(
             GrainId grain,
             string requestClusterId,
-            int retries);
+            bool withRetry = true);
 
         Task<Dictionary<ActivationId, GrainId>> GetDoubtfulActivations();
 

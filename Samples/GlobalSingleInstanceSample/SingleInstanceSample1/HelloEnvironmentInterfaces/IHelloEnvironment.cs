@@ -31,5 +31,6 @@ namespace HelloEnvironmentInterfaces
     public interface IHelloEnvironment : Orleans.IGrainWithIntegerKey
     {
         Task<string> SayHello(string hello);
+        Task TryDeactivate();
     }
 }

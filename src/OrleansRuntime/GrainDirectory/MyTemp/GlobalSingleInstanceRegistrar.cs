@@ -18,6 +18,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
         {
         }
 
+#region Registrar API
         public override async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address)
         {
             //Algorithm:
@@ -137,6 +138,17 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             return myClusterRegisterdAddress;
         }
 
+
+        public override Task UnregisterAsync(ActivationAddress address, bool force)
+        {
+            var activationStatus = DirectoryPartition.GetActivationStatus(address);
+            return base.UnregisterAsync(address, force);
+        }
+
+        #endregion
+
+
+#region Helper functions.
         /// <summary>
         /// Sends activation requests to all the other clusters (through the cluster gateways) in parallel and waits for all the responses.
         /// </summary>
@@ -176,7 +188,7 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                 //var clusterGrainDir = GetClusterDirectoryReference(clusterGatewayAddress);
                 var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
 
-                activationResonseTasks.Add(clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.SiloAddress.ClusterId, NUM_RETRIES));
+                activationResonseTasks.Add(clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.SiloAddress.ClusterId, true));
             }
             try
             {
@@ -229,4 +241,5 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             }            
         }
     }
+#endregion
 }

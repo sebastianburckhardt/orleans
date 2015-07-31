@@ -75,5 +75,11 @@ namespace Orleans.Azure.Samples.Web
                 this.ReplyText.Text = "Error connecting to Orleans: " + exc + " at " + DateTime.Now;
             }
         }
+
+        protected async void DeactivateButton_Click(object sender, EventArgs e)
+        {
+            IHelloEnvironment grainRef = GrainClient.GrainFactory.GetGrain<IHelloEnvironment>(0);
+            await grainRef.TryDeactivate();
+        }
     }
 }

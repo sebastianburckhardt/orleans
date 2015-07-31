@@ -15,6 +15,8 @@
                 <asp:TextBox ID="HelloTextBox" runat="server">100</asp:TextBox>
                 <asp:Button ID="ButtonSayHello" runat="server" Text="Ask Orleans it's details" 
                     onclick="ButtonSayHello_Click" />
+                <asp:Button ID="DeactivateButton" runat="server" Text="Deactivate Grain" 
+                    onclick="DeactivateButton_Click" />
             </p>
             <p id="ReplySpace">
                 <asp:TextBox ID="ReplyText" runat="server" ReadOnly="true" Width="100%" 
