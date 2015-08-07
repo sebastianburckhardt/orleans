@@ -119,7 +119,6 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
 
                     //If we reach here, implies that we recived few <failed,null> responses but non <failed, A> response. Hence wait for some time and retry the protocol.
 
-                    //todo: SHOULD WE TRANSITION TO REQUESTED_OWNERSHIP? WHAT IF WE TRANSITIONED TO RACE_LOOSER IN THE MEANWHILE?
                     await UpdateSingleInstanceActivationStatus(address.Grain, localAct.Activation, ActivationStatus.REQUESTED_OWNERSHIP);
                     await Task.Delay(RetryDelay);
                     continue;
@@ -128,21 +127,66 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                 {
                     //if control reaches here, it implies that we have a combination of Pass and Faulted responses. (i.e. there might be a partition, or come cluster is unreachable/down).
                     //So set the status to doubtful.
-                    await UpdateSingleInstanceActivationStatus(myClusterRegisterdAddress.Item1.Grain, myClusterRegisterdAddress.Item1.Activation, ActivationStatus.DOUBTFUL);
+                    
+                    //Note (**A**) the Change to protocol per discussion with Sebastian. We no longer make the state as DOUBTFUL. Instead leave it as REQUESTED_OWNERSHIP and just return. The periodic reconcialiation will kick in as appropriate.
+
+                    //await UpdateSingleInstanceActivationStatus(myClusterRegisterdAddress.Item1.Grain, myClusterRegisterdAddress.Item1.Activation, ActivationStatus.DOUBTFUL);
                     return myClusterRegisterdAddress;
                 }
             }
 
             //directory is not stable. Optimisically, set the status to doubtful and continue operations.
-            await UpdateSingleInstanceActivationStatus(myClusterRegisterdAddress.Item1.Grain, myClusterRegisterdAddress.Item1.Activation, ActivationStatus.DOUBTFUL);
+            
+            //SEE COMMENT ABOVE (**A**)
+            //await UpdateSingleInstanceActivationStatus(myClusterRegisterdAddress.Item1.Grain, myClusterRegisterdAddress.Item1.Activation, ActivationStatus.DOUBTFUL);
             return myClusterRegisterdAddress;
         }
 
 
-        public override Task UnregisterAsync(ActivationAddress address, bool force)
+        public override async Task UnregisterAsync(ActivationAddress address, bool force)
         {
-            var activationStatus = DirectoryPartition.GetActivationStatus(address);
-            return base.UnregisterAsync(address, force);
+            await base.UnregisterAsync(address, force);
+
+            if (address.Status == ActivationStatus.OWNED)
+            {
+                //send invalidate cache requests to other clusters.
+                var clusterMembershipOracle = Silo.CurrentSilo.LocalClusterMembershipOracle;
+
+                if (clusterMembershipOracle == null)
+                {
+                    //No cluster setup available. will ignore.
+                    return;
+                }
+
+                var activeClusters = clusterMembershipOracle.GetActiveClusters();
+
+                List<Task> responseTasks = new List<Task>();
+
+                //send the request to each of the cluster's gateways and wait for response. 
+                foreach (var clusterId in activeClusters)
+                {
+                    //Do not send request to the self cluster.
+                    if (clusterId.Equals(Silo.CurrentSilo.SiloAddress.ClusterId))
+                        continue;
+
+                    var clusterGatewayAddress = clusterMembershipOracle.GetRandomClusterGateway(clusterId);
+
+                    //get the reference for the system target on the gateway. The gateway will be responsible for forwarding the request to appropriate silo if it is not the owner.
+                    //var clusterGrainDir = GetClusterDirectoryReference(clusterGatewayAddress);
+                    var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+
+                    responseTasks.Add(clusterGrainDir.InvalidateCache(address.Grain));
+                }
+
+                try
+                {
+                    await Task.WhenAll(responseTasks);
+                }
+                catch (Exception ex)
+                {
+                    //nothing to do. further invalidation will be handled by the periodic timer.
+                }
+            }            
         }
 
         #endregion

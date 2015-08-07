@@ -21,8 +21,9 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
         public ClusterGrainDirectory(LocalGrainDirectory r, GrainId grainId, bool lowPriority)
             : base(grainId, r.MyAddress, lowPriority)
         {
-            router = r;
+            router = r;        
         }
+
 
         public async Task<RemoteClusterActivationResponse> ProcessActivationRequest(GrainId grain, string requestClusterId, bool withRetry = true)
         {
@@ -65,10 +66,10 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             try
             {
                 //var activations = await LookUp(grain, LocalGrainDirectory.NUM_RETRIES);
-                List<ActivationAddress> addresses;
-                bool foundlocally = router.LocalLookup(grain, out addresses) && addresses != null && addresses.Count > 0;
+                //since we are the owner, we can look directly into the partition. No need to lookinto the cache.
+                var localResult = router.DirectoryPartition.LookUpGrain(grain);
 
-                if (!foundlocally)
+                if (localResult == null)
                 {
                     //If no activation found in the cluster, return response as PASS.
                     response.ResponseStatus = ActivationResponseStatus.PASS;
@@ -76,10 +77,13 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                 else
                 {
                     //Find the Activation Status for the entry and return appropriate value.
-                    //For now returning the address as is.
 
+                    
+                    var addresses = localResult.Item1;
+                    
+                    //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
                     var act = addresses.FirstOrDefault();
-                        //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
+                    
 
                     if (act == null)
                     {
@@ -92,7 +96,6 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
                         switch (existingActivationStatus)
                         {
                             case ActivationStatus.OWNED:
-                            case ActivationStatus.DOUBTFUL:
                                 response.ResponseStatus = ActivationResponseStatus.FAILED;
                                 response.ExistingActivationAddress = act;
                                 break;
@@ -130,24 +133,25 @@ namespace Orleans.Runtime.GrainDirectory.MyTemp
             return response;
         }
 
-        public Task<Dictionary<ActivationId, GrainId>> GetDoubtfulActivations()
+        public async Task<List<Tuple<GrainId, RemoteClusterActivationResponse>>> ProcessRemoteDoubtfulActivations(List<GrainId> grains, string sendingClusterId)
         {
-            throw new NotImplementedException();
+            List<Tuple<GrainId, RemoteClusterActivationResponse>> responses = new List<Tuple<GrainId, RemoteClusterActivationResponse>>();
+
+            var collectDoubtfuls = grains
+                .Select(async g =>
+                {
+                    var r = await ProcessActivationRequest(g, sendingClusterId, false);
+
+                    responses.Add(Tuple.Create(g, r));
+                });
+
+            await Task.WhenAll(collectDoubtfuls);
+            return responses.ToList();
         }
 
-        public Task<Tuple<Dictionary<ActivationId, GrainId>, bool>> ProcessRemoteDoubtfulActivations(Dictionary<ActivationId, GrainId> addrList, int sendingClusterId)
+        public async Task InvalidateCache(GrainId gid)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<Dictionary<ActivationId, GrainId>> FindLoserDoubtfulActivations(Dictionary<ActivationId, GrainId> remoteDoubtful, int remoteClusterId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ProcessAntiEntropyResults(Dictionary<ActivationId, GrainId> losers, Dictionary<ActivationId, GrainId> winners)
-        {
-            throw new NotImplementedException();
+            
         }
     }
 }

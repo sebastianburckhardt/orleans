@@ -191,7 +191,7 @@ namespace OrleansManager
             var directory = GrainClient.InternalGrainFactory.GetSystemTarget<IRemoteGrainDirectory>(Constants.DirectoryServiceId, silo);
 
             WriteStatus(string.Format("**Calling DeleteGrain({0}, {1}, {2})", silo, grainId, RETRIES));
-            directory.DeleteGrain(grainId, true).Wait();
+            directory.DeleteGrainAsync(grainId, true).Wait();
             WriteStatus(string.Format("**DeleteGrain finished OK."));
         }
 
@@ -206,7 +206,7 @@ namespace OrleansManager
   
             WriteStatus(string.Format("**Calling LookupGrain({0}, {1}, {2})", silo, grainId, RETRIES));
             //Tuple<List<Tuple<SiloAddress, ActivationId>>, int> lookupResult = await directory.FullLookUp(grainId, true);
-            var lookupResult = await directory.FullLookUp(grainId, true);
+            var lookupResult = await directory.LookUpActivationAsync(grainId, true);
 
             WriteStatus(string.Format("**LookupGrain finished OK. Lookup result is:"));
             var list = lookupResult.Item1;

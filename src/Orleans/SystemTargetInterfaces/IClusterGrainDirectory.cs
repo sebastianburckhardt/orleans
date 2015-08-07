@@ -32,18 +32,10 @@ namespace Orleans.SystemTargetInterfaces
             string requestClusterId,
             bool withRetry = true);
 
-        Task<Dictionary<ActivationId, GrainId>> GetDoubtfulActivations();
+        Task<List<Tuple<GrainId, RemoteClusterActivationResponse>>> ProcessRemoteDoubtfulActivations(
+            List<GrainId> grains,
+            string sendingClusterId);
 
-        Task<Tuple<Dictionary<ActivationId, GrainId>, bool>> ProcessRemoteDoubtfulActivations(
-            Dictionary<ActivationId, GrainId> addrList,
-            int sendingClusterId);
-
-        Task<Dictionary<ActivationId, GrainId>> FindLoserDoubtfulActivations(
-            Dictionary<ActivationId, GrainId> remoteDoubtful,
-            int remoteClusterId);
-
-        Task ProcessAntiEntropyResults(
-            Dictionary<ActivationId, GrainId> losers,
-            Dictionary<ActivationId, GrainId> winners);
+        Task InvalidateCache(GrainId gid);
     }
 }

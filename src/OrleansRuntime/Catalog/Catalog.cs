@@ -491,7 +491,7 @@ namespace Orleans.Runtime
                                     String.Format("Failed to RegisterActivationInGrainDirectory for {0}.",
                                         activation), ex);
                                 // Need to undo the registration we just did earlier
-                                scheduler.RunOrQueueTask(() => directory.Unregister(address),
+                                scheduler.RunOrQueueTask(() => directory.UnregisterAsync(address),
                                     SchedulingContext).Ignore();
 
                                 RerouteAllQueuedMessages(activation, null,
@@ -504,7 +504,7 @@ namespace Orleans.Runtime
                             logger.Warn(ErrorCode.Catalog_Failed_SetupActivationState,
                                 String.Format("Failed to SetupActivationState for {0}.", activation), ex);
                             // Need to undo the registration we just did earlier
-                            scheduler.RunOrQueueTask(() => directory.Unregister(address),
+                            scheduler.RunOrQueueTask(() => directory.UnregisterAsync(address),
                                 SchedulingContext).Ignore();
 
                             RerouteAllQueuedMessages(activation, null, "Failed SetupActivationState", ex);
@@ -515,7 +515,7 @@ namespace Orleans.Runtime
                             logger.Warn(ErrorCode.Catalog_Failed_InvokeActivate,
                                 String.Format("Failed to InvokeActivate for {0}.", activation), ex);
                             // Need to undo the registration we just did earlier
-                            scheduler.RunOrQueueTask(() => directory.Unregister(address),
+                            scheduler.RunOrQueueTask(() => directory.UnregisterAsync(address),
                                 SchedulingContext).Ignore();
 
                             RerouteAllQueuedMessages(activation, null, "Failed InvokeActivate", ex);
@@ -1044,7 +1044,7 @@ namespace Orleans.Runtime
 
         private async Task RegisterActivationInGrainDirectory(ActivationAddress address, bool singleActivationMode)
         {
-            var returnedAddress = await scheduler.RunOrQueueTask(() => directory.Register(address), this.SchedulingContext);
+            var returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext);
 
             if (singleActivationMode)
             {            
@@ -1105,7 +1105,7 @@ namespace Orleans.Runtime
 
         public Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain)
         {
-            return scheduler.RunOrQueueTask(() => directory.FullLookUp(grain, true), this.SchedulingContext);
+            return scheduler.RunOrQueueTask(() => directory.LookUpActivationAsync(grain, true), this.SchedulingContext);
         }
 
         public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)

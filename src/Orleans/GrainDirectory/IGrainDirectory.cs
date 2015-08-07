@@ -16,7 +16,8 @@ namespace Orleans.GrainDirectory
     internal enum ActivationStatus
     {
         OWNED,                      // An activation in state OWNED is definitively owned by a silo.
-        DOUBTFUL,                   // Failed to contact one or more clusters while registering, so may be a duplicate.
+        //DOUBTFUL,                   // Failed to contact one or more clusters while registering, so may be a duplicate. This state is not required.
+
         REQUESTED_OWNERSHIP,        // The silo is in the process of trying to create a grain's activation.
         CACHED,                     // The activation reference is cached.
         RACE_LOSER,                 // The activation lost a race condition.
@@ -30,7 +31,7 @@ namespace Orleans.GrainDirectory
         /// <param name="address">The address of the new activation.</param>
         /// <param name="withRetry">Indicates whether or not to retry the operation.</param>
         /// <returns>The registered address and the version associated with this directory mapping.</returns>
-        Task<Tuple<ActivationAddress, int>> Register(ActivationAddress address, bool withRetry = true);
+        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool withRetry = true);
 
         /// <summary>
         /// Removes the record for an existing activation from the directory service.
@@ -39,7 +40,7 @@ namespace Orleans.GrainDirectory
         /// </summary>
         /// <param name="address">The address of the activation to remove.</param>
         /// <returns>whether the operation was successfully applied locally. Returns false if this silo is not the owner anymore.</returns>
-        Task<bool> Unregister(ActivationAddress address, bool force = true, bool withRetry = true);
+        Task<bool> UnregisterAsync(ActivationAddress address, bool force = true, bool withRetry = true);
 
         /// <summary>
         /// Unregister a batch of addresses at once
@@ -55,14 +56,14 @@ namespace Orleans.GrainDirectory
         /// <param name="grain">The ID of the grain to look up.</param>
         /// <returns>An acknowledgement that the deletion has completed.
         /// It is safe to ignore this result.</returns>
-        Task<bool> DeleteGrain(GrainId grain, bool withRetry = true);
+        Task<bool> DeleteGrainAsync(GrainId grain, bool withRetry = true);
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="gid"></param>
-        /// <param name="withRetry"></param>
+        /// <param name="fullLookup"></param>
         /// <returns></returns>
-        Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true);
+        Task<Tuple<List<ActivationAddress>, int>> LookUpActivationAsync(GrainId gid, bool fullLookup = true);
     }
 }

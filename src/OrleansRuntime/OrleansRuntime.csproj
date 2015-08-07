@@ -80,6 +80,7 @@
     <Compile Include="GossipNetwork\IGossipListener.cs" />
     <Compile Include="GossipNetwork\IGossipOracle.cs" />
     <Compile Include="GrainDirectory\MyTemp\ClusterGrainDirectory.cs" />
+    <Compile Include="GrainDirectory\MyTemp\GlobalSingleInstanceActivationMaintainer.cs" />
     <Compile Include="GrainDirectory\MyTemp\GlobalSingleInstanceRegistrar.cs" />
     <Compile Include="GrainDirectory\MyTemp\GrainDirectoryManager.cs" />
     <Compile Include="GrainDirectory\MyTemp\GrainRegistrarBase.cs" />
@@ -213,6 +214,7 @@
     <None Include="..\Orleans.snk">
       <Link>Orleans.snk</Link>
     </None>
+    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -45,11 +45,11 @@ namespace Orleans.Runtime.GrainDirectory
             logger = TraceLogger.GetLogger("Orleans.GrainDirectory.CacheValidator", TraceLogger.LoggerType.Runtime);
         }
 
-        public async Task<Tuple<ActivationAddress, int>> Register(ActivationAddress address, bool withRetry /*ignored*/)
+        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool withRetry /*ignored*/)
         {
             router.RegistrationsRemoteReceived.Increment();
             
-            return await router.Register(address, false);
+            return await router.RegisterAsync(address, false);
         }
 
         public Task RegisterMany(List<ActivationAddress> addresses, int retries)
@@ -62,13 +62,13 @@ namespace Orleans.Runtime.GrainDirectory
             if (addresses.Count == 0)
                 return TaskDone.Done;
             
-            return Task.WhenAll(addresses.Select(addr => Register(addr, false)));
+            return Task.WhenAll(addresses.Select(addr => RegisterAsync(addr, false)));
         }
 
-        public async Task<bool> Unregister(ActivationAddress address, bool force = true, bool withRetry = true /*ignored*/)
+        public async Task<bool> UnregisterAsync(ActivationAddress address, bool force = true, bool withRetry = true /*ignored*/)
         {
             router.UnregistrationsRemoteReceived.Increment();
-            return await router.Unregister(address, force, false);
+            return await router.UnregisterAsync(address, force, false);
         }
 
         public async Task<List<ActivationAddress>> UnregisterManyAsync(List<ActivationAddress> addresses, bool withRetry = true /*ignored*/)
@@ -77,15 +77,15 @@ namespace Orleans.Runtime.GrainDirectory
             return await router.UnregisterManyAsync(addresses, false);
         }
 
-        public async Task<bool> DeleteGrain(GrainId grain, bool withRetry = true /*ignored*/)
+        public async Task<bool> DeleteGrainAsync(GrainId grain, bool withRetry = true /*ignored*/)
         {
-            return await router.DeleteGrain(grain, false);
+            return await router.DeleteGrainAsync(grain, false);
         }
 
-        public async Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true /*ignored*/)
+        public async Task<Tuple<List<ActivationAddress>, int>> LookUpActivationAsync(GrainId gid, bool withRetry = true /*ignored*/)
         {
             router.RemoteLookupsReceived.Increment();
-            return await router.FullLookUp(gid, false);
+            return await router.LookUpActivationAsync(gid, false);
         }
 
         public async Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList, int retries)
@@ -106,7 +106,7 @@ namespace Orleans.Runtime.GrainDirectory
                 else
                 {
                     // the grain entry has been updated -- fetch and return its current version
-                    var lookupResult = await router.FullLookUp(tuple.Item1, false);
+                    var lookupResult = await router.LookUpActivationAsync(tuple.Item1, false);
                     // validate that the entry is still in the directory (i.e., it was not removed concurrently)
                     if (lookupResult != null)
                     {

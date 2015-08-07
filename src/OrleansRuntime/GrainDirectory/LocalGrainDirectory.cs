@@ -568,7 +568,7 @@ namespace Orleans.Runtime.GrainDirectory
             return result;
         }
 
-        public async Task<Tuple<ActivationAddress, int>> Register(ActivationAddress address, bool withRetry = true)
+        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool withRetry = true)
         {            
             registrationsIssued.Increment();
 
@@ -583,7 +583,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 RegistrationsSingleActRemoteSent.Increment();
                 
-                var result = await GetDirectoryReference(owner).Register(address, false);
+                var result = await GetDirectoryReference(owner).RegisterAsync(address, false);
                 if (result == null || result.Item1 == null) return null;
 
                 //cache if not duplicate.
@@ -599,7 +599,7 @@ namespace Orleans.Runtime.GrainDirectory
             return returnedAddress;
         }
 
-        public async Task<bool> Unregister(ActivationAddress address, bool force = true, bool withRetry = true)
+        public async Task<bool> UnregisterAsync(ActivationAddress address, bool force = true, bool withRetry = true)
         {
             return await UnregisterAsyncImpl(address, force, withRetry);
         }
@@ -630,7 +630,7 @@ namespace Orleans.Runtime.GrainDirectory
                 {
                     UnregistrationsRemoteSent.Increment();
                     // otherwise, notify the owner
-                    return await GetDirectoryReference(owner).Unregister(addr, force, false);     
+                    return await GetDirectoryReference(owner).UnregisterAsync(addr, force, false);     
                 }, withRetry);
             return success;
         }
@@ -656,7 +656,7 @@ namespace Orleans.Runtime.GrainDirectory
                             // if I am the owner, remove the old activation locally
                             foreach (var addr in g)
                             {
-                                await Unregister(addr, true, false);
+                                await UnregisterAsync(addr, true, false);
                                 //UnregistrationsLocal.Increment();
                                 //DirectoryPartition.RemoveActivation(addr.Grain, addr.Activation, true);
                             }
@@ -747,7 +747,7 @@ namespace Orleans.Runtime.GrainDirectory
             throw new NotImplementedException();
         }*/
 
-        public async Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId grain, bool withRetry = true)
+        public async Task<Tuple<List<ActivationAddress>, int>> LookUpActivationAsync(GrainId grain, bool withRetry = true)
         {
             fullLookups.Increment();
 
@@ -777,7 +777,7 @@ namespace Orleans.Runtime.GrainDirectory
                     }
 
                     RemoteLookupsSent.Increment();
-                    Tuple<List<ActivationAddress>, int> result = await GetDirectoryReference(owner).FullLookUp(grain, false);
+                    Tuple<List<ActivationAddress>, int> result = await GetDirectoryReference(owner).LookUpActivationAsync(grain, false);
 
                     if (result == null) return null;
 
@@ -800,7 +800,7 @@ namespace Orleans.Runtime.GrainDirectory
                 }, withRetry);            
         }
 
-        public async Task<bool> DeleteGrain(GrainId grain, bool withRetry = true)
+        public async Task<bool> DeleteGrainAsync(GrainId grain, bool withRetry = true)
         {
             //unregistrationsIssued.Increment();
 
@@ -818,7 +818,7 @@ namespace Orleans.Runtime.GrainDirectory
                     // otherwise, notify the owner
                     //return await GetDirectoryReference(owner).Unregister(addr, force, false);
                     DirectoryCache.Remove(grain);
-                    return await GetDirectoryReference(owner).DeleteGrain(gid, false);
+                    return await GetDirectoryReference(owner).DeleteGrainAsync(gid, false);
                 }, withRetry);
             return success;
         }
