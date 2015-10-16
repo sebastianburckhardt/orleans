@@ -45,7 +45,6 @@ using Orleans.Serialization;
 using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.Timers;
-using Orleans.MultiCluster;
 using System.Runtime;
 
 
@@ -238,8 +237,10 @@ namespace Orleans.Runtime
             scheduler = new OrleansTaskScheduler(globalConfig, nodeConfig);
             healthCheckParticipants.Add(scheduler);
 
+            var myclusterid = "myclusterid"; // placeholder for configuration-defined solution 
+
             // Initialize the message center
-            var mc = new MessageCenter(here, generation, globalConfig, siloStatistics.MetricsTable);
+            var mc = new MessageCenter(here, generation, myclusterid, globalConfig, siloStatistics.MetricsTable);
             if (nodeConfig.IsGatewayNode)
                 mc.InstallGateway(nodeConfig.ProxyGatewayEndpoint);
             

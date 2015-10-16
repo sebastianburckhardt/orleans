@@ -22,7 +22,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
-using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime
 {
@@ -32,19 +31,17 @@ namespace Orleans.Runtime
         public GrainId Grain { get; private set; }
         public ActivationId Activation { get; private set; }
         public SiloAddress Silo { get; private set; }
-        public ActivationStatus Status { get; private set; }
 
         public bool IsComplete
         {
             get { return Grain != null && Activation != null && Silo != null; }
         }
 
-        private ActivationAddress(SiloAddress silo, GrainId grain, ActivationId activation, ActivationStatus status)
+        private ActivationAddress(SiloAddress silo, GrainId grain, ActivationId activation)
         {
             Silo = silo;
             Grain = grain;
             Activation = activation;
-            Status = status;
         }
 
         public static ActivationAddress NewActivationAddress(SiloAddress silo, GrainId grain)
@@ -53,12 +50,12 @@ namespace Orleans.Runtime
             return GetAddress(silo, grain, activation);
         }
 
-        public static ActivationAddress GetAddress(SiloAddress silo, GrainId grain, ActivationId activation, ActivationStatus status = ActivationStatus.OWNED)
+        public static ActivationAddress GetAddress(SiloAddress silo, GrainId grain, ActivationId activation)
         {
             // Silo part is not mandatory
             if (grain == null) throw new ArgumentNullException("grain");
 
-            return new ActivationAddress(silo, grain, activation, status);
+            return new ActivationAddress(silo, grain, activation);
         }
 
         public override bool Equals(object obj)
