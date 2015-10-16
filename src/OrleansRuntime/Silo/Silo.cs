@@ -45,6 +45,7 @@ using Orleans.Serialization;
 using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.Timers;
+using Orleans.MultiCluster;
 using System.Runtime;
 
 
@@ -55,6 +56,11 @@ namespace Orleans.Runtime
     /// </summary>
     public class Silo : MarshalByRefObject // for hosting multiple silos in app domains of the same process
     {
+        public override object InitializeLifetimeService()
+        {
+            return null; // do not garbage collect this object when in app domain
+        }
+
         /// <summary> Silo Types. </summary>
         public enum SiloType
         {
@@ -798,6 +804,9 @@ namespace Orleans.Runtime
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
 
+            private readonly List<string> clusterCommunicationRestrictions; // clusters this silo is not allowed to communicate with
+            private readonly List<SiloAddress> siloCommunicationRestrictions; // silos this silo is not allowed to communicate with
+
             internal IConsistentRingProvider ConsistentRingProvider
             {
                 get { return CheckReturnBoundaryReference("ring provider", silo.RingProvider); }
@@ -821,6 +830,9 @@ namespace Orleans.Runtime
             {
                 silo = s;
                 ExecuteFastKillInProcessExit = true;
+
+                clusterCommunicationRestrictions = new List<string>();
+                siloCommunicationRestrictions = new List<SiloAddress>();
             }
 
             internal Guid ServiceId { get { return silo.GlobalConfig.ServiceId; } }
@@ -858,6 +870,34 @@ namespace Orleans.Runtime
             internal void SuppressFastKillInHandleProcessExit()
             {
                 ExecuteFastKillInProcessExit = false;
+            }
+
+            internal void ToggleInterClusterCommunication(string clusterId, bool enable)
+            {
+                // TODO: lock?
+                if (enable)
+                    clusterCommunicationRestrictions.Remove(clusterId);
+                else
+                    clusterCommunicationRestrictions.Add(clusterId);
+            }
+
+            internal void ToggleInterSiloCommunication(SiloAddress siloAddress, bool enable)
+            {
+                // TODO: lock?
+                if (enable)
+                    siloCommunicationRestrictions.Remove(siloAddress);
+                else
+                    siloCommunicationRestrictions.Add(siloAddress);
+            }
+
+            internal List<string> GetClusterCommunicationRestrictions()
+            {
+                return clusterCommunicationRestrictions;
+            }
+
+            internal List<SiloAddress> GetSiloCommunicationRestrictions()
+            {
+                return siloCommunicationRestrictions;
             }
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead

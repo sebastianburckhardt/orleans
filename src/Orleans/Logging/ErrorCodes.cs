@@ -704,6 +704,11 @@ namespace Orleans
         Messaging_Dispatcher_TryForward         = MessagingBase + 31,
         Messaging_Dispatcher_TryForwardFailed   = MessagingBase + 32,
         Messaging_Dispatcher_ForwardingRequests = MessagingBase + 33,
+        Messaging_SendingToOwnCluster           = MessagingBase + 34,
+        Messaging_BadClusterGatewayAddress      = MessagingBase + 35,
+        Messaging_NoClusterGateway              = MessagingBase + 36,
+        Messaging_SendWithInterClusterDelay     = MessagingBase + 37,
+        Messaging_MessagingToTargedDisabled     = MessagingBase + 38,
 
         DirectoryBase                           = Runtime + 1100,
         DirectoryBothPrimaryAndBackupForGrain   = DirectoryBase + 1,
