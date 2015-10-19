@@ -1,5 +1,4 @@
 ﻿using Orleans.MultiCluster;
-using Orleans.Replication;
 using Orleans.Runtime.Configuration;
 using System;
 using System.Collections.Generic;
@@ -58,8 +57,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
                                     logger.Verbose3("-NotificationWork: notify {0}", listener.GetType().FullName);
 
                                 // enqueue event as grain call
-                                var g = InsideRuntimeClient.Current.InternalGrainFactory.Cast<IReplicationProtocolParticipant>(listener);
+                                var g = InsideRuntimeClient.Current.InternalGrainFactory.Cast<IProtocolParticipant>(listener);
                                 g.OnMultiClusterConfigurationChange(conf).Ignore();
+                                //TODO advertise completion of all notifications in multicluster network
                             }
                         }
                         catch (Exception exc)

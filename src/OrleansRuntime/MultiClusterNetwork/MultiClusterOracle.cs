@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 using Orleans.MultiCluster;
-using Orleans.Replication;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
