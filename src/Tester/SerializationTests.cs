@@ -23,6 +23,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -43,6 +45,46 @@ namespace UnitTests.General
         public void InitializeForTesting()
         {
             SerializationManager.InitializeForTesting();
+        }
+
+        [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization")]
+        public void SerializationTests_DeepCopy()
+        {
+            {
+                var original = new int[] { 0, 1, 2 };
+                var copy = (int[])SerializationManager.DeepCopy(original);
+                copy[2] = 0;
+                Assert.AreEqual(original[2], 2);
+            }
+            {
+                var original = new int[] { 0, 1, 2 }.ToList();
+                var copy = (List<int>)SerializationManager.DeepCopy(original);
+                copy[2] = 0;
+                Assert.AreEqual(original[2], 2);
+            }
+            {
+                var original = new int[][] { new int[] { 0, 1 }, new int[] { 2, 3 } };
+                var copy = (int[][])SerializationManager.DeepCopy(original);
+                copy[1][0] = 0;
+                Assert.AreEqual(original[1][0], 2);
+            }
+            {
+                var original = new Dictionary<int, int>();
+                original[0] = 1;
+                original[1] = 2;
+                var copy = (Dictionary<int, int>)SerializationManager.DeepCopy(original);
+                copy[1] = 0;
+                Assert.AreEqual(original[1], 2);
+            }
+            {
+                var original = new Dictionary<string, Dictionary<string, string>>();
+                original["a"] = new Dictionary<string, string>();
+                original["a"]["0"] = "1";
+                original["a"]["1"] = "2";
+                var copy = (Dictionary<string, Dictionary<string, string>>)SerializationManager.DeepCopy(original);
+                copy["a"]["1"] = "";
+                Assert.AreEqual(original["a"]["1"], "2");
+            }
         }
 
         [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization")]

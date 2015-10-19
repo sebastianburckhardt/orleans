@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
+using Orleans.MultiCluster;
 
 
 namespace Orleans.Runtime
@@ -138,5 +139,31 @@ namespace Orleans.Runtime
         /// <param name="configuration">XML elements and attributes to update</param>
         /// <returns></returns>
         Task UpdateConfiguration(SiloAddress[] hostIds, Dictionary<string, string> configuration, Dictionary<string, string> tracing);
+
+
+#region MultiCluster Management
+
+        /// <summary>
+        /// Get the current list of multicluster gateways.
+        /// </summary>
+        /// <returns>A list of the currently known gateways</returns>
+        Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways();
+
+        /// <summary>
+        /// Get the current multicluster configuration.
+        /// </summary>
+        /// <returns>The current multicluster configuration, or null if there is none</returns>
+        Task<MultiClusterConfiguration> GetMultiClusterConfiguration();
+
+        /// <summary>
+        /// Inject a multicluster configuration. For this to have any effect, its UTC admin timestamp must be newer 
+        /// than the latest configuration stored in the multicluster network.
+        /// </summary>
+        /// <returns> The task completes once information has propagated to the gossip channels</returns>
+        Task InjectMultiClusterConfiguration(MultiClusterConfiguration configuration);
+
+#endregion
+
+
     }
 }

@@ -28,7 +28,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
 using Orleans.Runtime.MembershipService;
-
+using Orleans.MultiCluster;
 
 namespace Orleans.Runtime.Management
 {
@@ -330,5 +330,36 @@ namespace Orleans.Runtime.Management
         {
             return InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<ISiloControl>(Constants.SiloControlId, silo);
         }
+
+        #region MultiCluster
+
+        public Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways()
+        {
+            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+                throw new OrleansException("No multicluster network configured");
+
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            return Task.FromResult(multiclusteroracle.GetGateways().Select(g => (IMultiClusterGatewayInfo) g).ToList());
+        }
+
+        public Task<MultiClusterConfiguration> GetMultiClusterConfiguration()
+        {
+            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+                throw new OrleansException("No multicluster network configured");
+
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            return Task.FromResult(multiclusteroracle.GetMultiClusterConfiguration());
+        }
+
+        public Task InjectMultiClusterConfiguration(MultiClusterConfiguration configuration)
+        {
+            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+                throw new OrleansException("No multicluster network configured");
+
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            return multiclusteroracle.InjectMultiClusterConfiguration(configuration);
+        }
+
+        #endregion
     }
 }

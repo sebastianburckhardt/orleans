@@ -42,16 +42,6 @@ namespace UnitTests.General
         {
         }
 
-        public ISimpleGrain GetSimpleGrain()
-        {
-            return GrainFactory.GetGrain<ISimpleGrain>(GetRandomGrainId(), SimpleGrainNamePrefix);
-        }
-
-        private static int GetRandomGrainId()
-        {
-            return random.Next();
-        }
-
         [ClassCleanup]
         public static void MyClassCleanup()
         {
@@ -91,6 +81,16 @@ namespace UnitTests.General
             var x = await grain.GetAxB();
 
             Assert.AreEqual(12, x);
+        }
+
+        private ISimpleGrain GetSimpleGrain()
+        {
+            return GrainFactory.GetGrain<ISimpleGrain>(GetRandomGrainId(), SimpleGrainNamePrefix);
+        }
+
+        private static int GetRandomGrainId()
+        {
+            return random.Next();
         }
     }
 }

@@ -103,6 +103,32 @@ namespace Orleans.Runtime.Configuration
         }
 
         /// <summary>
+        /// Configuration for Gossip Channels
+        /// </summary>
+        public enum GossipChannelType
+        {
+            /// <summary>Default value to allow discrimination of override values.</summary>
+            NotSpecified,
+            /// <summary>An Azure Table serving as a channel. </summary>
+            AzureTable,
+        }
+
+
+        /// <summary>
+        /// base of all gossip channel configuration classes.
+        /// </summary>
+        [Serializable]
+        public class GossipChannelConfiguration
+        {
+            public GossipChannelType ChannelType { get; set; }
+
+            public string ConnectionString { get; set; }
+
+
+        }
+
+  
+        /// <summary>
         /// Configuration type that controls the type of the grain directory caching algorithm that silo use.
         /// </summary>
         public enum DirectoryCachingStrategyType
@@ -197,10 +223,59 @@ namespace Orleans.Runtime.Configuration
         /// Service Id.
         /// </summary>
         public Guid ServiceId { get; set; }
+
         /// <summary>
         /// Deployment Id.
         /// </summary>
         public string DeploymentId { get; set; }
+
+        #region MultiClusterNetwork
+
+        /// <summary>
+        /// Whether this cluster is configured to be part of a multicluster network
+        /// </summary>
+        public bool HasMultiClusterNetwork
+        {
+            get
+            {
+                return !(string.IsNullOrEmpty(GlobalServiceId) || string.IsNullOrEmpty(ClusterId));
+            }
+        }
+
+        /// <summary>
+        /// Shared Global service Id between different datacenters/deployments.
+        /// </summary>
+        public string GlobalServiceId { get; set; }
+
+        /// <summary>
+        /// Cluster id (one per deployment, unique across all the deployments/clusters)
+        /// </summary>
+        public string ClusterId { get; set; }
+
+        /// <summary>
+        ///A list of cluster ids, to be used if no multicluster configuration is found in gossip channels.
+        /// </summary>
+        public IReadOnlyList<string> DefaultMultiCluster { get; set; }
+
+        /// <summary>
+        /// How many silos per cluster should be designated to serve as gateways.
+        /// </summary>
+        public int NumMultiClusterGateways { get; set; }
+
+        /// <summary>
+        /// The number of seconds to periodically gossip with all gossip channels.
+        /// </summary>
+        public TimeSpan GossipChannelRefreshTimeout { get; set; }
+
+        /// <summary>
+        /// A list of connection strings for gossip channels.
+        /// </summary>
+        public IReadOnlyList<GossipChannelConfiguration> GossipChannels { get; set; }
+
+        
+
+        #endregion
+
         /// <summary>
         /// Connection string for the underlying data provider for liveness and reminders. eg. Azure Storage, ZooKeeper, SQL Server, ect.
         /// In order to override this value for reminders set <see cref="DataConnectionStringForReminders"/>
@@ -409,6 +484,8 @@ namespace Orleans.Runtime.Configuration
         private const int DEFAULT_LIVENESS_NUM_VOTES_FOR_DEATH_DECLARATION = 2;
         private const int DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT = 2;
         private const bool DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP = true;
+        private const int DEFAULT_NUM_MULTICLUSTER_GATEWAYS = 4;
+        private static readonly TimeSpan DEFAULT_GOSSIP_CHANNEL_REFRESH_TIMEOUT = TimeSpan.FromSeconds(60);
         private const int DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE = 20;
         private const int DEFAULT_CACHE_SIZE = 1000000;
         private static readonly TimeSpan DEFAULT_INITIAL_CACHE_TTL = TimeSpan.FromSeconds(30);
@@ -448,6 +525,8 @@ namespace Orleans.Runtime.Configuration
             NumMissedTableIAmAliveLimit = DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT;
             UseLivenessGossip = DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP;
             MaxJoinAttemptTime = DEFAULT_LIVENESS_MAX_JOIN_ATTEMPT_TIME;
+            NumMultiClusterGateways = DEFAULT_NUM_MULTICLUSTER_GATEWAYS;
+            GossipChannelRefreshTimeout = DEFAULT_GOSSIP_CHANNEL_REFRESH_TIMEOUT;
             ExpectedClusterSizeConfigValue = new ConfigValue<int>(DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE, true);
             ServiceId = Guid.Empty;
             DeploymentId = Environment.UserName;
@@ -513,6 +592,19 @@ namespace Orleans.Runtime.Configuration
             sb.AppendFormat("      NumMissedTableIAmAliveLimit: {0}", NumMissedTableIAmAliveLimit).AppendLine();
             sb.AppendFormat("      MaxJoinAttemptTime: {0}", MaxJoinAttemptTime).AppendLine();
             sb.AppendFormat("      ExpectedClusterSize: {0}", ExpectedClusterSize).AppendLine();
+
+            if (HasMultiClusterNetwork)
+            {
+                sb.AppendFormat("   MultiClusterNetwork:").AppendLine();
+                sb.AppendFormat("      GlobalServiceId: {0}", GlobalServiceId ?? "").AppendLine();
+                sb.AppendFormat("      ClusterId: {0}", ClusterId ?? "").AppendLine();
+                sb.AppendFormat("      DefaultMultiCluster: {0}", 
+                    DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
+                sb.AppendFormat("      NumMultiClusterGateways: {0}", NumMultiClusterGateways).AppendLine();
+                sb.AppendFormat("      GossipChannelRefreshTimeout: {0}", GossipChannelRefreshTimeout).AppendLine();
+                sb.AppendFormat("      GossipChannels: {0}", string.Join(",", GossipChannels.Select(conf => conf.ChannelType.ToString() + ":" + conf.ConnectionString))).AppendLine();
+            }
+
             sb.AppendFormat("   SystemStore:").AppendLine();
             // Don't print connection credentials in log files, so pass it through redactment filter
             string connectionStringForLog = ConfigUtilities.RedactConnectionStringInfo(DataConnectionString);
@@ -713,7 +805,61 @@ namespace Orleans.Runtime.Configuration
                             UseMockReminderTable = true;
                         }
                         break;
+                    case "MultiClusterNetwork":
+                        GlobalServiceId = child.GetAttribute("GlobalServiceId");
+                        ClusterId = child.GetAttribute("ClusterId");
 
+                        // we always trim cluster ids to avoid surprises when parsing comma-separated lists
+                        if (ClusterId != null) 
+                            ClusterId = ClusterId.Trim(); 
+
+                        if (string.IsNullOrEmpty(GlobalServiceId))
+                            throw new FormatException("MultiClusterNetwork.GlobalServiceId cannot be blank");
+                        if (string.IsNullOrEmpty(ClusterId))
+                            throw new FormatException("MultiClusterNetwork.ClusterId cannot be blank");
+                        if (ClusterId.Contains(","))
+                            throw new FormatException("MultiClusterNetwork.ClusterId cannot contain commas: " + ClusterId);
+
+                        if (child.HasAttribute("DefaultMultiCluster"))
+                        {
+                            var toparse = child.GetAttribute("DefaultMultiCluster").Trim();
+                            if (string.IsNullOrEmpty(toparse))
+                            {
+                                DefaultMultiCluster = new List<string>(); // empty cluster
+                            }
+                            else
+                            {
+                                DefaultMultiCluster = toparse.Split(',').Select(id => id.Trim()).ToList();
+                                foreach (var id in DefaultMultiCluster)
+                                    if (string.IsNullOrEmpty(id))
+                                        throw new FormatException("MultiClusterNetwork.DefaultMultiCluster cannot contain blank cluster ids: " + toparse);
+                            }
+                        }
+                        if (child.HasAttribute("GossipChannelRefreshTimeout"))
+                        {
+                            GossipChannelRefreshTimeout = ConfigUtilities.ParseTimeSpan(child.GetAttribute("GossipChannelRefreshTimeout"),
+                                "Invalid time value for the GossipChannelRefreshTimeout attribute on the MultiClusterNetwork element");
+                        }
+                        if (child.HasAttribute("NumMultiClusterGateways"))
+                        {
+                            NumMultiClusterGateways = ConfigUtilities.ParseInt(child.GetAttribute("NumMultiClusterGateways"),
+                                "Invalid time value for the NumMultiClusterGateways attribute on the MultiClusterNetwork element");
+                        }
+                        var channels = new List<GossipChannelConfiguration>();
+                        foreach (XmlNode childchild in child.ChildNodes)
+                        {
+                            var channelspec = childchild as XmlElement;
+                            if (channelspec == null || channelspec.LocalName != "GossipChannel")
+                                continue;
+                            channels.Add(new GossipChannelConfiguration()
+                            {
+                                ChannelType = (GlobalConfiguration.GossipChannelType)
+                                   Enum.Parse(typeof(GlobalConfiguration.GossipChannelType), channelspec.GetAttribute("Type")),
+                                ConnectionString = channelspec.GetAttribute("ConnectionString")
+                            });
+                        }
+                        GossipChannels = channels;
+                        break;
                     case "SeedNode":
                         SeedNodes.Add(ConfigUtilities.ParseIPEndPoint(child, Subnet));
                         break;

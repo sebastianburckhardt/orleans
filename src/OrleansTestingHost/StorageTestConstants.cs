@@ -62,9 +62,9 @@ namespace Orleans.TestingHost
                     if (!String.IsNullOrEmpty(line))
                     {
                         string fileFoundMsg = string.Format("Found the {0} file and using the Storage Key from there.", ORLEANS_TEST_STORAGE_KEY_FILE_NAME);
-                        Console.Out.WriteLine(fileFoundMsg);
+                        Console.WriteLine(fileFoundMsg);
                         Trace.WriteLine(fileFoundMsg);
-                        DataConnectionString = line;
+                        DataConnectionString = line.Trim();
                     }
                 }
             }
@@ -73,9 +73,22 @@ namespace Orleans.TestingHost
 
             // If did not find the file, just use the DevelopmentStorage
             string fileNotFoundMsg = string.Format("Did not find the {0} file or it was empty. Using Default Storage Data Connection String instead.", ORLEANS_TEST_STORAGE_KEY_FILE_NAME);
-            Console.Out.WriteLine(fileNotFoundMsg);
+            Console.WriteLine(fileNotFoundMsg);
             Trace.WriteLine(fileNotFoundMsg);
             DataConnectionString = DEFAULT_STORAGE_DATA_CONNECTION_STRING;
+        }
+
+        public static bool UsingAzureLocalStorageEmulator
+        {
+            get
+            {
+                string connString = DataConnectionString;
+                bool usingLocalWAS = DEFAULT_STORAGE_DATA_CONNECTION_STRING.Equals(connString, StringComparison.OrdinalIgnoreCase);
+                string msg = string.Format("Using Azure local storage emulator = {0}", usingLocalWAS);
+                Console.WriteLine(msg);
+                Trace.WriteLine(msg);
+                return usingLocalWAS;
+            }
         }
 
         public static string GetZooKeeperConnectionString()

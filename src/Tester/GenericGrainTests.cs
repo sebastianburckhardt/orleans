@@ -48,21 +48,6 @@ namespace UnitTests.General
         {
         }
 
-        public TGrainInterface GetGrain<TGrainInterface>(int i) where TGrainInterface : IGrainWithIntegerKey
-        {
-            return GrainFactory.GetGrain<TGrainInterface>(i);
-        }
-
-        public TGrainInterface GetGrain<TGrainInterface>() where TGrainInterface : IGrainWithIntegerKey 
-        {
-            return GrainFactory.GetGrain<TGrainInterface>(GetRandomGrainId());
-        }
-
-        private static int GetRandomGrainId()
-        {
-            return random.Next();
-        }
-
         [ClassCleanup]
         public static void MyClassCleanup()
         {
@@ -677,6 +662,21 @@ namespace UnitTests.General
             await Task.Delay(TimeSpan.FromSeconds(6));
             var s2 = await grain.GetLastValue();
             Assert.AreEqual(s1, s2);
+        }
+
+        private TGrainInterface GetGrain<TGrainInterface>(int i) where TGrainInterface : IGrainWithIntegerKey
+        {
+            return GrainFactory.GetGrain<TGrainInterface>(i);
+        }
+
+        private TGrainInterface GetGrain<TGrainInterface>() where TGrainInterface : IGrainWithIntegerKey
+        {
+            return GrainFactory.GetGrain<TGrainInterface>(GetRandomGrainId());
+        }
+
+        private static int GetRandomGrainId()
+        {
+            return random.Next();
         }
     }
 }

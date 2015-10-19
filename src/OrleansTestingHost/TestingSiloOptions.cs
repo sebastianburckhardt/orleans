@@ -23,6 +23,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.IO;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 
 namespace Orleans.TestingHost
@@ -38,6 +39,8 @@ namespace Orleans.TestingHost
 
         public FileInfo SiloConfigFile { get; set; }
 
+        public string SiloName { get; set; }
+        public bool AutoConfigNodeSettings { get; set; }
         public bool PickNewDeploymentId { get; set; }
         public bool PropagateActivityId { get; set; }
         public int BasePort { get; set; }
@@ -62,6 +65,7 @@ namespace Orleans.TestingHost
             ReminderServiceType = GlobalConfiguration.ReminderServiceProviderType.ReminderTableGrain;
             SiloConfigFile = new FileInfo(DEFAULT_SILO_CONFIG_FILE);
             ParallelStart = false;
+            AutoConfigNodeSettings = true;
         }
 
         public TestingSiloOptions Copy()
@@ -82,7 +86,8 @@ namespace Orleans.TestingHost
                 ReminderServiceType = ReminderServiceType,
                 DataConnectionString = DataConnectionString,
                 ParallelStart = ParallelStart,
-
+                AutoConfigNodeSettings = AutoConfigNodeSettings,
+                SiloName = SiloName
             };
         }
     }

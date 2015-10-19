@@ -43,6 +43,12 @@ namespace UnitTests.General
         {
         }
 
+        [ClassCleanup]
+        public static void MyClassCleanup()
+        {
+            StopAllSilos();
+        }
+
         [TestMethod, TestCategory("BVT"), TestCategory("Functional")]
         public async Task StateClassTests_StateClass()
         {

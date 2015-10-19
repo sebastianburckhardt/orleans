@@ -1066,6 +1066,15 @@ namespace Orleans
         AzureServiceRuntimeWrapper = Runtime + 3700,
         AzureServiceRuntime_NotLoaded       = AzureServiceRuntimeWrapper +1,
         AzureServiceRuntime_FailedToLoad    = AzureServiceRuntimeWrapper +2,
+
+        MultiClusterNetworkBase = Runtime + 3900,
+        MultiClusterNetwork_Starting = MultiClusterNetworkBase + 1,
+        MultiClusterNetwork_Started = MultiClusterNetworkBase + 2,
+        MultiClusterNetwork_FailedToStart = MultiClusterNetworkBase + 3,
+        MultiClusterNetwork_LocalSubscriberException = MultiClusterNetworkBase + 4,
+        MultiClusterNetwork_CommunicationFailure = MultiClusterNetworkBase + 5,
+        MultiClusterNetwork_NoChannelsConfigured = MultiClusterNetworkBase + 6,
+
     }
 }
 // ReSharper restore InconsistentNaming
