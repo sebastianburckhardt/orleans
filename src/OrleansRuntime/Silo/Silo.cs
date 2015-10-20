@@ -346,7 +346,7 @@ namespace Orleans.Runtime
 
             if (multiClusterOracle != null)
             {
-                logger.Verbose("Creating {0} System Target", "GossipOracle");
+                logger.Verbose("Creating {0} System Target", "MultiClusterOracle");
                 RegisterSystemTarget((SystemTarget)multiClusterOracle);
             }
 
