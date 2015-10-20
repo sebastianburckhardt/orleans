@@ -134,6 +134,11 @@ namespace Orleans.Runtime
             get { return allSiloProviders.AsReadOnly();  }
         }
 
+        private string MyClusterId
+        {
+            get { return "me"; } // placeholder for multi-cluster oracle
+        }
+
         /// <summary> SiloAddress for this silo. </summary>
         public SiloAddress SiloAddress { get { return messageCenter.MyAddress; } }
 
@@ -243,10 +248,8 @@ namespace Orleans.Runtime
             scheduler = new OrleansTaskScheduler(globalConfig, nodeConfig);
             healthCheckParticipants.Add(scheduler);
 
-            var myclusterid = globalConfig.ClusterId;
-
             // Initialize the message center
-            var mc = new MessageCenter(here, generation, myclusterid, globalConfig, siloStatistics.MetricsTable);
+            var mc = new MessageCenter(here, generation, MyClusterId, globalConfig, siloStatistics.MetricsTable);
             if (nodeConfig.IsGatewayNode)
                 mc.InstallGateway(nodeConfig.ProxyGatewayEndpoint);
             
@@ -445,7 +448,7 @@ namespace Orleans.Runtime
             if (statsProviderName != null)
                 LocalConfig.StatisticsProviderName = statsProviderName;
             allSiloProviders.AddRange(statisticsProviderManager.GetProviders());
-            
+
             // can call SetSiloMetricsTableDataManager only after MessageCenter is created (dependency on this.SiloAddress).
             siloStatistics.SetSiloStatsTableDataManager(this, nodeConfig).WaitWithThrow(initTimeout);
             siloStatistics.SetSiloMetricsTableDataManager(this, nodeConfig).WaitWithThrow(initTimeout);
