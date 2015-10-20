@@ -128,6 +128,11 @@ namespace Orleans.Runtime
             get { return allSiloProviders.AsReadOnly();  }
         }
 
+        private string MyClusterId
+        {
+            get { return "me"; } // placeholder for multi-cluster oracle
+        }
+
         /// <summary> SiloAddress for this silo. </summary>
         public SiloAddress SiloAddress { get { return messageCenter.MyAddress; } }
 
@@ -237,10 +242,8 @@ namespace Orleans.Runtime
             scheduler = new OrleansTaskScheduler(globalConfig, nodeConfig);
             healthCheckParticipants.Add(scheduler);
 
-            var myclusterid = "myclusterid"; // placeholder for configuration-defined solution 
-
             // Initialize the message center
-            var mc = new MessageCenter(here, generation, myclusterid, globalConfig, siloStatistics.MetricsTable);
+            var mc = new MessageCenter(here, generation, MyClusterId, globalConfig, siloStatistics.MetricsTable);
             if (nodeConfig.IsGatewayNode)
                 mc.InstallGateway(nodeConfig.ProxyGatewayEndpoint);
             
