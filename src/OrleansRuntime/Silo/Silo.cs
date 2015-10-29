@@ -136,7 +136,7 @@ namespace Orleans.Runtime
 
         private string MyClusterId
         {
-            get { return globalConfig.HasMultiClusterNetwork ? globalConfig.ClusterId : "me"; } 
+            get { return globalConfig.HasMultiClusterNetwork ? globalConfig.ClusterId : null; } 
         }
 
         /// <summary> SiloAddress for this silo. </summary>
