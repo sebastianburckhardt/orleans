@@ -130,7 +130,7 @@ namespace Orleans.Runtime
 
         private string MyClusterId
         {
-            get { return "me"; } // placeholder for multi-cluster oracle
+            get { return null; } // placeholder for multi-cluster configuration (in separate branch)
         }
 
         /// <summary> SiloAddress for this silo. </summary>
