@@ -21,8 +21,6 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define TEST_MODE
-
 using System;
 using System.Linq;
 using System.Threading;
@@ -127,25 +125,18 @@ namespace Orleans.Runtime.Messaging
                     return;
                 }
 
-#if TEST_MODE
-                // Inter-cluster messages can be either System or Application. 
-                // Grain directory protocol messages are of type System. 
-                // An activation in this cluster can also call an activation in a remote cluster, 
-                // these correspond to Application messages.
+                 // check for cluster communication restrictions
 
-                // check for cluster communication restrictions
-                if (!msg.TargetSilo.IsSameCluster(messageCenter.MyAddress))
+                if (Silo.CurrentSilo.TestHookup.SiloCommunicationBlocks != null
+                    && Silo.CurrentSilo.TestHookup.SiloCommunicationBlocks[msg.TargetSilo.Endpoint])
                 {
-                    if (Silo.CurrentSilo.TestHookup.GetClusterCommunicationRestrictions().Contains(msg.TargetSilo.ClusterId) ||
-                        Silo.CurrentSilo.TestHookup.GetSiloCommunicationRestrictions().Contains(msg.TargetSilo))
-                    {
-                        string errorMsg = "Cannot route message when cluster or silo messaging is Disabled " + msg;
-                        logger.Error(ErrorCode.Messaging_MessagingToTargedDisabled, errorMsg);
-                        messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, errorMsg);
-                        return;
-                    }
+                    string errorMsg = "Message blocked by TestHookup.SiloCommunicationBlocks";
+                    logger.Error(ErrorCode.Messaging_MessagingToTargedDisabled, errorMsg);
+                    messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, errorMsg);
+                    return;
                 }
-#endif
+                
+ 
 
                 // Prioritize system messages
                 switch (msg.Category)
