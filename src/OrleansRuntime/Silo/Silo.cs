@@ -129,7 +129,7 @@ namespace Orleans.Runtime
             get { return allSiloProviders.AsReadOnly();  }
         }
 
-        private string MyClusterId
+        public string ClusterId
         {
             get { return null; } // placeholder for multi-cluster configuration (in separate branch)
         }
