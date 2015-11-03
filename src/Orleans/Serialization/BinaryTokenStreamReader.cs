@@ -393,8 +393,7 @@ namespace Orleans.Serialization
         {
             var ep = ReadIPEndPoint();
             var gen = ReadInt();
-            var clusterId = ReadString();
-            return SiloAddress.New(ep, gen, clusterId);
+            return SiloAddress.New(ep, gen);
         }
 
         /// <summary> Read an <c>GrainId</c> value from the stream. </summary>

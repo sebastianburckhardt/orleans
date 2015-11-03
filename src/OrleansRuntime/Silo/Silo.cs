@@ -23,6 +23,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -134,11 +135,12 @@ namespace Orleans.Runtime
             get { return allSiloProviders.AsReadOnly();  }
         }
 
-        private string MyClusterId
+        public string MyClusterId
         {
             get { return globalConfig.HasMultiClusterNetwork ? globalConfig.ClusterId : null; } 
         }
 
+     
         /// <summary> SiloAddress for this silo. </summary>
         public SiloAddress SiloAddress { get { return messageCenter.MyAddress; } }
 
@@ -249,7 +251,7 @@ namespace Orleans.Runtime
             healthCheckParticipants.Add(scheduler);
 
             // Initialize the message center
-            var mc = new MessageCenter(here, generation, MyClusterId, globalConfig, siloStatistics.MetricsTable);
+            var mc = new MessageCenter(here, generation, globalConfig, siloStatistics.MetricsTable);
             if (nodeConfig.IsGatewayNode)
                 mc.InstallGateway(nodeConfig.ProxyGatewayEndpoint);
             
@@ -835,8 +837,9 @@ namespace Orleans.Runtime
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
 
-            private readonly List<string> clusterCommunicationRestrictions; // clusters this silo is not allowed to communicate with
-            private readonly List<SiloAddress> siloCommunicationRestrictions; // silos this silo is not allowed to communicate with
+            // silos this silo is not allowed to communicate with
+            // is left null if there are no restrictions
+            internal ConcurrentDictionary<IPEndPoint,bool> SiloCommunicationBlocks; 
 
             internal IConsistentRingProvider ConsistentRingProvider
             {
@@ -861,9 +864,6 @@ namespace Orleans.Runtime
             {
                 silo = s;
                 ExecuteFastKillInProcessExit = true;
-
-                clusterCommunicationRestrictions = new List<string>();
-                siloCommunicationRestrictions = new List<SiloAddress>();
             }
 
             internal Guid ServiceId { get { return silo.GlobalConfig.ServiceId; } }
@@ -926,33 +926,16 @@ namespace Orleans.Runtime
                 silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
             }
 
-            internal void ToggleInterClusterCommunication(string clusterId, bool enable)
+            internal void BlockSiloCommunication(IPEndPoint destination, bool block)
             {
-                // TODO: lock?
-                if (enable)
-                    clusterCommunicationRestrictions.Remove(clusterId);
-                else
-                    clusterCommunicationRestrictions.Add(clusterId);
+                if (SiloCommunicationBlocks == null)
+                    SiloCommunicationBlocks = new ConcurrentDictionary<IPEndPoint, bool>();
+
+                SiloCommunicationBlocks[destination] = block;
             }
 
-            internal void ToggleInterSiloCommunication(SiloAddress siloAddress, bool enable)
-            {
-                // TODO: lock?
-                if (enable)
-                    siloCommunicationRestrictions.Remove(siloAddress);
-                else
-                    siloCommunicationRestrictions.Add(siloAddress);
-            }
 
-            internal List<string> GetClusterCommunicationRestrictions()
-            {
-                return clusterCommunicationRestrictions;
-            }
 
-            internal List<SiloAddress> GetSiloCommunicationRestrictions()
-            {
-                return siloCommunicationRestrictions;
-            }
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
             internal void SendMessageInternal(Message message)

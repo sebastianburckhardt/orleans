@@ -54,7 +54,6 @@ namespace Orleans.Runtime
 
         public IPEndPoint Endpoint { get; private set; }
         public int Generation { get; private set; }
-        public string ClusterId { get; set; }
 
         private const char SEPARATOR = '@';
 
@@ -67,8 +66,7 @@ namespace Orleans.Runtime
         static SiloAddress()
         {
             siloAddressInterningCache = new Interner<SiloAddress, SiloAddress>(INTERN_CACHE_INITIAL_SIZE, internCacheCleanupInterval);
-            
-            var sa = new SiloAddress(new IPEndPoint(0, 0), 0, null);
+            var sa = new SiloAddress(new IPEndPoint(0, 0), 0);
             Zero = siloAddressInterningCache.Intern(sa, sa);
         }
 
@@ -90,20 +88,14 @@ namespace Orleans.Runtime
         /// <returns>SiloAddress object initialized with specified address and silo generation.</returns>
         public static SiloAddress New(IPEndPoint ep, int gen)
         {
-            return New(ep, gen, null);
-        }
-
-        public static SiloAddress New(IPEndPoint ep, int gen, string clusterId)
-        {
-            var sa = new SiloAddress(ep, gen, clusterId);
+            var sa = new SiloAddress(ep, gen);
             return siloAddressInterningCache.Intern(sa, sa);
         }
 
-        private SiloAddress(IPEndPoint endpoint, int gen, string clusterId)
+        private SiloAddress(IPEndPoint endpoint, int gen)
         {
             Endpoint = endpoint;
             Generation = gen;
-            ClusterId = clusterId;
         }
 
         public bool IsClient { get { return Generation < 0; } }
@@ -125,7 +117,7 @@ namespace Orleans.Runtime
             // This must be the "inverse" of FromParsableString, and must be the same across all silos in a deployment.
             // Basically, this should never change unless the data content of SiloAddress changes
 
-            return String.Format("{0}:{1}@{2}#{3}", Endpoint.Address, Endpoint.Port, Generation, ClusterId);
+            return String.Format("{0}:{1}@{2}", Endpoint.Address, Endpoint.Port, Generation);
         }
 
         /// <summary>
@@ -140,24 +132,21 @@ namespace Orleans.Runtime
 
             // First is the IPEndpoint; then '@'; then the generation
             int atSign = addr.LastIndexOf(SEPARATOR);
-            int hashSign = addr.LastIndexOf('#');
-            if (atSign < 0 || hashSign < 0)
+            if (atSign < 0)
             {
                 throw new FormatException("Invalid string SiloAddress: " + addr);
             }
             var epString = addr.Substring(0, atSign);
-            var genString = addr.Substring(atSign + 1, hashSign - atSign - 1);
-            var clusterString = addr.Substring(hashSign + 1);
-            clusterString = string.IsNullOrWhiteSpace(clusterString) ? null : clusterString;
-
+            var genString = addr.Substring(atSign + 1);
             // IPEndpoint is the host, then ':', then the port
             int lastColon = epString.LastIndexOf(':');
             if (lastColon < 0) throw new FormatException("Invalid string SiloAddress: " + addr);
+
             var hostString = epString.Substring(0, lastColon);
             var portString = epString.Substring(lastColon + 1);
             var host = IPAddress.Parse(hostString);
             int port = Int32.Parse(portString);
-            return New(new IPEndPoint(host, port), Int32.Parse(genString), clusterString);
+            return New(new IPEndPoint(host, port), Int32.Parse(genString));
         }
 
         /// <summary> Object.ToString method override. </summary>
@@ -256,9 +245,8 @@ namespace Orleans.Runtime
         /// <summary> IEquatable.Equals method override. </summary>
         public bool Equals(SiloAddress other)
         {
-            return other != null && Endpoint.Address.Equals(other.Endpoint.Address) &&
-                   (Endpoint.Port == other.Endpoint.Port) &&
-                   (Generation == other.Generation); //&& (ClusterId == other.ClusterId);
+            return other != null && Endpoint.Address.Equals(other.Endpoint.Address) && (Endpoint.Port == other.Endpoint.Port) &&
+                ((Generation == other.Generation));
         }
 
         #endregion
@@ -266,13 +254,6 @@ namespace Orleans.Runtime
         public int CompareTo(SiloAddress other)
         {
             return other == null ? 1 : Generation.CompareTo(other.Generation);
-        }
-
-        public bool IsSameCluster(SiloAddress other)
-        {
-            if (ClusterId == null || other.ClusterId == null || other.ClusterId.Equals(ClusterId))
-                return true;
-            return false;
         }
     }
 }

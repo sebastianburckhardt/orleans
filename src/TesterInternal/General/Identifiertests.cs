@@ -478,7 +478,7 @@ namespace UnitTests.General
             Assert.AreEqual(address1, addressObj1, "SiloAddress equal after To-From-ParsableString");
 
             //const string addressStr2 = "127.0.0.1-11111-144611139";
-            const string addressStr2 = "127.0.0.1:11111@144611139#123";
+            const string addressStr2 = "127.0.0.1:11111@144611139";
             SiloAddress addressObj2 = SiloAddress.FromParsableString(addressStr2);
             string addressStr2Out = addressObj2.ToParsableString();
 

@@ -483,7 +483,6 @@ namespace Orleans.Serialization
         {
             Write(addr.Endpoint);
             Write(addr.Generation);
-            Write(addr.ClusterId);
         }
 
         internal void Write(UniqueKey key)

@@ -250,40 +250,7 @@ namespace Tests.GeoClusterTests
         }
 
 
-        /// <summary>
-        /// This function toggles on/off the communication from currently active silos
-        /// in cluster 1 to silos in cluster 2.
-        ///
-        /// TODO: when restarting/adding a silo in cluster 1, do we need to keep this option
-        /// for that silo as well? - if yes, add structure to ClusterInfo
-        /// </summary>
-        /// <param name="clusterId1"></param>
-        /// <param name="clusterId2"></param>
-        /// <returns></returns>
-        public bool ToggleInterClusterCommunication(string clusterId1, string clusterId2, bool enable)
-        {
-            var activeSilos = clusters[clusterId1].activeSilos;
-
-            if (activeSilos == null) return false;
-
-            foreach (var s in activeSilos)
-            {
-                s.Silo.TestHookup.ToggleInterClusterCommunication(clusterId2, enable);
-            }
-
-            return true;
-        }
-
-        public bool ToggleInterSiloCommunication(string siloName1, string clusterId1, string siloName2, string clusterId2)
-        {
-            return true;
-        }
-
-        public bool ToggleInterClusterDelay(string clusterId1, string clusterId2, TimeSpan delay)
-        {
-            return true;
-        }
-
+  
         private SiloHandle GetActiveSiloInClusterByName(string clusterId, string siloName)
         {
             if (clusters[clusterId].activeSilos == null) return null;
