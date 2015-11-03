@@ -135,7 +135,7 @@ namespace Orleans.Runtime
             get { return allSiloProviders.AsReadOnly();  }
         }
 
-        public string MyClusterId
+        public string ClusterId
         {
             get { return globalConfig.HasMultiClusterNetwork ? globalConfig.ClusterId : null; } 
         }
@@ -925,7 +925,7 @@ namespace Orleans.Runtime
             {
                 silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
             }
-
+          
             internal void BlockSiloCommunication(IPEndPoint destination, bool block)
             {
                 if (SiloCommunicationBlocks == null)
@@ -934,8 +934,8 @@ namespace Orleans.Runtime
                 SiloCommunicationBlocks[destination] = block;
             }
 
-
-
+      
+         
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
             internal void SendMessageInternal(Message message)
