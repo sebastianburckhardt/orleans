@@ -72,9 +72,7 @@ namespace Tests.GeoClusterTests
         public void TestInitialize()
         {
             globalServiceId = "test-multiDC-gossip";
-            clusterId = "1";
             deploymentId = "test-" + Guid.NewGuid();
-            generation = 0;
 
             IPAddress ip;
             if (!IPAddress.TryParse("127.0.0.1", out ip))
@@ -83,9 +81,9 @@ namespace Tests.GeoClusterTests
                 return;
             }
             IPEndPoint ep1 = new IPEndPoint(ip, 21111);
-            siloAddress1 = SiloAddress.New(ep1, generation, clusterId);
+            siloAddress1 = SiloAddress.New(ep1, 0);
             IPEndPoint ep2 = new IPEndPoint(ip, 21112);
-            siloAddress2 = SiloAddress.New(ep2, generation, clusterId);
+            siloAddress2 = SiloAddress.New(ep2, 0);
 
             logger.Info("DeploymentId={0} Generation={1}", deploymentId, generation);
 
@@ -132,7 +130,7 @@ namespace Tests.GeoClusterTests
             var ts2 = new DateTime(year: 2012, month: 2, day: 2);
             var ts3 = new DateTime(year: 2013, month: 3, day: 3);
 
-            var conf1 = new MultiClusterConfiguration(ts1, new string[] { "A" }.ToList());
+            var conf1 = new MultiClusterConfiguration(ts1, new string[] { "A" }.ToList(), "comment");
             var conf2 = new MultiClusterConfiguration(ts2, new string[] { "A", "B", "C" }.ToList());
             var conf3 = new MultiClusterConfiguration(ts3, new string[] { }.ToList());
 
@@ -180,24 +178,28 @@ namespace Tests.GeoClusterTests
             var G1 = new GatewayEntry()
             {
                 SiloAddress = siloAddress1,
+                ClusterId = "1",
                 HeartbeatTimestamp = ts1,
                 Status = GatewayStatus.Active
             };
             var G2 = new GatewayEntry()
             {
                 SiloAddress = siloAddress1,
+                ClusterId = "1",
                 HeartbeatTimestamp = ts3,
                 Status = GatewayStatus.Inactive
             };
             var H1 = new GatewayEntry()
             {
                 SiloAddress = siloAddress2,
+                ClusterId = "2",
                 HeartbeatTimestamp = ts2,
                 Status = GatewayStatus.Active
             };
             var H2 = new GatewayEntry()
             {
                 SiloAddress = siloAddress2,
+                ClusterId = "2",
                 HeartbeatTimestamp = ts3,
                 Status = GatewayStatus.Inactive
             };

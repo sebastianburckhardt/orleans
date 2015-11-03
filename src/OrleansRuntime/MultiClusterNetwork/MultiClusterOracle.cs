@@ -23,19 +23,22 @@ namespace Orleans.Runtime.MultiClusterNetwork
         private ISiloStatusOracle silostatusoracle;
 
         private string globalServiceId;
+        private string clusterId;
 
         private readonly BackgroundWorker gossipworker;
 
         private IReadOnlyList<string> defaultMultiCluster;
 
-        public MultiClusterOracle(SiloAddress silo, List<IGossipChannel> sources, GlobalConfiguration config)
+        public MultiClusterOracle(SiloAddress silo, string clusterid, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.MultiClusterOracleId, silo)
         {
             Debug.Assert(sources != null);
+            Debug.Assert(silo != null);
             logger = TraceLogger.GetLogger("MultiClusterOracle");
             gossipChannels = sources;
             localData = new MultiClusterOracleData(logger);
             globalServiceId = config.GlobalServiceId;
+            clusterId = config.ClusterId;
             defaultMultiCluster = config.DefaultMultiCluster;
             gossipworker = new BackgroundWorker(() => GossipWork());
             RefreshInterval = config.GossipChannelRefreshTimeout;
@@ -57,7 +60,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             var clusters = localData.Current.Gateways.Values
                  .Where(g => g.Status == GatewayStatus.Active)
-                 .Select(g => g.SiloAddress.ClusterId)
+                 .Select(g => g.ClusterId)
                  .Distinct();
 
             return clusters;
@@ -70,16 +73,22 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public SiloAddress GetRandomClusterGateway(string cluster)
         {
-            //TraceLogger.GetLogger("CMOD").Info("local data {0}", localTable);
-            var gateways = localData.Current.Gateways.Values
-                .Where(g => g.SiloAddress.ClusterId.Equals(cluster) && g.Status == GatewayStatus.Active)
-                .Select(g => g.SiloAddress)
-                .ToList();
+            var activegateways = new List<SiloAddress>();
 
-            if (gateways.Count == 0)
+            foreach(var gw in localData.Current.Gateways)
+            {
+                var cur = gw.Value;
+                if (cur.ClusterId != cluster)
+                    continue;
+                if (cur.Status != GatewayStatus.Active)
+                    continue;
+                activegateways.Add(cur.SiloAddress);
+            }
+
+            if (activegateways.Count == 0)
                 return null;
 
-            return gateways[random.Next(gateways.Count)];
+            return activegateways[random.Next(activegateways.Count)];
         }
 
         public MultiClusterConfiguration GetMultiClusterConfiguration()
@@ -114,12 +123,17 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public async Task Start(ISiloStatusOracle oracle)
         {
-            logger.Info(ErrorCode.MultiClusterNetwork_Starting, "MultiClusterOracle starting on {0} ", Silo);
+            logger.Info(ErrorCode.MultiClusterNetwork_Starting, "MultiClusterOracle starting on {0}, Severity={1} ", Silo, logger.SeverityLevel);
             try
             {
+                if (string.IsNullOrEmpty(clusterId))
+                    throw new OrleansException("Internal Error: missing cluster id");
+
                 this.silostatusoracle = oracle;
 
                 silostatusoracle.SubscribeToSiloStatusEvents(this);
+
+           
 
                 await Gossip();
 
@@ -185,6 +199,10 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             var demotesomegateways = (iamgateway) ? DemoteLocalGateways(activelocalgateways) : false;
 
+            if (logger.IsVerbose)
+                logger.Verbose("-GossipWork activegateways={0} iamgateway={1} localstatuschanged={2} configchanged={3} demotesomegateways={4}",
+                   string.Join(",",activelocalgateways), iamgateway, localstatuschanged, configchanged, demotesomegateways);
+
             if (localstatuschanged ||
                 configchanged ||
                 demotesomegateways ||
@@ -249,26 +267,30 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         private bool InjectLocalStatus(bool isgateway)
         {
-            var currentstatus = new GatewayEntry()
+            var mystatus = new GatewayEntry()
             {
+                ClusterId = clusterId,
                 SiloAddress = Silo,
                 Status = isgateway ? GatewayStatus.Active : GatewayStatus.Inactive,
-                HeartbeatTimestamp = DateTime.UtcNow
+                HeartbeatTimestamp = DateTime.UtcNow,
             };
 
             GatewayEntry whatsthere;
 
+            // do not update if we are reporting inactive status and entry is not already there
+            if (!localData.Current.Gateways.TryGetValue(Silo, out whatsthere) && !isgateway)
+                return false;
+
             // send if status is changed, or we are active and haven't said so in a while
-            if (! localData.Current.Gateways.TryGetValue(Silo, out whatsthere)
-                || whatsthere.Status != currentstatus.Status
-                || (currentstatus.Status == GatewayStatus.Active 
-                      && currentstatus.HeartbeatTimestamp - whatsthere.HeartbeatTimestamp > ResendActiveStatusAfter))
+            if (whatsthere == null
+                || whatsthere.Status != mystatus.Status
+                || (mystatus.Status == GatewayStatus.Active
+                      && mystatus.HeartbeatTimestamp - whatsthere.HeartbeatTimestamp > ResendActiveStatusAfter))
             {
-                if (logger.IsVerbose2)
-                    logger.Verbose2("-InjectLocalStatus {0}", currentstatus.ToString());
+                logger.Verbose2("-InjectLocalStatus {0}", mystatus);
 
                 // update current data with status
-                return localData.ApplyIncomingDataAndNotify(new MultiClusterData(currentstatus));
+                return localData.ApplyIncomingDataAndNotify(new MultiClusterData(mystatus));
             }
 
             return false;
@@ -281,15 +303,16 @@ namespace Orleans.Runtime.MultiClusterNetwork
             // mark gateways as inactive if they have not recently advertised their existence,
             // and if they are not designated gateways as per membership table
             var tobeupdated = localData.Current.Gateways
-                .Where(g => g.Key.ClusterId == Silo.ClusterId
+                .Where(g => g.Value.ClusterId == clusterId
                        && g.Value.Status == GatewayStatus.Active
                        && (now - g.Value.HeartbeatTimestamp > CleanupSilentGoneGatewaysAfter)
                        && !activegateways.Contains(g.Key))
                 .Select(g => new GatewayEntry()
                 {
-                    SiloAddress = g.Value.SiloAddress,
+                    ClusterId = g.Value.ClusterId,
+                    SiloAddress = g.Key,
                     Status = GatewayStatus.Inactive,
-                    HeartbeatTimestamp = g.Value.HeartbeatTimestamp + CleanupSilentGoneGatewaysAfter
+                    HeartbeatTimestamp = g.Value.HeartbeatTimestamp + CleanupSilentGoneGatewaysAfter,
                 });
 
             if (tobeupdated.Count() == 0)

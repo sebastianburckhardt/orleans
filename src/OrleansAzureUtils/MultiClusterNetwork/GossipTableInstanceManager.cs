@@ -48,17 +48,20 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public string Clusters { get; set; }   // comma-separated list of clusters
 
+        public string Comment { get; set; }
+
         #endregion
 
 
         internal const string CONFIGURATION_ROW = "CONFIG"; // Row key for configuration row.
 
-        public static string ConstructRowKey(SiloAddress silo)
+        internal const char SEPARATOR = ','; // safe because clusterid cannot contain commas
+
+        public static string ConstructRowKey(SiloAddress silo, string clusterid)
         {
-            return String.Format("{0}-{1}-{2}-{3}", silo.ClusterId, silo.Endpoint.Address, silo.Endpoint.Port, silo.Generation);
+            return String.Format("{1}{0}{2}{0}{3}{0}{4}", SEPARATOR, clusterid, silo.Endpoint.Address, silo.Endpoint.Port, silo.Generation);
         }
 
-        internal const char Separator = '-';
 
 
         internal void UnpackRowKey()
@@ -66,9 +69,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
             var debugInfo = "UnpackRowKey";
             try
             {
-                int idx3 = RowKey.LastIndexOf(Separator);
-                int idx2 = RowKey.LastIndexOf(Separator, idx3 - 1);
-                int idx1 = RowKey.LastIndexOf(Separator, idx2 - 1);
+                int idx3 = RowKey.LastIndexOf(SEPARATOR);
+                int idx2 = RowKey.LastIndexOf(SEPARATOR, idx3 - 1);
+                int idx1 = RowKey.LastIndexOf(SEPARATOR, idx2 - 1);
 
                 ClusterId = RowKey.Substring(0, idx1);
                 var addressstr = RowKey.Substring(idx1 + 1, idx2 - idx1 - 1);
@@ -78,7 +81,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 Port = Int32.Parse(portstr);
                 Generation = Int32.Parse(genstr);
 
-                this.SiloAddress = SiloAddress.New(new IPEndPoint(Address, Port), Generation, ClusterId);
+                this.SiloAddress = SiloAddress.New(new IPEndPoint(Address, Port), Generation);
             }
             catch (Exception exc)
             {
@@ -90,7 +93,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             string clusterliststring = Clusters;
             var clusterlist = clusterliststring.Split(',');
-            return new MultiClusterConfiguration(GossipTimestamp, clusterlist);
+            return new MultiClusterConfiguration(GossipTimestamp, clusterlist, Comment ?? "");
         }
 
         internal GatewayEntry ToGatewayEntry()
@@ -98,6 +101,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             // call this only after already unpacking row key
             return new GatewayEntry()
             {
+                ClusterId = ClusterId,
                 SiloAddress = SiloAddress,
                 Status = (GatewayStatus) Enum.Parse(typeof(GatewayStatus), Status),
                 HeartbeatTimestamp = GossipTimestamp
@@ -127,19 +131,18 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public string GlobalServiceId { get; private set; }
 
-        private GossipTableInstanceManager(string globalServiceId, string storageConnectionString)
+        private GossipTableInstanceManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
             GlobalServiceId = globalServiceId;
-            logger = TraceLogger.GetLogger(this.GetType().Name, TraceLogger.LoggerType.Runtime);
             storage = new AzureTableDataManager<GossipTableEntry>(
                 INSTANCE_TABLE_NAME, storageConnectionString, logger);
         }
 
-        public static async Task<GossipTableInstanceManager> GetManager(string globalServiceId, string storageConnectionString)
+        public static async Task<GossipTableInstanceManager> GetManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
             Debug.Assert(!string.IsNullOrEmpty(globalServiceId));
 
-            var instance = new GossipTableInstanceManager(globalServiceId, storageConnectionString);
+            var instance = new GossipTableInstanceManager(globalServiceId, storageConnectionString, logger);
             try
             {
                 await instance.storage.InitTableAsync()
@@ -178,7 +181,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal Task<Tuple<GossipTableEntry, string>> ReadGatewayEntryAsync(GatewayEntry gateway)
         {
-            return storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress));
+            return storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress, gateway.ClusterId));
         }
 
         internal async Task<bool> TryCreateConfigurationEntryAsync(MultiClusterConfiguration configuration)
@@ -190,7 +193,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 PartitionKey = GlobalServiceId,
                 RowKey = GossipTableEntry.CONFIGURATION_ROW,
                 GossipTimestamp = configuration.AdminTimestamp,
-                Clusters = string.Join(",", configuration.Clusters)
+                Clusters = string.Join(",", configuration.Clusters),
+                Comment = configuration.Comment ?? ""
             };
 
             return (await TryCreateTableEntryAsync("TryCreateConfigurationEntryAsync", entry) != null);
@@ -206,6 +210,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             Debug.Assert(entry.RowKey == GossipTableEntry.CONFIGURATION_ROW);
             entry.GossipTimestamp = configuration.AdminTimestamp;
             entry.Clusters = string.Join(",", configuration.Clusters);
+            entry.Comment = configuration.Comment ?? "";
 
             return (await TryUpdateTableEntryAsync("TryUpdateConfigurationEntryAsync", entry, eTag) != null);
         }
@@ -215,7 +220,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             var row = new GossipTableEntry()
             {
                 PartitionKey = GlobalServiceId,
-                RowKey = GossipTableEntry.ConstructRowKey(entry.SiloAddress),
+                RowKey = GossipTableEntry.ConstructRowKey(entry.SiloAddress, entry.ClusterId),
                 Status = entry.Status.ToString(),
                 GossipTimestamp = entry.HeartbeatTimestamp
             };
@@ -228,7 +233,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             Debug.Assert(row.ETag == eTag);
             Debug.Assert(row.PartitionKey == GlobalServiceId);
-            Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(entry.SiloAddress));
+            Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(entry.SiloAddress, entry.ClusterId));
             row.Status = entry.Status.ToString();
             row.GossipTimestamp = entry.HeartbeatTimestamp;
 
@@ -239,7 +244,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             Debug.Assert(row.ETag == eTag);
             Debug.Assert(row.PartitionKey == GlobalServiceId);
-            Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(row.SiloAddress));
+            Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(row.SiloAddress, row.ClusterId));
 
 
             return await TryDeleteTableEntryAsync("TryDeleteGatewayEntryAsync", row, eTag);

@@ -198,9 +198,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
     /// Information about gateways, as stored/transmitted in the multicluster network.
     /// </summary>
     [Serializable]
-    public class GatewayEntry : IMultiClusterGatewayInfo, IEquatable<GatewayEntry>
+    public class GatewayEntry : IMultiClusterGatewayInfo, IEquatable<GatewayEntry>, IComparable<GatewayEntry>
     {
-        public string ClusterId { get { return this.SiloAddress.ClusterId; } }
+        public string ClusterId { get; set; }
 
         public SiloAddress SiloAddress { get; set; }
 
@@ -227,12 +227,32 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         public static TimeSpan ExpiresAfter = new TimeSpan(hours: 0, minutes: 30, seconds: 0);
 
-
         public bool Equals(GatewayEntry other)
         {
             return SiloAddress.Equals(other.SiloAddress)
                 && Status.Equals(other.Status)
-                && HeartbeatTimestamp.Equals(other.HeartbeatTimestamp);
+                && HeartbeatTimestamp.Equals(other.HeartbeatTimestamp)
+                && ClusterId.Equals(other.ClusterId);
+        }
+
+        public override int GetHashCode()
+        {
+            return SiloAddress.GetHashCode() ^ ((int)Status << 8) ^ HeartbeatTimestamp.GetHashCode() ^ ClusterId.GetHashCode();
+        }
+
+        public int CompareTo(GatewayEntry other)
+        {
+            var diff = ClusterId.CompareTo(other.ClusterId);
+            if (diff != 0) return diff;
+            diff = SiloAddress.ToString().CompareTo(other.SiloAddress.ToString());
+            if (diff != 0) return diff;
+            diff = HeartbeatTimestamp.CompareTo(other.HeartbeatTimestamp);
+            return diff;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("[Gateway {0} {1} {2} {3}]", ClusterId, SiloAddress, Status, HeartbeatTimestamp);
         }
 
     }

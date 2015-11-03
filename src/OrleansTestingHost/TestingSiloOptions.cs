@@ -50,6 +50,8 @@ namespace Orleans.TestingHost
         public bool ParallelStart { get; set; }
         public GlobalConfiguration.ReminderServiceProviderType ReminderServiceType { get; set; }
         public string DataConnectionString { get; set; }
+        public Action<ClusterConfiguration> ConfigurationCustomizer { get; set; }
+
 
         public TestingSiloOptions()
         {
@@ -66,6 +68,7 @@ namespace Orleans.TestingHost
             SiloConfigFile = new FileInfo(DEFAULT_SILO_CONFIG_FILE);
             ParallelStart = false;
             AutoConfigNodeSettings = true;
+            ConfigurationCustomizer = null;
         }
 
         public TestingSiloOptions Copy()
@@ -87,7 +90,8 @@ namespace Orleans.TestingHost
                 DataConnectionString = DataConnectionString,
                 ParallelStart = ParallelStart,
                 AutoConfigNodeSettings = AutoConfigNodeSettings,
-                SiloName = SiloName
+                SiloName = SiloName,
+                ConfigurationCustomizer = ConfigurationCustomizer
             };
         }
     }

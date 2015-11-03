@@ -91,7 +91,7 @@ namespace Orleans.Runtime
         private readonly SiloType siloType;
         private readonly SiloStatisticsManager siloStatistics;
         private readonly MembershipFactory membershipFactory;
-        private readonly MultiClusterOracleFactory gossipFactory;
+        private readonly MultiClusterOracleFactory multiClusterFactory;
         private StorageProviderManager storageProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private readonly LocalReminderServiceFactory reminderFactory;
@@ -311,7 +311,7 @@ namespace Orleans.Runtime
             incomingAgent = new IncomingMessageAgent(Message.Categories.Application, messageCenter, activationDirectory, scheduler, dispatcher);
 
             membershipFactory = new MembershipFactory();
-            gossipFactory = new MultiClusterOracleFactory();
+            multiClusterFactory = new MultiClusterOracleFactory();
             
             reminderFactory = new LocalReminderServiceFactory();
             
@@ -455,7 +455,7 @@ namespace Orleans.Runtime
 
             IMembershipTable membershipTable = membershipFactory.GetMembershipTable(GlobalConfig.LivenessType, GlobalConfig.MembershipTableAssembly);
             membershipOracle = membershipFactory.CreateMembershipOracle(this, membershipTable);
-            multiClusterOracle = gossipFactory.CreateGossipOracle(this).WaitForResultWithThrow(initTimeout);
+            multiClusterOracle = multiClusterFactory.CreateGossipOracle(this).WaitForResultWithThrow(initTimeout);
             
             // This has to follow the above steps that start the runtime components
             CreateSystemTargets();

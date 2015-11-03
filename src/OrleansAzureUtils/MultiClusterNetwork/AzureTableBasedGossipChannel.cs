@@ -46,11 +46,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public async Task Initialize(GlobalConfiguration globalconfig, string connectionstring)
         {
-            logger.Info("Initializing Gossip Channel for ServiceId={0} using connection: {1}",
-                globalconfig.GlobalServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring));
+            logger.Info("Initializing Gossip Channel for ServiceId={0} using connection: {1}, SeverityLevel={2}",
+                globalconfig.GlobalServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
 
             tableManager =
-                await GossipTableInstanceManager.GetManager(globalconfig.GlobalServiceId, connectionstring);
+                await GossipTableInstanceManager.GetManager(globalconfig.GlobalServiceId, connectionstring, logger);
         }
 
         // used by unit tests
@@ -77,6 +77,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
         // IGossipChannel
         public async Task Push(MultiClusterData data)
         {
+            logger.Verbose("-Push data:{0}", data);
+
             var retrievaltasks = new List<Task<Tuple<GossipTableEntry,string>>>();
             if (data.Configuration != null)
                 retrievaltasks.Add(tableManager.ReadConfigurationEntryAsync());
@@ -92,8 +94,25 @@ namespace Orleans.Runtime.MultiClusterNetwork
         // IGossipChannel
         public async Task<MultiClusterData> PushAndPull(MultiClusterData pushed)
         {
-            var entriesfromstorage = await tableManager.FindAllGossipTableEntries();
-            return await DiffAndWriteBack(pushed, entriesfromstorage);
+            logger.Verbose("-PushAndPull pushed:{0}", pushed);
+
+            try
+            {
+
+                var entriesfromstorage = await tableManager.FindAllGossipTableEntries();
+                var delta = await DiffAndWriteBack(pushed, entriesfromstorage);
+
+                logger.Verbose("-PushAndPull pulled delta:{0}", delta);
+
+                return delta;
+            }
+            catch (Exception e)
+            {
+                logger.Info("-PushAndPull encountered exception {0}", e);
+
+                throw e;
+            }
+
         }
 
         internal async Task<MultiClusterData> DiffAndWriteBack(MultiClusterData pushed, IEnumerable<Tuple<GossipTableEntry, string>> entriesfromstorage)
@@ -131,7 +150,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     catch (Exception exc)
                     {
                         logger.Error(ErrorCode.AzureTable_61, String.Format(
-                            "Intermediate error parsing SiloInstanceTableEntry to MembershipTableData: {0}. Ignoring this entry.",
+                            "Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.",
                             tableEntry), exc);
                     }
                 }

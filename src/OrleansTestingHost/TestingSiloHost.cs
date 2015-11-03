@@ -571,6 +571,9 @@ namespace Orleans.TestingHost
 
             config.AdjustForTestEnvironment();
 
+            if (options.ConfigurationCustomizer != null)
+                options.ConfigurationCustomizer(config);
+
             _livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
             _gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
 
@@ -631,6 +634,11 @@ namespace Orleans.TestingHost
                 catch (RemotingException re) { Console.WriteLine(re); /* Ignore error */ }
                 catch (Exception exc) { Console.WriteLine(exc); throw; }
             }
+
+            // give silo a bit more time before unloading appdomain
+            // e.g. for completing async storage requests
+            if (stopGracefully)
+                System.Threading.Thread.Sleep(3000);
 
             try
             {

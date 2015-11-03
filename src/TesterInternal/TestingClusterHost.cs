@@ -9,6 +9,7 @@ using Orleans.MultiCluster;
 using System.Reflection;
 using System.Globalization;
 using UnitTests.Tester;
+using Orleans.Runtime.Configuration;
 
 namespace Tests.GeoClusterTests
 {
@@ -64,7 +65,7 @@ namespace Tests.GeoClusterTests
         /// <param name="configFile"></param>
         /// <param name="numSilos"></param>
         /// <returns></returns>
-        public string NewCluster(string configFile, int numSilos)
+        public string NewCluster(string configFile, int numSilos, Action<ClusterConfiguration> customizer = null)
         {
             var handleList = new List<SiloHandle>();
             SiloHandle silo;
@@ -73,7 +74,8 @@ namespace Tests.GeoClusterTests
                 SiloConfigFile = new FileInfo(configFile),
                 StartClient = false,
                 AutoConfigNodeSettings = false,
-                SiloName = "Primary"
+                SiloName = "Primary",
+                ConfigurationCustomizer = customizer
             };
             silo = StartAdditionalSilo(Silo.SiloType.Primary, primaryOption);
             handleList.Add(silo);
@@ -87,8 +89,9 @@ namespace Tests.GeoClusterTests
                     SiloConfigFile = new FileInfo(configFile),
                     StartClient = false,
                     AutoConfigNodeSettings = false,
-                    SiloName = "Secondary_" + i
-                };
+                    SiloName = "Secondary_" + i,
+                    ConfigurationCustomizer = customizer
+               };
                 silo = StartAdditionalSilo(Silo.SiloType.Secondary, options);
                 lock(handleList)
                    handleList.Add(silo);

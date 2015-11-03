@@ -319,7 +319,14 @@ namespace Orleans.Runtime.MembershipService
             Debug.Assert(!string.IsNullOrEmpty(GlobalServiceId)); // call only if this is a multi cluster
 
             var candidates = localTableCopyOnlyActive.Keys.ToList();
-            candidates.Sort();
+
+            // sort deterministically so everyone ends up with the same result
+            candidates.Sort((a, b) =>  
+            {
+                var addressdiff = a.Endpoint.Address.ToString().CompareTo(b.Endpoint.Address.ToString());
+                if (addressdiff != 0) return addressdiff;
+                return a.Endpoint.Port.CompareTo(b.Endpoint.Port);
+            });
 
             // take all the active silos if their count does not exceed the desired number of gateways
             if (candidates.Count <= NumMultiClusterGatewaysPerCluster)
@@ -357,7 +364,7 @@ namespace Orleans.Runtime.MembershipService
                 var list = groups[keys[i % keys.Count]];
                 var col = i / keys.Count;
                 if (col < list.Count)
-                    result.Add(list[col]);
+                    result.Add(list[col]); // keep only endpoint
             }
             return result;
         }

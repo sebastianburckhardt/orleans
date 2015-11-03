@@ -93,8 +93,8 @@
     <Compile Include="..\Build\GlobalAssemblyInfo.cs">
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="GossipNetwork\AzureTableBasedGossipChannel.cs" />
-    <Compile Include="GossipNetwork\GossipTableInstanceManager.cs" />
+    <Compile Include="MultiClusterNetwork\AzureTableBasedGossipChannel.cs" />
+    <Compile Include="MultiClusterNetwork\GossipTableInstanceManager.cs" />
     <Compile Include="Providers\Streams\PersistentStreams\AzureTableStorageStreamFailureHandler.cs" />
     <Compile Include="Providers\Streams\PersistentStreams\StreamDeliveryFailureEntity.cs" />
     <Compile Include="Storage\AzureBasedMembershipTable.cs" />
