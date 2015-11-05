@@ -13,18 +13,11 @@ using Orleans.Runtime.Configuration;
 
 namespace Tests.GeoClusterTests
 {
-    //TODO: start a cluster by default based on the default config file?
-    public class TestingClusterHost: TestingSiloHost
+    public class TestingClusterHost  
     {
         protected readonly Dictionary<string, ClusterInfo> clusters;
 
         public TestingClusterHost()
-            : base(new TestingSiloOptions
-            {
-                StartClient = false,
-                StartPrimary = false,
-                StartSecondary = false
-            })
         {
             clusters = new Dictionary<string, ClusterInfo>();
 
@@ -33,9 +26,7 @@ namespace Tests.GeoClusterTests
 
         protected struct ClusterInfo
         {
-            public List<SiloHandle> activeSilos;  // currently active silos
-            public List<SiloHandle> stoppedSilos; // gracefully stopped silos
-            public List<SiloHandle> killedSilos;  // killed silos
+            public List<SiloHandle> silos;  // currently active silos
             public string config;                 // the configuration file TODO: keep this as a structure
         }
 
@@ -46,8 +37,12 @@ namespace Tests.GeoClusterTests
         {
             return Path.Combine(ConfigPrefix, fileName);
         }
+        public static void WriteLog(string format, params object[] args)
+        {
+            Console.WriteLine(format, args);
+        }
 
-        #region Silos and Cluster Creation
+        #region Cluster Creation
 
         /// <summary>
         /// This function takes a Config file corresponding to a
@@ -67,21 +62,19 @@ namespace Tests.GeoClusterTests
         /// <returns></returns>
         public string NewCluster(string configFile, int numSilos, Action<ClusterConfiguration> customizer = null)
         {
-            var handleList = new List<SiloHandle>();
-            SiloHandle silo;
+            WriteLog("Starting New Cluster...");
+            var silohandles = new SiloHandle[numSilos];
+
             var primaryOption = new TestingSiloOptions
             {
                 SiloConfigFile = new FileInfo(configFile),
                 StartClient = false,
                 AutoConfigNodeSettings = false,
                 SiloName = "Primary",
-                ConfigurationCustomizer = customizer
+                ConfigurationCustomizer = customizer,
             };
-            silo = StartAdditionalSilo(Silo.SiloType.Primary, primaryOption);
-            handleList.Add(silo);
-
-            string clusterId = silo.Silo.GlobalConfig.ClusterId;
-
+            silohandles[0] = TestingSiloHost.StartOrleansSilo(Silo.SiloType.Primary, primaryOption, 0);
+           
             Parallel.For(1, numSilos, i =>
             {
                 var options = new TestingSiloOptions
@@ -92,94 +85,59 @@ namespace Tests.GeoClusterTests
                     SiloName = "Secondary_" + i,
                     ConfigurationCustomizer = customizer
                };
-                silo = StartAdditionalSilo(Silo.SiloType.Secondary, options);
-                lock(handleList)
-                   handleList.Add(silo);
+
+               silohandles[i] = TestingSiloHost.StartOrleansSilo(Silo.SiloType.Secondary, options, i);
             });
             
+            string clusterId = silohandles[0].Silo.GlobalConfig.ClusterId;
+
             clusters[clusterId] = new ClusterInfo { config = configFile,
-                                                    activeSilos = handleList,
-                                                    stoppedSilos = new List<SiloHandle>(),
-                                                    killedSilos = new List<SiloHandle>()};
+                                                    silos = silohandles.ToList() };
+
+            WriteLog("Cluster {0} started.", clusterId);
             return clusterId;
         }
 
-        public bool AddSiloToCluster(string clusterId, string siloName, Silo.SiloType type)
+        public void AddSiloToCluster(string clusterId, string siloName, Action<ClusterConfiguration> customizer = null)
         {
-            var configFile = clusters[clusterId].config;
-
-            // if cluster was not created
-            if (String.IsNullOrEmpty(configFile)) return false;
+            var clusterinfo = clusters[clusterId];
 
             var options = new TestingSiloOptions
             {
-                SiloConfigFile = new FileInfo(configFile),
+                SiloConfigFile = new FileInfo(clusterinfo.config),
                 StartClient = false,
                 AutoConfigNodeSettings = false,
-                SiloName = siloName
+                SiloName = siloName, 
+                ConfigurationCustomizer = customizer
             };
-            var silo = StartAdditionalSilo(type, options);
-
-            if (clusters[clusterId].activeSilos == null) return false; // should not be the case
-
-            clusters[clusterId].activeSilos.Add(silo);
-            return true;
+            var silo = TestingSiloHost.StartOrleansSilo(Silo.SiloType.Secondary, options, clusterinfo.silos.Count);
         }
 
-        public bool StopSiloInCluster(string clusterId, string siloName)
+        public void StopCluster(string cluster)
         {
-            var silo = GetActiveSiloInClusterByName(clusterId, siloName);
-            if (silo == null) return false;
-
-            StopSilo(silo);
-
-            clusters[clusterId].activeSilos.Remove(silo);
-            clusters[clusterId].stoppedSilos.Add(silo);
-           
-            return true;
+            var info = clusters[cluster];
+            Parallel.For(1, info.silos.Count, i => TestingSiloHost.StopSilo(info.silos[i]));
+            TestingSiloHost.StopSilo(info.silos[0]);
         }
 
-        public bool KillSiloInClusterByName(string clusterId, string siloName)
+        public void StopAllClientsAndClusters()
         {
-            var silo = GetActiveSiloInClusterByName(clusterId, siloName);
-            if (silo == null) return false;
-
-            KillSilo(silo);
-
-            clusters[clusterId].activeSilos.Remove(silo);
-            clusters[clusterId].stoppedSilos.Add(silo);
-
-            return true;
-        }
-
-        public bool KillGatewaySiloInCluster(string clusterId)
-        {
-            //TODO: wait for stabilization to make sure we kill an actual GW?
-            var silos = clusters[clusterId].activeSilos;
-            if (silos == null || silos.Count == 0)
-                return false;
-
-            // get a random active silo and use it to interrogate the gossip network
-            SiloHandle silo = silos[0];
-            SiloAddress sa = silo.Silo.LocalMultiClusterOracle.GetRandomClusterGateway(silo.Silo.GlobalConfig.ClusterId);
-
-            // find the cluster gateway
-            silo = silos.Find(s => s.Silo.SiloAddress.Equals(sa));
-
-            KillSiloInClusterByName(silo.Name, clusterId);
-            return true;
+            WriteLog("Stopping All Clients and Clusters...");
+            StopAllClients();
+            StopAllClusters();
+            WriteLog("All Clients and Clusters Are Stopped.");
         }
 
         public void StopAllClusters()
         {
-            StopAllSilos();
-            // TODO: clear structures
+            Parallel.ForEach(clusters.Keys, key => StopCluster(key));
         }
 
-        public List<SiloHandle> GetActiveSilosInCluster(string clusterId)
+        public List<SiloHandle> GetSilosInCluster(string clusterId)
         {
-            return clusters[clusterId].activeSilos;
+            return clusters[clusterId].silos;
         }
+
         #endregion
 
         #region client wrappers
@@ -228,6 +186,7 @@ namespace Tests.GeoClusterTests
                 }
             }
         }
+
         #endregion
 
         #region Cluster Config
@@ -236,7 +195,7 @@ namespace Tests.GeoClusterTests
         {
             // pick an active silo of the specified cluster and gossip the new configuration
 
-            var activeSilo = clusters[cluster].activeSilos.FirstOrDefault();
+            var activeSilo = clusters[cluster].silos.FirstOrDefault();
            
             if (activeSilo == null) return false;
 
@@ -244,17 +203,29 @@ namespace Tests.GeoClusterTests
 
             activeSilo.Silo.TestHookup.InjectMultiClusterConfiguration(new MultiClusterConfiguration(DateTime.UtcNow, clusterlist));
 
-            await WaitForMultiClusterGossipToStabilizeAsync();
+            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync();
 
             return true;
         }
 
+        public void BlockAllClusterCommunication(string from, string to)
+        {
+            foreach (var silo in clusters[from].silos)
+                foreach (var dest in clusters[to].silos)
+                    silo.Silo.TestHookup.BlockSiloCommunication(dest.Endpoint, true);
+        }
+
+        public void UnblockAllClusterCommunication(string from)
+        {
+            foreach (var silo in clusters[from].silos)
+                    silo.Silo.TestHookup.UnblockSiloCommunication();
+        }
 
   
         private SiloHandle GetActiveSiloInClusterByName(string clusterId, string siloName)
         {
-            if (clusters[clusterId].activeSilos == null) return null;
-            return clusters[clusterId].activeSilos.Find(s => s.Name == siloName);
+            if (clusters[clusterId].silos == null) return null;
+            return clusters[clusterId].silos.Find(s => s.Name == siloName);
         }
         #endregion
     }

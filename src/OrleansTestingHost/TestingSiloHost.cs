@@ -193,7 +193,7 @@ namespace Orleans.TestingHost
         /// Wait for the silo liveness sub-system to detect and act on any recent cluster membership changes.
         /// </summary>
         /// <param name="didKill">Whether recent membership changes we done by graceful Stop.</param>
-        public async Task WaitForLivenessToStabilizeAsync(bool didKill = false)
+        public static async Task WaitForLivenessToStabilizeAsync(bool didKill = false)
         {
             TimeSpan stabilizationTime = _livenessStabilizationTime;
             WriteLog(Environment.NewLine + Environment.NewLine + "WaitForLivenessToStabilize is about to sleep for {0}", stabilizationTime);
@@ -224,7 +224,7 @@ namespace Orleans.TestingHost
         /// <summary>
         /// Wait for the multicluster-gossip sub-system to stabilize.
         /// </summary>
-        public async Task WaitForMultiClusterGossipToStabilizeAsync()
+        public static async Task WaitForMultiClusterGossipToStabilizeAsync()
         {
             TimeSpan stabilizationTime = _gossipStabilizationTime;
             WriteLog(Environment.NewLine + Environment.NewLine + "WaitForMultiClusterGossipToStabilizeAsync is about to sleep for {0}", stabilizationTime);
@@ -524,7 +524,7 @@ namespace Orleans.TestingHost
             }
         }
 
-        private static SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
+        public static SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
         {
             // Load initial config settings, then apply some overrides below.
             ClusterConfiguration config = new ClusterConfiguration();
