@@ -934,8 +934,10 @@ namespace Orleans.Runtime
                 SiloCommunicationBlocks[destination] = block;
             }
 
-      
-         
+            internal void UnblockSiloCommunication()
+            {
+                SiloCommunicationBlocks = null;
+            }
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
             internal void SendMessageInternal(Message message)

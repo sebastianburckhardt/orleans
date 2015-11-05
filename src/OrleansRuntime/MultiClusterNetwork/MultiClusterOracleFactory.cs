@@ -31,7 +31,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             if (channels.Count == 0)
                 logger.Warn(ErrorCode.MultiClusterNetwork_NoChannelsConfigured, "No gossip channels are configured.");
 
-            var gossiporacle = new MultiClusterOracle(silo.SiloAddress, silo.MyClusterId, channels, silo.GlobalConfig);
+            var gossiporacle = new MultiClusterOracle(silo.SiloAddress, silo.ClusterId, channels, silo.GlobalConfig);
 
             logger.Info("Created multicluster oracle.");
 
