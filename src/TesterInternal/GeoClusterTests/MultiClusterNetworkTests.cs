@@ -35,6 +35,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.MultiCluster;
 using System.Net;
 using Orleans.Runtime.MultiClusterNetwork;
+using Orleans.TestingHost;
 
 // ReSharper disable InconsistentNaming
 
@@ -59,7 +60,7 @@ namespace Tests.GeoClusterTests
         [ClassInitialize]
         public static void ClassInitialize(TestContext testContext)
         {
-            StopAllSilos();
+            TestingSiloHost.StopAllSilos();
         }
 
         // Kill all clients and silos.
@@ -68,8 +69,7 @@ namespace Tests.GeoClusterTests
         {
             try
             {
-                StopAllClients();
-                StopAllClusters();
+                StopAllClientsAndClusters();
             }
             catch (Exception e)
             {
@@ -131,7 +131,7 @@ namespace Tests.GeoClusterTests
             var cur = clientA.GetMultiClusterConfiguration();
             Assert.IsNull(cur, "no configuration should be there yet");
 
-            await WaitForLivenessToStabilizeAsync();
+            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             cur = clientA.GetMultiClusterConfiguration();
             Assert.IsNull(cur, "no configuration should be there yet");
@@ -157,7 +157,7 @@ namespace Tests.GeoClusterTests
             cur = clientB.GetMultiClusterConfiguration();
             Assert.IsNull(cur, "no configuration should be there yet");
 
-            await WaitForLivenessToStabilizeAsync();
+            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             cur = clientB.GetMultiClusterConfiguration();
             Assert.IsNull(cur, "no configuration should be there yet");
@@ -181,7 +181,7 @@ namespace Tests.GeoClusterTests
                 // immediately visible on A, visible after stabilization on B
                 cur = clientA.GetMultiClusterConfiguration();
                 Assert.IsTrue(conf.Equals(cur));
-                await WaitForLivenessToStabilizeAsync();
+                await TestingSiloHost.WaitForLivenessToStabilizeAsync();
                 cur = clientA.GetMultiClusterConfiguration();
                 Assert.IsTrue(conf.Equals(cur));
                 cur = clientB.GetMultiClusterConfiguration();
@@ -189,17 +189,17 @@ namespace Tests.GeoClusterTests
             }
 
             // shut down cluster B
-            StopSilo(clusters[clusterB].activeSilos[0]);
+            TestingSiloHost.StopSilo(clusters[clusterB].silos[0]);
 
             // expect disappearance of gateway from multicluster network
-            await WaitForLivenessToStabilizeAsync();
+            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
             gateways = clientA.GetMultiClusterGateways();
             Assert.AreEqual(2, gateways.Count, "Expect 2 gateways");
             var activegateways = gateways.Where(g => g.Status == GatewayStatus.Active).ToList();
             Assert.AreEqual(1, activegateways.Count, "Expect 1 active gateway");
             Assert.AreEqual("A", activegateways[0].ClusterId);
 
-            StopAllClusters();
+            StopAllClientsAndClusters();
         }
 
         private void AssertSameList(List<IMultiClusterGatewayInfo> a, List<IMultiClusterGatewayInfo> b)
@@ -214,6 +214,8 @@ namespace Tests.GeoClusterTests
                 Assert.AreEqual(a[i].Status, b[i].Status, "status at pos " + i + " must match");
             }
         }
+
+  
 
         [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
         [Timeout(120000)]
@@ -247,7 +249,7 @@ namespace Tests.GeoClusterTests
             var clusterB = NewCluster(GetConfigFile("Config_Cluster1.xml"), 3, customizerB);
             var clientB = CreateClient<ClientWrapper>("ClientB", GetConfigFile("Config_Client1.xml"));
 
-            await WaitForLivenessToStabilizeAsync();
+            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             // check that default configuration took effect
             var cur = clientA.GetMultiClusterConfiguration();
@@ -261,12 +263,12 @@ namespace Tests.GeoClusterTests
             var activegatewaysB = clientB.GetMultiClusterGateways().Where(g => g.Status == GatewayStatus.Active).ToList();
  
             // shut down one of the gateways in cluster B gracefully
-            var target = clusters[clusterB].activeSilos.Where(h => h.Endpoint.Port == 21117).FirstOrDefault();
+            var target = clusters[clusterB].silos.Where(h => h.Endpoint.Port == 21117).FirstOrDefault();
             Assert.IsNotNull(target);
-            StopSilo(target);
+            TestingSiloHost.StopSilo(target);
 
             // expect disappearance and replacement of gateway from multicluster network
-            await WaitForLivenessToStabilizeAsync();
+            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
             AssertSameList(clientA.GetMultiClusterGateways(), clientB.GetMultiClusterGateways());
             activegateways = clientA.GetMultiClusterGateways().Where(g => g.Status == GatewayStatus.Active).ToList();
             Assert.AreEqual("21111,21112", string.Join(",", activegateways.Where(g => g.ClusterId == "A").Select(g => g.SiloAddress.Endpoint.Port).OrderBy(x => x)));
@@ -274,9 +276,9 @@ namespace Tests.GeoClusterTests
      
 
             // kill one of the gateways in cluster A
-            target = clusters[clusterA].activeSilos.Where(h => h.Endpoint.Port == 21112).FirstOrDefault();
+            target = clusters[clusterA].silos.Where(h => h.Endpoint.Port == 21112).FirstOrDefault();
             Assert.IsNotNull(target);
-            KillSilo(target);
+            TestingSiloHost.KillSilo(target);
 
             // wait for time necessary before peer removal can kick in
             await Task.Delay(MultiClusterOracle.CleanupSilentGoneGatewaysAfter);
@@ -293,13 +295,16 @@ namespace Tests.GeoClusterTests
             }
 
             // wait for periodic gossipwork
-            await WaitForLivenessToStabilizeAsync();
+            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
 
             AssertSameList(clientA.GetMultiClusterGateways(), clientB.GetMultiClusterGateways());
             activegateways = clientA.GetMultiClusterGateways().Where(g => g.Status == GatewayStatus.Active).ToList();
             Assert.AreEqual("21111,21113", string.Join(",", activegateways.Where(g => g.ClusterId == "A").Select(g => g.SiloAddress.Endpoint.Port).OrderBy(x => x)));
             Assert.AreEqual("21116,21118", string.Join(",", activegateways.Where(g => g.ClusterId == "B").Select(g => g.SiloAddress.Endpoint.Port).OrderBy(x => x)));
+
+            StopAllClientsAndClusters();
+
         }
 
     }
