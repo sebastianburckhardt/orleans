@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
-    class MultiClusterOracleData
+    class MultiClusterOracleData : IMultiClusterGossipData
     {
         private volatile MultiClusterData localdata;  // immutable, can read without lock
 
@@ -41,7 +41,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             conf_changes = new List<MultiClusterConfiguration>();
 
             if (logger.IsVerbose2)
-                logger.Verbose2("-NotificationWork: {0} nonempty deltas", conflist.Count);
+                logger.Verbose2("Configuration Notifications: {0} updates", conflist.Count);
 
             // do the listener notifications on threadpool so as to not starve multicluster oracle when there are many
             await Task.Run(() =>
@@ -49,24 +49,24 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 lock (confListeners) // must not race with add/remove of status listeners
                 {
                     foreach (var listener in confListeners)
-                        try
+                        foreach (var conf in conflist)
                         {
-                            foreach (var conf in conflist)
+                            try
                             {
                                 if (logger.IsVerbose3)
-                                    logger.Verbose3("-NotificationWork: notify {0}", listener.GetType().FullName);
+                                    logger.Verbose3("-NotificationWork: notify IProtocolParticipant {0} of configuration {1}", listener, conf);
 
                                 // enqueue event as grain call
                                 var g = InsideRuntimeClient.Current.InternalGrainFactory.Cast<IProtocolParticipant>(listener);
                                 g.OnMultiClusterConfigurationChange(conf).Ignore();
                                 //TODO advertise completion of all notifications in multicluster network
                             }
-                        }
-                        catch (Exception exc)
-                        {
-                            logger.Error(ErrorCode.MultiClusterNetwork_LocalSubscriberException,
-                                String.Format("Local IReplicationProtocolParticipant {0} has thrown an exception",
-                                listener.GetType().FullName), exc);
+                            catch (Exception exc)
+                            {
+                                logger.Error(ErrorCode.MultiClusterNetwork_LocalSubscriberException,
+                                    String.Format("IProtocolParticipant {0} threw exception processing configuration {1}",
+                                    listener, conf), exc);
+                            }
                         }
                 }
             });
@@ -76,7 +76,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         internal bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer)
         {
             if (logger.IsVerbose3)
-                logger.Verbose3("-SubscribeToMultiClusterConfigurationEvents: {0}", observer.GetType().FullName);
+                logger.Verbose3("SubscribeToMultiClusterConfigurationEvents: {0}", observer);
 
             lock (confListeners)
             {
@@ -91,7 +91,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         internal bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
         {
             if (logger.IsVerbose3)
-                logger.Verbose3("-UnSubscribeFromMultiClusterConfigurationEvents: {0}", observer.GetType().FullName);
+                logger.Verbose3("UnSubscribeFromMultiClusterConfigurationEvents: {0}", observer);
 
             lock (confListeners)
             {
@@ -100,10 +100,10 @@ namespace Orleans.Runtime.MultiClusterNetwork
         }
 
 
-        public bool ApplyIncomingDataAndNotify(MultiClusterData data)
+        public MultiClusterData ApplyDataAndNotify(MultiClusterData data)
         {
             if (data.IsEmpty)
-                return false;
+                return data;
 
             MultiClusterData delta;
             MultiClusterData prev = localdata;
@@ -111,17 +111,17 @@ namespace Orleans.Runtime.MultiClusterNetwork
             localdata = prev.Merge(data, out delta);
 
             if (logger.IsVerbose2)
-                logger.Verbose2("-ApplyIncomingDataAndNotify: delta {0}", delta.ToString());
+                logger.Verbose2("ApplyDataAndNotify: delta {0}", delta);
 
             if (delta.IsEmpty)
-                return false;
+                return delta;
 
             if (delta.Configuration != null)
                 conf_changes.Add(delta.Configuration);
 
             notificationworker.Notify();
 
-            return true;
+            return delta;
         }
 
 

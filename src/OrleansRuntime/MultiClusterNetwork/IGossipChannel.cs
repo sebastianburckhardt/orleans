@@ -25,6 +25,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
         Task Initialize(GlobalConfiguration globalconfig, string connectionstring);
 
         /// <summary>
+        /// A name for the channel.
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
         /// One-way small-scale gossip: send partial data to recipient
         /// </summary>
         /// <param name="data"></param>
@@ -39,7 +44,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
         Task<MultiClusterData> PushAndPull(MultiClusterData data);
 
     }
-
-
+ 
 
 }

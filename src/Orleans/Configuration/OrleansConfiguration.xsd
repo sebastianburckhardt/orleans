@@ -846,10 +846,10 @@
               </xs:documentation>
             </xs:annotation>
           </xs:attribute>
-          <xs:attribute name="GossipChannelRefreshTimeout" type="tns:TimeSpan" use="optional">
+          <xs:attribute name="BackgroundGossipInterval" type="tns:TimeSpan" use="optional">
             <xs:annotation>
               <xs:documentation>
-                The number of milliseconds between the periodic gossips with each channels.
+                The time between periodic background gossips.
               </xs:documentation>
             </xs:annotation>
           </xs:attribute>

@@ -33,4 +33,11 @@ namespace Orleans.MultiCluster
         [AlwaysInterleave]
         Task OnMultiClusterConfigurationChange(MultiClusterConfiguration next);
     }
+
+    /// <summary>
+    /// interface to mark classes that represent protocol messages
+    /// </summary>
+    public interface IProtocolMessage
+    {
+    }
 }

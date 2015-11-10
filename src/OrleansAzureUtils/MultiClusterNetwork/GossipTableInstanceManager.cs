@@ -134,6 +134,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         private GossipTableInstanceManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
             GlobalServiceId = globalServiceId;
+            this.logger = logger;
             storage = new AzureTableDataManager<GossipTableEntry>(
                 INSTANCE_TABLE_NAME, storageConnectionString, logger);
         }
@@ -141,7 +142,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public static async Task<GossipTableInstanceManager> GetManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
             Debug.Assert(!string.IsNullOrEmpty(globalServiceId));
-
+            Debug.Assert(logger != null);
+            
             var instance = new GossipTableInstanceManager(globalServiceId, storageConnectionString, logger);
             try
             {

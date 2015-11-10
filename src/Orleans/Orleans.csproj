@@ -95,7 +95,6 @@
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\GrainStateStorageBridge.cs" />
     <Compile Include="Core\IGrainIdentity.cs" />
-    <Compile Include="MultiCluster\IProtocolMessage.cs" />
     <Compile Include="MultiCluster\MultiClusterConfiguration.cs" />
     <Compile Include="MultiCluster\IProtocolParticipant.cs" />
     <Compile Include="Core\IStorage.cs" />
@@ -137,6 +136,7 @@
     <Compile Include="RelationalStorage\SqlFormatProvider.cs" />
     <Compile Include="Streams\PubSub\ImplicitStreamPubSub.cs" />
     <Compile Include="Streams\PubSub\StreamPubSubImpl.cs" />
+    <Compile Include="SystemTargetInterfaces\IMultiClusterGossipService.cs" />
     <Compile Include="Timers\IReminderRegistry.cs" />
     <Compile Include="Runtime\IRuntimeClient.cs" />
     <Compile Include="Runtime\IGrainExtension.cs" />

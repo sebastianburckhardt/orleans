@@ -236,8 +236,10 @@ namespace Orleans.TestingHost
         {
             TimeSpan stabilizationTime = TimeSpan.Zero;
 
-            // direct gossip is not yet implemented, so have to rely refresh timeout
-            stabilizationTime += global.GossipChannelRefreshTimeout + TimeSpan.FromMilliseconds(50);
+            // without failures, gossip is pushed eagerly thanks to direct pushes
+            stabilizationTime += TimeSpan.FromSeconds(3);
+
+            // stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
 
             return stabilizationTime;
         }

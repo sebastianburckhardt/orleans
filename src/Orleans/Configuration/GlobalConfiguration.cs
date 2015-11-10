@@ -263,9 +263,9 @@ namespace Orleans.Runtime.Configuration
         public int NumMultiClusterGateways { get; set; }
 
         /// <summary>
-        /// The number of seconds to periodically gossip with all gossip channels.
+        /// The number of seconds between background gossips.
         /// </summary>
-        public TimeSpan GossipChannelRefreshTimeout { get; set; }
+        public TimeSpan BackgroundGossipInterval { get; set; }
 
         /// <summary>
         /// A list of connection strings for gossip channels.
@@ -485,7 +485,7 @@ namespace Orleans.Runtime.Configuration
         private const int DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT = 2;
         private const bool DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP = true;
         private const int DEFAULT_NUM_MULTICLUSTER_GATEWAYS = 4;
-        private static readonly TimeSpan DEFAULT_GOSSIP_CHANNEL_REFRESH_TIMEOUT = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan BACKGROUND_GOSSIP_INTERVAL = TimeSpan.FromSeconds(10);
         private const int DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE = 20;
         private const int DEFAULT_CACHE_SIZE = 1000000;
         private static readonly TimeSpan DEFAULT_INITIAL_CACHE_TTL = TimeSpan.FromSeconds(30);
@@ -526,7 +526,7 @@ namespace Orleans.Runtime.Configuration
             UseLivenessGossip = DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP;
             MaxJoinAttemptTime = DEFAULT_LIVENESS_MAX_JOIN_ATTEMPT_TIME;
             NumMultiClusterGateways = DEFAULT_NUM_MULTICLUSTER_GATEWAYS;
-            GossipChannelRefreshTimeout = DEFAULT_GOSSIP_CHANNEL_REFRESH_TIMEOUT;
+            BackgroundGossipInterval = BACKGROUND_GOSSIP_INTERVAL;
             ExpectedClusterSizeConfigValue = new ConfigValue<int>(DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE, true);
             ServiceId = Guid.Empty;
             DeploymentId = Environment.UserName;
@@ -601,7 +601,7 @@ namespace Orleans.Runtime.Configuration
                 sb.AppendFormat("      DefaultMultiCluster: {0}", 
                     DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
                 sb.AppendFormat("      NumMultiClusterGateways: {0}", NumMultiClusterGateways).AppendLine();
-                sb.AppendFormat("      GossipChannelRefreshTimeout: {0}", GossipChannelRefreshTimeout).AppendLine();
+                sb.AppendFormat("      BackgroundGossipInterval: {0}", BackgroundGossipInterval).AppendLine();
                 sb.AppendFormat("      GossipChannels: {0}", string.Join(",", GossipChannels.Select(conf => conf.ChannelType.ToString() + ":" + conf.ConnectionString))).AppendLine();
             }
 
@@ -835,10 +835,10 @@ namespace Orleans.Runtime.Configuration
                                         throw new FormatException("MultiClusterNetwork.DefaultMultiCluster cannot contain blank cluster ids: " + toparse);
                             }
                         }
-                        if (child.HasAttribute("GossipChannelRefreshTimeout"))
+                        if (child.HasAttribute("BackgroundGossipInterval"))
                         {
-                            GossipChannelRefreshTimeout = ConfigUtilities.ParseTimeSpan(child.GetAttribute("GossipChannelRefreshTimeout"),
-                                "Invalid time value for the GossipChannelRefreshTimeout attribute on the MultiClusterNetwork element");
+                            BackgroundGossipInterval = ConfigUtilities.ParseTimeSpan(child.GetAttribute("BackgroundGossipInterval"),
+                                "Invalid time value for the BackgroundGossipInterval attribute on the MultiClusterNetwork element");
                         }
                         if (child.HasAttribute("NumMultiClusterGateways"))
                         {

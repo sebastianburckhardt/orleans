@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Orleans.MultiCluster;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
@@ -14,7 +15,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
     /// Data is gossip-able.
     /// </summary>
     [Serializable]
-    public class MultiClusterData : IEquatable<MultiClusterData>
+    public class MultiClusterData : IEquatable<MultiClusterData>, IMultiClusterGossipData
     {
         /// <summary>
         /// The dictionary of gateway entries and their current status.
@@ -37,7 +38,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 return Gateways.Count == 0 && Configuration == null;
             }
         }
- 
+
+   
+        private static Dictionary<SiloAddress, GatewayEntry> emptyd = new Dictionary<SiloAddress, GatewayEntry>();
 
         #region constructor overloads
 
@@ -71,7 +74,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
             Gateways = emptyd;
             Configuration = config;
         }
-        private static IReadOnlyDictionary<SiloAddress, GatewayEntry> emptyd = new Dictionary<SiloAddress, GatewayEntry>();
 
         #endregion
 
@@ -85,6 +87,32 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 Gateways.Count
             );
         }
+
+        /// <summary>
+        /// Check whether a particular silo is an active gateway for a cluster
+        /// </summary>
+        /// <param name="address">the silo address</param>
+        /// <param name="clusterid">the id of the cluster</param>
+        /// <returns></returns>
+        public bool IsActiveGatewayForCluster(SiloAddress address, string clusterid)
+        {
+            GatewayEntry info;
+            return  Gateways.TryGetValue(address, out info) 
+                && info.ClusterId == clusterid && info.Status == GatewayStatus.Active;
+        }
+
+
+        /// <summary>
+        ///  merge source into this object, and return result.
+        ///  Ignores expired entries in source, and removes expired entries from this.
+        /// <param name="source">The source data to apply to the data in this object</param>
+        /// <returns>The updated data</returns>
+        public MultiClusterData Merge(MultiClusterData source)
+        {
+            MultiClusterData ignore;
+            return Merge(source, out ignore);
+        }
+
 
         /// <summary>
         ///  incorporate source, producing new result, and report delta.

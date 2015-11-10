@@ -8,8 +8,7 @@
      <SeedNode Address="localhost" Port="21116"/>
     <MultiClusterNetwork GlobalServiceId="0"
                          ClusterId="1"
-                         NumMultiClusterGateways="2"
-                         GossipChannelRefreshTimeout="3s">
+                         NumMultiClusterGateways="2">
       <GossipChannel Type="AzureTable" ConnectionString="DefaultEndpointsProtocol=https;AccountName=orleansgeotest;AccountKey=2c7R3ajGg44yknj9sYRFaZE2fiwdj3dlsux3KJHG7neurpnP7/+EL23do0ttYuzQwqkcd9icNIB/0XpiURjftg=="/>
     </MultiClusterNetwork>
     <Directory ReplicationFactor="0"/>
