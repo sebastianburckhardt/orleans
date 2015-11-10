@@ -156,6 +156,12 @@ namespace Orleans.Runtime
         Task<MultiClusterConfiguration> GetMultiClusterConfiguration();
 
         /// <summary>
+        /// Get all silos that do not have the expected configuration.
+        /// </summary>
+        /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
+        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected);
+ 
+        /// <summary>
         /// Inject a multicluster configuration. For this to have any effect, its UTC admin timestamp must be newer 
         /// than the latest configuration stored in the multicluster network.
         /// </summary>

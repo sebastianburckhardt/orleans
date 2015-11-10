@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 using Orleans.MultiCluster;
 using Orleans.Concurrency;
+using System;
+using System.Collections.Generic;
 
 namespace Orleans.Runtime
 {
@@ -22,6 +24,14 @@ namespace Orleans.Runtime
         /// <param name="data">The pushed gossip data</param>
         /// <returns>The returned gossip data</returns>
         Task<IMultiClusterGossipData> PushAndPull(IMultiClusterGossipData data);
+
+        /// <summary>
+        /// Find silos whose configuration does not match the expected configuration.
+        /// </summary>
+        /// <param name="expected">the configuration to compare with</param>
+        /// <param name="forwardlocally">whether to recursively include all silos in the same cluster</param>
+        /// <returns></returns>
+        Task<Dictionary<SiloAddress,MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardlocally);
     }
 
 

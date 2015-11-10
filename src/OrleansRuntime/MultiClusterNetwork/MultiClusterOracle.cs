@@ -348,7 +348,67 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return Task.FromResult((IMultiClusterGossipData)delta);
         }
 
+        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected)
+        {
+            var localtask = FindUnstableSilos(expected, true);
 
+            var remotetasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
+            foreach (var cluster in GetActiveClusters())
+                if (cluster != clusterId)
+                {
+                    var silo = GetRandomClusterGateway(cluster);
+                    if (silo == null)
+                        throw new OrleansException("no gateway for cluster " + cluster);
+                    var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, silo);
+                    remotetasks.Add(remoteoracle.FindUnstableSilos(expected, true));
+                }
+
+            var result = await localtask;
+
+            await Task.WhenAll(remotetasks);
+
+            foreach (var t in remotetasks)
+                foreach (var kvp in t.Result)
+                    result.Add(kvp.Key, kvp.Value);
+
+            return result;
+        }
+
+
+        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardlocally)
+        {
+            logger.Verbose("--- FindUnstableSilos: {0}, {1}", forwardlocally ? "remote" : "local", expected);
+
+            var result = new Dictionary<SiloAddress, MultiClusterConfiguration>();
+
+            if (! MultiClusterConfiguration.SameAs(localData.Current.Configuration, expected))
+                result.Add(this.Silo, localData.Current.Configuration);
+
+            if (forwardlocally)
+            {
+                var tasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
+
+                  foreach (var kvp in silostatusoracle.GetApproximateSiloStatuses())
+                       if (!kvp.Key.Equals(Silo) && kvp.Value == SiloStatus.Active)
+                       {
+                           var silo = kvp.Key;
+                           var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, silo);
+                           tasks.Add(remoteoracle.FindUnstableSilos(expected, false));
+                       }
+ 
+                await Task.WhenAll(tasks);
+
+                foreach (var t in tasks)
+                    foreach (var kvp in t.Result)
+                        result.Add(kvp.Key, kvp.Value);
+            }
+
+            logger.Verbose("--- FindUnstableSilos: done, found {0}", result.Count);
+
+            return result;
+        }
+
+      
 
         private void PushMyStatusToNewDestinations(MultiClusterData delta)
         {
@@ -711,5 +771,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
             }
         }
 
+
+
+    
     }
 }

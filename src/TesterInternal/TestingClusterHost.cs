@@ -191,22 +191,6 @@ namespace Tests.GeoClusterTests
 
         #region Cluster Config
 
-        public async Task<bool> InjectClusterConfiguration(string cluster, string Conf)
-        {
-            // pick an active silo of the specified cluster and gossip the new configuration
-
-            var activeSilo = clusters[cluster].silos.FirstOrDefault();
-           
-            if (activeSilo == null) return false;
-
-            var clusterlist = Conf.Split(',').ToList();
-
-            activeSilo.Silo.TestHookup.InjectMultiClusterConfiguration(new MultiClusterConfiguration(DateTime.UtcNow, clusterlist));
-
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync();
-
-            return true;
-        }
 
         public void BlockAllClusterCommunication(string from, string to)
         {

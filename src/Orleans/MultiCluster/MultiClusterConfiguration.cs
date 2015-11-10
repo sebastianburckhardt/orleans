@@ -52,9 +52,16 @@ namespace Orleans.MultiCluster
             else
                 return b != null && a.AdminTimestamp < b.AdminTimestamp;
         }
+        public static bool SameAs(MultiClusterConfiguration a, MultiClusterConfiguration b)
+        {
+            return (a == b) || (a != null && a.Equals(b));
+        }
 
         public bool Equals(MultiClusterConfiguration other)
         {
+            if (other == null)
+                return false;
+
             if (!AdminTimestamp.Equals(other.AdminTimestamp)
                 || Clusters.Count != other.Clusters.Count)
                 return false;

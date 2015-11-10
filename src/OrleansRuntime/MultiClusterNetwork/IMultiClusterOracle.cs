@@ -31,10 +31,13 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         /// <param name="siloAddress">A gateway whose status we are interested in.</param>
         bool IsFunctionalClusterGateway(SiloAddress siloAddress);
-
-
-        
-
+    
+        /// <summary>
+        /// Get all silos that do not have the expected configuration.
+        /// </summary>
+        /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
+        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected);
+  
         /// <summary>
         /// Returns a list of cluster ids for active clusters based on what gateways we have stored in the table.
         /// </summary>

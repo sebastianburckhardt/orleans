@@ -351,15 +351,42 @@ namespace Orleans.Runtime.Management
             return Task.FromResult(multiclusteroracle.GetMultiClusterConfiguration());
         }
 
-        public Task InjectMultiClusterConfiguration(MultiClusterConfiguration configuration)
+        public async Task InjectMultiClusterConfiguration(MultiClusterConfiguration configuration)
         {
-            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+            if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
                 throw new OrleansException("No multicluster network configured");
 
             var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
-            return multiclusteroracle.InjectMultiClusterConfiguration(configuration);
+
+            if (! MultiClusterConfiguration.OlderThan(multiclusteroracle.GetMultiClusterConfiguration(), configuration))
+                throw new OrleansException("could not inject configuration: must use more recent timestamp");
+
+            try
+            {
+                var unstablesilos = await multiclusteroracle.GetSilosWithUnstableConfiguration(multiclusteroracle.GetMultiClusterConfiguration());
+
+                if (unstablesilos.Count > 0)
+                {
+                    var msg = string.Format("Unstable silos {0}", string.Join(",", unstablesilos.Keys));
+                    throw new OrleansException(msg);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new OrleansException("could not inject configuration: current configuration not stable", e);
+            }
+
+            await multiclusteroracle.InjectMultiClusterConfiguration(configuration);
+        }
+
+        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected)
+        {
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            return multiclusteroracle.GetSilosWithUnstableConfiguration(expected);
         }
 
         #endregion
+
+
     }
 }
