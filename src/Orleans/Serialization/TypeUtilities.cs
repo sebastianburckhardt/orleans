@@ -33,11 +33,14 @@ using Orleans.Concurrency;
 
 namespace Orleans.Serialization
 {
+    using System.Runtime.CompilerServices;
+
     internal static class TypeUtilities
     {
         internal static bool IsOrleansPrimitive(this Type t)
         {
-            return t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(DateTime) || t == typeof(Decimal) || (t.IsArray && t.GetElementType().IsOrleansPrimitive());
+            var typeInfo = t.GetTypeInfo();
+            return typeInfo.IsPrimitive || typeInfo.IsEnum || t == typeof(string) || t == typeof(DateTime) || t == typeof(Decimal) || (typeInfo.IsArray && typeInfo.GetElementType().IsOrleansPrimitive());
         }
 
         static readonly Dictionary<RuntimeTypeHandle, bool> shallowCopyableValueTypes = new Dictionary<RuntimeTypeHandle, bool>();
@@ -61,25 +64,26 @@ namespace Orleans.Serialization
 
         internal static bool IsOrleansShallowCopyable(this Type t)
         {
-            if (t.IsPrimitive || t.IsEnum || t == typeof (string) || t == typeof (DateTime) || t == typeof (Decimal) ||
+            var typeInfo = t.GetTypeInfo();
+            if (typeInfo.IsPrimitive || typeInfo.IsEnum || t == typeof (string) || t == typeof (DateTime) || t == typeof (Decimal) ||
                 t == typeof (Immutable<>))
                 return true;
 
-            if (t.GetCustomAttributes(typeof (ImmutableAttribute), false).Length > 0) 
+            if (typeInfo.GetCustomAttributes(typeof (ImmutableAttribute), false).Length > 0) 
                 return true;  
 
-            if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof (Immutable<>))
+            if (typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof (Immutable<>))
                 return true;
 
-            if (t.IsValueType && !t.IsGenericType && !t.IsGenericTypeDefinition)
+            if (typeInfo.IsValueType && !typeInfo.IsGenericType && !typeInfo.IsGenericTypeDefinition)
             {
                 bool result;
                 lock (shallowCopyableValueTypes)
                 {
-                    if (shallowCopyableValueTypes.TryGetValue(t.TypeHandle, out result))
+                    if (shallowCopyableValueTypes.TryGetValue(typeInfo.TypeHandle, out result))
                         return result;
                 }
-                result = t.GetFields().All(f => !(f.FieldType == t) && f.FieldType.IsOrleansShallowCopyable());
+                result = typeInfo.GetFields().All(f => !(f.FieldType == t) && f.FieldType.IsOrleansShallowCopyable());
                 lock (shallowCopyableValueTypes)
                 {
                     shallowCopyableValueTypes[t.TypeHandle] = result;
@@ -92,7 +96,8 @@ namespace Orleans.Serialization
 
         internal static bool IsSpecializationOf(this Type t, Type match)
         {
-            return t.IsGenericType && t.GetGenericTypeDefinition() == match;
+            var typeInfo = t.GetTypeInfo();
+            return typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == match;
         }
 
         internal static string OrleansTypeName(this Type t)
@@ -129,21 +134,22 @@ namespace Orleans.Serialization
 
         public static string OrleansTypeKeyString(this Type t)
         {
+            var typeInfo = t.GetTypeInfo();
             string key;
             lock (typeKeyStringCache)
             {
-                if (typeKeyStringCache.TryGetValue(t.TypeHandle, out key))
+                if (typeKeyStringCache.TryGetValue(typeInfo.TypeHandle, out key))
                     return key;
             }
 
             var sb = new StringBuilder();
-            if (t.IsGenericTypeDefinition)
+            if (typeInfo.IsGenericTypeDefinition)
             {
                 sb.Append(GetBaseTypeKey(t));
                 sb.Append('\'');
-                sb.Append(t.GetGenericArguments().Length);
+                sb.Append(typeInfo.GetGenericArguments().Length);
             }
-            else if (t.IsGenericType)
+            else if (typeInfo.IsGenericType)
             {
                 sb.Append(GetBaseTypeKey(t));
                 sb.Append('<');
@@ -185,18 +191,20 @@ namespace Orleans.Serialization
 
         private static string GetBaseTypeKey(Type t)
         {
+            var typeInfo = t.GetTypeInfo();
+
             string namespacePrefix = "";
-            if ((t.Namespace != null) && !t.Namespace.StartsWith("System.") && !t.Namespace.Equals("System"))
+            if ((typeInfo.Namespace != null) && !typeInfo.Namespace.StartsWith("System.") && !typeInfo.Namespace.Equals("System"))
             {
-                namespacePrefix = t.Namespace + '.';
+                namespacePrefix = typeInfo.Namespace + '.';
             }
 
-            if (t.IsNestedPublic)
+            if (typeInfo.IsNestedPublic)
             {
-                return namespacePrefix + OrleansTypeKeyString(t.DeclaringType) + "." + t.Name;
+                return namespacePrefix + OrleansTypeKeyString(typeInfo.DeclaringType) + "." + typeInfo.Name;
             }
 
-            return namespacePrefix + t.Name;
+            return namespacePrefix + typeInfo.Name;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
@@ -217,19 +225,76 @@ namespace Orleans.Serialization
             }
         }
 
-        public static bool IsTypeIsInaccessibleForSerialization(Type t, Module currentModule, Assembly grainAssembly)
+        public static bool IsTypeIsInaccessibleForSerialization(Type t, Module fromModule, Assembly fromAssembly)
         {
-            if(t.GetCustomAttributes(typeof(SerializableAttribute), false).Length > 0)
-                return false;
+            var typeInfo = t.GetTypeInfo();
 
-            if (t.IsNotPublic)
+            if (!typeInfo.IsVisible && typeInfo.IsConstructedGenericType)
             {
-                if (!t.Module.Equals(currentModule)) return true; // subtype is defined in a different assembly from the outer type
-                if (!t.Assembly.Equals(grainAssembly)) return true; // subtype defined in a different assembly from the one we are generating serializers for.
+                foreach (var inner in typeInfo.GetGenericArguments())
+                {
+                    if (IsTypeIsInaccessibleForSerialization(inner, fromModule, fromAssembly))
+                    {
+                        return true;
+                    }
+                }
+                
+                return IsTypeIsInaccessibleForSerialization(
+                    typeInfo.GetGenericTypeDefinition(),
+                    fromModule,
+                    fromAssembly);
             }
 
-            return t.IsNestedPrivate || t.IsNestedFamily ||
-                (t.IsArray && IsTypeIsInaccessibleForSerialization(t.GetElementType(), currentModule, grainAssembly));
+            if ((typeInfo.IsNotPublic || !typeInfo.IsVisible) && !AreInternalsVisibleTo(typeInfo.Assembly, fromAssembly))
+            {
+                // subtype is defined in a different assembly from the outer type
+                if (!typeInfo.Module.Equals(fromModule))
+                {
+                    return true;
+                }
+
+                // subtype defined in a different assembly from the one we are generating serializers for.
+                if (!typeInfo.Assembly.Equals(fromAssembly))
+                {
+                    return true;
+                }
+            }
+
+            if (typeInfo.IsArray)
+            {
+                return IsTypeIsInaccessibleForSerialization(typeInfo.GetElementType(), fromModule, fromAssembly);
+            }
+
+            var result = typeInfo.IsNestedPrivate || typeInfo.IsNestedFamily;
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="fromAssembly"/> has exposed its internals to <paramref name="toAssembly"/>, false otherwise.
+        /// </summary>
+        /// <param name="fromAssembly">The assembly containing internal types.</param>
+        /// <param name="toAssembly">The assembly requiring access to internal types.</param>
+        /// <returns>
+        /// true if <paramref name="fromAssembly"/> has exposed its internals to <paramref name="toAssembly"/>, false otherwise
+        /// </returns>
+        private static bool AreInternalsVisibleTo(Assembly fromAssembly, Assembly toAssembly)
+        {
+            // If the to-assembly is null, it cannot have internals visible to it.
+            if (toAssembly == null)
+            {
+                return false;
+            }
+
+            // Check InternalsVisibleTo attributes on the from-assembly, pointing to the to-assembly.
+            var serializationAssemblyName = toAssembly.GetName().FullName;
+            var internalsVisibleTo = fromAssembly.GetCustomAttributes<InternalsVisibleToAttribute>();
+            if (internalsVisibleTo.All(_ => _.AssemblyName != serializationAssemblyName))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

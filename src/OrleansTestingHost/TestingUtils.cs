@@ -22,7 +22,10 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
+using System.IO;
 using System.Net;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,31 +35,28 @@ namespace Orleans.TestingHost
     {
         public static async Task WaitUntilAsync(Func<bool,Task<bool>> predicate, TimeSpan timeout)
         {
-            bool keepGoing = true;
-            int numLoops = 0;
-            // ReSharper disable AccessToModifiedClosure
+            var keepGoing = new[] { true };
             Func<Task> loop =
                 async () =>
                 {
                     do
                     {
-                        numLoops++;
                         // need to wait a bit to before re-checking the condition.
                         await Task.Delay(TimeSpan.FromSeconds(1));
                     }
-                    while (!await predicate(!keepGoing) && keepGoing);
+                    while (!await predicate(!keepGoing[0]) && keepGoing[0]);
                 };
-            // ReSharper restore AccessToModifiedClosure
 
             var task = loop();
             try
             {
-                await Task.WhenAny(new Task[] { task, Task.Delay(timeout) });
+                await Task.WhenAny(task, Task.Delay(timeout));
             }
             finally
             {
-                keepGoing = false;
+                keepGoing[0] = false;
             }
+
             await task;
         }
 
@@ -96,6 +96,16 @@ namespace Orleans.TestingHost
             // We did not complete before the timeout, we fire and forget to ensure we observe any exceptions that may occur
             taskToComplete.Ignore();
             throw new TimeoutException(message);
+        }
+
+        public static T RoundTripDotNetSerializer<T>(T input)
+        {
+            IFormatter formatter = new BinaryFormatter();
+            MemoryStream stream = new MemoryStream(new byte[100000], true);
+            formatter.Serialize(stream, input);
+            stream.Position = 0;
+            T output = (T)formatter.Deserialize(stream);
+            return output;
         }
     }
 }

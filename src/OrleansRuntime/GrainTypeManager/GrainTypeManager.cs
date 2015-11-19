@@ -26,9 +26,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Orleans.CodeGeneration;
-using Orleans.Core;
 using Orleans.Runtime.Providers;
 using Orleans.Serialization;
+using System.Reflection;
 
 namespace Orleans.Runtime
 {
@@ -68,6 +68,9 @@ namespace Orleans.Runtime
             // 1. We scan the file system for assemblies meeting pre-determined criteria, specified in SiloAssemblyLoader.LoadApplicationAssemblies (called by the constructor).
             // 2. We load those assemblies into memory. In the official distribution of Orleans, this is usually 4 assemblies.
             var loader = new SiloAssemblyLoader();
+
+            // Generate code for newly loaded assemblies.
+            CodeGeneratorManager.GenerateAndCacheCodeForAllAssemblies();
 
             // (no more assemblies should be loaded into memory, so now is a good time to log all types registered with the serialization manager)
             SerializationManager.LogRegisteredTypes();
@@ -253,7 +256,7 @@ namespace Orleans.Runtime
             public InvokerData(Type invokerType)
             {
                 baseInvokerType = invokerType;
-                if(invokerType.IsGenericType)
+                if(invokerType.GetTypeInfo().IsGenericType)
                     cachedGenericInvokers = new Dictionary<string, IGrainMethodInvoker>();
             }
 

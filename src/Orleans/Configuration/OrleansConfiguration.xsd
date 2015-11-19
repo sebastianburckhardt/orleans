@@ -184,6 +184,36 @@
         Specifies global messaging configuration.
       </xs:documentation>
     </xs:annotation>
+    <xs:sequence>
+      <xs:element name="SerializationProviders" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>
+            A collection of serialization providers that implement the Orleans.Serialization.IExternalSerializer interface.
+            IMPORTANT: The silo and client configurations must match.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Provider" minOccurs="1" maxOccurs="unbounded">
+              <xs:annotation>
+                <xs:documentation>
+                  A member of the provider collection.
+                </xs:documentation>
+              </xs:annotation>
+              <xs:complexType>
+                <xs:attribute name="type" type="xs:string">
+                  <xs:annotation>
+                    <xs:documentation>
+                      The fully qualified type name of a non-abstract, non-generic class that has a default parameterless constructor and implements Orleans.Serialization.IExternalSerializer
+                    </xs:documentation>
+                  </xs:annotation>
+                </xs:attribute>         
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
     <xs:attribute name="ResponseTimeout" type="tns:TimeSpan" use="optional">
       <xs:annotation>
         <xs:documentation>
@@ -296,6 +326,29 @@
           this variable should not be specified in the OrleansConfiguration.xml (it will be overwritten if specified).
           If the silos are deployed on the cluster and not as Azure roles,  this variable should be set in the OrleansConfiguration.xml file.
           If not set at all, DevelopmentStorageAccount will be used.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="DataConnectionStringForReminders" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+          Overrides the data connection string for reminders storage if differs from DataConnectionString
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="AdoInvariant" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+           When using ADO, identifies the underlying data provider for liveness and reminders. This three-part naming syntax is also used
+           when creating a new factory and for identifying the provider in an application configuration file so that the provider name,
+           along with its associated connection string, can be retrieved at run time. https://msdn.microsoft.com/en-us/library/dd0w4a2z%28v=vs.110%29.aspx
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="AdoInvariantForReminders" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+          Overrides the AdoInvariant for reminders storage if differs
         </xs:documentation>
       </xs:annotation>
     </xs:attribute>

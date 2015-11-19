@@ -37,28 +37,37 @@
     <WarningsAsErrors>4014</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Orleans.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Azure.SqlDatabase.ElasticScale.Client">
+      <HintPath>..\packages\Microsoft.Azure.SqlDatabase.ElasticScale.Client.1.1.0\lib\net45\Microsoft.Azure.SqlDatabase.ElasticScale.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Data.Edm">
-      <HintPath>..\packages\Microsoft.Data.Edm.5.6.0\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\Microsoft.Data.Edm.5.6.0\lib\net40\Microsoft.Data.Edm.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Data.OData">
-      <HintPath>..\packages\Microsoft.Data.OData.5.6.0\lib\net40\Microsoft.Data.OData.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\Microsoft.Data.OData.5.6.0\lib\net40\Microsoft.Data.OData.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Data.Services.Client">
-      <HintPath>..\packages\Microsoft.Data.Services.Client.5.6.0\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\Microsoft.Data.Services.Client.5.6.0\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework">
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Configuration">
-      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.2.0.0.0\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\Microsoft.WindowsAzure.ConfigurationManager.2.0.0.0\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Storage">
-      <HintPath>..\packages\WindowsAzure.Storage.4.2.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\WindowsAzure.Storage.4.2.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(SolutionDir)\packages\Newtonsoft.Json.6.0.5\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -67,16 +76,18 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data.Services" />
     <Reference Include="System.Spatial">
-      <HintPath>..\packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System.Transactions" />
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="General\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
     <Compile Include="GeoClusterTests\ClusterConfigTests.cs" />
     <Compile Include="General\InterfaceRules.cs" />
     <Compile Include="GeoClusterTests\MultiClusterNetworkTests.cs" />
+    <Compile Include="MembershipTests\MySqlMembershipTableTests.cs" />
     <Compile Include="OrleansRuntime\AsyncSerialExecutorTests.cs" />
     <Compile Include="OrleansRuntime\ExceptionsTests.cs" />
     <Compile Include="OrleansRuntime\Streams\BestFitBalancerTests.cs" />
@@ -84,15 +95,19 @@
     <Compile Include="..\Build\GlobalAssemblyInfo.cs">
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="MembershipTests\SQLMembershipTableTests.cs" />
+    <Compile Include="MembershipTests\SqlServerMembershipTableTests.cs" />
+    <Compile Include="RemindersTest\MySqlRemindersTableTests.cs" />
     <Compile Include="RemindersTest\ReminderTablePluginTests.cs" />
-    <Compile Include="RemindersTest\SqlRemindersTableTests.cs" />
+    <Compile Include="RemindersTest\SqlServerRemindersTableTests.cs" />
+    <Compile Include="General\SerializationTests.cs" />
     <Compile Include="GeoClusterTests\AzureClusterMembershipOracleTests_Standalone.cs" />
     <Compile Include="GeoClusterTests\AzureGossipTableTests.cs" />
     <Compile Include="StorageTests\AzureTableDataManagerStressTests.cs" />
     <Compile Include="StorageTests\AzureTableErrorCodeTests.cs" />
     <Compile Include="MembershipTests\AzureMembershipTableTests.cs" />
     <Compile Include="MembershipTests\MembershipTablePluginTests.cs" />
+    <Compile Include="StorageTests\SQLAdapter\SampleGrainStateMapFactory.cs" />
+    <Compile Include="StorageTests\SQLAdapter\ShardTests.cs" />
     <Compile Include="StorageTests\UnitTestAzureTableDataManager.cs" />
     <Compile Include="StorageTests\AzureTableDataManagerTests.cs" />
     <Compile Include="StorageTests\SiloInstanceTableManagerTests.cs" />
@@ -129,6 +144,10 @@
       <Project>{6ff2004c-cdf8-479c-bf27-c6bfe8ef93e0}</Project>
       <Name>OrleansRuntime</Name>
     </ProjectReference>
+    <ProjectReference Include="..\OrleansSQLUtils\OrleansSqlUtils.csproj">
+      <Project>{47e9ae37-4eae-48d5-a778-2c80e9a6375f}</Project>
+      <Name>OrleansSqlUtils</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OrleansTestingHost\OrleansTestingHost.csproj">
       <Project>{40ee3b00-d381-485f-9c69-ff706837deed}</Project>
       <Name>OrleansTestingHost</Name>
@@ -163,7 +182,11 @@
     <None Include="ReadMe.md" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\OrleansProviders\SQLServer\CreateOrleansTables_SqlServer.sql">
+    <Content Include="..\OrleansSQLUtils\CreateOrleansTables_MySql.sql">
+      <Link>CreateOrleansTables_MySql.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\OrleansSQLUtils\CreateOrleansTables_SqlServer.sql">
       <Link>CreateOrleansTables_SqlServer.sql</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

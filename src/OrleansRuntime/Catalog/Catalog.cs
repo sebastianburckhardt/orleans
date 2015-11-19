@@ -641,8 +641,14 @@ namespace Orleans.Runtime
             GrainTypeData grainTypeData = GrainTypeManager[grainClassName];
 
             Type grainType = grainTypeData.Type;
-            Grain grain = (Grain) Activator.CreateInstance(grainType);
-            // Inject runtime hookups into grain instance
+
+            // TODO: Change back to GetRequiredService after stable Microsoft.Framework.DependencyInjection is released and can be referenced here
+            var services = Runtime.Silo.CurrentSilo.Services;
+            var grain = services != null
+                ? (Grain) services.GetService(grainType)
+                : (Grain) Activator.CreateInstance(grainType);
+
+            // Inject runtime hooks into grain instance
             grain.Runtime = grainRuntime;
             grain.Data = data;
 
@@ -795,6 +801,7 @@ namespace Orleans.Runtime
                 {
                     // Change the ActivationData state here, since we're about to give up the lock.
                     data.PrepareForDeactivation(); // Don't accept any new messages
+                    ActivationCollector.TryCancelCollection(data);
                     if (!data.IsCurrentlyExecuting)
                     {
                         promptly = true;
@@ -843,6 +850,7 @@ namespace Orleans.Runtime
                     {
                         // Change the ActivationData state here, since we're about to give up the lock.
                         activationData.PrepareForDeactivation(); // Don't accept any new messages
+                        ActivationCollector.TryCancelCollection(activationData);
                         if (!activationData.IsCurrentlyExecuting)
                         {
                             if (destroyNow == null)
@@ -889,7 +897,7 @@ namespace Orleans.Runtime
         public Task DeactivateAllActivations()
         {
             logger.Info(ErrorCode.Catalog_DeactivateAllActivations, "DeactivateAllActivations.");
-            var activationsToShutdown = activations.Select(kv => kv.Value).ToList();
+            var activationsToShutdown = activations.Where(kv => !kv.Value.IsExemptFromCollection).Select(kv => kv.Value).ToList();
             return DeactivateActivations(activationsToShutdown);
         }
 
@@ -1280,6 +1288,10 @@ namespace Orleans.Runtime
             // thus it will only deliver a "remove" notification for a given silo once to us. Therefore, we need to react the fist time we are notified.
             // We may review the directory behaiviour in the future and treat ShuttingDown differently ("drain only") and then this code will have to change a well.
             if (!status.IsTerminating()) return;
+            if (status == SiloStatus.Dead)
+            {
+                RuntimeClient.Current.BreakOutstandingMessagesToDeadSilo(updatedSilo);
+            }
 
             var activationsToShutdown = new List<ActivationData>();
             try

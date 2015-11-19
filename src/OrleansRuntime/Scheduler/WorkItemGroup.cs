@@ -32,7 +32,7 @@ using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime.Scheduler
 {
-    [DebuggerDisplay("WorkItemGroup State={state} WorkItemCount={WorkItemCount} Context={SchedulingContext.Name}")]
+    [DebuggerDisplay("WorkItemGroup Name={Name} State={state}")]
     internal class WorkItemGroup : IWorkItem
     {
         private enum WorkGroupStatus
@@ -68,7 +68,12 @@ namespace Orleans.Runtime.Scheduler
 
         public ISchedulingContext SchedulingContext { get; set; }
 
-        public bool IsSystem
+        public bool IsSystemPriority
+        {
+            get { return SchedulingUtils.IsSystemPriorityContext(SchedulingContext); }
+        }
+
+        internal bool IsSystemGroup
         {
             get { return SchedulingUtils.IsSystemContext(SchedulingContext); }
         }
@@ -160,7 +165,7 @@ namespace Orleans.Runtime.Scheduler
             totalQueuingDelay = TimeSpan.Zero;
             quantumExpirations = 0;
             TaskRunner = new ActivationTaskScheduler(this);
-            log = IsSystem ? TraceLogger.GetLogger("Scheduler." + Name + ".WorkItemGroup", TraceLogger.LoggerType.Runtime) : appLogger;
+            log = IsSystemPriority ? TraceLogger.GetLogger("Scheduler." + Name + ".WorkItemGroup", TraceLogger.LoggerType.Runtime) : appLogger;
 
             if (StatisticsCollector.CollectShedulerQueuesStats)
             {
@@ -206,6 +211,7 @@ namespace Orleans.Runtime.Scheduler
                         String.Format("Enqueuing task {0} to a stopped work item group. Going to ignore and not execute it. "
                         + "The likely reason is that the task is not being 'awaited' properly.", task),
                         ErrorCode.SchedulerNotEnqueuWorkWhenShutdown);
+                    task.Ignore(); // Ignore this Task, so in case it is faulted it will not cause UnobservedException.
                     return;
                 }
 
@@ -248,7 +254,7 @@ namespace Orleans.Runtime.Scheduler
                     ReportWorkGroupProblem(
                         String.Format("WorkItemGroup is being stoped while still active. workItemCount = {0}." 
                         + "The likely reason is that the task is not being 'awaited' properly.", WorkItemCount),
-                        ErrorCode.SchedulerWorkGroupStopping); // Throws InvalidOperationException
+                        ErrorCode.SchedulerWorkGroupStopping);
                 }
 
                 if (state == WorkGroupStatus.Shutdown)
@@ -267,7 +273,12 @@ namespace Orleans.Runtime.Scheduler
 
                 if (StatisticsCollector.CollectShedulerQueuesStats)
                     queueTracking.OnStopExecution();
-                
+
+                foreach (Task task in workItems)
+                {
+                    // Ignore all queued Tasks, so in case they are faulted they will not cause UnobservedException.
+                    task.Ignore();
+                }
                 workItems.Clear();
             }
         }
@@ -420,8 +431,8 @@ namespace Orleans.Runtime.Scheduler
 
         public override string ToString()
         {
-            return String.Format("{0}WorkItemGroup:Name={1},State={2}",
-                IsSystem ? "System*" : "",
+            return String.Format("{0}WorkItemGroup:Name={1},WorkGroupStatus={2}",
+                IsSystemGroup ? "System*" : "",
                 Name,
                 state);
         }
@@ -434,14 +445,21 @@ namespace Orleans.Runtime.Scheduler
                 sb.Append(this);
                 sb.AppendFormat(". Currently QueuedWorkItems={0}; Total EnQueued={1}; Total processed={2}; Quantum expirations={3}; ",
                     WorkItemCount, totalItemsEnQueued, totalItemsProcessed, quantumExpirations);
+         
                 if (AverageQueueLenght != 0)
                 {
                     sb.AppendFormat("average queue length at enqueue: {0}; ", AverageQueueLenght);
-                    if (!totalQueuingDelay.Equals(TimeSpan.Zero))
+                    if (!totalQueuingDelay.Equals(TimeSpan.Zero) && totalItemsProcessed > 0)
+                    {
                         sb.AppendFormat("average queue delay: {0}ms; ", totalQueuingDelay.Divide(totalItemsProcessed).TotalMilliseconds);
+                    }
                 }
+                
                 sb.AppendFormat("TaskRunner={0}; ", TaskRunner);
-                sb.AppendFormat("SchedulingContext={0}", SchedulingContext);
+                if (SchedulingContext != null)
+                {
+                    sb.AppendFormat("Detailed SchedulingContext=<{0}>", SchedulingContext.DetailedStatus());
+                }
                 return sb.ToString();
             }
         }

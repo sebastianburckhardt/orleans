@@ -28,13 +28,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-using Orleans.Runtime;
-
 namespace Orleans.Runtime
 {
     internal class AssemblyLoader
     {
-
         private readonly Dictionary<string, SearchOption> dirEnumArgs;
         private readonly HashSet<AssemblyLoaderPathNameCriterion> pathNameCriteria;
         private readonly HashSet<AssemblyLoaderReflectionCriterion> reflectionCriteria;
@@ -58,8 +55,11 @@ namespace Orleans.Runtime
             SimulateLoadCriteriaFailure = false;
             SimulateReflectionOnlyLoadFailure = false;
             RethrowDiscoveryExceptions = false;
-        }
 
+            // Ensure that each assembly which is loaded is processed.
+            AssemblyProcessor.Initialize();
+        }
+        
         /// <summary>
         /// Loads assemblies according to caller-defined criteria.
         /// </summary>
@@ -102,11 +102,41 @@ namespace Orleans.Runtime
             return discoveredAssemblyLocations;
         }
 
+        public static T TryLoadAndCreateInstance<T>(string assemblyName, TraceLogger logger) where T : class
+        {
+            try
+            {
+                var assembly = Assembly.Load(new AssemblyName(assemblyName));
+                var foundType =
+                    TypeUtils.GetTypes(
+                        assembly,
+                        type =>
+                        typeof(T).GetTypeInfo().IsAssignableFrom(type) && !type.GetTypeInfo().IsInterface
+                        && type.GetTypeInfo().GetConstructor(Type.EmptyTypes) != null).FirstOrDefault();
+                if (foundType == null)
+                {
+                    return null;
+                }
+
+                return (T)Activator.CreateInstance(foundType, true);
+            }
+            catch (FileNotFoundException exception)
+            {
+                logger.Warn(ErrorCode.Loader_TryLoadAndCreateInstance_Failure, exception.Message, exception);
+                return null;
+            }
+            catch (Exception exc)
+            {
+                logger.Error(ErrorCode.Loader_TryLoadAndCreateInstance_Failure, exc.Message, exc);
+                throw;
+            }
+        }
+
         public static T LoadAndCreateInstance<T>(string assemblyName, TraceLogger logger) where T : class
         {
             try
             {
-                var assembly = Assembly.Load(assemblyName);
+                var assembly = Assembly.Load(new AssemblyName(assemblyName));
                 var foundType = TypeUtils.GetTypes(assembly, type => typeof(T).IsAssignableFrom(type)).First();
 
                 return (T)Activator.CreateInstance(foundType, true);
@@ -117,7 +147,6 @@ namespace Orleans.Runtime
                 throw;
             }
         }
-
 
         // this method is internal so that it can be accessed from unit tests, which only test the discovery
         // process-- not the actual loading of assemblies.
@@ -199,7 +228,7 @@ namespace Orleans.Runtime
                 // that appear not to automatically resolve dependencies.
                 // We are trying to pre-load all dlls we find in the folder, so that if one of these
                 // assemblies happens to be a dependency of an assembly we later on call 
-                // Assembly.GetTypes() on, the dependency will be already loaded and will get
+                // Assembly.DefinedTypes on, the dependency will be already loaded and will get
                 // automatically resolved. Ugly, but seems to solve the problem.
 
                 foreach (var j in candidates)
