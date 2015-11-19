@@ -409,6 +409,10 @@ namespace Orleans.TestingHost
             config.AdjustForTestEnvironment();
         }
 
+        public virtual void AdjustForTest(ClientConfiguration config)
+        {
+            config.AdjustForTestEnvironment();
+        }
 
         #region Private methods
 
@@ -557,7 +561,7 @@ namespace Orleans.TestingHost
             }
         }
 
-        public static SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
+        public SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
         {
             // Load initial config settings, then apply some overrides below.
             ClusterConfiguration config = new ClusterConfiguration();
@@ -624,17 +628,17 @@ namespace Orleans.TestingHost
 
             if (options.AutoConfigNodeSettings)
             {
-            NodeConfiguration nodeConfig = config.GetConfigurationForNode(siloName);
-            nodeConfig.HostNameOrIPAddress = "loopback";
-            nodeConfig.Port = basePort + instanceCount;
-            nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
-            nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
-            nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
+                NodeConfiguration nodeConfig = config.GetConfigurationForNode(siloName);
+                nodeConfig.HostNameOrIPAddress = "loopback";
+                nodeConfig.Port = basePort + instanceCount;
+                nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
+                nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
+                nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
 
-            if (nodeConfig.ProxyGatewayEndpoint != null && nodeConfig.ProxyGatewayEndpoint.Address != null)
-            {
-                nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(nodeConfig.ProxyGatewayEndpoint.Address, ProxyBasePort + instanceCount);
-            }
+                if (nodeConfig.ProxyGatewayEndpoint != null && nodeConfig.ProxyGatewayEndpoint.Address != null)
+                {
+                    nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(nodeConfig.ProxyGatewayEndpoint.Address, ProxyBasePort + instanceCount);
+                }
                 config.Overrides[siloName] = nodeConfig;
             }
 
@@ -660,7 +664,7 @@ namespace Orleans.TestingHost
             return retValue;
         }
 
-        private static void StopOrleansSilo(SiloHandle instance, bool stopGracefully)
+        public static void StopOrleansSilo(SiloHandle instance, bool stopGracefully)
         {
             var silo = instance.Silo;
             if (stopGracefully)

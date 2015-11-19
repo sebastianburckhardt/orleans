@@ -13,7 +13,7 @@ using Orleans.Runtime.Configuration;
 
 namespace Tests.GeoClusterTests
 {
-    public class TestingClusterHost  
+    public class TestingClusterHost  : TestingSiloHost
     {
         protected readonly Dictionary<string, ClusterInfo> clusters;
 
@@ -73,7 +73,7 @@ namespace Tests.GeoClusterTests
                 SiloName = "Primary",
                 ConfigurationCustomizer = customizer,
             };
-            silohandles[0] = TestingSiloHost.StartOrleansSilo(Silo.SiloType.Primary, primaryOption, 0);
+            silohandles[0] = StartOrleansSilo(Silo.SiloType.Primary, primaryOption, 0);
            
             Parallel.For(1, numSilos, i =>
             {
@@ -86,7 +86,7 @@ namespace Tests.GeoClusterTests
                     ConfigurationCustomizer = customizer
                };
 
-               silohandles[i] = TestingSiloHost.StartOrleansSilo(Silo.SiloType.Secondary, options, i);
+               silohandles[i] = StartOrleansSilo(Silo.SiloType.Secondary, options, i);
             });
             
             string clusterId = silohandles[0].Silo.GlobalConfig.ClusterId;
@@ -110,7 +110,7 @@ namespace Tests.GeoClusterTests
                 SiloName = siloName, 
                 ConfigurationCustomizer = customizer
             };
-            var silo = TestingSiloHost.StartOrleansSilo(Silo.SiloType.Secondary, options, clusterinfo.silos.Count);
+            var silo = StartOrleansSilo(Silo.SiloType.Secondary, options, clusterinfo.silos.Count);
         }
 
         public void StopCluster(string cluster)

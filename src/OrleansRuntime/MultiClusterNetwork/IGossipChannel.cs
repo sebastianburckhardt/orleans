@@ -8,14 +8,12 @@ using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 
 
-// should this go into SystemTargetInterfaces?
-
 namespace Orleans.Runtime.MultiClusterNetwork
 {
     /// <summary>
     /// Interface for a multi cluster channel, providing gossip-style communication
     /// </summary>
-    internal interface IGossipChannel
+    public interface IGossipChannel
     {
         /// <summary>
         /// Initialize the channel with given configuration.
