@@ -31,6 +31,7 @@ using Orleans.TestingHost;
 using UnitTests.GrainInterfaces;
 using UnitTests.Tester;
 using System.Collections.Generic;
+using TestGrainInterfaces;
 
 namespace UnitTests.General
 {
@@ -619,18 +620,7 @@ namespace UnitTests.General
             var v = await grain2.GetValue();
             Assert.IsNull(v);
         }
-
-        [TestMethod, TestCategory("Functional"), TestCategory("Generics"), TestCategory("Cast")]
-        public async Task Generic_CastToSelf()
-        {
-            var id = Guid.NewGuid();
-            var g = GrainFactory.GetGrain<IGeneric1Argument<string>>(id, "UnitTests.Grains.Generic1ArgumentGrain");
-            var grain = Generic1ArgumentFactory<string>.Cast(g);
-            var s1 = Guid.NewGuid().ToString();
-            var s2 = await grain.Ping(s1);
-            Assert.AreEqual(s1, s2);
-        }
-
+        
         [TestMethod, TestCategory("Functional"), TestCategory("Generics"), TestCategory("Echo")]
         public async Task Generic_PingSelf()
         {
@@ -677,6 +667,14 @@ namespace UnitTests.General
             await Task.Delay(TimeSpan.FromSeconds(6));
             var s2 = await grain.GetLastValue();
             Assert.AreEqual(s1, s2);
+        }
+
+        [TestMethod, TestCategory("Functional"), TestCategory("Generics"), TestCategory("Serialization")]
+        public async Task Generic_CircularReferenceTest()
+        {
+            var grainId = Guid.NewGuid();
+            var grain = GrainFactory.GetGrain<ICircularStateTestGrain>(primaryKey: grainId, keyExtension: grainId.ToString("N"));
+            var c1 = await grain.GetState();
         }
     }
 }

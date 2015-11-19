@@ -36,7 +36,7 @@ namespace Orleans.Runtime
     /// </remarks>
     [Serializable]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1058:TypesShouldNotExtendCertainBaseTypes")]
-    public class OrleansException : ApplicationException
+    public class OrleansException : Exception
     {
         public OrleansException() : base("Unexpected error.") { }
 
@@ -165,6 +165,21 @@ namespace Orleans.Runtime
         public GrainExtensionNotInstalledException(string message, Exception innerException) : base(message, innerException) { }
 
         protected GrainExtensionNotInstalledException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        { }
+    }
+
+    /// <summary>
+    /// Signifies that an request was cancelled due to target silo unavailability.
+    /// </summary>
+    [Serializable]
+    public class SiloUnavailableException : OrleansException
+    {
+        public SiloUnavailableException() : base("SiloUnavailableException") { }
+        public SiloUnavailableException(string msg) : base(msg) { }
+        public SiloUnavailableException(string message, Exception innerException) : base(message, innerException) { }
+
+        protected SiloUnavailableException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         { }
     }

@@ -29,7 +29,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Xml;
 using Orleans.Providers;
-using Orleans.Runtime.Storage.Relational;
+using System.Reflection;
 
 namespace Orleans.Runtime.Configuration
 {
@@ -201,7 +201,7 @@ namespace Orleans.Runtime.Configuration
             DeploymentId = Environment.UserName;
             DataConnectionString = "";
             // Assume the ado invariant is for sql server storage if not explicitly specified
-            AdoInvariant = AdoNetInvariants.InvariantNameSqlServer;
+            AdoInvariant = Constants.INVARIANT_NAME_SQL_SERVER;
 
             DefaultTraceLevel = Logger.Severity.Info;
             TraceLevelOverrides = new List<Tuple<string, Logger.Severity>>();
@@ -243,7 +243,7 @@ namespace Orleans.Runtime.Configuration
                     switch (child.LocalName)
                     {
                         case "Gateway":
-                            Gateways.Add(ConfigUtilities.ParseIPEndPoint(child));
+                            Gateways.Add(ConfigUtilities.ParseIPEndPoint(child).GetResult());
                             if (GatewayProvider == GatewayProviderType.None)
                             {
                                 GatewayProvider = GatewayProviderType.Config;
@@ -373,13 +373,13 @@ namespace Orleans.Runtime.Configuration
         /// <param name="properties">Properties that will be passed to stream provider upon initialization</param>
         public void RegisterStreamProvider<T>(string providerName, IDictionary<string, string> properties = null) where T : Orleans.Streams.IStreamProvider
         {
-            Type providerType = typeof(T);
-            if (providerType.IsAbstract ||
-                providerType.IsGenericType ||
-                !typeof(Orleans.Streams.IStreamProvider).IsAssignableFrom(providerType))
+            Type providerTypeInfo = typeof(T).GetTypeInfo();
+            if (providerTypeInfo.IsAbstract ||
+                providerTypeInfo.IsGenericType ||
+                !typeof(Orleans.Streams.IStreamProvider).IsAssignableFrom(providerTypeInfo))
                 throw new ArgumentException("Expected non-generic, non-abstract type which implements IStreamProvider interface", "typeof(T)");
 
-            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.STREAM_PROVIDER_CATEGORY_NAME, providerType.FullName, providerName, properties);
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.STREAM_PROVIDER_CATEGORY_NAME, providerTypeInfo.FullName, providerName, properties);
         }
 
         /// <summary>

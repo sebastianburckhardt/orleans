@@ -65,7 +65,7 @@ namespace Orleans.Runtime.Configuration
         /// This is a configurable IP address or Hostname.
         /// </summary>
         public string HostNameOrIPAddress { get; set; } 
-        private IPAddress Address { get { return ClusterConfiguration.ResolveIPAddress(HostNameOrIPAddress, Subnet, AddressType); } }
+        private IPAddress Address { get { return ClusterConfiguration.ResolveIPAddress(HostNameOrIPAddress, Subnet, AddressType).GetResult(); } }
 
         /// <summary>
         /// The port this silo uses for silo-to-silo communication.
@@ -193,6 +193,10 @@ namespace Orleans.Runtime.Configuration
         /// </summary>
         public int BulkMessageLimit { get; set; }
 
+        /// <summary>
+        /// Specifies the name of the Startup class in the configuration file.
+        /// </summary>
+        public string StartupTypeName { get; set; }
 
         public string StatisticsProviderName { get; set; }
         /// <summary>
@@ -347,6 +351,8 @@ namespace Orleans.Runtime.Configuration
             Expect100Continue = other.Expect100Continue;
             DefaultConnectionLimit = other.DefaultConnectionLimit;
             UseNagleAlgorithm = other.UseNagleAlgorithm;
+
+            StartupTypeName = other.StartupTypeName;
         }
 
         public override string ToString()
@@ -423,7 +429,7 @@ namespace Orleans.Runtime.Configuration
                         }
                         break;
                     case "ProxyingGateway":
-                        ProxyGatewayEndpoint = ConfigUtilities.ParseIPEndPoint(child, Subnet);
+                        ProxyGatewayEndpoint = ConfigUtilities.ParseIPEndPoint(child, Subnet).GetResult();
                         break;
                     case "Scheduler":
                         if (child.HasAttribute("MaxActiveThreads"))
@@ -499,6 +505,12 @@ namespace Orleans.Runtime.Configuration
                         break;
                     case "Limits":
                         ConfigUtilities.ParseLimitValues(LimitManager, child, SiloName);
+                        break;
+                    case "Startup":
+                        if (child.HasAttribute("Type"))
+                        {
+                            StartupTypeName = child.GetAttribute("Type");
+                        }
                         break;
                 }
             }

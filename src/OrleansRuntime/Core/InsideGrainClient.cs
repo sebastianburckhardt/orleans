@@ -633,10 +633,10 @@ namespace Orleans.Runtime
             return InternalGrainFactory.GetSystemTarget<IReminderService>(Constants.ReminderServiceId, destination);
         }
 
-        public async Task ExecAsync(Func<Task> asyncFunction, ISchedulingContext context)
+        public async Task ExecAsync(Func<Task> asyncFunction, ISchedulingContext context, string activityName)
         {
             // Schedule call back to grain context
-            await OrleansTaskScheduler.Instance.QueueTask(asyncFunction, context);
+            await OrleansTaskScheduler.Instance.QueueNamedTask(asyncFunction, context, activityName);
         }
 
         public void Reset()
@@ -749,6 +749,17 @@ namespace Orleans.Runtime
         public SiloStatus GetSiloStatus(SiloAddress siloAddress)
         {
             return Silo.CurrentSilo.LocalSiloStatusOracle.GetApproximateSiloStatus(siloAddress);
+        }
+
+        public void BreakOutstandingMessagesToDeadSilo(SiloAddress deadSilo)
+        {
+            foreach (var callback in callbacks)
+            {
+                if (deadSilo.Equals(callback.Value.Message.TargetSilo))
+                {
+                    callback.Value.OnTargetSiloFail();
+                }
+            }
         }
     }
 }

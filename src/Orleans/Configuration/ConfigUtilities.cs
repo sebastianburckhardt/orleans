@@ -32,6 +32,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Runtime;
+using System.Threading.Tasks;
 
 namespace Orleans.Runtime.Configuration
 {
@@ -100,14 +101,15 @@ namespace Orleans.Runtime.Configuration
                         {
                             var assemblyName = className.Substring(pos + 1).Trim();
                             className = className.Substring(0, pos).Trim();
-                            assembly = Assembly.Load(assemblyName);
+                            assembly = Assembly.Load(new AssemblyName(assemblyName));
                         }
                         else
                         {
-                            assembly = Assembly.GetExecutingAssembly();
+                            assembly = typeof(ConfigUtilities).GetTypeInfo().Assembly;
                         }
-                        var plugin = assembly.CreateInstance(className);
-                        if (plugin == null) throw new TypeLoadException("Cannot locate plugin class " + className + " in assembly " + assembly.FullName);
+                        var pluginType = assembly.GetType(className);
+                        if (pluginType == null) throw new TypeLoadException("Cannot locate plugin class " + className + " in assembly " + assembly.FullName);
+                        var plugin = Activator.CreateInstance(pluginType);
 
                         if (plugin is ILogConsumer)
                         {
@@ -280,12 +282,66 @@ namespace Orleans.Runtime.Configuration
             return p;
         }
 
+        internal static Type ParseFullyQualifiedType(string input, string errorMessage)
+        {
+            Type returnValue;
+            try
+            {
+                returnValue = Type.GetType(input);
+            }
+            catch(Exception e)
+            {
+                throw new FormatException(errorMessage, e);
+            }
+
+            if (returnValue == null)
+            {
+                throw new FormatException(errorMessage);
+            }
+
+            return returnValue;
+        }
+
+        internal static void ValidateSerializationProvider(Type type)
+        {
+            if (type.IsClass == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} was not a class", type.FullName));
+            }
+
+            if (type.IsAbstract)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} was an abstract class", type.FullName));
+            }
+
+            if (type.IsPublic == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} is not public", type.FullName));
+            }
+
+            if (type.IsGenericType && type.IsConstructedGenericType == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} is generic and has a missing type parameter specification", type.FullName));
+            }
+
+            var constructor = type.GetConstructor(Type.EmptyTypes);
+            if (constructor == null)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} does not have a parameterless constructor", type.FullName));
+            }
+
+            if (constructor.IsPublic == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} has a non-public parameterless constructor", type.FullName));
+            }
+        }
+
         // Time spans are entered as a string of decimal digits, optionally followed by a unit string: "ms", "s", "m", "hr"
         internal static TimeSpan ParseTimeSpan(string input, string errorMessage)
         {
             int unitSize;
             string numberInput;
-            var trimmedInput = input.Trim().ToLower(CultureInfo.InvariantCulture);
+            var trimmedInput = input.Trim().ToLowerInvariant();
             if (trimmedInput.EndsWith("ms", StringComparison.Ordinal))
             {
                 unitSize = 1;
@@ -345,7 +401,7 @@ namespace Orleans.Runtime.Configuration
             return s;
         }
 
-        internal static IPEndPoint ParseIPEndPoint(XmlElement root, byte[] subnet = null)
+        internal static async Task<IPEndPoint> ParseIPEndPoint(XmlElement root, byte[] subnet = null)
         {
             if (!root.HasAttribute("Address")) throw new FormatException("Missing Address attribute for " + root.LocalName + " element");
             if (!root.HasAttribute("Port")) throw new FormatException("Missing Port attribute for " + root.LocalName + " element");
@@ -360,7 +416,7 @@ namespace Orleans.Runtime.Configuration
                 family = ParseEnum<AddressFamily>(root.GetAttribute("PreferredFamily"),
                     "Invalid preferred addressing family for " + root.LocalName + " element");
             }
-            IPAddress addr = ClusterConfiguration.ResolveIPAddress(root.GetAttribute("Address"), subnet, family);
+            IPAddress addr = await ClusterConfiguration.ResolveIPAddress(root.GetAttribute("Address"), subnet, family);
             int port = ParseInt(root.GetAttribute("Port"), "Invalid Port attribute for " + root.LocalName + " element");
             return new IPEndPoint(addr, port);
         }
@@ -475,7 +531,7 @@ namespace Orleans.Runtime.Configuration
         public static string FindConfigFile(bool isSilo)
         {
             // Add directory containing Orleans binaries to the search locations for config files
-            defaultConfigDirs[0] = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            defaultConfigDirs[0] = Path.GetDirectoryName(typeof(ConfigUtilities).GetTypeInfo().Assembly.Location);
 
             var notFound = new List<string>();
             foreach (string dir in defaultConfigDirs)

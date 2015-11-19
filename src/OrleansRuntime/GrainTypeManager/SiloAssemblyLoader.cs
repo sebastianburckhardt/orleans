@@ -30,10 +30,12 @@ using System.Text;
 
 using Orleans.Providers;
 using Orleans.CodeGeneration;
+using Orleans.Serialization;
 
 
 namespace Orleans.Runtime
 {
+    [NonSerializable]
     internal class SiloAssemblyLoader
     {
         private readonly TraceLogger logger = TraceLogger.GetLogger("AssemblyLoader.Silo");
@@ -46,7 +48,7 @@ namespace Orleans.Runtime
 
         private void LoadApplicationAssemblies()
         {
-            var exeRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var exeRoot = Path.GetDirectoryName(typeof(SiloAssemblyLoader).GetTypeInfo().Assembly.Location);
             var appRoot = Path.Combine(exeRoot, "Applications");
             var directories = new Dictionary<string, SearchOption>
                     {
@@ -92,13 +94,13 @@ namespace Orleans.Runtime
                 var parentType = grainType.BaseType;
                 while (parentType != typeof (Grain) && parentType != typeof(object))
                 {
-                    if (parentType.IsGenericType)
+                    if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
                         if (definition == typeof (Grain<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
-                            if (stateArg.IsClass)
+                            if (stateArg.GetTypeInfo().IsClass)
                             {
                                 grainStateType = stateArg;
                                 break;
@@ -142,7 +144,7 @@ namespace Orleans.Runtime
         /// </summary>
         private static GrainTypeData GetTypeData(Type grainType, Type stateObjectType)
         {
-            return grainType.IsGenericTypeDefinition ? 
+            return grainType.GetTypeInfo().IsGenericTypeDefinition ? 
                 new GenericGrainTypeData(grainType, stateObjectType) : 
                 new GrainTypeData(grainType, stateObjectType);
         }

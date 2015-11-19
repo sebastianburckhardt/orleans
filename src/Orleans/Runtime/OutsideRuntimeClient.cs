@@ -122,11 +122,11 @@ namespace Orleans
             get { throw new InvalidOperationException("Storage provider only available from inside grain"); }
         }
 
-        internal List<Uri> Gateways
+        internal IList<Uri> Gateways
         {
             get
             {
-                return transport.GatewayManager.ListProvider.GetGateways().ToList();
+                return transport.GatewayManager.ListProvider.GetGateways().GetResult();
             }
         }
 
@@ -154,7 +154,7 @@ namespace Orleans
 
             if (!TraceLogger.IsInitialized) TraceLogger.Initialize(config);
             StatisticsCollector.Initialize(config);
-            SerializationManager.Initialize(config.UseStandardSerializer);
+            SerializationManager.Initialize(config.UseStandardSerializer, cfg.SerializationProviders);
             logger = TraceLogger.GetLogger("OutsideRuntimeClient", TraceLogger.LoggerType.Runtime);
             appLogger = TraceLogger.GetLogger("Application", TraceLogger.LoggerType.Application);
 
@@ -173,17 +173,6 @@ namespace Orleans
                 }
                 // Ensure SerializationManager static constructor is called before AssemblyLoad event is invoked
                 SerializationManager.GetDeserializer(typeof(String));
-                // Ensure that any assemblies that get loaded in the future get recorded
-                AppDomain.CurrentDomain.AssemblyLoad += NewAssemblyHandler;
-
-                // Load serialization info for currently-loaded assemblies
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    if (!assembly.ReflectionOnly)
-                    {
-                        SerializationManager.FindSerializationInfo(assembly);
-                    }
-                }
 
                 clientProviderRuntime = new ClientProviderRuntime(grainFactory);
                 statisticsProviderManager = new StatisticsProviderManager("Statistics", clientProviderRuntime);
@@ -208,7 +197,7 @@ namespace Orleans
 
                 if (TestOnlyThrowExceptionDuringInit)
                 {
-                    throw new ApplicationException("TestOnlyThrowExceptionDuringInit");
+                    throw new Exception("TestOnlyThrowExceptionDuringInit");
                 }
 
                 config.CheckGatewayProviderSettings();
@@ -252,7 +241,7 @@ namespace Orleans
                 new Dictionary<string, SearchOption>
                     {
                         {
-                            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), 
+                            Path.GetDirectoryName(typeof(OutsideRuntimeClient).GetTypeInfo().Assembly.Location), 
                             SearchOption.AllDirectories
                         }
                     };
@@ -270,16 +259,7 @@ namespace Orleans
 
             AssemblyLoader.LoadAssemblies(directories, excludeCriteria, loadProvidersCriteria, logger);
         }
-
-        private static void NewAssemblyHandler(object sender, AssemblyLoadEventArgs args)
-        {
-            var assembly = args.LoadedAssembly;
-            if (!assembly.ReflectionOnly)
-            {
-                SerializationManager.FindSerializationInfo(args.LoadedAssembly); 
-            }
-        }
-
+        
         private void UnhandledException(ISchedulingContext context, Exception exception)
         {
             logger.Error(ErrorCode.Runtime_Error_100007, String.Format("OutsideRuntimeClient caught an UnobservedException."), exception);
@@ -844,7 +824,7 @@ namespace Orleans
             throw new InvalidOperationException("GetSiloStatus can only be called on the silo.");
         }
 
-        public async Task ExecAsync(Func<Task> asyncFunction, ISchedulingContext context)
+        public async Task ExecAsync(Func<Task> asyncFunction, ISchedulingContext context, string activityName)
         {
             await Task.Run(asyncFunction); // No grain context on client - run on .NET thread pool
         }
@@ -923,6 +903,17 @@ namespace Orleans
         public IGrainMethodInvoker GetInvoker(int interfaceId, string genericGrainType = null)
         {
             throw new NotImplementedException();
+        }
+
+        public void BreakOutstandingMessagesToDeadSilo(SiloAddress deadSilo)
+        {
+            foreach (var callback in callbacks)
+            {
+                if (deadSilo.Equals(callback.Value.Message.TargetSilo))
+                {
+                    callback.Value.OnTargetSiloFail();
+                }
+            }
         }
     }
 }

@@ -28,7 +28,6 @@ using System.Threading.Tasks;
 
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
-using Orleans.Runtime.MembershipService;
 
 namespace Orleans.Messaging
 {
@@ -48,7 +47,7 @@ namespace Orleans.Messaging
                     break;
 
                 case ClientConfiguration.GatewayProviderType.SqlServer:
-                    listProvider = new SqlMembershipTable();
+                    listProvider = AssemblyLoader.LoadAndCreateInstance<IGatewayListProvider>(Constants.ORLEANS_SQL_UTILS_DLL, logger);
                     break;
 
                 case ClientConfiguration.GatewayProviderType.Custom:
@@ -75,7 +74,7 @@ namespace Orleans.Messaging
 
     internal class StaticGatewayListProvider : IGatewayListProvider
     {
-        private List<Uri> knownGateways;
+        private IList<Uri> knownGateways;
 
 
         #region Implementation of IGatewayListProvider
@@ -83,12 +82,12 @@ namespace Orleans.Messaging
         public Task InitializeGatewayListProvider(ClientConfiguration cfg, TraceLogger traceLogger)
         {
             knownGateways = cfg.Gateways.Select(ep => ep.ToGatewayUri()).ToList();
-            return TaskDone.Done; ;
+            return TaskDone.Done;
         }
 
-        public IList<Uri> GetGateways()
+        public Task<IList<Uri>> GetGateways()
         {
-            return knownGateways;
+            return Task.FromResult(knownGateways);
         }
 
         public TimeSpan MaxStaleness 
