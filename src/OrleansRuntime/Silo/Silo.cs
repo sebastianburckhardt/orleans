@@ -884,10 +884,6 @@ namespace Orleans.Runtime
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
 
-            // silos this silo is not allowed to communicate with
-            // is left null if there are no restrictions
-            internal ConcurrentDictionary<IPEndPoint,bool> SiloCommunicationBlocks; 
-
             internal IConsistentRingProvider ConsistentRingProvider
             {
                 get { return CheckReturnBoundaryReference("ring provider", silo.RingProvider); }
@@ -985,18 +981,22 @@ namespace Orleans.Runtime
             {
                 silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
             }
-          
-            internal void BlockSiloCommunication(IPEndPoint destination, bool block)
-            {
-                if (SiloCommunicationBlocks == null)
-                    SiloCommunicationBlocks = new ConcurrentDictionary<IPEndPoint, bool>();
 
-                SiloCommunicationBlocks[destination] = block;
+            // store silos for which we simulate faulty communication
+            // number indicates how many percent of requests are lost
+            internal ConcurrentDictionary<IPEndPoint, double> SimulatedMessageLoss; 
+
+            internal void BlockSiloCommunication(IPEndPoint destination, double lost_percentage)
+            {
+                if (SimulatedMessageLoss == null)
+                    SimulatedMessageLoss = new ConcurrentDictionary<IPEndPoint, double>();
+
+                SimulatedMessageLoss[destination] = lost_percentage;
             }
 
             internal void UnblockSiloCommunication()
             {
-                SiloCommunicationBlocks = null;
+                SimulatedMessageLoss = null;
             }
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead

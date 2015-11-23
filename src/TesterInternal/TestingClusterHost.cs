@@ -196,7 +196,7 @@ namespace Tests.GeoClusterTests
         {
             foreach (var silo in clusters[from].silos)
                 foreach (var dest in clusters[to].silos)
-                    silo.Silo.TestHookup.BlockSiloCommunication(dest.Endpoint, true);
+                    silo.Silo.TestHookup.BlockSiloCommunication(dest.Endpoint, 100);
         }
 
         public void UnblockAllClusterCommunication(string from)

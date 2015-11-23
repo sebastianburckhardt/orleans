@@ -38,6 +38,7 @@ namespace Orleans.Runtime.Messaging
         private readonly MessageCenter messageCenter;
         private readonly TraceLogger logger;
         private bool stopped;
+        private Random random;
 
         public int Count
         {
@@ -71,6 +72,7 @@ namespace Orleans.Runtime.Messaging
             logger = TraceLogger.GetLogger("Messaging.OutboundMessageQueue");
             stopped = false;
         }
+
 
         public void SendMessage(Message msg)
         {
@@ -125,21 +127,22 @@ namespace Orleans.Runtime.Messaging
                     return;
                 }
 
-                 // check for cluster communication restrictions
-                if (Silo.CurrentSilo.TestHookup.SiloCommunicationBlocks != null)
+                // check for simulation of lost messages
+                if (Silo.CurrentSilo.TestHookup.SimulatedMessageLoss != null)
                 {
-                    bool blocked = false;
-                    Silo.CurrentSilo.TestHookup.SiloCommunicationBlocks.TryGetValue(msg.TargetSilo.Endpoint, out blocked);
-                    if (blocked) {
-                        string errorMsg = "Message blocked by TestHookup.SiloCommunicationBlocks";
-                        logger.Error(ErrorCode.Messaging_MessagingToTargedDisabled, errorMsg);
+                    double blockedpercentage = 0.0;
+                    Silo.CurrentSilo.TestHookup.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
+                    if (random == null)
+                        random = new Random();   
+                    if (random.NextDouble() * 100 < blockedpercentage)
+                    {
+                        string errorMsg = "Message blocked by TestHookup.SimulatedMessageLoss";
+                        logger.Error(ErrorCode.Messaging_SimulatedMessageLoss, errorMsg);
                         messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, errorMsg);
                         return;
                     }
                 }
                 
- 
-
                 // Prioritize system messages
                 switch (msg.Category)
                 {
