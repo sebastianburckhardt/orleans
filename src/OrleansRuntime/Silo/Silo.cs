@@ -23,7 +23,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -59,11 +58,6 @@ namespace Orleans.Runtime
     /// </summary>
     public class Silo : MarshalByRefObject // for hosting multiple silos in app domains of the same process
     {
-        public override object InitializeLifetimeService()
-        {
-            return null; // do not garbage collect this object when in app domain
-        }
-
         /// <summary> Silo Types. </summary>
         public enum SiloType
         {
@@ -134,11 +128,6 @@ namespace Orleans.Runtime
         }
 
         internal IServiceProvider Services { get { return services; } }
-
-        public string ClusterId
-        {
-            get { return null; } // placeholder for multi-cluster configuration (in separate branch)
-        }
 
         /// <summary> SiloAddress for this silo. </summary>
         public SiloAddress SiloAddress { get { return messageCenter.MyAddress; } }
@@ -746,7 +735,7 @@ namespace Orleans.Runtime
                 // Streams and Bootstrap - the order is less clear. Seems like Bootstrap may indirecly depend on Streams, but not the other way around.
                 // 8:
                 SafeExecute(() =>
-                {                
+                {
                     scheduler.QueueTask(() => statisticsProviderManager.CloseProviders(), providerManagerSystemTarget.SchedulingContext)
                             .WaitWithThrow(initTimeout);
                 });
@@ -854,11 +843,7 @@ namespace Orleans.Runtime
         {
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
-
-            // silos this silo is not allowed to communicate with
-            // is left null if there are no restrictions
-            internal ConcurrentDictionary<IPEndPoint,bool> SiloCommunicationBlocks; 
-
+            
             internal IConsistentRingProvider ConsistentRingProvider
             {
                 get { return CheckReturnBoundaryReference("ring provider", silo.RingProvider); }
@@ -890,7 +875,7 @@ namespace Orleans.Runtime
             }
 
             internal Action<GrainId> Debug_OnDecideToCollectActivation { get; set; }
-            
+
             internal TestHookups(Silo s)
             {
                 silo = s;
@@ -933,18 +918,6 @@ namespace Orleans.Runtime
             {
                 ExecuteFastKillInProcessExit = false;
             }
-
-          
-            internal void BlockSiloCommunication(IPEndPoint destination, bool block)
-            {
-                if (SiloCommunicationBlocks == null)
-                    SiloCommunicationBlocks = new ConcurrentDictionary<IPEndPoint, bool>();
-
-                SiloCommunicationBlocks[destination] = block;
-            }
-
-      
-         
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 

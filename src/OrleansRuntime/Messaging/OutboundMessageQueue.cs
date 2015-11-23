@@ -125,21 +125,6 @@ namespace Orleans.Runtime.Messaging
                     return;
                 }
 
-                 // check for cluster communication restrictions
-                if (Silo.CurrentSilo.TestHookup.SiloCommunicationBlocks != null)
-                {
-                    bool blocked = false;
-                    Silo.CurrentSilo.TestHookup.SiloCommunicationBlocks.TryGetValue(msg.TargetSilo.Endpoint, out blocked);
-                    if (blocked) {
-                        string errorMsg = "Message blocked by TestHookup.SiloCommunicationBlocks";
-                        logger.Error(ErrorCode.Messaging_MessagingToTargedDisabled, errorMsg);
-                        messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, errorMsg);
-                        return;
-                    }
-                }
-                
- 
-
                 // Prioritize system messages
                 switch (msg.Category)
                 {
