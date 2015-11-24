@@ -348,7 +348,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return Task.FromResult((IMultiClusterGossipData)delta);
         }
 
-        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected)
+        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck(MultiClusterConfiguration expected)
         {
             var localtask = FindUnstableSilos(expected, true);
 

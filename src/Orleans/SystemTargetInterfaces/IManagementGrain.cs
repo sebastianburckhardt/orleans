@@ -156,17 +156,20 @@ namespace Orleans.Runtime
         Task<MultiClusterConfiguration> GetMultiClusterConfiguration();
 
         /// <summary>
-        /// Get all silos that do not have the expected configuration.
+        /// Contact all silos in all clusters and return silos that do not have the latest configuration. 
+        /// If some clusters and/or silos cannot be reached, an exception is thrown.
         /// </summary>
         /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
-        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected);
+        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck();
  
         /// <summary>
-        /// Inject a multicluster configuration. For this to have any effect, its UTC admin timestamp must be newer 
-        /// than the latest configuration stored in the multicluster network.
+        /// Configure the active multi-cluster, by injecting a multicluster configuration.
         /// </summary>
+        /// <param name="clusters">the clusters that should be part of the active configuration</param>
+        /// <param name="comment">a comment to store alongside the configuration</param>
+        /// <param name="checkstabilityfirst">if true, checks that all clusters are reachable and up-to-date before injecting the new configuration</param>
         /// <returns> The task completes once information has propagated to the gossip channels</returns>
-        Task InjectMultiClusterConfiguration(MultiClusterConfiguration configuration);
+        Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkstabilityfirst = true);
 
 #endregion
 

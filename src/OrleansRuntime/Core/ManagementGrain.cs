@@ -352,38 +352,45 @@ namespace Orleans.Runtime.Management
             return Task.FromResult(multiclusteroracle.GetMultiClusterConfiguration());
         }
 
-        public async Task InjectMultiClusterConfiguration(MultiClusterConfiguration configuration)
+        public async Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkstabilityfirst = true)
         {
             if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
                 throw new OrleansException("No multicluster network configured");
 
             var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
 
-            if (! MultiClusterConfiguration.OlderThan(multiclusteroracle.GetMultiClusterConfiguration(), configuration))
-                throw new OrleansException("could not inject configuration: must use more recent timestamp");
+            var configuration = new MultiClusterConfiguration(DateTime.UtcNow, clusters.ToList(), comment);
 
-            try
-            {
-                var unstablesilos = await multiclusteroracle.GetSilosWithUnstableConfiguration(multiclusteroracle.GetMultiClusterConfiguration());
+            if (!MultiClusterConfiguration.OlderThan(multiclusteroracle.GetMultiClusterConfiguration(), configuration))
+                throw new OrleansException("Could not inject multi-cluster configuration: current configuration is newer than clock");
 
-                if (unstablesilos.Count > 0)
+            if (checkstabilityfirst)
+                try
                 {
-                    var msg = string.Format("Unstable silos {0}", string.Join(",", unstablesilos.Keys));
-                    throw new OrleansException(msg);
+                    var unstablesilos = await multiclusteroracle.StabilityCheck(multiclusteroracle.GetMultiClusterConfiguration());
+
+                    if (unstablesilos.Count > 0)
+                    {
+                        var msg = string.Format("Found unstable silos {0}", string.Join(",", unstablesilos.Keys));
+                        throw new OrleansException(msg);
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                throw new OrleansException("could not inject configuration: current configuration not stable", e);
-            }
+                catch (Exception e)
+                {
+                    throw new OrleansException("Could not inject multi-cluster configuration: stability check failed", e);
+                }
+
 
             await multiclusteroracle.InjectMultiClusterConfiguration(configuration);
+
+            return configuration;
         }
 
-        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> GetSilosWithUnstableConfiguration(MultiClusterConfiguration expected)
+        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck()
         {
             var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
-            return multiclusteroracle.GetSilosWithUnstableConfiguration(expected);
+            var expected = multiclusteroracle.GetMultiClusterConfiguration();
+            return multiclusteroracle.StabilityCheck(expected);
         }
 
         #endregion

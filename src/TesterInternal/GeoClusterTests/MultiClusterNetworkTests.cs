@@ -87,9 +87,9 @@ namespace Tests.GeoClusterTests
             }
             IManagementGrain systemManagement;
 
-            public void InjectMultiClusterConf(MultiClusterConfiguration conf)
+            public MultiClusterConfiguration InjectMultiClusterConf(IEnumerable<string> clusters, string comment = "")
             {
-                systemManagement.InjectMultiClusterConfiguration(conf).Wait();
+                return systemManagement.InjectMultiClusterConfiguration(clusters, comment).Result;
             }
 
             public MultiClusterConfiguration GetMultiClusterConfiguration()
@@ -175,8 +175,7 @@ namespace Tests.GeoClusterTests
             for (int i = 0; i < 2; i++)
             {
                 // test injection
-                var conf = new MultiClusterConfiguration(DateTime.UtcNow, "A,B".Split(',').ToList(), "my conf " + i);
-                clientA.InjectMultiClusterConf(conf);
+                var conf = clientA.InjectMultiClusterConf("A,B".Split(','), "my conf " + i);
 
                 // immediately visible on A, visible after stabilization on B
                 cur = clientA.GetMultiClusterConfiguration();
