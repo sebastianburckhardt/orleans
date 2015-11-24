@@ -225,11 +225,14 @@ namespace Orleans.TestingHost
         /// <summary>
         /// Wait for the multicluster-gossip sub-system to stabilize.
         /// </summary>
-        public static async Task WaitForMultiClusterGossipToStabilizeAsync()
+        public static async Task WaitForMultiClusterGossipToStabilizeAsync(bool account_for_lost_messages)
         {
             TimeSpan stabilizationTime = _gossipStabilizationTime;
             WriteLog(Environment.NewLine + Environment.NewLine + "WaitForMultiClusterGossipToStabilizeAsync is about to sleep for {0}", stabilizationTime);
-            await Task.Delay(stabilizationTime);
+            if (!account_for_lost_messages)
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            else
+                await Task.Delay(stabilizationTime);
             WriteLog("WaitForMultiClusterGossipToStabilizeAsync is done sleeping");
         }
 
@@ -237,10 +240,7 @@ namespace Orleans.TestingHost
         {
             TimeSpan stabilizationTime = TimeSpan.Zero;
 
-            // without failures, gossip is pushed eagerly thanks to direct pushes
-            stabilizationTime += TimeSpan.FromSeconds(3);
-
-            // stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
+            stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
 
             return stabilizationTime;
         }
