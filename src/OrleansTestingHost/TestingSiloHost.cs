@@ -561,7 +561,13 @@ namespace Orleans.TestingHost
             }
         }
 
-        public SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
+        private SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
+        {
+            return StartOrleansSilo(this, type, options, instanceCount, shared);
+        }
+
+        // This is a static version that can be called without a TestingSiloHost object (host = null)
+        public static SiloHandle StartOrleansSilo(TestingSiloHost host, Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
         {
             // Load initial config settings, then apply some overrides below.
             ClusterConfiguration config = new ClusterConfiguration();
@@ -644,7 +650,8 @@ namespace Orleans.TestingHost
 
             config.Globals.ExpectedClusterSize = 2;
 
-            AdjustForTest(config);
+            if (host != null)
+                host.AdjustForTest(config);
 
             WriteLog("Starting a new silo in app domain {0} with config {1}", siloName, config.ToString(siloName));
             AppDomain appDomain;
