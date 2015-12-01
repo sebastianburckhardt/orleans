@@ -49,6 +49,21 @@ namespace UnitTests.General
         {
         }
 
+        public TGrainInterface GetGrain<TGrainInterface>(int i) where TGrainInterface : IGrainWithIntegerKey
+        {
+            return GrainFactory.GetGrain<TGrainInterface>(i);
+        }
+
+        public TGrainInterface GetGrain<TGrainInterface>() where TGrainInterface : IGrainWithIntegerKey 
+        {
+            return GrainFactory.GetGrain<TGrainInterface>(GetRandomGrainId());
+        }
+
+        private static int GetRandomGrainId()
+        {
+            return random.Next();
+        }
+
         [ClassCleanup]
         public static void MyClassCleanup()
         {
@@ -605,7 +620,7 @@ namespace UnitTests.General
             var v = await grain2.GetValue();
             Assert.IsNull(v);
         }
-
+        
         [TestMethod, TestCategory("Functional"), TestCategory("Generics"), TestCategory("Echo")]
         public async Task Generic_PingSelf()
         {
@@ -660,21 +675,6 @@ namespace UnitTests.General
             var grainId = Guid.NewGuid();
             var grain = GrainFactory.GetGrain<ICircularStateTestGrain>(primaryKey: grainId, keyExtension: grainId.ToString("N"));
             var c1 = await grain.GetState();
-        }
-
-        private TGrainInterface GetGrain<TGrainInterface>(int i) where TGrainInterface : IGrainWithIntegerKey
-        {
-            return GrainFactory.GetGrain<TGrainInterface>(i);
-        }
-
-        private TGrainInterface GetGrain<TGrainInterface>() where TGrainInterface : IGrainWithIntegerKey
-        {
-            return GrainFactory.GetGrain<TGrainInterface>(GetRandomGrainId());
-        }
-
-        private static int GetRandomGrainId()
-        {
-            return random.Next();
         }
     }
 }

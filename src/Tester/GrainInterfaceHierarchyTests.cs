@@ -17,6 +17,16 @@ namespace Tester
         {
         }
 
+        private T GetHierarchyGrain<T>() where T : IDoSomething, IGrainWithIntegerKey
+        {
+            return GrainFactory.GetGrain<T>(GetRandomGrainId());
+        }
+
+        private static int GetRandomGrainId()
+        {
+            return random.Next();
+        }
+
         [ClassCleanup]
         public static void MyClassCleanup()
         {
@@ -98,16 +108,7 @@ namespace Tester
             Assert.AreEqual(await doSomethingCombinedGrain.GetA(), 11);
             Assert.AreEqual(await doSomethingCombinedGrain.GetB(), 11);
             Assert.AreEqual(await doSomethingCombinedGrain.GetC(), 11);
-        }
 
-        private T GetHierarchyGrain<T>() where T : IDoSomething, IGrainWithIntegerKey
-        {
-            return GrainFactory.GetGrain<T>(GetRandomGrainId());
-        }
-
-        private static int GetRandomGrainId()
-        {
-            return random.Next();
         }
     }
 }

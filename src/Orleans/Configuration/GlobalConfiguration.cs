@@ -485,7 +485,7 @@ namespace Orleans.Runtime.Configuration
         private const int DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT = 2;
         private const bool DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP = true;
         private const int DEFAULT_NUM_MULTICLUSTER_GATEWAYS = 4;
-        private static readonly TimeSpan BACKGROUND_GOSSIP_INTERVAL = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan DEFAULT_BACKGROUND_GOSSIP_INTERVAL = TimeSpan.FromSeconds(30);
         private const int DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE = 20;
         private const int DEFAULT_CACHE_SIZE = 1000000;
         private static readonly TimeSpan DEFAULT_INITIAL_CACHE_TTL = TimeSpan.FromSeconds(30);
@@ -526,7 +526,7 @@ namespace Orleans.Runtime.Configuration
             UseLivenessGossip = DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP;
             MaxJoinAttemptTime = DEFAULT_LIVENESS_MAX_JOIN_ATTEMPT_TIME;
             NumMultiClusterGateways = DEFAULT_NUM_MULTICLUSTER_GATEWAYS;
-            BackgroundGossipInterval = BACKGROUND_GOSSIP_INTERVAL;
+            BackgroundGossipInterval = DEFAULT_BACKGROUND_GOSSIP_INTERVAL;
             ExpectedClusterSizeConfigValue = new ConfigValue<int>(DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE, true);
             ServiceId = Guid.Empty;
             DeploymentId = Environment.UserName;
