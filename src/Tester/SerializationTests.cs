@@ -32,7 +32,6 @@ using Newtonsoft.Json.Linq;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
 using UnitTests.GrainInterfaces;
-using System.Collections.Generic;
 using Orleans.TestingHost;
 using System.Runtime.Serialization;
 
