@@ -24,6 +24,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 using Orleans.Runtime.Scheduler;
@@ -157,7 +158,8 @@ namespace Orleans.Runtime.GrainDirectory
                 router.Scheduler.QueueTask(async () =>
                 {
                     var response = await validator.LookUpMany(cachedGrainAndETagList);
-                    ProcessCacheRefreshResponse(capture, response);
+                    var entries = response.Select(t => Tuple.Create(t.Item1, t.Item2, t.Item3.Select(a => Tuple.Create(a.Silo, a.Activation)).ToList())).ToList();
+                    ProcessCacheRefreshResponse(capture, entries);
                 }, router.CacheValidator.SchedulingContext).Ignore();
 
                 if (Log.IsVerbose2) Log.Verbose2("Silo {0} is sending request to silo {1} with {2} entries", router.MyAddress, silo, cachedGrainAndETagList.Count);                

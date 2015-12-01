@@ -22,6 +22,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
+using Orleans.GrainDirectory;
 
 namespace Orleans
 {
@@ -106,6 +107,37 @@ namespace Orleans
         [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class)]
         public sealed class ImmutableAttribute : Attribute
         {
+        }
+    }
+
+    namespace MultiCluster
+    {
+        /// <summary>
+        /// base class for multi cluster registration strategies.
+        /// </summary>
+        public abstract class RegistrationAttribute : Attribute
+        {
+            internal MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
+
+            internal RegistrationAttribute(MultiClusterRegistrationStrategy strategy)
+            {
+                RegistrationStrategy = strategy ?? MultiClusterRegistrationStrategy.GetDefault();
+            }
+        }
+
+        /// <summary>
+        /// This attribute indicates that instances of the marked grain class
+        /// will have an independent instance for each cluster with 
+        /// no coordination. This is the default, so no need to explicitly specify this attributes 
+        /// for grains.
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
+        public class OneInstancePerClusterAttribute : RegistrationAttribute
+        {
+            public OneInstancePerClusterAttribute()
+                : base(ClusterLocalRegistration.Singleton)
+            {
+            }
         }
     }
 
