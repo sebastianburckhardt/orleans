@@ -66,6 +66,7 @@ namespace Orleans.TestingHost
         protected readonly TestingClientOptions clientInitOptions;
 
         private static TimeSpan _livenessStabilizationTime;
+        private static TimeSpan _gossipStabilizationTime;
 
         protected static readonly Random random = new Random();
 
@@ -83,6 +84,13 @@ namespace Orleans.TestingHost
         {
             get { return GrainClient.Logger; }
         }
+
+        public static int GetRandom()
+        {
+            lock (random) // need thread safe random
+                return (random.Next());
+        }
+
 
         /// <summary>
         /// Start the default Primary and Secondary test silos, plus client in-process, 
@@ -186,7 +194,7 @@ namespace Orleans.TestingHost
         /// Wait for the silo liveness sub-system to detect and act on any recent cluster membership changes.
         /// </summary>
         /// <param name="didKill">Whether recent membership changes we done by graceful Stop.</param>
-        public async Task WaitForLivenessToStabilizeAsync(bool didKill = false)
+        public static async Task WaitForLivenessToStabilizeAsync(bool didKill = false)
         {
             TimeSpan stabilizationTime = _livenessStabilizationTime;
             WriteLog(Environment.NewLine + Environment.NewLine + "WaitForLivenessToStabilize is about to sleep for {0}", stabilizationTime);
@@ -210,6 +218,30 @@ namespace Orleans.TestingHost
             {
                 stabilizationTime += TestingUtils.Multiply(global.TableRefreshTimeout, 2);
             }
+            return stabilizationTime;
+        }
+
+
+        /// <summary>
+        /// Wait for the multicluster-gossip sub-system to stabilize.
+        /// </summary>
+        public static async Task WaitForMultiClusterGossipToStabilizeAsync(bool account_for_lost_messages)
+        {
+            TimeSpan stabilizationTime = _gossipStabilizationTime;
+            WriteLog(Environment.NewLine + Environment.NewLine + "WaitForMultiClusterGossipToStabilizeAsync is about to sleep for {0}", stabilizationTime);
+            if (!account_for_lost_messages)
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            else
+                await Task.Delay(stabilizationTime);
+            WriteLog("WaitForMultiClusterGossipToStabilizeAsync is done sleeping");
+        }
+
+        private static TimeSpan GetGossipStabilizationTime(GlobalConfiguration global)
+        {
+            TimeSpan stabilizationTime = TimeSpan.Zero;
+
+            stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
+
             return stabilizationTime;
         }
 
@@ -244,11 +276,26 @@ namespace Orleans.TestingHost
         }
 
         /// <summary>
+        /// Start an additional silo of the specified type and with the specified config, so that it joins the existing cluster.
+        /// </summary>
+        /// <returns>SiloHandle for the newly started silo.</returns>
+        public SiloHandle StartAdditionalSilo(Silo.SiloType siloType, TestingSiloOptions siloOptions)
+        {
+            SiloHandle instance = StartOrleansSilo(
+                siloType,
+                siloOptions,
+                InstanceCounter++);
+            lock(additionalSilos)
+                additionalSilos.Add(instance);
+            return instance;
+        }
+
+        /// <summary>
         /// Stop any additional silos, not including the default Primary and Secondary silos.
         /// </summary>
         public static void StopAdditionalSilos()
         {
-            foreach (SiloHandle instance in additionalSilos)
+            foreach (SiloHandle instance in additionalSilos.Reverse<SiloHandle>())
             {
                 StopSilo(instance);
             }
@@ -516,6 +563,12 @@ namespace Orleans.TestingHost
 
         private SiloHandle StartOrleansSilo(Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
         {
+            return StartOrleansSilo(this, type, options, instanceCount, shared);
+        }
+
+        // This is a static version that can be called without a TestingSiloHost object (host = null)
+        public static SiloHandle StartOrleansSilo(TestingSiloHost host, Silo.SiloType type, TestingSiloOptions options, int instanceCount, AppDomain shared = null)
+        {
             // Load initial config settings, then apply some overrides below.
             ClusterConfiguration config = new ClusterConfiguration();
             if (options.SiloConfigFile == null)
@@ -553,14 +606,21 @@ namespace Orleans.TestingHost
 
             config.Globals.LivenessType = options.LivenessType;
             config.Globals.ReminderServiceType = options.ReminderServiceType;
+
             if (!String.IsNullOrEmpty(options.DataConnectionString))
             {
                 config.Globals.DataConnectionString = options.DataConnectionString;
             }
 
+           if (options.ConfigurationCustomizer != null)
+                options.ConfigurationCustomizer(config);
+
             _livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
+            _gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
             
-            string siloName;
+            string siloName = options.SiloName;
+            if (siloName == null)
+            {
             switch (type)
             {
                 case Silo.SiloType.Primary:
@@ -570,24 +630,28 @@ namespace Orleans.TestingHost
                     siloName = "Secondary_" + instanceCount.ToString(CultureInfo.InvariantCulture);
                     break;
             }
+            }
 
-            NodeConfiguration nodeConfig = config.GetConfigurationForNode(siloName);
-            nodeConfig.HostNameOrIPAddress = "loopback";
-            nodeConfig.Port = basePort + instanceCount;
-            nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
-            nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
-            nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
-
-            if (nodeConfig.ProxyGatewayEndpoint != null && nodeConfig.ProxyGatewayEndpoint.Address != null)
+            if (options.AutoConfigNodeSettings)
             {
-                nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(nodeConfig.ProxyGatewayEndpoint.Address, ProxyBasePort + instanceCount);
+                NodeConfiguration nodeConfig = config.GetConfigurationForNode(siloName);
+                nodeConfig.HostNameOrIPAddress = "loopback";
+                nodeConfig.Port = basePort + instanceCount;
+                nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
+                nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
+                nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
+
+                if (nodeConfig.ProxyGatewayEndpoint != null && nodeConfig.ProxyGatewayEndpoint.Address != null)
+                {
+                    nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(nodeConfig.ProxyGatewayEndpoint.Address, ProxyBasePort + instanceCount);
+                }
+                config.Overrides[siloName] = nodeConfig;
             }
 
             config.Globals.ExpectedClusterSize = 2;
 
-            config.Overrides[siloName] = nodeConfig;
-
-            AdjustForTest(config);
+            if (host != null)
+                host.AdjustForTest(config);
 
             WriteLog("Starting a new silo in app domain {0} with config {1}", siloName, config.ToString(siloName));
             AppDomain appDomain;
@@ -607,7 +671,7 @@ namespace Orleans.TestingHost
             return retValue;
         }
 
-        private static void StopOrleansSilo(SiloHandle instance, bool stopGracefully)
+        public static void StopOrleansSilo(SiloHandle instance, bool stopGracefully)
         {
             var silo = instance.Silo;
             if (stopGracefully)
@@ -617,7 +681,7 @@ namespace Orleans.TestingHost
                     if (silo != null)
                     {
                         silo.Shutdown();
-                    }
+            }
                 }
                 catch (RemotingException re)
                 {
@@ -629,6 +693,11 @@ namespace Orleans.TestingHost
                     throw;
                 }
             }
+
+            // give silo a bit more time before unloading appdomain
+            // e.g. for completing async storage requests
+            if (stopGracefully)
+                System.Threading.Thread.Sleep(3000);
 
             ImportGeneratedAssemblies(instance);
 
@@ -684,9 +753,9 @@ namespace Orleans.TestingHost
                 "OrleansRuntime.dll", typeof(Silo).FullName, false,
                 BindingFlags.Default, null, args, CultureInfo.CurrentCulture,
                 new object[] { });
-            
+
             appDomain.UnhandledException += ReportUnobservedException;
-            
+
             return silo;
         }
 

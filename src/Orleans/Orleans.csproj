@@ -92,6 +92,7 @@
     <Compile Include="Async\TaskUtility.cs" />
     <Compile Include="Async\UnobservedExceptionsHandlerClass.cs" />
     <Compile Include="Async\TaskExtensions.cs" />
+    <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />
     <Compile Include="CodeGeneration\GrainState.cs" />
     <Compile Include="CodeGeneration\ICodeGeneratorCache.cs" />
@@ -108,6 +109,8 @@
     <Compile Include="Core\Exceptions.cs" />
     <Compile Include="Core\GrainStateStorageBridge.cs" />
     <Compile Include="Core\IGrainIdentity.cs" />
+    <Compile Include="MultiCluster\MultiClusterConfiguration.cs" />
+    <Compile Include="MultiCluster\IProtocolParticipant.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="IDs\GuidId.cs" />
@@ -151,6 +154,7 @@
     <Compile Include="Telemetry\ITraceTelemetryConsumer.cs" />
     <Compile Include="Telemetry\Severity.cs" />
     <Compile Include="Telemetry\TraceParserUtils.cs" />
+    <Compile Include="SystemTargetInterfaces\IMultiClusterGossipService.cs" />
     <Compile Include="Timers\IReminderRegistry.cs" />
     <Compile Include="Runtime\IRuntimeClient.cs" />
     <Compile Include="Runtime\IGrainExtension.cs" />

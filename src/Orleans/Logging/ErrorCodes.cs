@@ -707,6 +707,7 @@ namespace Orleans
         Messaging_Dispatcher_TryForward         = MessagingBase + 31,
         Messaging_Dispatcher_TryForwardFailed   = MessagingBase + 32,
         Messaging_Dispatcher_ForwardingRequests = MessagingBase + 33,
+        Messaging_SimulatedMessageLoss          = MessagingBase + 34,
 
         DirectoryBase                           = Runtime + 1100,
         DirectoryBothPrimaryAndBackupForGrain   = DirectoryBase + 1,
@@ -1063,7 +1064,7 @@ namespace Orleans
         PersistentStreamPullingManager_AlreadyStarted   = PersistentStreamPullingManagerBase + 21,
         PersistentStreamPullingManager_AlreadyStopped   = PersistentStreamPullingManagerBase + 22,
         PersistentStreamPullingManager_PeriodicPrint    = PersistentStreamPullingManagerBase + 23,
-        
+
         AzureServiceRuntimeWrapper          = Runtime + 3700,
         AzureServiceRuntime_NotLoaded       = AzureServiceRuntimeWrapper +1,
         AzureServiceRuntime_FailedToLoad    = AzureServiceRuntimeWrapper + 2,
@@ -1076,6 +1077,14 @@ namespace Orleans
         CodeGenIgnoringTypes                = CodeGenBase + 5,
         CodeGenDllMissing                   = CodeGenBase + 6,
         CodeGenSystemTypeRequiresSerializer = CodeGenBase + 7,
+
+        MultiClusterNetworkBase = Runtime + 3900,
+        MultiClusterNetwork_Starting = MultiClusterNetworkBase + 1,
+        MultiClusterNetwork_Started = MultiClusterNetworkBase + 2,
+        MultiClusterNetwork_FailedToStart = MultiClusterNetworkBase + 3,
+        MultiClusterNetwork_LocalSubscriberException = MultiClusterNetworkBase + 4,
+        MultiClusterNetwork_GossipCommunicationFailure = MultiClusterNetworkBase + 5,
+        MultiClusterNetwork_NoChannelsConfigured = MultiClusterNetworkBase + 6,
     }
 }
 // ReSharper restore InconsistentNaming
