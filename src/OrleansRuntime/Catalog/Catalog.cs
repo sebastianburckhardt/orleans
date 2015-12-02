@@ -30,6 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Orleans.Core;
+using Orleans.GrainDirectory;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.GrainDirectory;
@@ -304,8 +305,9 @@ namespace Orleans.Runtime
             try
             {
                 PlacementStrategy unused;
+                MultiClusterRegistrationStrategy unusedActivationStrategy;
                 string grainClassName;
-                GrainTypeManager.GetTypeInfo(grain.GetTypeCode(), out grainClassName, out unused);
+                GrainTypeManager.GetTypeInfo(grain.GetTypeCode(), out grainClassName, out unused, out unusedActivationStrategy);
                 report.GrainClassTypeName = grainClassName;
             }
             catch (Exception exc)
@@ -385,9 +387,9 @@ namespace Orleans.Runtime
                 data.IsReentrant;
         }
 
-        public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
+        public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, out MultiClusterRegistrationStrategy activationStrategy, string genericArguments = null)
         {
-            GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, genericArguments);
+            GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, out activationStrategy, genericArguments);
         }
 
         #endregion
@@ -427,12 +429,13 @@ namespace Orleans.Runtime
                     ActivationCollector.TryRescheduleCollection(result);
                     return result;
                 }
-
+                
                 int typeCode = address.Grain.GetTypeCode();
                 string actualGrainType = null;
+                MultiClusterRegistrationStrategy activationStrategy = MultiClusterRegistrationStrategy.GetDefault();
 
                 if (typeCode != 0) // special case for Membership grain.
-                    GetGrainTypeInfo(typeCode, out actualGrainType, out placement);
+                    GetGrainTypeInfo(typeCode, out actualGrainType, out placement, out activationStrategy);
                 else
                     placement = SystemPlacement.Singleton;
 
@@ -449,6 +452,7 @@ namespace Orleans.Runtime
                         address, 
                         genericArguments, 
                         placement, 
+                        activationStrategy,
                         ActivationCollector, 
                         config.Application.GetCollectionAgeLimit(grainType));
                     RegisterMessageTarget(result);
@@ -543,15 +547,15 @@ namespace Orleans.Runtime
                                 // If this was a duplicate, it's not an error, just a race.
                                 // Forward on all of the pending messages, and then forget about this activation.
                                 string logMsg = String.Format("Tried to create a duplicate activation {0}, but we'll use {1} instead. " +
-                                                            "GrainInstanceType is {2}. " +
+                                    "GrainInstanceType is {2}. " +
                                                             "{3}" +
                                                             "Full activation address is {4}. We have {5} messages to forward.",
-                                                address,
-                                                target,
-                                                activation.GrainInstanceType,
+                                    address,
+                                    target,
+                                    activation.GrainInstanceType,
                                                 primary != null ? "Primary Directory partition for this grain is " + primary + ". " : String.Empty,
-                                                address.ToFullString(),
-                                                activation.WaitingCount);
+                                    address.ToFullString(),
+                                    activation.WaitingCount);
                                 if (activation.IsStatelessWorker)
                                 {
                                     if (logger.IsVerbose) logger.Verbose(ErrorCode.Catalog_DuplicateActivation, logMsg);
@@ -630,7 +634,8 @@ namespace Orleans.Runtime
                 if (typeCode != 0)
                 {
                     PlacementStrategy unused;
-                    GetGrainTypeInfo(typeCode, out grainClassName, out unused, genericArguments);
+                    MultiClusterRegistrationStrategy unusedActivationStrategy;
+                    GetGrainTypeInfo(typeCode, out grainClassName, out unused, out unusedActivationStrategy, genericArguments);
                 }
                 else
                 {
@@ -1160,11 +1165,11 @@ namespace Orleans.Runtime
 
             if (singleActivationMode)
             {
-                ActivationAddress returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterSingleActivationAsync(address), this.SchedulingContext);
-                if (address.Equals(returnedAddress)) return;
-
+                Tuple<ActivationAddress,int> returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
+                if (address.Equals(returnedAddress.Item1)) return;
+               
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
-                throw new DuplicateActivationException(returnedAddress, primaryDirectoryForGrain);
+                throw new DuplicateActivationException(returnedAddress.Item1, primaryDirectoryForGrain);
             }
             else
             {
@@ -1180,8 +1185,6 @@ namespace Orleans.Runtime
                     throw new DuplicateActivationException(id);
                 }
             }
-            // We currently don't have any other case for multiple activations except for StatelessWorker.
-            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext);
         }
 
         #endregion
@@ -1221,9 +1224,9 @@ namespace Orleans.Runtime
             // thus volaiting the single-activation semantics and not converging even eventualy!
         }
 
-        public Task<List<ActivationAddress>> FullLookup(GrainId grain)
+        public Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain)
         {
-            return scheduler.RunOrQueueTask(() => directory.FullLookup(grain), this.SchedulingContext);
+            return scheduler.RunOrQueueTask(() => directory.LookupAsync(grain), this.SchedulingContext);
         }
 
         public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)

@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Orleans.GrainDirectory;
 using Orleans.Messaging;
 
 namespace Orleans.Runtime.Messaging
