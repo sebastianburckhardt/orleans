@@ -78,4 +78,12 @@ namespace Orleans.Providers
     {
         // for now empty, later can add storage specific runtime capabilities.
     }
+
+    /// <summary>
+    /// Provider-facing interface for manager of replication providers
+    /// </summary>
+    public interface IReplicationProviderRuntime : IProviderRuntime
+    {
+        // for now empty, later can add storage specific runtime capabilities.
+    }
 }

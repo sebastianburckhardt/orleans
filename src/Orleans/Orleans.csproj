@@ -84,6 +84,7 @@
   <ItemGroup>
     <Compile Include="AssemblyLoader\AssemblyProcessor.cs" />
     <Compile Include="Async\AsyncBatchedContinuationQueue.cs" />
+    <Compile Include="Async\BackgroundWorker.cs" />
     <Compile Include="Async\MultiTaskCompletionSource.cs" />
     <Compile Include="Async\AsyncSerialExecutor.cs" />
     <Compile Include="Async\AsyncExecutorWithRetries.cs" />
@@ -111,6 +112,9 @@
     <Compile Include="Core\IGrainIdentity.cs" />
     <Compile Include="MultiCluster\MultiClusterConfiguration.cs" />
     <Compile Include="MultiCluster\IProtocolParticipant.cs" />
+    <Compile Include="Replication\IQueuedGrainAdaptor.cs" />
+    <Compile Include="Replication\IQueuedGrain.cs" />
+    <Compile Include="Replication\IQueuedGrainAdaptorHost.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="IDs\GuidId.cs" />
@@ -119,7 +123,11 @@
     <Compile Include="Messaging\RequestInvocationHistory.cs" />
     <Compile Include="Messaging\Response.cs" />
     <Compile Include="Providers\IControllable.cs" />
+    <Compile Include="Replication\IReplicationProvider.cs" />
     <Compile Include="Providers\StorageProviderUtils.cs" />
+    <Compile Include="Replication\IReplicationProtocolServices.cs" />
+    <Compile Include="Replication\IUpdateOperation.cs" />
+    <Compile Include="Replication\QueuedGrain.cs" />
     <Compile Include="Runtime\GrainRuntime.cs" />
     <Compile Include="Runtime\IAddressable.cs" />
     <Compile Include="Placement\PreferLocalPlacement.cs" />
@@ -140,6 +148,7 @@
     <Compile Include="Streams\PersistentStreams\StreamEventDeliveryFailureException.cs" />
     <Compile Include="Streams\Predicates\DefaultStreamFilterPredicateWrapper.cs" />
     <Compile Include="Streams\PubSub\FaultedSubscriptionException.cs" />
+    <Compile Include="SystemTargetInterfaces\IReplicationProtocolGateway.cs" />
     <Compile Include="Streams\PubSub\ImplicitStreamPubSub.cs" />
     <Compile Include="Streams\PubSub\StreamPubSubImpl.cs" />
     <Compile Include="Telemetry\Consumers\ConsoleTelemetryConsumer.cs" />

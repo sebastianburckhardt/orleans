@@ -239,6 +239,26 @@ namespace Orleans
             /// </summary>
             public string ProviderName { get; set; }
         }
+
+
+        /// <summary>
+        /// The [Orleans.Providers.ReplicationProvider] attribute is used to specify a replication provider for grains that extend QueuedGrain&lt;T&gt;.
+        /// <para>
+        /// If present, the [Orleans.Providers.ReplicationProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute,
+        /// otherwise we try to find a storage provider as for all other grains. 
+        /// </para>
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
+        public sealed class ReplicationProviderAttribute : Attribute
+        {
+            public ReplicationProviderAttribute()
+            {
+            }
+            /// <summary>
+            /// The name of the storage provider to ne used for persisting state for this grain.
+            /// </summary>
+            public string ProviderName { get; set; }
+        }
     }
 
     [AttributeUsage(AttributeTargets.Interface)]

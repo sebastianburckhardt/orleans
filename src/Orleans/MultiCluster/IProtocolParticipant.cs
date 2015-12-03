@@ -32,6 +32,19 @@ namespace Orleans.MultiCluster
         /// <returns></returns>
         [AlwaysInterleave]
         Task OnMultiClusterConfigurationChange(MultiClusterConfiguration next);
+
+
+        /// <summary>
+        /// Called immediately before the user-level OnActivateAsync, on same scheduler
+        /// </summary>
+        /// <returns></returns>
+        Task ActivateProtocolParticipant();
+
+        /// <summary>
+        /// Called immediately after the user-level OnDeactivateAsync, on same scheduler
+        /// </summary>
+        /// <returns></returns>
+        Task DeactivateProtocolParticipant();
     }
 
     /// <summary>

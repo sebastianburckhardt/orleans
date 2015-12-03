@@ -31,15 +31,18 @@ namespace Orleans.Runtime
     {
         private readonly Type activationType;
         private readonly Type stateObjectType;
+        private readonly bool isQueued;
 
-        public GenericGrainTypeData(Type activationType, Type stateObjectType) :
-            base(activationType, stateObjectType)
+        public GenericGrainTypeData(Type activationType, Type stateObjectType, bool isQueued) :
+            base(activationType, stateObjectType, isQueued)
         {
             if (!activationType.GetTypeInfo().IsGenericTypeDefinition)
                 throw new ArgumentException("Activation type is not generic: " + activationType.Name);
 
             this.activationType = activationType;
             this.stateObjectType = stateObjectType;
+            this.isQueued = isQueued;
+
         }
 
         public GrainTypeData MakeGenericType(Type[] typeArgs)
@@ -48,7 +51,7 @@ namespace Orleans.Runtime
             var concreteActivationType = activationType.MakeGenericType(typeArgs);
             var concreteStateObjectType = (stateObjectType != null && stateObjectType.GetTypeInfo().IsGenericType) ? stateObjectType.GetGenericTypeDefinition().MakeGenericType(typeArgs) : stateObjectType;
 
-            return new GrainTypeData(concreteActivationType, concreteStateObjectType);
+            return new GrainTypeData(concreteActivationType, concreteStateObjectType, isQueued);
         }
     }
 }

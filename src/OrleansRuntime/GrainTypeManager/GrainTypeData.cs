@@ -24,6 +24,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 using System;
 using System.Collections.Generic;
 using Orleans.Concurrency;
+using Orleans.MultiCluster;
 using Orleans.Placement;
 
 
@@ -39,11 +40,12 @@ namespace Orleans.Runtime
         internal string GrainClass { get; private set; }
         internal List<Type> RemoteInterfaceTypes { get; private set; }
         internal Type StateObjectType { get; private set; }
+        internal bool IsQueued { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
-   
-     
-        public GrainTypeData(Type type, Type stateObjectType)
+
+        
+        public GrainTypeData(Type type, Type stateObjectType, bool isQueued)
         {
             Type = type;
             IsReentrant = Type.GetCustomAttributes(typeof (ReentrantAttribute), true).Length > 0;
@@ -51,6 +53,7 @@ namespace Orleans.Runtime
             GrainClass = TypeUtils.GetFullName(type);
             RemoteInterfaceTypes = GetRemoteInterfaces(type); ;
             StateObjectType = stateObjectType;
+            IsQueued = isQueued;
         }
 
         /// <summary>

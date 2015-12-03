@@ -5,6 +5,9 @@
       <Provider Type="Orleans.Storage.MemoryStorage" Name="Default" />
       <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore"   DataConnectionString="DefaultEndpointsProtocol=https;AccountName=orleansgeotest;AccountKey=2c7R3ajGg44yknj9sYRFaZE2fiwdj3dlsux3KJHG7neurpnP7/+EL23do0ttYuzQwqkcd9icNIB/0XpiURjftg=="/>
     </StorageProviders>
+    <ReplicationProviders>
+      <Provider Type="Orleans.Providers.Replication.SharedStorageProvider" Name="SharedStorage" GlobalStorageProvider="AzureStore"/>
+    </ReplicationProviders>
      <SeedNode Address="localhost" Port="21116"/>
     <MultiClusterNetwork GlobalServiceId="0"
                          ClusterId="1"
@@ -26,11 +29,12 @@
       <TraceLevelOverride LogPrefix="Runtime.Message" TraceLevel="Verbose" />
       <TraceLevelOverride LogPrefix="Runtime.Catalog" TraceLevel="Verbose" />
       <TraceLevelOverride LogPrefix="Runtime.Orleans.GrainDirectory.LocalGrainDirectory" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="Provider.SharedStorage" TraceLevel="Verbose2" />
       -->
+      <TraceLevelOverride LogPrefix="Provider.SharedStorage" TraceLevel="Verbose2" />
       <TraceLevelOverride LogPrefix="Runtime.MultiClusterOracle" TraceLevel="Verbose3" />
       <TraceLevelOverride LogPrefix="Runtime.AzureTableBasedGossipChannel" TraceLevel="Verbose3" />
       <TraceLevelOverride LogPrefix="Runtime.GossipTableInstanceManager" TraceLevel="Verbose3" />
+      <TraceLevelOverride LogPrefix="Replication" TraceLevel="Verbose2" />
     </Tracing>
   </Defaults>
   <Override Node="Primary">

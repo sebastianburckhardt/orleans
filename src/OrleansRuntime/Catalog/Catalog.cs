@@ -30,13 +30,15 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Orleans.Core;
+using Orleans.MultiCluster;
 using Orleans.Providers;
+using Orleans.Replication;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Placement;
 using Orleans.Runtime.Scheduler;
+using Orleans.Runtime.Replication;
 using Orleans.Storage;
-
 
 namespace Orleans.Runtime
 {
@@ -144,6 +146,7 @@ namespace Orleans.Runtime
         private readonly OrleansTaskScheduler scheduler;
         private readonly ActivationDirectory activations;
         private IStorageProviderManager storageProviderManager;
+        private IReplicationProviderManager replicationProviderManager;
         private Dispatcher dispatcher;
         private readonly TraceLogger logger;
         private int collectionNumber;
@@ -212,6 +215,11 @@ namespace Orleans.Runtime
         {
             storageProviderManager = storageManager;
         }
+
+        internal void SetReplicationManager(IReplicationProviderManager replicationManager)
+        {
+            replicationProviderManager = replicationManager;
+        } 
 
         internal void Start()
         {
@@ -671,10 +679,20 @@ namespace Orleans.Runtime
 
                 if (state != null)
                 {
-                    SetupStorageProvider(data);
+                    if (!grainTypeData.IsQueued)
+                    {
+                        SetupStorageProvider(data);
 
-                    data.GrainInstance.GrainState = state;
-                    data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
+                        data.GrainInstance.GrainState = state;
+                        data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
+                    }
+                    else
+                    {
+                        var repprovider = SetupReplicationProvider(data);
+                        var svc = new ReplicationServices(grain, repprovider);
+                        ((IQueuedGrainAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
+                    }
+
                 }
             }
 
@@ -692,6 +710,19 @@ namespace Orleans.Runtime
             var attr = attrs.FirstOrDefault() as StorageProviderAttribute;
             var storageProviderName = attr != null ? attr.ProviderName : Constants.DEFAULT_STORAGE_PROVIDER_NAME;
 
+            var provider = FindStorageProvider(storageProviderName, grainTypeName);
+            data.StorageProvider = provider;
+
+            if (logger.IsVerbose2)
+            {
+                string msg = string.Format("Assigned storage provider with Name={0} to grain type {1}",
+                    storageProviderName, grainTypeName);
+                logger.Verbose2(ErrorCode.Provider_CatalogStorageProviderAllocated, msg);
+            }
+        }
+
+        private IStorageProvider FindStorageProvider(string storageProviderName, string grainTypeName)
+        {
             IStorageProvider provider;
             if (storageProviderManager == null || storageProviderManager.GetNumLoadedProviders() == 0)
             {
@@ -718,13 +749,78 @@ namespace Orleans.Runtime
                     throw new BadProviderConfigException(errMsg);
                 }
             }
-            data.StorageProvider = provider;
+            return provider;
+        }
+
+        private IReplicationProvider SetupReplicationProvider(ActivationData data)
+        {
+            var grainTypeName = data.GrainInstanceType.FullName;
+
+            var attrs = data.GrainInstanceType.GetCustomAttributes(typeof(ReplicationProviderAttribute), true);
+            var attr = attrs.Length > 0 ? attrs[0] as ReplicationProviderAttribute : null;
+
+            if (attr == null)
+            {
+                // there is no replication provider specified.
+                // wrap storage provider
+
+                SetupStorageProvider(data); // find storage provider, possibly the default provider
+
+                if (replicationProviderManager == null)
+                {
+                    var errMsg = string.Format("Cannot create queued grain {0} : replication provider manager is null", grainTypeName);
+                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                    throw new BadProviderConfigException(errMsg);
+                }
+
+                return replicationProviderManager.WrapStorageProvider(data.StorageProvider);
+            }
+            else
+            {
+                var replicationProviderName = attr.ProviderName;
+                if (string.IsNullOrEmpty(replicationProviderName))
+                {
+                    var errMsg = string.Format("ReplicationProvider attribute is missing name for grain type {0}", grainTypeName);
+                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                    throw new BadProviderConfigException(errMsg);
+                }
+
+                IReplicationProvider provider;
+                if (replicationProviderManager == null || replicationProviderManager.GetNumLoadedProviders() == 0)
+                {
+                    var errMsg = string.Format("No replication providers found loading grain type {0}", grainTypeName);
+                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                    throw new BadProviderConfigException(errMsg);
+                }
+                if (string.IsNullOrWhiteSpace(replicationProviderName))
+                {
+                    var errMsg = string.Format("No replication providers found loading grain type {0}", grainTypeName);
+                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                    throw new BadProviderConfigException(errMsg);
+                }
+                replicationProviderManager.TryGetProvider(replicationProviderName, out provider, false);
+
+                if (provider == null)
+                {
+                    var errMsg = string.Format(
+                        "Cannot find replication provider with Name={0} for grain type {1}", replicationProviderName,
+                        grainTypeName);
+                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                    throw new BadProviderConfigException(errMsg);
+                }
+
+                provider.SetupDependedOnStorageProviders((string providername) =>
+                    FindStorageProvider(string.IsNullOrEmpty(providername) ? Constants.DEFAULT_STORAGE_PROVIDER_NAME : providername, grainTypeName)
+                );
 
             if (logger.IsVerbose2)
             {
-                string msg = string.Format("Assigned storage provider with Name={0} to grain type {1}",
-                    storageProviderName, grainTypeName);
-                logger.Verbose2(ErrorCode.Provider_CatalogStorageProviderAllocated, msg);
+                    string msg = string.Format("Assigned replication provider with Name={0} to grain type {1}",
+                        replicationProviderName, grainTypeName);
+                    logger.Verbose2(ErrorCode.Provider_CatalogReplicationProviderAllocated, msg);
+                }
+
+                return provider;
             }
         }
 
@@ -1068,6 +1164,9 @@ namespace Orleans.Runtime
         {
             var grainTypeName = activation.GrainInstanceType.FullName;
 
+            if (activation.GrainInstance is IProtocolParticipant)
+                await ((IProtocolParticipant)activation.GrainInstance).ActivateProtocolParticipant();
+
             // Note: This call is being made from within Scheduler.Queue wrapper, so we are already executing on worker thread
             if (logger.IsVerbose) logger.Verbose(ErrorCode.Catalog_BeforeCallingActivate, "About to call {1} grain's OnActivateAsync() method {0}", activation, grainTypeName);
 
@@ -1145,6 +1244,10 @@ namespace Orleans.Runtime
                         logger.Warn(ErrorCode.Catalog_DeactivateStreamResources_Exception, String.Format("DeactivateStreamResources Grain type = {0} Activation = {1} failed.", grainTypeName, activation), exc);
                     }
                 }
+
+                if (activation.GrainInstance is IProtocolParticipant)
+                    await ((IProtocolParticipant)activation.GrainInstance).DeactivateProtocolParticipant();
+
             }
             catch(Exception exc)
             {

@@ -29,6 +29,7 @@ using System.Text;
 using System.Net;
 using System.Xml;
 using Orleans.Providers;
+using Orleans.Replication;
 using Orleans.Streams;
 using Orleans.Storage;
 using System.Reflection;
@@ -1045,6 +1046,34 @@ namespace Orleans.Runtime.Configuration
         {
             ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.STORAGE_PROVIDER_CATEGORY_NAME, providerTypeFullName, providerName, properties);
         }
+
+        /// <summary>
+        /// Registers a given replication provider.
+        /// </summary>
+        /// <param name="providerTypeFullName">Full name of the storage provider type</param>
+        /// <param name="providerName">Name of the replication provider</param>
+        /// <param name="properties">Properties that will be passed to the storage provider upon initialization </param>
+        public void RegisterReplicationProvider(string providerTypeFullName, string providerName, IDictionary<string, string> properties = null)
+        {
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.REPLICATION_PROVIDER_CATEGORY_NAME, providerTypeFullName, providerName, properties);
+        }
+
+        /// <summary>
+        /// Registers a given type of <typeparamref name="T"/> where <typeparamref name="T"/> is replication provider
+        /// </summary>
+        /// <typeparam name="T">Non-abstract type which implements <see cref="IStorageProvider"/> replication</typeparam>
+        /// <param name="providerName">Name of the replication provider</param>
+        /// <param name="properties">Properties that will be passed to replication provider upon initialization</param>
+       public void RegisterReplicationProvider<T>(string providerName, IDictionary<string, string> properties = null) where T : IStorageProvider
+        {
+            Type providerType = typeof(T);
+            if (providerType.IsAbstract ||
+                providerType.IsGenericType ||
+                !typeof(IReplicationProvider).IsAssignableFrom(providerType))
+                throw new ArgumentException("Expected non-generic, non-abstract type which implements ISReplicationProvider interface", "typeof(T)");
+
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.REPLICATION_PROVIDER_CATEGORY_NAME, providerType.FullName, providerName, properties);
+        } 
 
         /// <summary>
         /// Retrieves an existing provider configuration
