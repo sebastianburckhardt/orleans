@@ -34,7 +34,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Core;
+using Orleans.GrainDirectory;
 using Orleans.CodeGeneration;
+using Orleans.MultiCluster;
 using Orleans.Providers;
 using Orleans.Replication;
 using Orleans.Runtime.Configuration;
@@ -54,7 +56,6 @@ using Orleans.Serialization;
 using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.Timers;
-using Orleans.MultiCluster;
 
 
 namespace Orleans.Runtime
@@ -206,7 +207,7 @@ namespace Orleans.Runtime
                 TraceLogger.Initialize(nodeConfig);
 
             config.OnConfigChange("Defaults/Tracing", () => TraceLogger.Initialize(nodeConfig, true), false);
-
+            MultiClusterRegistrationStrategy.Initialize();
             ActivationData.Init(config, nodeConfig);
             StatisticsCollector.Initialize(nodeConfig);
             
@@ -308,6 +309,8 @@ namespace Orleans.Runtime
             // This has to come after the message center //; note that it then gets injected back into the message center.;
             localGrainDirectory = new LocalGrainDirectory(this); 
 
+            RegistrarManager.InitializeGrainDirectoryManager(localGrainDirectory);
+
             // Now the activation directory.
             // This needs to know which router to use so that it can keep the global directory in synch with the local one.
             activationDirectory = new ActivationDirectory();
@@ -378,6 +381,9 @@ namespace Orleans.Runtime
             logger.Verbose("Creating {0} System Target", "RemGrainDirectory + CacheValidator");
             RegisterSystemTarget(LocalGrainDirectory.RemGrainDirectory);
             RegisterSystemTarget(LocalGrainDirectory.CacheValidator);
+
+            logger.Verbose("Creating {0} System Target", "RemClusterGrainDirectory");
+            RegisterSystemTarget(LocalGrainDirectory.RemClusterGrainDirectory);
 
             logger.Verbose("Creating {0} System Target", "ClientObserverRegistrar + TypeManager");
             clientRegistrar = new ClientObserverRegistrar(SiloAddress, LocalMessageCenter, LocalGrainDirectory, LocalScheduler, OrleansConfig);
@@ -587,7 +593,7 @@ namespace Orleans.Runtime
                 if (reminderService != null)
                 {
                     // so, we have the view of the membership in the consistentRingProvider. We can start the reminder service
-                    scheduler.QueueTask(reminderService.Start, ((SystemTarget) reminderService).SchedulingContext)
+                    scheduler.QueueTask(reminderService.Start, ((SystemTarget)reminderService).SchedulingContext)
                         .WaitWithThrow(initTimeout);
                     if (logger.IsVerbose)
                     {
@@ -982,11 +988,11 @@ namespace Orleans.Runtime
             {
                 return silo.localGrainDirectory.DirectoryPartition.GetItems();
             }
-
+          
             internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypenamesContaining(string expr)
             {
                 var x = new Dictionary<GrainId, IGrainInfo>();
-                foreach (var kvp in GetDirectory())
+                foreach (var kvp in silo.localGrainDirectory.DirectoryPartition.GetItems())
                 {
                     if (kvp.Key.IsSystemTarget || kvp.Key.IsClient || !kvp.Key.IsGrain)
                         continue;// Skip system grains, system targets and clients

@@ -64,7 +64,7 @@ namespace Orleans.Runtime.GrainDirectory
                 if (result != null)
                 {
                     // Force the list to be created in order to avoid race conditions
-                    return result.Item1.Select(pair => ActivationAddress.GetAddress(pair.Item1, grain, pair.Item2)).ToList();
+                    return result.Item1.Select(a => ActivationAddress.GetAddress(a.Silo, grain, a.Activation, a.Status)).ToList();
                 }
             }
             return null;
@@ -231,8 +231,7 @@ namespace Orleans.Runtime.GrainDirectory
                     if (logger.IsVerbose) logger.Verbose("Sending " + splitPartListSingle.Count + " single activation entries to " + addedSilo);
                     localDirectory.Scheduler.QueueTask(async () =>
                     {
-                        await localDirectory.GetDirectoryReference(successors[0]).RegisterManySingleActivation(
-                            splitPartListSingle, LocalGrainDirectory.NUM_RETRIES);
+                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListSingle, singleactivation:true);
                         splitPartListSingle.ForEach(
                             activationAddress =>
                                 localDirectory.DirectoryPartition.RemoveGrain(activationAddress.Grain));
@@ -244,7 +243,7 @@ namespace Orleans.Runtime.GrainDirectory
                     if (logger.IsVerbose) logger.Verbose("Sending " + splitPartListMulti.Count + " entries to " + addedSilo);
                     localDirectory.Scheduler.QueueTask(async () =>
                     {
-                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListMulti);
+                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListMulti, singleactivation:false);
                         splitPartListMulti.ForEach(
                             activationAddress =>
                                 localDirectory.DirectoryPartition.RemoveGrain(activationAddress.Grain));

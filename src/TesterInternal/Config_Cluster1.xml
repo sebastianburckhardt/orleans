@@ -29,12 +29,12 @@
       <TraceLevelOverride LogPrefix="Runtime.Message" TraceLevel="Verbose" />
       <TraceLevelOverride LogPrefix="Runtime.Catalog" TraceLevel="Verbose" />
       <TraceLevelOverride LogPrefix="Runtime.Orleans.GrainDirectory.LocalGrainDirectory" TraceLevel="Verbose" />
-      -->
       <TraceLevelOverride LogPrefix="Provider.SharedStorage" TraceLevel="Verbose2" />
       <TraceLevelOverride LogPrefix="Runtime.MultiClusterOracle" TraceLevel="Verbose3" />
       <TraceLevelOverride LogPrefix="Runtime.AzureTableBasedGossipChannel" TraceLevel="Verbose3" />
       <TraceLevelOverride LogPrefix="Runtime.GossipTableInstanceManager" TraceLevel="Verbose3" />
       <TraceLevelOverride LogPrefix="Replication" TraceLevel="Verbose2" />
+      -->
     </Tracing>
   </Defaults>
   <Override Node="Primary">

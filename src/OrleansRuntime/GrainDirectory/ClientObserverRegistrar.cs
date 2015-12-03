@@ -84,7 +84,7 @@ namespace Orleans.Runtime
             // That way, when we refresh it in the directiry, it's the same one.
             var addr = GetClientActivationAddress(clientId);
             scheduler.QueueTask(
-                () => ExecuteWithRetries(() => grainDirectory.RegisterAsync(addr), ErrorCode.ClientRegistrarFailedToRegister, String.Format("Directory.RegisterAsync {0} failed.", addr)),
+                () => ExecuteWithRetries(() => grainDirectory.RegisterAsync(addr, singleact:false), ErrorCode.ClientRegistrarFailedToRegister, String.Format("Directory.RegisterAsync {0} failed.", addr)),
                 this.SchedulingContext)
                         .Ignore();
         }
@@ -93,7 +93,7 @@ namespace Orleans.Runtime
         {
             var addr = GetClientActivationAddress(clientId);
             scheduler.QueueTask(
-                () => ExecuteWithRetries(() => grainDirectory.UnregisterAsync(addr), ErrorCode.ClientRegistrarFailedToUnregister, String.Format("Directory.UnRegisterAsync {0} failed.", addr)),
+                () => ExecuteWithRetries(() => grainDirectory.UnregisterAsync(addr, force:true), ErrorCode.ClientRegistrarFailedToUnregister, String.Format("Directory.UnRegisterAsync {0} failed.", addr)), 
                 this.SchedulingContext)
                         .Ignore();
         }
@@ -132,7 +132,7 @@ namespace Orleans.Runtime
                 foreach (GrainId clientId in clients)
                 {
                     var addr = GetClientActivationAddress(clientId);
-                    Task task = grainDirectory.RegisterAsync(addr).
+                    Task task = grainDirectory.RegisterAsync(addr, singleact:false).
                         LogException(logger, ErrorCode.ClientRegistrarFailedToRegister_2, String.Format("Directory.RegisterAsync {0} failed.", addr));
                     tasks.Add(task);
                 }

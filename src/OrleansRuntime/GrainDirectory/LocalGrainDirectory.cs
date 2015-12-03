@@ -27,6 +27,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Orleans.GrainDirectory;
 using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime.GrainDirectory
@@ -39,15 +40,18 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly List<SiloAddress> membershipRingList;
         private readonly HashSet<SiloAddress> membershipCache;
         private readonly AsynchAgent maintainer;
+        private readonly AsynchAgent globalSingleInstanceActivationMaintainer;
         private readonly TraceLogger log;
         private readonly SiloAddress seed;
         internal ISiloStatusOracle Membership;
 
         // Consider: move these constants into an apropriate place
-        // number of retries to redirect a wrong request (which can get wrong beacuse of membership changes)
-        internal const int NUM_RETRIES = 3;
+        internal const int HOP_LIMIT = 3; // forward a remote request no more than two times
+        private static readonly TimeSpan RETRY_DELAY = TimeSpan.FromSeconds(5); // Pause 5 seconds between forwards to let the membership directory settle down
 
         protected SiloAddress Seed { get { return seed; } }
+
+        internal Logger Logger { get { return log; } } // logger is shared with classes that manage grain directory
 
         internal bool Running;
 
@@ -58,6 +62,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         public RemoteGrainDirectory RemGrainDirectory { get; private set; }
         public RemoteGrainDirectory CacheValidator { get; private set; }
+        public ClusterGrainDirectory RemClusterGrainDirectory { get; private set; }
 
         private readonly TaskCompletionSource<bool> stopPreparationResolver;
         public Task StopPreparationCompletion { get { return stopPreparationResolver.Task; } }
@@ -115,6 +120,7 @@ namespace Orleans.Runtime.GrainDirectory
                 }
             });
             maintainer = GrainDirectoryCacheFactory<IReadOnlyList<Tuple<SiloAddress, ActivationId>>>.CreateGrainDirectoryCacheMaintainer(this, DirectoryCache);
+            globalSingleInstanceActivationMaintainer = new GlobalSingleInstanceActivationMaintainer(this, this.Logger, silo.GlobalConfig);
 
             if (silo.GlobalConfig.SeedNodes.Count > 0)
             {
@@ -127,6 +133,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             RemGrainDirectory = new RemoteGrainDirectory(this, Constants.DirectoryServiceId);
             CacheValidator = new RemoteGrainDirectory(this, Constants.DirectoryCacheValidatorId);
+            RemClusterGrainDirectory = new ClusterGrainDirectory(this, Constants.ClusterDirectoryServiceId, silo.ClusterId);
 
             // add myself to the list of members
             AddServer(MyAddress);
@@ -193,10 +200,15 @@ namespace Orleans.Runtime.GrainDirectory
 
         public void Start()
         {
+            log.Info("Start (SeverityLevel={0})", log.SeverityLevel);
             Running = true;
             if (maintainer != null)
             {
                 maintainer.Start();
+            }
+            if (globalSingleInstanceActivationMaintainer != null)
+            {
+                globalSingleInstanceActivationMaintainer.Start();
             }
         }
 
@@ -340,8 +352,8 @@ namespace Orleans.Runtime.GrainDirectory
 
                 // 1) remove entries that point to activations located on the removed silo
                 RemoveActivations(DirectoryCache, tuple.Item1, tuple.Item2, tuple.Item3, t => t.Item1.Equals(removedSilo));
-            }
-        }
+                }
+                }
 
         internal List<SiloAddress> FindPredecessors(SiloAddress silo, int count)
         {
@@ -418,7 +430,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        private bool IsValidSilo(SiloAddress silo)
+        internal bool IsValidSilo(SiloAddress silo)
         {
             if (Membership == null)
                 Membership = Silo.CurrentSilo.LocalSiloStatusOracle;
@@ -507,10 +519,21 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         /// <param name="address">The address of the potential new activation.</param>
         /// <returns>The address registered for the grain's single activation.</returns>
-        public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
+        //public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
+        //{
+        //    registrationsIssued.Increment();
+        //    var directory = GrainDirectoryManager.Instance.ResolveDirectory(StatelessWorkerActivationStrategy.Singleton);
+        //    var returnedAddress = await directory.RegisterAsync(address);
+        //    //returnedAddress
+        //}
+
+
+
+
+        public SiloAddress CheckIfIShouldForward(GrainId grain, int hopcount, string operationdescription)
         {
-            registrationsSingleActIssued.Increment();
-            SiloAddress owner = CalculateTargetSilo(address.Grain);
+            SiloAddress owner = CalculateTargetSilo(grain);
+
             if (owner == null)
             {
                 // We don't know about any other silos, and we're stopping, so throw
@@ -518,51 +541,67 @@ namespace Orleans.Runtime.GrainDirectory
             }
             if (owner.Equals(MyAddress))
             {
-                RegistrationsSingleActLocal.Increment();
-                // if I am the owner, store the new activation locally
-                Tuple<ActivationAddress, int> returnedAddress = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
-                return returnedAddress == null ? null : returnedAddress.Item1;
+                // if I am the owner, perform the operation locally
+                return null;
+            }
+            if (hopcount >= HOP_LIMIT)
+            {
+                // we are not forwarding because there were too many hops already
+                throw new OrleansException(string.Format("Silo {0} is not owner of {1}, cannot forward {2} to owner {3} because hop limit is reached", MyAddress, grain, operationdescription, owner));
+            }
+            // forward to the silo that we think is the owner
+            return owner;
+        }
+
+
+        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact, int hopcount)
+        {
+            (singleact ? (hopcount > 0 ? RegistrationsSingleActRemoteReceived : registrationsSingleActIssued)
+                            : (hopcount > 0 ? RegistrationsRemoteReceived : registrationsIssued)).Increment();
+          
+            SiloAddress owner = CalculateTargetSilo(address.Grain);
+
+            // see if the owner is somewhere else (returns null if we are owner)
+            var forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "RegisterAsync");
+ 
+            // on all silos other than first, we insert a retry delay and recheck owner before forwarding
+            if (hopcount > 0 && forwardaddress != null)
+            {
+                await Task.Delay(RETRY_DELAY);
+                forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "RegisterAsync(recheck)");
+            }
+
+            if (forwardaddress == null)
+            {
+                (singleact ? RegistrationsSingleActLocal : RegistrationsLocal).Increment();
+
+                // we are the owner     
+                var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
+
+                return await registrar.RegisterAsync(address, singleact);
             }
             else
             {
-                RegistrationsSingleActRemoteSent.Increment();
-                // otherwise, notify the owner
-                Tuple<ActivationAddress, int> returnedAddress = await GetDirectoryReference(owner).RegisterSingleActivation(address, NUM_RETRIES);
+                (singleact ? RegistrationsSingleActRemoteSent  : RegistrationsRemoteSent).Increment();
 
+                // otherwise, notify the owner
+                Tuple<ActivationAddress, int> returnedAddress = await GetDirectoryReference(forwardaddress).RegisterAsync(address, singleact, hopcount + 1);
+
+                if (singleact)
+                {
                 // Caching optimization: 
                 // cache the result of a successfull RegisterSingleActivation call, only if it is not a duplicate activation.
                 // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
                 if (returnedAddress == null || returnedAddress.Item1 == null) return null;
 
-                if (!address.Equals(returnedAddress.Item1) || !IsValidSilo(address.Silo)) return returnedAddress.Item1;
+                   if (!address.Equals(returnedAddress.Item1) || !IsValidSilo(address.Silo)) return returnedAddress;
 
                 var cached = new List<Tuple<SiloAddress, ActivationId>>(1) { Tuple.Create(address.Silo, address.Activation) };
                 // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
                 DirectoryCache.AddOrUpdate(address.Grain, cached, returnedAddress.Item2);
-                return returnedAddress.Item1;
-            }
-        }
-
-        public async Task RegisterAsync(ActivationAddress address)
-        {
-            registrationsIssued.Increment();
-            SiloAddress owner = CalculateTargetSilo(address.Grain);
-            if (owner == null)
-            {
-                // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
-            }
-            if (owner.Equals(MyAddress))
-            {
-                RegistrationsLocal.Increment();
-                // if I am the owner, store the new activation locally
-                DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
             }
             else
             {
-                RegistrationsRemoteSent.Increment();
-                // otherwise, notify the owner
-                int eTag = await GetDirectoryReference(owner).Register(address, NUM_RETRIES);
                 if (IsValidSilo(address.Silo))
                 {
                     // Caching optimization:
@@ -584,81 +623,125 @@ namespace Orleans.Runtime.GrainDirectory
                         cached = newcached;
                     }
                     // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
-                    DirectoryCache.AddOrUpdate(address.Grain, cached, eTag);
+                    DirectoryCache.AddOrUpdate(address.Grain, cached, returnedAddress.Item2);
                 }
             }
+
+                return returnedAddress;
+        }
         }
 
-        public Task UnregisterAsync(ActivationAddress addr)
-        {
-            return UnregisterAsyncImpl(addr, true);
-        }
 
         public Task UnregisterConditionallyAsync(ActivationAddress addr)
         {
             // This is a no-op if the lazy registration delay is zero or negative
             return Silo.CurrentSilo.OrleansConfig.Globals.DirectoryLazyDeregistrationDelay <= TimeSpan.Zero ? 
-                TaskDone.Done : UnregisterAsyncImpl(addr, false);
+                TaskDone.Done : UnregisterAsync(addr, false, 0);
         }
 
-        private Task UnregisterAsyncImpl(ActivationAddress addr, bool force)
+        public async Task UnregisterAsync(ActivationAddress address, bool force, int hopcount)
         {
-            unregistrationsIssued.Increment();
-            SiloAddress owner = CalculateTargetSilo(addr.Grain);
-            if (owner == null)
+            (hopcount > 0 ? UnregistrationsRemoteReceived : unregistrationsIssued).Increment();
+
+            if (hopcount == 0)
+                InvalidateCacheEntry(address);
+
+            // see if the owner is somewhere else (returns null if we are owner)
+            var forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "UnregisterAsync");
+
+            // on all silos other than first, we insert a retry delay and recheck owner before forwarding
+            if (hopcount > 0 && forwardaddress != null)
             {
-                // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
+                await Task.Delay(RETRY_DELAY);
+                forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "UnregisterAsync(recheck)");
             }
 
-            if (log.IsVerbose) log.Verbose("Silo {0} is going to unregister grain {1}-->{2} ({3}-->{4})", MyAddress, addr.Grain, owner, addr.Grain.GetUniformHashCode(), owner.GetConsistentHashCode());
-
-            InvalidateCacheEntry(addr);
-            if (owner.Equals(MyAddress))
+            if (forwardaddress == null)
             {
+                // we are the owner
                 UnregistrationsLocal.Increment();
-                // if I am the owner, remove the old activation locally
-                DirectoryPartition.RemoveActivation(addr.Grain, addr.Activation, force);
-                return TaskDone.Done;
+                var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
+                await registrar.UnregisterAsync(address, force);
             }
-            
+            else
+            {
             UnregistrationsRemoteSent.Increment();
             // otherwise, notify the owner
-            return GetDirectoryReference(owner).Unregister(addr, force, NUM_RETRIES);
+                await GetDirectoryReference(forwardaddress).UnregisterAsync(address, force, hopcount+1);
+            }
         }
 
-        public Task UnregisterManyAsync(List<ActivationAddress> addresses)
+        private void AddToDictionary<K,V>(ref Dictionary<K, List<V>> dictionary, K key, V value)
         {
-            unregistrationsManyIssued.Increment();
-            return Task.WhenAll(
-                addresses.GroupBy(a => CalculateTargetSilo(a.Grain))
-                    .Select(g =>
+            if (dictionary == null) 
+               dictionary = new Dictionary<K,List<V>>();
+            List<V> list;
+            if (! dictionary.TryGetValue(key, out list))
+               dictionary[key] = list = new List<V>();
+            list.Add(value);
+        }
+
+        public async Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopcount)
+        {
+            (hopcount > 0 ? UnregistrationsManyRemoteReceived : unregistrationsManyIssued).Increment();
+
+            Dictionary<SiloAddress, List<ActivationAddress>> forward = null;
+            var tasks = new List<Task>();
+
+            foreach (var address in addresses)
                     {
-                        if (g.Key == null)
+                // see if the owner is somewhere else (returns null if we are owner)
+                var forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "UnregisterManyAsync");
+
+                if (forwardaddress != null)
+                    AddToDictionary(ref forward, forwardaddress, address);
+
+                else
                         {
-                            // We don't know about any other silos, and we're stopping, so throw
-                            throw new InvalidOperationException("Grain directory is stopping");
+                    // we are the owner
+                    UnregistrationsLocal.Increment();
+                    var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
+                    tasks.Add(registrar.UnregisterAsync(address, true));
+                }
                         }
 
-                        foreach (var addr in g)
-                            InvalidateCacheEntry(addr);
+            // on all silos other than first, we insert a retry delay and re-check destination
+            if (hopcount > 0 && forward != null)
+            {
+                await Task.Delay(RETRY_DELAY);
+                Dictionary<SiloAddress, List<ActivationAddress>> forward2 = null;
+                foreach (var list in forward.Values)
+                    foreach (var address in list)
+                    {
+                        // see if the owner is somewhere else (returns null if we are owner)
+                        var forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "UnregisterManyAsync");
+
+                        if (forwardaddress != null)
+                            AddToDictionary(ref forward2, forwardaddress, address);
                         
-                        if (MyAddress.Equals(g.Key))
-                        {
-                            // if I am the owner, remove the old activation locally
-                            foreach (var addr in g)
+                        else
                             {
+                            // we are the owner
                                 UnregistrationsLocal.Increment();
-                                DirectoryPartition.RemoveActivation(addr.Grain, addr.Activation, true);
+                            var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
+                            tasks.Add(registrar.UnregisterAsync(address, true));
+                        }
                             }
-                            return TaskDone.Done;
+                forward = forward2;
                         }
                         
+            // forward the requests
+            if (forward != null)
+                foreach (var kvp in forward)
+                {
                         UnregistrationsManyRemoteSent.Increment();
-                        // otherwise, notify the owner
-                        return GetDirectoryReference(g.Key).UnregisterMany(g.ToList(), NUM_RETRIES);
-                    }));
+                    tasks.Add(GetDirectoryReference(kvp.Key).UnregisterManyAsync(kvp.Value, hopcount + 1));
+                }
+
+            // wait for all the requests to finish
+            await Task.WhenAll(tasks);
         }
+
 
         public bool LocalLookup(GrainId grain, out List<ActivationAddress> addresses)
         {
@@ -705,7 +788,7 @@ namespace Orleans.Runtime.GrainDirectory
         {
             var result = DirectoryPartition.LookUpGrain(grain);
             return result == null ? null : 
-                result.Item1.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList();
+                result.Item1.Where(addr => IsValidSilo(addr.Silo)).ToList();
         }
 
         public List<ActivationAddress> GetLocalCacheData(GrainId grain)
@@ -716,19 +799,28 @@ namespace Orleans.Runtime.GrainDirectory
                 null;
         }
 
-        public async Task<List<ActivationAddress>> FullLookup(GrainId grain)
+        /*public Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true)
         {
-            fullLookups.Increment();
+            throw new NotImplementedException();
+        }*/
 
-            SiloAddress silo = CalculateTargetSilo(grain, false);
-            // No need to check that silo != null since we're passing excludeThisSiloIfStopping = false
+        public async Task<Tuple<List<ActivationAddress>, int>> LookupAsync(GrainId grain, int hopcount = 0)
+        {
+            (hopcount > 0 ? RemoteLookupsReceived : fullLookups).Increment();
 
-            if (log.IsVerbose) log.Verbose("Silo {0} fully lookups for {1}-->{2} ({3}-->{4})", MyAddress, grain, silo, grain.GetUniformHashCode(), silo.GetConsistentHashCode());
+            // see if the owner is somewhere else (returns null if we are owner)
+            var forwardaddress = CheckIfIShouldForward(grain, hopcount, "LookUpAsync");
 
-            // We assyme that getting here means the grain was not found locally (i.e., in TryFullLookup()).
-            // We still check if we own the grain locally to avoid races between the time TryFullLookup() and FullLookup() were called.
-            if (silo.Equals(MyAddress))
+            // on all silos other than first, we insert a retry delay and recheck owner before forwarding
+            if (hopcount > 0 && forwardaddress != null)
             {
+                await Task.Delay(RETRY_DELAY);
+                forwardaddress = CheckIfIShouldForward(grain, hopcount, "LookUpAsync(recheck)");
+            }
+
+            if (forwardaddress == null)
+            {
+                // we are the owner
                 LocalDirectoryLookups.Increment();
                 var localResult = DirectoryPartition.LookUpGrain(grain);
                 if (localResult == null)
@@ -736,57 +828,64 @@ namespace Orleans.Runtime.GrainDirectory
                     // it can happen that we cannot find the grain in our partition if there were 
                     // some recent changes in the membership
                     if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}=none", grain);
-                    return new List<ActivationAddress>();
+                    return Tuple.Create(new List<ActivationAddress>(), GrainInfo.NO_ETAG);
                 }
-                var a = localResult.Item1.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList();
+                var a = localResult.Item1.Where(addr => IsValidSilo(addr.Silo)).ToList();
+
                 if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grain, a.ToStrings());
                 LocalDirectorySuccesses.Increment();
-                return a;
+                return Tuple.Create(a, localResult.Item2);
             }
-
-            // Just a optimization. Why sending a message to someone we know is not valid.
-            if (!IsValidSilo(silo))
+            else
             {
-                throw new OrleansException(String.Format("Current directory at {0} is not stable to perform the lookup for grain {1} (it maps to {2}, which is not a valid silo). Retry later.", MyAddress, grain, silo));
+            // Just a optimization. Why sending a message to someone we know is not valid.
+                if (!IsValidSilo(forwardaddress))
+            {
+                    throw new OrleansException(String.Format("Current directory at {0} is not stable to perform the lookup for grain {1} (it maps to {2}, which is not a valid silo). Retry later.", MyAddress, grain, forwardaddress));
             }
 
             RemoteLookupsSent.Increment();
-            Tuple<List<Tuple<SiloAddress, ActivationId>>, int> result = await GetDirectoryReference(silo).LookUp(grain, NUM_RETRIES);
+                Tuple<List<ActivationAddress>, int> result = await GetDirectoryReference(forwardaddress).LookupAsync(grain, hopcount + 1);
 
             // update the cache
-            List<Tuple<SiloAddress, ActivationId>> entries = result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
-            List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).ToList();
+                //List<Tuple<SiloAddress, ActivationId>> entries = result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
+                //List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).ToList();
+                var addresses = result.Item1.Where(t => IsValidSilo(t.Silo)).ToList();
             if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, addresses.ToStrings());
+
+                var entries = addresses.Select(t => Tuple.Create(t.Silo, t.Activation)).ToList();
 
             if (entries.Count > 0)
                 DirectoryCache.AddOrUpdate(grain, entries, result.Item2);
             
-            return addresses;
+                return Tuple.Create(addresses, result.Item2);
+            }         
         }
 
-        public Task DeleteGrain(GrainId grain)
+        public async Task DeleteGrainAsync(GrainId grain, int hopcount)
         {
-            SiloAddress silo = CalculateTargetSilo(grain);
-            if (silo == null)
+            // see if the owner is somewhere else (returns null if we are owner)
+            var forwardaddress = CheckIfIShouldForward(grain, hopcount, "DeleteGrainAsync");
+
+            // on all silos other than first, we insert a retry delay and recheck owner before forwarding
+            if (hopcount > 0 && forwardaddress != null)
             {
-                // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
+                await Task.Delay(RETRY_DELAY);
+                forwardaddress = CheckIfIShouldForward(grain, hopcount, "DeleteGrainAsync(recheck)");
             }
 
-            if (log.IsVerbose) log.Verbose("Silo {0} tries to lookup for {1}-->{2} ({3}-->{4})", MyAddress, grain, silo, grain.GetUniformHashCode(), silo.GetConsistentHashCode());
-
-            if (silo.Equals(MyAddress))
+            if (forwardaddress == null)
             {
-                // remove from our partition
-                DirectoryPartition.RemoveGrain(grain);
-                return TaskDone.Done;
+                // we are the owner
+                var registrar = RegistrarManager.Instance.GetRegistrarForGrain(grain);
+                await registrar.DeleteAsync(grain);
             }
-
-            // remove from the cache
+            else
+            {
+                // otherwise, notify the owner
             DirectoryCache.Remove(grain);
-
-            // send request to the owner
-            return GetDirectoryReference(silo).DeleteGrain(grain, NUM_RETRIES);
+                await GetDirectoryReference(forwardaddress).DeleteGrainAsync(grain, hopcount + 1);
+            }
         }
 
         public void InvalidateCacheEntry(ActivationAddress activationAddress)

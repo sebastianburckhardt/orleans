@@ -104,6 +104,7 @@
     <Compile Include="CodeGeneration\OrleansCodeGenerationTargetAttribute.cs" />
     <Compile Include="CodeGeneration\SkipCodeGenerationAttribute.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
+    <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
     <Compile Include="Configuration\LimitValue.cs" />
@@ -117,6 +118,11 @@
     <Compile Include="Replication\IQueuedGrainAdaptorHost.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="GrainDirectory\MultiClusterRegistrationStrategy.cs" />
+    <Compile Include="GrainDirectory\GlobalSingleInstanceRegistration.cs" />
+    <Compile Include="GrainDirectory\IGrainDirectory.cs" />
+    <Compile Include="GrainDirectory\IGrainRegistrar.cs" />
+    <Compile Include="GrainDirectory\ClusterLocalRegistration.cs" />
     <Compile Include="IDs\GuidId.cs" />
     <Compile Include="Messaging\GatewayManager.cs" />
     <Compile Include="Messaging\IncomingMessageBuffer.cs" />
@@ -148,6 +154,7 @@
     <Compile Include="Streams\PersistentStreams\StreamEventDeliveryFailureException.cs" />
     <Compile Include="Streams\Predicates\DefaultStreamFilterPredicateWrapper.cs" />
     <Compile Include="Streams\PubSub\FaultedSubscriptionException.cs" />
+    <Compile Include="SystemTargetInterfaces\IClusterGrainDirectory.cs" />
     <Compile Include="SystemTargetInterfaces\IReplicationProtocolGateway.cs" />
     <Compile Include="Streams\PubSub\ImplicitStreamPubSub.cs" />
     <Compile Include="Streams\PubSub\StreamPubSubImpl.cs" />

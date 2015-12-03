@@ -51,6 +51,7 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClusterTestGrains.cs" />
     <Compile Include="CircularStateTestGrain.cs" />
     <Compile Include="ActivateDeactivateWatcherGrain.cs" />
     <Compile Include="ExceptionGrain.cs" />

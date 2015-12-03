@@ -30,6 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Orleans.Core;
+using Orleans.GrainDirectory;
 using Orleans.MultiCluster;
 using Orleans.Providers;
 using Orleans.Replication;
@@ -312,8 +313,9 @@ namespace Orleans.Runtime
             try
             {
                 PlacementStrategy unused;
+                MultiClusterRegistrationStrategy unusedActivationStrategy;
                 string grainClassName;
-                GrainTypeManager.GetTypeInfo(grain.GetTypeCode(), out grainClassName, out unused);
+                GrainTypeManager.GetTypeInfo(grain.GetTypeCode(), out grainClassName, out unused, out unusedActivationStrategy);
                 report.GrainClassTypeName = grainClassName;
             }
             catch (Exception exc)
@@ -393,9 +395,9 @@ namespace Orleans.Runtime
                 data.IsReentrant;
         }
 
-        public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
+        public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, out MultiClusterRegistrationStrategy activationStrategy, string genericArguments = null)
         {
-            GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, genericArguments);
+            GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, out activationStrategy, genericArguments);
         }
 
         #endregion
@@ -438,9 +440,10 @@ namespace Orleans.Runtime
 
                 int typeCode = address.Grain.GetTypeCode();
                 string actualGrainType = null;
+                MultiClusterRegistrationStrategy activationStrategy = MultiClusterRegistrationStrategy.GetDefault();
 
                 if (typeCode != 0) // special case for Membership grain.
-                    GetGrainTypeInfo(typeCode, out actualGrainType, out placement);
+                    GetGrainTypeInfo(typeCode, out actualGrainType, out placement, out activationStrategy);
                 else
                     placement = SystemPlacement.Singleton;
 
@@ -457,6 +460,7 @@ namespace Orleans.Runtime
                         address, 
                         genericArguments, 
                         placement, 
+                        activationStrategy,
                         ActivationCollector, 
                         config.Application.GetCollectionAgeLimit(grainType));
                     RegisterMessageTarget(result);
@@ -638,7 +642,8 @@ namespace Orleans.Runtime
                 if (typeCode != 0)
                 {
                     PlacementStrategy unused;
-                    GetGrainTypeInfo(typeCode, out grainClassName, out unused, genericArguments);
+                    MultiClusterRegistrationStrategy unusedActivationStrategy;
+                    GetGrainTypeInfo(typeCode, out grainClassName, out unused, out unusedActivationStrategy, genericArguments);
                 }
                 else
                 {
@@ -681,17 +686,17 @@ namespace Orleans.Runtime
                 {
                     if (!grainTypeData.IsQueued)
                     {
-                        SetupStorageProvider(data);
+                    SetupStorageProvider(data);
 
-                        data.GrainInstance.GrainState = state;
-                        data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
-                    }
+                    data.GrainInstance.GrainState = state;
+                    data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
+                }
                     else
                     {
                         var repprovider = SetupReplicationProvider(data);
                         var svc = new ReplicationServices(grain, repprovider);
                         ((IQueuedGrainAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
-                    }
+            }
 
                 }
             }
@@ -1263,11 +1268,11 @@ namespace Orleans.Runtime
 
             if (singleActivationMode)
             {
-                ActivationAddress returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterSingleActivationAsync(address), this.SchedulingContext);
-                if (address.Equals(returnedAddress)) return;
+                Tuple<ActivationAddress,int> returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
+                if (address.Equals(returnedAddress.Item1)) return;
 
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
-                throw new DuplicateActivationException(returnedAddress, primaryDirectoryForGrain);
+                throw new DuplicateActivationException(returnedAddress.Item1, primaryDirectoryForGrain);
             }
             else
             {
@@ -1283,8 +1288,6 @@ namespace Orleans.Runtime
                     throw new DuplicateActivationException(id);
                 }
             }
-            // We currently don't have any other case for multiple activations except for StatelessWorker.
-            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext);
         }
 
         #endregion
@@ -1324,9 +1327,9 @@ namespace Orleans.Runtime
             // thus volaiting the single-activation semantics and not converging even eventualy!
         }
 
-        public Task<List<ActivationAddress>> FullLookup(GrainId grain)
+        public Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain)
         {
-            return scheduler.RunOrQueueTask(() => directory.FullLookup(grain), this.SchedulingContext);
+            return scheduler.RunOrQueueTask(() => directory.LookupAsync(grain), this.SchedulingContext);
         }
 
         public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)

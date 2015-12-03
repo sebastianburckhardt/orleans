@@ -154,6 +154,7 @@
     <Compile Include="StreamingTests\StreamTestsConstants.cs" />
     <Compile Include="StreamingTests\SampleStreamingTests.cs" />
     <Compile Include="SimpleGrainTests.cs" />
+    <Compile Include="GeoClusterTests\SimpleGlobalSingleInstanceGrainTests.cs" />
     <Compile Include="StreamingTests\SMSDeactivationTests.cs" />
     <Compile Include="StreamingTests\SMSSubscriptionMultiplicityTests.cs" />
     <Compile Include="StreamingTests\SubscriptionMultiplicityTestRunner.cs" />
