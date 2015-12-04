@@ -318,19 +318,14 @@ namespace Orleans.Runtime.MembershipService
         {
             Debug.Assert(!string.IsNullOrEmpty(GlobalServiceId)); // call only if this is a multi cluster
 
-            var candidates = localTableCopyOnlyActive.Keys.ToList();
-
-            // sort deterministically so everyone ends up with the same result
-            candidates.Sort((a, b) =>  
-            {
-                var addressdiff = a.Endpoint.Address.ToString().CompareTo(b.Endpoint.Address.ToString());
-                if (addressdiff != 0) return addressdiff;
-                return a.Endpoint.Port.CompareTo(b.Endpoint.Port);
-            });
-
             // take all the active silos if their count does not exceed the desired number of gateways
-            if (candidates.Count <= NumMultiClusterGatewaysPerCluster)
-                return candidates;
+            if (localTableCopyOnlyActive.Count <= NumMultiClusterGatewaysPerCluster)
+                return localTableCopyOnlyActive.Keys.ToList();
+
+            var candidates = new SortedList<string, SiloAddress>();
+
+            foreach(var x in localTableCopyOnlyActive)
+                candidates.Add(x.Key.Endpoint.ToString(), x.Key);
 
             // group by fault/update zones
             var groups = new Dictionary<UpdateFaultCombo, List<SiloAddress>>();
@@ -344,14 +339,14 @@ namespace Orleans.Runtime.MembershipService
                 }
                 else
                 {
-                    var e = localTable[c];
+                    var e = localTable[c.Value];
                     key.FaultZone = e.FaultZone;
                     key.UpdateZone = e.UpdateZone;
                 }
                 List<SiloAddress> list;
                 if (!groups.TryGetValue(key, out list))
                     groups[key] = list = new List<SiloAddress>();
-                list.Add(c);
+                list.Add(c.Value);
             }
               
             var keys = groups.Keys.ToList();
