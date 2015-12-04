@@ -209,7 +209,7 @@ namespace Orleans.Runtime.GrainDirectory
             if (globalSingleInstanceActivationMaintainer != null)
             {
                 globalSingleInstanceActivationMaintainer.Start();
-            }
+        }
         }
 
         // Note that this implementation stops processing directory change requests (Register, Unregister, etc.) when the Stop event is raised. 
@@ -352,8 +352,8 @@ namespace Orleans.Runtime.GrainDirectory
 
                 // 1) remove entries that point to activations located on the removed silo
                 RemoveActivations(DirectoryCache, tuple.Item1, tuple.Item2, tuple.Item3, t => t.Item1.Equals(removedSilo));
-                }
-                }
+            }
+        }
 
         internal List<SiloAddress> FindPredecessors(SiloAddress silo, int count)
         {

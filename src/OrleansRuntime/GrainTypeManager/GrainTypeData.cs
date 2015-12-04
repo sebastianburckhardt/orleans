@@ -43,8 +43,8 @@ namespace Orleans.Runtime
         internal Type StateObjectType { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
-
-        
+   
+     
         public GrainTypeData(Type type, Type stateObjectType)
         {
             Type = type;
