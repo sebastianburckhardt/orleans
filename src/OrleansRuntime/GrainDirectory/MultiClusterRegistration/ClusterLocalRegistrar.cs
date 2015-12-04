@@ -19,9 +19,9 @@ namespace Orleans.Runtime.GrainDirectory
             DirectoryPartition = partition;
         }
 
-        public virtual Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact)
+        public virtual Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation)
         {
-            if (singleact)
+            if (singleActivation)
             {
                 var returnedAddress = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
                 return Task.FromResult(returnedAddress);

@@ -45,14 +45,14 @@ namespace Orleans.Runtime.GrainDirectory
             logger = TraceLogger.GetLogger("Orleans.GrainDirectory.CacheValidator", TraceLogger.LoggerType.Runtime);
         }
 
-        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact, int hopcount)
+        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
         {
-            (singleact ? router.RegistrationsSingleActRemoteReceived : router.RegistrationsRemoteReceived).Increment();
+            (singleActivation ? router.RegistrationsSingleActRemoteReceived : router.RegistrationsRemoteReceived).Increment();
             
-            return await router.RegisterAsync(address, singleact, hopcount);
+            return await router.RegisterAsync(address, singleActivation, hopcount);
         }
 
-        public Task RegisterMany(List<ActivationAddress> addresses, bool singleact)
+        public Task RegisterMany(List<ActivationAddress> addresses, bool singleActivation)
         {
             // validate that this request arrived correctly
             //logger.Assert(ErrorCode.Runtime_Error_100140, silo.Matches(router.MyAddress), "destination address != my address");
@@ -62,7 +62,7 @@ namespace Orleans.Runtime.GrainDirectory
             if (addresses.Count == 0)
                 return TaskDone.Done;
 
-            return Task.WhenAll(addresses.Select(addr => router.RegisterAsync(addr, singleact, 1)));
+            return Task.WhenAll(addresses.Select(addr => router.RegisterAsync(addr, singleActivation, 1)));
         }
 
         public Task UnregisterAsync(ActivationAddress address, bool force, int hopcount)

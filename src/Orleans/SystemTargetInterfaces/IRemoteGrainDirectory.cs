@@ -42,7 +42,7 @@ namespace Orleans.Runtime
         int VersionTag { get; }
         bool SingleInstance { get; }
         bool AddActivation(ActivationId act, SiloAddress silo);
-        ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.OWNED);
+        ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.Owned);
         bool RemoveActivation(ActivationAddress addr);
         bool RemoveActivation(ActivationId act, bool force);
         bool Merge(GrainId grain, IGrainInfo other);
@@ -60,9 +60,9 @@ namespace Orleans.Runtime
         /// This method should be called only remotely during handoff.
         /// </summary>
         /// <param name="addresses">The addresses of the grains to register</param>
-        /// <param name="singleactivation">whether to use single-activation registration</param>
+        /// <param name="singleActivation">If true, use single-activation registration</param>
         /// <returns></returns>
-        Task RegisterMany(List<ActivationAddress> addresses, bool singleactivation);
+        Task RegisterMany(List<ActivationAddress> addresses, bool singleActivation);
 
         /// <summary>
         /// Fetch the updated information on the given list of grains.

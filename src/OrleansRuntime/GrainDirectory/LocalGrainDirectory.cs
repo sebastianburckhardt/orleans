@@ -554,9 +554,9 @@ namespace Orleans.Runtime.GrainDirectory
         }
 
 
-        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact, int hopcount)
+        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
         {
-            (singleact ? (hopcount > 0 ? RegistrationsSingleActRemoteReceived : registrationsSingleActIssued)
+            (singleActivation ? (hopcount > 0 ? RegistrationsSingleActRemoteReceived : registrationsSingleActIssued)
                             : (hopcount > 0 ? RegistrationsRemoteReceived : registrationsIssued)).Increment();
           
             SiloAddress owner = CalculateTargetSilo(address.Grain);
@@ -573,21 +573,21 @@ namespace Orleans.Runtime.GrainDirectory
 
             if (forwardaddress == null)
             {
-                (singleact ? RegistrationsSingleActLocal : RegistrationsLocal).Increment();
+                (singleActivation ? RegistrationsSingleActLocal : RegistrationsLocal).Increment();
 
                 // we are the owner     
                 var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
 
-                return await registrar.RegisterAsync(address, singleact);
+                return await registrar.RegisterAsync(address, singleActivation);
             }
             else
             {
-                (singleact ? RegistrationsSingleActRemoteSent  : RegistrationsRemoteSent).Increment();
+                (singleActivation ? RegistrationsSingleActRemoteSent  : RegistrationsRemoteSent).Increment();
 
                 // otherwise, notify the owner
-                Tuple<ActivationAddress, int> returnedAddress = await GetDirectoryReference(forwardaddress).RegisterAsync(address, singleact, hopcount + 1);
+                Tuple<ActivationAddress, int> returnedAddress = await GetDirectoryReference(forwardaddress).RegisterAsync(address, singleActivation, hopcount + 1);
 
-                if (singleact)
+                if (singleActivation)
                 {
                 // Caching optimization: 
                 // cache the result of a successfull RegisterSingleActivation call, only if it is not a duplicate activation.

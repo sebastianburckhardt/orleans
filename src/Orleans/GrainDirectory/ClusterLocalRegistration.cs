@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Orleans.GrainDirectory
 {
@@ -13,23 +9,16 @@ namespace Orleans.GrainDirectory
     [Serializable]
     internal class ClusterLocalRegistration : MultiClusterRegistrationStrategy
     {
-        private static ClusterLocalRegistration singleton;
+        private static readonly Lazy<ClusterLocalRegistration> singleton = new Lazy<ClusterLocalRegistration>(() => new ClusterLocalRegistration());
 
         internal static ClusterLocalRegistration Singleton
         {
-            get
-            {
-                if (singleton == null)
-                {
-                    Initialize();
-                }
-                return singleton;
-            }
+            get { return singleton.Value; }
         }
 
         internal static void Initialize()
         {
-            singleton = new ClusterLocalRegistration();
+            var instance = Singleton;
         }
 
         private ClusterLocalRegistration()
