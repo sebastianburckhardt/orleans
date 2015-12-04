@@ -96,12 +96,12 @@ namespace Orleans.Runtime.GrainDirectory
                     return false;
                 }
             }
-            Instances[act] = new ActivationInfo(silo, MultiClusterStatus.OWNED);
+            Instances[act] = new ActivationInfo(silo, MultiClusterStatus.Owned);
             VersionTag = rand.Next();
             return true;
         }
 
-        public ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.OWNED)
+        public ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.Owned)
         {
             SingleInstance = true;
             if (Instances.Count > 0)
@@ -194,7 +194,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 Instances.Remove(oldActivation);
             }
-            Instances.Add(activation, new ActivationInfo(silo, MultiClusterStatus.CACHED));
+            Instances.Add(activation, new ActivationInfo(silo, MultiClusterStatus.Cached));
         }
 
         public bool UpdateClusterRegistrationStatus(ActivationId act, MultiClusterStatus status, MultiClusterStatus? comparewith = null)
@@ -294,7 +294,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// <param name="silo"></param>
         /// <param name="registrationStatus"></param>
         /// <returns>The registered ActivationAddress and version associated with this directory mapping</returns>
-        internal virtual Tuple<ActivationAddress, int> AddSingleActivation(GrainId grain, ActivationId activation, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.OWNED)
+        internal virtual Tuple<ActivationAddress, int> AddSingleActivation(GrainId grain, ActivationId activation, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.Owned)
         {
             if (log.IsVerbose3) log.Verbose3("Adding single activation for grain {0}{1}{2}", silo, grain, activation);
 
@@ -542,7 +542,7 @@ namespace Orleans.Runtime.GrainDirectory
                 else
                 {
                     AddSingleActivation(grain, otherClusterAddress.Activation, otherClusterAddress.Silo,
-                        MultiClusterStatus.CACHED);
+                        MultiClusterStatus.Cached);
                 }
             }
         }

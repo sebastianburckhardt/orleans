@@ -55,7 +55,7 @@ namespace Orleans.Runtime
             return GetAddress(silo, grain, activation);
         }
 
-        public static ActivationAddress GetAddress(SiloAddress silo, GrainId grain, ActivationId activation, MultiClusterStatus status = MultiClusterStatus.OWNED)
+        public static ActivationAddress GetAddress(SiloAddress silo, GrainId grain, ActivationId activation, MultiClusterStatus status = MultiClusterStatus.Owned)
         {
             // Silo part is not mandatory
             if (grain == null) throw new ArgumentNullException("grain");

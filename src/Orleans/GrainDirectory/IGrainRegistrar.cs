@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Orleans.Runtime;
 
@@ -19,8 +16,9 @@ namespace Orleans.GrainDirectory
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
         /// <param name="address">The address of the activation to register.</param>
+        /// <param name="singleActivation">If true, use single-activation registration</param>
         /// <returns>The address registered for the grain's single activation.</returns>
-        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact);
+        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation);
 
         /// <summary>
         /// Removes the given activation for the grain.
@@ -36,6 +34,5 @@ namespace Orleans.GrainDirectory
         /// </summary>
         /// <returns></returns>
         Task DeleteAsync(GrainId gid);
-
     }
 }

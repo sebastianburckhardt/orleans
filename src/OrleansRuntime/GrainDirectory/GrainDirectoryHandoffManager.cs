@@ -231,7 +231,7 @@ namespace Orleans.Runtime.GrainDirectory
                     if (logger.IsVerbose) logger.Verbose("Sending " + splitPartListSingle.Count + " single activation entries to " + addedSilo);
                     localDirectory.Scheduler.QueueTask(async () =>
                     {
-                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListSingle, singleactivation:true);
+                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListSingle, singleActivation:true);
                         splitPartListSingle.ForEach(
                             activationAddress =>
                                 localDirectory.DirectoryPartition.RemoveGrain(activationAddress.Grain));
@@ -243,7 +243,7 @@ namespace Orleans.Runtime.GrainDirectory
                     if (logger.IsVerbose) logger.Verbose("Sending " + splitPartListMulti.Count + " entries to " + addedSilo);
                     localDirectory.Scheduler.QueueTask(async () =>
                     {
-                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListMulti, singleactivation:false);
+                        await localDirectory.GetDirectoryReference(successors[0]).RegisterMany(splitPartListMulti, singleActivation:false);
                         splitPartListMulti.ForEach(
                             activationAddress =>
                                 localDirectory.DirectoryPartition.RemoveGrain(activationAddress.Grain));

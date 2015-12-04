@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Orleans.Runtime;
 
@@ -19,11 +17,11 @@ namespace Orleans.GrainDirectory
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
         /// <param name="address">The address of the new activation.</param>
-        /// <param name="singleact">If true, use single-activation registration</param>
+        /// <param name="singleActivation">If true, use single-activation registration</param>
         /// <param name="withRetry">Indicates whether or not to retry the operation.</param>
         /// <param name="hopcount">Counts recursion depth across silos</param>
         /// <returns>The registered address and the version associated with this directory mapping.</returns>
-        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact, int hopcount = 0);
+        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount = 0);
 
         /// <summary>
         /// Removes the record for an existing activation from the directory service.
