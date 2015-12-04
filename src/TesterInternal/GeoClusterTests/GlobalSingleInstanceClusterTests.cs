@@ -144,8 +144,8 @@ namespace Tests.GeoClusterTests
             client0.InjectMultiClusterConf("0,1");
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
-            int baseCount0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
+            int baseCount0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
             int baseCount = baseCount0 + baseCount1;
 
             const int numGrains = 2000;
@@ -174,15 +174,15 @@ namespace Tests.GeoClusterTests
             // We have created 2000 grains, 1000 grains are created on cluster 0, 
             // and 1000 grains are created on cluster1.
             // Get the grain directory associated with each of the clusters.
-            int own0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            int own1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
+            int own0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            int own1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
             int ownCount = own0 + own1;
 
-            int doubt0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.DOUBTFUL).Count;
-            int doubt1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.DOUBTFUL).Count;
+            int doubt0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
+            int doubt1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
             
-            int req0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.REQUESTED_OWNERSHIP).Count;
-            int req1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.REQUESTED_OWNERSHIP).Count;
+            int req0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.RequestedOwnership).Count;
+            int req1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.RequestedOwnership).Count;
 
             Console.WriteLine("Counts: Cluster 0 => Owned={0} Requested={1} Doubtful={2}", own0, req0, doubt0);
             Console.WriteLine("Counts: Cluster 1 => Owned={0} Requested={1} Doubtful={2}", own1, req1, doubt1);
@@ -232,8 +232,8 @@ namespace Tests.GeoClusterTests
             client3.InjectMultiClusterConf("0,1");
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
-            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
+            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
             int countsBase = countsBase0 + countsBase1;
 
             // Create 2000 grains, 1000 grains in each cluster. We alternate the calls among two clients connected to the same cluster. This allows
@@ -288,9 +288,9 @@ namespace Tests.GeoClusterTests
             WriteLog("Elapsed={0}", sw.Elapsed);
 
             // Count the total number of OWNED activations in cluster0.
-            var countsCluster0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
+            var countsCluster0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
             // Count the total number of OWNED activations in cluster1. 
-            var countsCluster1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
+            var countsCluster1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
  
             // Check that total number of OWNED grains that we counted is equal to the number of grains that were activated.
             Assert.AreEqual(numGrains, countsCluster0 + countsCluster1 - countsBase,
@@ -433,12 +433,12 @@ namespace Tests.GeoClusterTests
                 // one should be owned and the other cached
                 switch (activations[0].RegistrationStatus)
                 {
-                    case MultiClusterStatus.OWNED:
-                        if (activations[1].RegistrationStatus != MultiClusterStatus.CACHED)
+                    case MultiClusterStatus.Owned:
+                        if (activations[1].RegistrationStatus != MultiClusterStatus.Cached)
                             error();
                         break;
-                    case MultiClusterStatus.CACHED:
-                        if (activations[1].RegistrationStatus != MultiClusterStatus.OWNED)
+                    case MultiClusterStatus.Cached:
+                        if (activations[1].RegistrationStatus != MultiClusterStatus.Owned)
                             error();
                         break;
                     default:
@@ -504,8 +504,8 @@ namespace Tests.GeoClusterTests
             // in cluster0 (created during silo creation - like the Membership Grain).
             // These should be excluded from out test results;
             // we assume they don't dissapear before the test is over.
-            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
+            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
 
             // Turn off intercluster messaging to simulate a partition.
             BlockAllClusterCommunication(cluster0, cluster1);
@@ -524,8 +524,8 @@ namespace Tests.GeoClusterTests
             });
 
             // Validate that all the created grains are DOUBTFUL, one activation in each cluster.
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.DOUBTFUL).Count == numGrains, "c0 - Expecting All are Doubtful");
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.DOUBTFUL).Count == numGrains, "c1 - Expecting All are Doubtful");
+            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count == numGrains, "c0 - Expecting All are Doubtful");
+            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count == numGrains, "c1 - Expecting All are Doubtful");
 
 
             // un-block intercluster messaging.
@@ -537,12 +537,12 @@ namespace Tests.GeoClusterTests
             await Task.Delay(TimeSpan.FromSeconds(7));
 
             // Validate that all the duplicates have been resolved.
-            var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
-            var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.CACHED).Count;
-            var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.CACHED).Count;
-            var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.DOUBTFUL).Count;
-            var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.DOUBTFUL).Count;
+            var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+            var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached).Count;
+            var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached).Count;
+            var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
+            var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
 
             Assert.IsTrue(owned0 + owned1 == numGrains + countsBase1 + countsBase0, "Expecting All are now Owned");
             Assert.IsTrue(cached0 + cached1 == numGrains, "Expecting All Owned have a cached in the other cluster");
@@ -600,8 +600,8 @@ namespace Tests.GeoClusterTests
             // in cluster0 (created during silo creation - like the Membership Grain).
             // These should be excluded from out test results;
             // we assume they don't dissapear before the test is over.
-            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
+            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
 
             // Turn off intercluster messaging to simulate a partition.
             BlockAllClusterCommunication(cluster0, cluster1);
@@ -634,8 +634,8 @@ namespace Tests.GeoClusterTests
             });
 
             // Validate that all the created grains are in DOUBTFUL, one activation in each cluster.
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.DOUBTFUL).Count == numGrains, "c0 - Expecting All are Doubtful");
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.DOUBTFUL).Count == numGrains, "c1 - Expecting All are Doubtful");
+            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count == numGrains, "c0 - Expecting All are Doubtful");
+            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count == numGrains, "c1 - Expecting All are Doubtful");
 
             // Turn on intercluster messaging and wait for the resolution to kick in.
             UnblockAllClusterCommunication(cluster0);
@@ -647,12 +647,12 @@ namespace Tests.GeoClusterTests
 
   
             // Validate that all the duplicates have been resolved.
-            var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED).Count;
-            var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED).Count;
-            var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.CACHED).Count;
-            var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.CACHED).Count;
-            var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.DOUBTFUL).Count;
-            var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.DOUBTFUL).Count;
+            var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+            var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+            var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached).Count;
+            var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached).Count;
+            var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
+            var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
 
             Assert.IsTrue(owned0 + owned1 == numGrains + countsBase1 + countsBase0, "Expecting All are now Owned");
             Assert.IsTrue(cached0 + cached1 == numGrains, "Expecting All Owned have a cached in the other cluster");
@@ -698,10 +698,10 @@ namespace Tests.GeoClusterTests
             var clusterOwned0 = new HashSet<GrainId>();
             var clusterOwned1 = new HashSet<GrainId>();
 
-            clusterCached0.UnionWith(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.CACHED));
-            clusterOwned0.UnionWith(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.OWNED));
-            clusterCached1.UnionWith(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.CACHED));
-            clusterOwned1.UnionWith(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.OWNED));
+            clusterCached0.UnionWith(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached));
+            clusterOwned0.UnionWith(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned));
+            clusterCached1.UnionWith(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached));
+            clusterOwned1.UnionWith(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned));
            
             // Since both clients raced to create the same grain, 
             // we expect one cluster to contain a CACHED activation of the grain, 
