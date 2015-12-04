@@ -109,13 +109,13 @@ namespace Orleans.Runtime.Configuration
         {
             /// <summary>Default value to allow discrimination of override values.</summary>
             NotSpecified,
+
             /// <summary>An Azure Table serving as a channel. </summary>
             AzureTable,
         }
 
-
         /// <summary>
-        /// base of all gossip channel configuration classes.
+        /// Gossip channel configuration.
         /// </summary>
         [Serializable]
         public class GossipChannelConfiguration
@@ -123,10 +123,7 @@ namespace Orleans.Runtime.Configuration
             public GossipChannelType ChannelType { get; set; }
 
             public string ConnectionString { get; set; }
-
-
         }
-
   
         /// <summary>
         /// Configuration type that controls the type of the grain directory caching algorithm that silo use.
@@ -271,8 +268,6 @@ namespace Orleans.Runtime.Configuration
         /// A list of connection strings for gossip channels.
         /// </summary>
         public IReadOnlyList<GossipChannelConfiguration> GossipChannels { get; set; }
-
-        
 
         #endregion
 
@@ -595,14 +590,17 @@ namespace Orleans.Runtime.Configuration
 
             if (HasMultiClusterNetwork)
             {
-                sb.AppendFormat("   MultiClusterNetwork:").AppendLine();
+                sb.AppendLine("   MultiClusterNetwork:");
                 sb.AppendFormat("      GlobalServiceId: {0}", GlobalServiceId ?? "").AppendLine();
                 sb.AppendFormat("      ClusterId: {0}", ClusterId ?? "").AppendLine();
-                sb.AppendFormat("      DefaultMultiCluster: {0}", 
-                    DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
+                sb.AppendFormat("      DefaultMultiCluster: {0}", DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
                 sb.AppendFormat("      NumMultiClusterGateways: {0}", NumMultiClusterGateways).AppendLine();
                 sb.AppendFormat("      BackgroundGossipInterval: {0}", BackgroundGossipInterval).AppendLine();
                 sb.AppendFormat("      GossipChannels: {0}", string.Join(",", GossipChannels.Select(conf => conf.ChannelType.ToString() + ":" + conf.ConnectionString))).AppendLine();
+            }
+            else
+            {
+                sb.AppendLine("   MultiClusterNetwork: N/A");
             }
 
             sb.AppendFormat("   SystemStore:").AppendLine();
