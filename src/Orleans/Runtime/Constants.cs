@@ -103,6 +103,7 @@ namespace Orleans.Runtime
             {TypeManagerId,"TypeManagerId"},
             {ProviderManagerSystemTargetId, "ProviderManagerSystemTarget"},
             {DeploymentLoadPublisherSystemTargetId, "DeploymentLoadPublisherSystemTarge"},
+            {ClusterDirectoryServiceId, "ClusterDirectoryService"}
         };
 
         private static readonly Dictionary<int, string> nonSingletonSystemTargetNames = new Dictionary<int, string>
