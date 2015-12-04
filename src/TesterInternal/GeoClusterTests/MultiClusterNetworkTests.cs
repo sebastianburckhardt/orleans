@@ -23,14 +23,11 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.Runtime;
-using TestGrainInterfaces;
 using Orleans.Runtime.Configuration;
 using Orleans.MultiCluster;
 using System.Net;
@@ -56,7 +53,6 @@ namespace Tests.GeoClusterTests
     [DeploymentItem("Config_Client3.xml")]
     public class MultiClusterNetworkTests : TestingClusterHost
     {
-
         [ClassInitialize]
         public static void ClassInitialize(TestContext testContext)
         {
@@ -307,8 +303,5 @@ namespace Tests.GeoClusterTests
             StopAllClientsAndClusters();
 
         }
-
     }
-     
- 
 }

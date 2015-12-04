@@ -85,13 +85,6 @@ namespace Orleans.TestingHost
             get { return GrainClient.Logger; }
         }
 
-        public static int GetRandom()
-        {
-            lock (random) // need thread safe random
-                return (random.Next());
-        }
-
-
         /// <summary>
         /// Start the default Primary and Secondary test silos, plus client in-process, 
         /// using the default silo config options.
