@@ -51,9 +51,15 @@ namespace Orleans.Runtime.MembershipService
         internal string SiloName { get; private set; } // name of this silo.
  
         private readonly string GlobalServiceId; // set by configuration
-        private readonly int NumMultiClusterGatewaysPerCluster; // set by configuration
-        private int MyFaultZone;
-        private int MyUpdateZone;
+        private readonly int MaxMultiClusterGateways; // set by configuration
+
+        private UpdateFaultCombo MyFaultAndUpdateZones;
+        private struct UpdateFaultCombo // define struct so we can use it as a key for group-by
+        {
+            public int UpdateZone;
+            public int FaultZone;
+        }
+ 
 
         internal MembershipOracleData(Silo silo, TraceLogger log)
         {
@@ -70,7 +76,7 @@ namespace Orleans.Runtime.MembershipService
             MyHostname = silo.LocalConfig.DNSHostName;
             SiloName = silo.LocalConfig.SiloName;
             GlobalServiceId = silo.GlobalConfig.GlobalServiceId;
-            NumMultiClusterGatewaysPerCluster = silo.GlobalConfig.NumMultiClusterGateways;
+            MaxMultiClusterGateways = silo.GlobalConfig.MaxMultiClusterGateways;
             CurrentStatus = SiloStatus.Created;
             clusterSizeStatistic = IntValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER_SIZE, () => localTableCopyOnlyActive.Count);
             clusterStatistic = StringValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER,
@@ -235,8 +241,8 @@ namespace Orleans.Runtime.MembershipService
 
         internal void UpdateMyFaultAndUpdateZone(MembershipEntry entry)
         {
-            MyFaultZone = entry.FaultZone;
-            MyUpdateZone = entry.UpdateZone;
+            MyFaultAndUpdateZones.FaultZone = entry.FaultZone;
+            MyFaultAndUpdateZones.UpdateZone = entry.UpdateZone;
         }
 
         internal bool TryUpdateStatusAndNotify(MembershipEntry entry)
@@ -300,58 +306,43 @@ namespace Orleans.Runtime.MembershipService
             }
         }
 
-        private struct UpdateFaultCombo : IComparable<UpdateFaultCombo>
-        {
-            public int UpdateZone;
-            public int FaultZone;
-        
-            public int CompareTo(UpdateFaultCombo other)
-            {
- 	             var i = UpdateZone.CompareTo(other.UpdateZone);
-                 return (i != 0) ? i : FaultZone.CompareTo(other.FaultZone);
-           }
-        }
     
 
         // deterministic function for designating the silos that should act as gateways
         private List<SiloAddress> DetermineMultiClusterGateways()
         {
-            Debug.Assert(!string.IsNullOrEmpty(GlobalServiceId)); // call only if this is a multi cluster
-
-            var candidates = localTableCopyOnlyActive.Keys.ToList();
-
-            // sort deterministically so everyone ends up with the same result
-            candidates.Sort((a, b) =>  
-            {
-                var addressdiff = a.Endpoint.Address.ToString().CompareTo(b.Endpoint.Address.ToString());
-                if (addressdiff != 0) return addressdiff;
-                return a.Endpoint.Port.CompareTo(b.Endpoint.Port);
-            });
+            // function should never be called if we are not in a multicluster
+            if (string.IsNullOrEmpty(GlobalServiceId))
+                throw new OrleansException("internal error: should not call this function without multicluster network");
 
             // take all the active silos if their count does not exceed the desired number of gateways
-            if (candidates.Count <= NumMultiClusterGatewaysPerCluster)
-                return candidates;
+            if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)
+                return localTableCopyOnlyActive.Keys.ToList();
+
+            var candidates = new SortedList<string, SiloAddress>();
+
+            foreach(var x in localTableCopyOnlyActive)
+                candidates.Add(x.Key.Endpoint.ToString(), x.Key);
 
             // group by fault/update zones
             var groups = new Dictionary<UpdateFaultCombo, List<SiloAddress>>();
             foreach (var c in candidates)
             {
                 UpdateFaultCombo key = default(UpdateFaultCombo);
-                if (c.Equals(MyAddress))
+                if (c.Value.Equals(MyAddress))
                 {
-                    key.FaultZone = MyFaultZone;
-                    key.UpdateZone = MyUpdateZone;
+                    key = MyFaultAndUpdateZones;
                 }
                 else
                 {
-                    var e = localTable[c];
+                    var e = localTable[c.Value];
                     key.FaultZone = e.FaultZone;
                     key.UpdateZone = e.UpdateZone;
                 }
                 List<SiloAddress> list;
                 if (!groups.TryGetValue(key, out list))
                     groups[key] = list = new List<SiloAddress>();
-                list.Add(c);
+                list.Add(c.Value);
             }
               
             var keys = groups.Keys.ToList();
@@ -359,7 +350,7 @@ namespace Orleans.Runtime.MembershipService
 
             // pick round-robin from groups
             var  result = new List<SiloAddress>();
-            for (int i = 0; result.Count < NumMultiClusterGatewaysPerCluster; i++)
+            for (int i = 0; result.Count < MaxMultiClusterGateways; i++)
             {
                 var list = groups[keys[i % keys.Count]];
                 var col = i / keys.Count;

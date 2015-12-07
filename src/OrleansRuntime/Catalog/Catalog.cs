@@ -440,12 +440,18 @@ namespace Orleans.Runtime
 
                 int typeCode = address.Grain.GetTypeCode();
                 string actualGrainType = null;
-                MultiClusterRegistrationStrategy activationStrategy = MultiClusterRegistrationStrategy.GetDefault();
+                MultiClusterRegistrationStrategy activationStrategy;
 
-                if (typeCode != 0) // special case for Membership grain.
+                if (typeCode != 0)
+                {
                     GetGrainTypeInfo(typeCode, out actualGrainType, out placement, out activationStrategy);
+                }
                 else
+                {
+                    // special case for Membership grain.
                     placement = SystemPlacement.Singleton;
+                    activationStrategy = MultiClusterRegistrationStrategy.GetDefault();
+                }
 
                 if (newPlacement && !SiloStatusOracle.CurrentStatus.IsTerminating())
                 {
@@ -1288,6 +1294,8 @@ namespace Orleans.Runtime
                     throw new DuplicateActivationException(id);
                 }
             }
+            // We currently don't have any other case for multiple activations except for StatelessWorker. 
+            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext); 
         }
 
         #endregion

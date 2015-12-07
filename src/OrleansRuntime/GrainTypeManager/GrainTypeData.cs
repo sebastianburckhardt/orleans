@@ -44,8 +44,8 @@ namespace Orleans.Runtime
         internal bool IsQueued { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
-   
-     
+
+        
         public GrainTypeData(Type type, Type stateObjectType, bool isQueued)
         {
             Type = type;

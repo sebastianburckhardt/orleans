@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.GrainDirectory
@@ -31,22 +28,28 @@ namespace Orleans.Runtime.GrainDirectory
         private void Register<TStrategy>(IGrainRegistrar directory)
             where TStrategy : MultiClusterRegistrationStrategy
         {
-            registrars.Add(typeof(TStrategy), directory);
+            this.registrars.Add(typeof(TStrategy), directory);
         }
 
         public IGrainRegistrar GetRegistrarForGrain(GrainId gid)
         {
-            string unusedGrainClass;
-            PlacementStrategy unusedPlacement;
-            MultiClusterRegistrationStrategy strategy = ClusterLocalRegistration.Singleton; // default
+            MultiClusterRegistrationStrategy strategy;
 
             var typeCode = gid.GetTypeCode();
 
-            if (typeCode != 0) // special case for Membership grain or client grain.
+            if (typeCode != 0)
+            {
+                string unusedGrainClass;
+                PlacementStrategy unusedPlacement;
                 GrainTypeManager.Instance.GetTypeInfo(gid.GetTypeCode(), out unusedGrainClass, out unusedPlacement, out strategy);
+            }
+            else
+            {
+                // special case for Membership grain or client grain.
+                strategy = ClusterLocalRegistration.Singleton; // default
+            }
 
-
-            return registrars[strategy.GetType()];
+            return this.registrars[strategy.GetType()];
         }
     }
 }

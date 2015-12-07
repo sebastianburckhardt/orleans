@@ -32,7 +32,7 @@ namespace Orleans.Runtime.GrainDirectory
             if (!globalconfig.HasMultiClusterNetwork)
             {
                 // no multicluster network. Go to owned state directly.
-                return DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.OWNED);
+                return DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.Owned);
             }
 
             var myclusterid = globalconfig.ClusterId;
@@ -43,13 +43,13 @@ namespace Orleans.Runtime.GrainDirectory
             if (config == null || ! config.Clusters.Contains(myclusterid))
             {
                 // we are not joined to the cluster yet/anymore. Go to doubtful state directly.
-                return DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.DOUBTFUL);
+                return DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.Doubtful);
             }
 
             var RemoteClusters = config.Clusters.Where(id => id != myclusterid).ToList();
 
             // Try to go into REQUESTED_OWNERSHIP state
-            var MyActivation = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.REQUESTED_OWNERSHIP);
+            var MyActivation = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.RequestedOwnership);
 
             if (!MyActivation.Item1.Equals(address)) 
             {
@@ -83,7 +83,7 @@ namespace Orleans.Runtime.GrainDirectory
                         }
                     case GlobalSingleInstanceResponseTracker.Outcome.SUCCEED:
                         {
-                            if (DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.OWNED, MultiClusterStatus.REQUESTED_OWNERSHIP))
+                            if (DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Owned, MultiClusterStatus.RequestedOwnership))
                                 return MyActivation;
                             else
                                 break; // concurrently moved to RACE_LOSER
@@ -99,14 +99,14 @@ namespace Orleans.Runtime.GrainDirectory
                 address = currentActivations.FirstOrDefault();
                 Debug.Assert(address != null && address.Equals(MyActivation.Item1));
 
-                if (address.Status == MultiClusterStatus.REQUESTED_OWNERSHIP)
+                if (address.Status == MultiClusterStatus.RequestedOwnership)
                 {
                     // we failed because of inconclusive answers. Stay in this state for retry.
                 }
-                else  if (address.Status == MultiClusterStatus.RACE_LOSER)
+                else  if (address.Status == MultiClusterStatus.RaceLoser)
                 {
                     // we failed because an external request moved us to RACE_LOSER. Go back to REQUESTED_OWNERSHIP for retry
-                    var success = DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.REQUESTED_OWNERSHIP, MultiClusterStatus.RACE_LOSER);
+                    var success = DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.RaceLoser);
                     if (!success) ProtocolError(address, "unable to transition from RACE_LOSER to REQUESTED_OWNERSHIP");
                     // do not wait before retrying because there is a dominant remote request active so we can probably complete quickly
                 }
@@ -118,7 +118,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             // we are done with the quick retries. Now we go into doubtful state, which means slower retries.
 
-            var ok = DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.DOUBTFUL, MultiClusterStatus.REQUESTED_OWNERSHIP);
+            var ok = DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Doubtful, MultiClusterStatus.RequestedOwnership);
            
             if (!ok) ProtocolError(address, "unable to transition into doubtful");
 
@@ -136,7 +136,7 @@ namespace Orleans.Runtime.GrainDirectory
             await base.UnregisterAsync(address, force);
 
             /*
-            if (address.Status == MultiClusterStatus.OWNED)
+            if (address.Status == MultiClusterStatus.Owned)
             {
 
                 var RemoteClusters = MultiClusterUtils.GetRemoteClusters();

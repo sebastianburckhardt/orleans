@@ -107,21 +107,21 @@ namespace Orleans.Runtime.GrainDirectory
 
                         switch (existingActivationStatus)
                         {
-                            case MultiClusterStatus.OWNED:
+                            case MultiClusterStatus.Owned:
                                 response.ResponseStatus = ActivationResponseStatus.FAILED;
                                 response.ExistingActivationAddress = act;
                                 response.ClusterId = ClusterId;
                                 response.Owned = true;
                                 break;
 
-                            case MultiClusterStatus.CACHED:
-                            case MultiClusterStatus.RACE_LOSER:
+                            case MultiClusterStatus.Cached:
+                            case MultiClusterStatus.RaceLoser:
                                 response.ResponseStatus = ActivationResponseStatus.PASS;
                                 response.ExistingActivationAddress = null;
                                 break;
 
-                            case MultiClusterStatus.REQUESTED_OWNERSHIP:
-                            case MultiClusterStatus.DOUBTFUL:
+                            case MultiClusterStatus.RequestedOwnership:
+                            case MultiClusterStatus.Doubtful:
 
                                 var iWin = MultiClusterUtils.ActivationPrecedenceFunc(grain, ClusterId,
                                     requestClusterId);
@@ -137,9 +137,9 @@ namespace Orleans.Runtime.GrainDirectory
                                     response.ResponseStatus = ActivationResponseStatus.PASS;
                                     response.ExistingActivationAddress = null;
                                     //update own activation status to race loser.
-                                    if (existingActivationStatus == MultiClusterStatus.REQUESTED_OWNERSHIP)
+                                    if (existingActivationStatus == MultiClusterStatus.RequestedOwnership)
                                     {
-                                        var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, act.Activation, MultiClusterStatus.RACE_LOSER, MultiClusterStatus.REQUESTED_OWNERSHIP);
+                                        var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, act.Activation, MultiClusterStatus.RaceLoser, MultiClusterStatus.RequestedOwnership);
                                         if (!success)
                                         {
                                             // there was a race. retry.

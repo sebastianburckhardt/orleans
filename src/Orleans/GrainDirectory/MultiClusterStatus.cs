@@ -1,23 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Orleans.GrainDirectory
+﻿namespace Orleans.GrainDirectory
 {
     /// <summary>
     /// Status of a directory entry with respect to multi-cluster registration
     /// </summary>
     internal enum MultiClusterStatus
     {
-        OWNED,                      // Registration is owned by this cluster.
-        DOUBTFUL,                   // Failed to contact one or more clusters while registering, so may be a duplicate.
+        /// <summary>
+        /// Registration is owned by this cluster.
+        /// </summary>
+        Owned,
 
-        CACHED,                     // Cached reference to a registration owned by a remote cluster. 
+        /// <summary>
+        /// Failed to contact one or more clusters while registering, so may be a duplicate.
+        /// </summary>
+        Doubtful,
 
-        REQUESTED_OWNERSHIP,        // The cluster is in the process of checking remote clusters for existing registrations.
-        RACE_LOSER,                 // The cluster lost a race condition.
+        /// <summary>
+        /// Cached reference to a registration owned by a remote cluster.
+        /// </summary>
+        Cached,
+
+        /// <summary>
+        /// The cluster is in the process of checking remote clusters for existing registrations.
+        /// </summary>
+        RequestedOwnership,
+
+        /// <summary>
+        /// The cluster lost a race condition.
+        /// </summary>
+        RaceLoser,
     }
-
 }
