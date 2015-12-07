@@ -255,7 +255,7 @@ namespace Orleans.Runtime.Configuration
         public IReadOnlyList<string> DefaultMultiCluster { get; set; }
 
         /// <summary>
-        /// How many silos per cluster should be designated to serve as gateways.
+        /// The maximum number of silos per cluster should be designated to serve as gateways.
         /// </summary>
         public int MaxMultiClusterGateways { get; set; }
 
