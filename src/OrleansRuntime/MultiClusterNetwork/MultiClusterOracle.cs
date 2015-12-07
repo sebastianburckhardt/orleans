@@ -1,4 +1,27 @@
-﻿using System;
+﻿/*
+Project Orleans Cloud Service SDK ver. 1.0
+ 
+Copyright (c) Microsoft Corporation
+ 
+All rights reserved.
+ 
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+associated documentation files (the ""Software""), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,7 +33,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
 {
     internal class MultiClusterOracle : SystemTarget, IMultiClusterOracle, ISiloStatusListener, IMultiClusterGossipService
     {
-
         private readonly List<IGossipChannel> gossipChannels;
         private readonly MultiClusterOracleData localData;
         private readonly TraceLogger logger;
@@ -28,8 +50,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public MultiClusterOracle(SiloAddress silo, string clusterid, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.MultiClusterOracleId, silo)
         {
-            Debug.Assert(sources != null);
-            Debug.Assert(silo != null);
+            if (sources == null || silo == null) throw new ArgumentException();
             logger = TraceLogger.GetLogger("MultiClusterOracle");
             gossipChannels = sources;
             localData = new MultiClusterOracleData(logger);
@@ -54,7 +75,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         // randomize a timespan by up to 10%
         private TimeSpan RandomizeTimespan(TimeSpan value)
         {
-            return TimeSpan.FromMilliseconds(value.TotalMilliseconds * (0.9 + (random.Next(100) * 0.001)));
+            return TimeSpan.FromMilliseconds(value.TotalMilliseconds * (0.9 + (random.NextDouble() * 0.1)));
         }
 
         public bool IsFunctionalClusterGateway(SiloAddress siloAddress)
@@ -770,9 +791,5 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 deltas = deltas.Merge(delta);
             }
         }
-
-
-
-    
     }
 }

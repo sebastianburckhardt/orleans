@@ -85,13 +85,6 @@ namespace Orleans.TestingHost
             get { return GrainClient.Logger; }
         }
 
-        public static int GetRandom()
-        {
-            lock (random) // need thread safe random
-                return (random.Next());
-        }
-
-
         /// <summary>
         /// Start the default Primary and Secondary test silos, plus client in-process, 
         /// using the default silo config options.
@@ -580,8 +573,10 @@ namespace Orleans.TestingHost
                 config.LoadFromFile(options.SiloConfigFile.FullName);
             }
 
-            int basePort = options.BasePort < 0 ? BasePort : options.BasePort;
+            if (options.ConfigurationCustomizer != null)
+                options.ConfigurationCustomizer(config);
 
+            int basePort = options.BasePort < 0 ? BasePort : options.BasePort;
 
             if (config.Globals.SeedNodes.Count > 0 && options.BasePort < 0)
             {
@@ -612,8 +607,6 @@ namespace Orleans.TestingHost
                 config.Globals.DataConnectionString = options.DataConnectionString;
             }
 
-           if (options.ConfigurationCustomizer != null)
-                options.ConfigurationCustomizer(config);
 
             _livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
             _gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
@@ -693,11 +686,6 @@ namespace Orleans.TestingHost
                     throw;
                 }
             }
-
-            // give silo a bit more time before unloading appdomain
-            // e.g. for completing async storage requests
-            if (stopGracefully)
-                System.Threading.Thread.Sleep(3000);
 
             ImportGeneratedAssemblies(instance);
 
