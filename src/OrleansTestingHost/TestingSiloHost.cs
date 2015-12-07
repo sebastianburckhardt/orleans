@@ -573,8 +573,10 @@ namespace Orleans.TestingHost
                 config.LoadFromFile(options.SiloConfigFile.FullName);
             }
 
-            int basePort = options.BasePort < 0 ? BasePort : options.BasePort;
+            if (options.ConfigurationCustomizer != null)
+                options.ConfigurationCustomizer(config);
 
+            int basePort = options.BasePort < 0 ? BasePort : options.BasePort;
 
             if (config.Globals.SeedNodes.Count > 0 && options.BasePort < 0)
             {
@@ -605,8 +607,6 @@ namespace Orleans.TestingHost
                 config.Globals.DataConnectionString = options.DataConnectionString;
             }
 
-           if (options.ConfigurationCustomizer != null)
-                options.ConfigurationCustomizer(config);
 
             _livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
             _gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
