@@ -332,7 +332,7 @@ namespace Orleans.Runtime.MembershipService
             foreach (var c in candidates)
             {
                 UpdateFaultCombo key = default(UpdateFaultCombo);
-                if (c.Equals(MyAddress))
+                if (c.Value.Equals(MyAddress))
                 {
                     key.FaultZone = MyFaultZone;
                     key.UpdateZone = MyUpdateZone;
