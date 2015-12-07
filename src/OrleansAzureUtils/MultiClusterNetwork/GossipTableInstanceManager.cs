@@ -161,8 +161,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public static async Task<GossipTableInstanceManager> GetManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
-            Debug.Assert(!string.IsNullOrEmpty(globalServiceId));
-            Debug.Assert(logger != null);
+            if (string.IsNullOrEmpty(globalServiceId)) throw new ArgumentException();
+            if (logger == null) throw new ArgumentException();
             
             var instance = new GossipTableInstanceManager(globalServiceId, storageConnectionString, logger);
             try
@@ -208,7 +208,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal async Task<bool> TryCreateConfigurationEntryAsync(MultiClusterConfiguration configuration)
         {
-            Debug.Assert(configuration != null);
+            if (configuration == null) throw new ArgumentException();
 
             var entry = new GossipTableEntry
             {
@@ -225,11 +225,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal async Task<bool> TryUpdateConfigurationEntryAsync(MultiClusterConfiguration configuration, GossipTableEntry entry, string eTag)
         {
-            Debug.Assert(configuration != null);
+            if (configuration == null) throw new ArgumentException();
 
-            Debug.Assert(entry.ETag == eTag);
-            Debug.Assert(entry.PartitionKey == GlobalServiceId);
-            Debug.Assert(entry.RowKey == GossipTableEntry.CONFIGURATION_ROW);
+            //Debug.Assert(entry.ETag == eTag);
+            //Debug.Assert(entry.PartitionKey == GlobalServiceId);
+            //Debug.Assert(entry.RowKey == GossipTableEntry.CONFIGURATION_ROW);
+
             entry.GossipTimestamp = configuration.AdminTimestamp;
             entry.Clusters = string.Join(",", configuration.Clusters);
             entry.Comment = configuration.Comment ?? "";
@@ -253,9 +254,10 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal async Task<bool> TryUpdateGatewayEntryAsync(GatewayEntry entry, GossipTableEntry row, string eTag)
         {
-            Debug.Assert(row.ETag == eTag);
-            Debug.Assert(row.PartitionKey == GlobalServiceId);
-            Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(entry.SiloAddress, entry.ClusterId));
+            //Debug.Assert(row.ETag == eTag);
+            //Debug.Assert(row.PartitionKey == GlobalServiceId);
+            //Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(entry.SiloAddress, entry.ClusterId));
+            
             row.Status = entry.Status.ToString();
             row.GossipTimestamp = entry.HeartbeatTimestamp;
 
@@ -264,10 +266,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal async Task<bool> TryDeleteGatewayEntryAsync(GossipTableEntry row, string eTag)
         {
-            Debug.Assert(row.ETag == eTag);
-            Debug.Assert(row.PartitionKey == GlobalServiceId);
-            Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(row.SiloAddress, row.ClusterId));
-
+            //Debug.Assert(row.ETag == eTag);
+            //Debug.Assert(row.PartitionKey == GlobalServiceId);
+            //Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(row.SiloAddress, row.ClusterId));
 
             return await TryDeleteTableEntryAsync("TryDeleteGatewayEntryAsync", row, eTag);
         }

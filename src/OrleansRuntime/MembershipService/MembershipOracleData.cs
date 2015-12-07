@@ -311,7 +311,9 @@ namespace Orleans.Runtime.MembershipService
         // deterministic function for designating the silos that should act as gateways
         private List<SiloAddress> DetermineMultiClusterGateways()
         {
-            Debug.Assert(!string.IsNullOrEmpty(GlobalServiceId)); // call only if this is a multi cluster
+            // function should never be called if we are not in a multicluster
+            if (string.IsNullOrEmpty(GlobalServiceId))
+                throw new OrleansException("internal error: should not call this function without multicluster network");
 
             // take all the active silos if their count does not exceed the desired number of gateways
             if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)

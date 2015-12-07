@@ -51,7 +51,9 @@ namespace Orleans.MultiCluster
 
         public MultiClusterConfiguration(DateTime Timestamp, IReadOnlyList<string> Clusters, string Comment = "")
         {
-            System.Diagnostics.Debug.Assert(Clusters != null);
+            if (Clusters == null)
+                throw new ArgumentException("Clusters must not be null");
+
             this.AdminTimestamp = Timestamp;
             this.Clusters = Clusters;
             this.Comment = Comment;

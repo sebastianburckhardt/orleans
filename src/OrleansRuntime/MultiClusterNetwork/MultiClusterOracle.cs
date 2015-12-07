@@ -50,8 +50,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public MultiClusterOracle(SiloAddress silo, string clusterid, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.MultiClusterOracleId, silo)
         {
-            Debug.Assert(sources != null);
-            Debug.Assert(silo != null);
+            if (sources == null || silo == null) throw new ArgumentException();
             logger = TraceLogger.GetLogger("MultiClusterOracle");
             gossipChannels = sources;
             localData = new MultiClusterOracleData(logger);
