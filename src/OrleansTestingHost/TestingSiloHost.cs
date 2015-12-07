@@ -687,11 +687,6 @@ namespace Orleans.TestingHost
                 }
             }
 
-            // give silo a bit more time before unloading appdomain
-            // e.g. for completing async storage requests
-            if (stopGracefully)
-                System.Threading.Thread.Sleep(3000);
-
             ImportGeneratedAssemblies(instance);
 
             try
