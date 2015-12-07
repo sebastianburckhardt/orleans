@@ -47,12 +47,8 @@ namespace Tests.GeoClusterTests
     [DeploymentItem("OrleansAzureUtils.dll")]
     [DeploymentItem("TestGrainInterfaces.dll")]
     [DeploymentItem("TestGrains.dll")]
-    [DeploymentItem("Config_Cluster0.xml")]
-    [DeploymentItem("Config_Cluster1.xml")]
-    [DeploymentItem("Config_Client0.xml")]
-    [DeploymentItem("Config_Client1.xml")]
-    [DeploymentItem("Config_Client2.xml")]
-    [DeploymentItem("Config_Client3.xml")]
+    [DeploymentItem("ClientConfigurationForTesting.xml")]
+    [DeploymentItem("OrleansConfigurationForTesting.xml")]
     public class GlobalSingleInstanceClusterTests : TestingClusterHost
     {
 
@@ -69,27 +65,14 @@ namespace Tests.GeoClusterTests
             }
         }
 
-        // Kill all clients and silos.
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            try
-            {
-                StopAllClientsAndClusters();
-            }
-            catch (Exception e)
-            {
-                WriteLog("Exception caught in test cleanup function: {0}", e);
-            }
-        }
+   
 
         #region client wrappers
 
-        public class ClientWrapper : MarshalByRefObject
+        public class ClientWrapper : ClientWrapperBase
         {
-            public ClientWrapper(string configFile)
+            public ClientWrapper(string name, int gatewayport) : base(name, gatewayport)
             {
-                GrainClient.Initialize(configFile);
                 systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
             }
 
@@ -101,9 +84,9 @@ namespace Tests.GeoClusterTests
                 return toWait.Result;
             }
 
-            public void InjectMultiClusterConf(string clusters)
+            public void InjectMultiClusterConf(params string[] args)
             {
-                systemManagement.InjectMultiClusterConfiguration(clusters.Split(',')).Wait();
+                systemManagement.InjectMultiClusterConfiguration(args).Wait();
             }
 
             IManagementGrain systemManagement;
@@ -127,28 +110,24 @@ namespace Tests.GeoClusterTests
             };
 
             // Create two clusters, each with a single silo.
-            var configCluster0 = GetConfigFile("Config_Cluster0.xml");
-            var configCluster1 = GetConfigFile("Config_Cluster1.xml");
-            var cluster0 = NewCluster(configCluster0, 1, customizer);
-            var cluster1 = NewCluster(configCluster1, 1, customizer);
+            var cluster0 = NewCluster(1, customizer);
+            var cluster1 = NewCluster(1, customizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
-            // Create clients.
-            var configClient0 = GetConfigFile("Config_Client0.xml");
-            var configClient1 = GetConfigFile("Config_Client1.xml");
-            var client0 = CreateClient<ClientWrapper>("Client0", configClient0);
-            var client1 = CreateClient<ClientWrapper >("Client1", configClient1);
+            // Create one client per cluster
+            var client0 = NewClient<ClientWrapper>(cluster0, 0);
+            var client1 = NewClient<ClientWrapper>(cluster1, 0);
 
-            //Configure multicluster
-            client0.InjectMultiClusterConf("0,1");
+            // Configure multicluster
+            client0.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
             int baseCount0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
             int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
             int baseCount = baseCount0 + baseCount1;
 
-            const int numGrains = 2000;
+            const int numGrains = 2;
 
             // Create grains on both clusters. Alternating between the two.
             Parallel.For(0, numGrains, i =>
@@ -190,6 +169,7 @@ namespace Tests.GeoClusterTests
             // Assert that the number of OWNED grains is equal to the number of grains that we invoked.
             Assert.AreEqual(numGrains + baseCount, ownCount);
 
+            StopAllClientsAndClusters();
         }
 
 
@@ -207,29 +187,20 @@ namespace Tests.GeoClusterTests
             };
 
             // Create two clusters, each with 5 silos.
-            var configCluster0 = GetConfigFile("Config_Cluster0.xml");
-            var configCluster1 = GetConfigFile("Config_Cluster1.xml");
-            var cluster0 = NewCluster(configCluster0, 5, customizer);
-            var cluster1 = NewCluster(configCluster1, 5, customizer);
+            var cluster0 = NewCluster(5, customizer);
+            var cluster1 = NewCluster(5, customizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
-    
-            // Create 4 clients, 2 clients will connect to two gateway silos on cluster 0, 2 clients connect to cluster1.
-            var configClient0 = GetConfigFile("Config_Client0.xml");
-            var configClient1 = GetConfigFile("Config_Client1.xml");
-            var configClient2 = GetConfigFile("Config_Client2.xml");
-            var configClient3 = GetConfigFile("Config_Client3.xml");
-
-            // Clients 0 and 1 connected to Cluster 1
-            var client0 = CreateClient<ClientWrapper>("Client0-Cluster0", configClient0);
-            var client1 = CreateClient<ClientWrapper>("Client1-Cluster0", configClient2);
-            // Clients 2 and 3 connected to Cluster 2
-            var client2 = CreateClient<ClientWrapper>("Client2-Cluster1", configClient1);
-            var client3 = CreateClient<ClientWrapper>("Client3-Cluster1", configClient3);
+            // Clients 0 and 1 connected to Cluster 0
+            var client0 = NewClient<ClientWrapper>(cluster0, 0);
+            var client1 = NewClient<ClientWrapper>(cluster0, 1);
+            // Clients 2 and 3 connected to Cluster 1
+            var client2 = NewClient<ClientWrapper>(cluster1, 0);
+            var client3 = NewClient<ClientWrapper>(cluster1, 1);
 
             //Configure multicluster
-            client3.InjectMultiClusterConf("0,1");
+            client3.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
             int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
@@ -303,7 +274,7 @@ namespace Tests.GeoClusterTests
             Assert.AreEqual(numGrains / 2, countsCluster1 - countsBase1,
                 "Cluster 1 grains: count={0} base={1}", countsCluster1, countsBase1);
 
-
+            StopAllClientsAndClusters();
         }
         #endregion
 
@@ -326,23 +297,21 @@ namespace Tests.GeoClusterTests
             };
 
             // Create two clusters, each with 1 silo. 
-            var configCluster0 = GetConfigFile("Config_Cluster0.xml");
-            var configCluster1 = GetConfigFile("Config_Cluster1.xml");
-            var cluster0 = NewCluster(configCluster0, 1, customizer);
-            var cluster1 = NewCluster(configCluster1, 1, customizer);
+            var cluster0 = NewCluster(1, customizer);
+            var cluster1 = NewCluster(1, customizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             //Configure multicluster
-            var cfgclient = CreateClient<ClientWrapper>("cfg", "Config_Client1.xml");
-            cfgclient.InjectMultiClusterConf("0,1");
+            var cfgclient = NewClient<ClientWrapper>(cluster1, 2);
+            cfgclient.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
             // Create two clients, connect each client to the appropriate cluster.
-            List<string> clientConfigs = new List<string>
+            var clients = new List<ClientIdentity>
             {
-                GetConfigFile("Config_Client0.xml"),
-                GetConfigFile("Config_Client1.xml")
+                new ClientIdentity() { cluster = cluster0, number = 0 },
+                new ClientIdentity() { cluster = cluster1, number = 0 },
             };
 
             const int numGrains = 2000;
@@ -350,11 +319,12 @@ namespace Tests.GeoClusterTests
             // We perform a run of concurrent experiments. 
             // we expect that all calls from concurrent clients will reference 
             // the same activation of a grain.
-            var results = DoConcurrentExperiment(clientConfigs, numGrains);
+            var results = DoConcurrentExperiment(clients, numGrains);
 
             // validate the results and the directory
             ValidateClusterRaceResults(numGrains, results);
 
+            StopAllClientsAndClusters();
         }
 
         // This test is exactly the same as TestSingleSingleClusterRace. 
@@ -373,36 +343,35 @@ namespace Tests.GeoClusterTests
             };
 
             // Create two clusters, each with 5 silos.
-            var configCluster0 = GetConfigFile("Config_Cluster0.xml");
-            var configCluster1 = GetConfigFile("Config_Cluster1.xml");
-            var cluster0 = NewCluster(configCluster0, 5, customizer);
-            var cluster1 = NewCluster(configCluster1, 5, customizer);
+            var cluster0 = NewCluster(5, customizer);
+            var cluster1 = NewCluster(5, customizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             //Configure multicluster
-            var cfgclient = CreateClient<ClientWrapper>("cfg", "Config_Client1.xml");
-            cfgclient.InjectMultiClusterConf("0,1");
+            var cfgclient = NewClient<ClientWrapper>(cluster1, 2);
+            cfgclient.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
             const int numGrains = 2000;
 
             // Create multiple clients. Two clients connect to each cluster.
-            List<string> clientConfigs = new List<string>
+            var clients = new List<ClientIdentity>
             {
-                GetConfigFile("Config_Client0.xml"),
-                GetConfigFile("Config_Client1.xml"),
-                GetConfigFile("Config_Client2.xml"),
-                GetConfigFile("Config_Client3.xml")
+                new ClientIdentity() { cluster = cluster0, number = 0 },
+                new ClientIdentity() { cluster = cluster1, number = 0 },
+                new ClientIdentity() { cluster = cluster0, number = 1 },
+                new ClientIdentity() { cluster = cluster1, number = 1 },
             };
 
             // We perform a run of concurrent experiments. 
             // we expect that all calls from concurrent clients will reference 
             // the same activation of a grain.
-            var results = DoConcurrentExperiment(clientConfigs, numGrains);
+            var results = DoConcurrentExperiment(clients, numGrains);
 
             ValidateClusterRaceResults(numGrains, results);
 
+            StopAllClientsAndClusters();
         }
 
         private void ValidateClusterRaceResults(int numGrains, List<Tuple<int, int>>[] results)
@@ -484,20 +453,16 @@ namespace Tests.GeoClusterTests
                 c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
             };
 
-            var configCluster0 = GetConfigFile("Config_Cluster0.xml");
-            var configCluster1 = GetConfigFile("Config_Cluster1.xml");
-            var cluster0 = NewCluster(configCluster0, 1, customizer);
-            var cluster1 = NewCluster(configCluster1, 1, customizer);
+            var cluster0 = NewCluster(1, customizer);
+            var cluster1 = NewCluster(1, customizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
-            var configClient0 = GetConfigFile("Config_Client0.xml");
-            var configClient1 = GetConfigFile("Config_Client1.xml");
-            var client0 = CreateClient<ClientWrapper>("Client0", configClient0);
-            var client1 = CreateClient<ClientWrapper>("Client1", configClient1);
+            var client0 = NewClient<ClientWrapper>(cluster0, 0);
+            var client1 = NewClient<ClientWrapper>(cluster1, 0);
 
             //Configure multicluster
-            client0.InjectMultiClusterConf("0,1");
+            client0.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
             // Count the total number of already OWNED grain activations
@@ -558,6 +523,7 @@ namespace Tests.GeoClusterTests
                 Assert.IsTrue(res0 == 2 && res1 == 3);
             });
 
+            StopAllClientsAndClusters();
         }
 
         // This test is exactly the same as TestConflictResolution. The only difference is that we use more silos per cluster.
@@ -574,24 +540,18 @@ namespace Tests.GeoClusterTests
                 c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
             };
 
-            var configCluster0 = GetConfigFile("Config_Cluster0.xml");
-            var configCluster1 = GetConfigFile("Config_Cluster1.xml");
-            var cluster0 = NewCluster(configCluster0, 3, customizer);
-            var cluster1 = NewCluster(configCluster1, 3, customizer);
+            var cluster0 = NewCluster(3, customizer);
+            var cluster1 = NewCluster(3, customizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
-            
-            var configClient0 = GetConfigFile("Config_Client0.xml");
-            var configClient1 = GetConfigFile("Config_Client1.xml");
-            var configClient2 = GetConfigFile("Config_Client2.xml");
-            var configClient3 = GetConfigFile("Config_Client3.xml");
-            var client0 = CreateClient<ClientWrapper>("Client0", configClient0);
-            var client1 = CreateClient<ClientWrapper>("Client1", configClient1);
-            var client2 = CreateClient<ClientWrapper>("Client2", configClient2);
-            var client3 = CreateClient<ClientWrapper>("Client3", configClient3);
+
+            var client0 = NewClient<ClientWrapper>(cluster0, 0);
+            var client1 = NewClient<ClientWrapper>(cluster1, 0);
+            var client2 = NewClient<ClientWrapper>(cluster0, 1);
+            var client3 = NewClient<ClientWrapper>(cluster1, 1);
 
             //Configure multicluster
-            client2.InjectMultiClusterConf("0,1");
+            client2.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
             ClientWrapper[] clients = { client0, client1, client2, client3 };
@@ -685,6 +645,8 @@ namespace Tests.GeoClusterTests
                 Assert.AreEqual(5, res2);
                 Assert.AreEqual(6, res3);
             }
+
+           StopAllClientsAndClusters();
 
         }
         #endregion
@@ -781,7 +743,7 @@ namespace Tests.GeoClusterTests
             int instancecount = 0;
 
             foreach(var kvp in clusters)
-                foreach (var silo in kvp.Value.silos)
+                foreach (var silo in kvp.Value.Silos)
                 {
                     var dir = silo.Silo.TestHookup.GetDirectoryForTypenamesContaining("ClusterTestGrain");
 
@@ -894,11 +856,17 @@ namespace Tests.GeoClusterTests
             }
         }
 
+        private struct ClientIdentity
+        {
+            public string cluster;
+            public int number;
+        }
+
         // This function takes two arguments, a list of client configurations, and an integer. The list of client configurations is used to
         // create multiple clients that concurrently call the grains in range [0, numGrains). We run the experiment in a series of barriers.
         // The clients all invoke grain "g", in parallel, and then wait on a signal by the main thread (this function). The main thread, then 
         // wakes up the clients, after which they invoke "g+1", and so on.
-        private List<Tuple<int, int>>[] DoConcurrentExperiment(List<string> configList, int numGrains)
+        private List<Tuple<int, int>>[] DoConcurrentExperiment(List<ClientIdentity> configList, int numGrains)
         {
             // We use two objects to coordinate client threads and the main thread. coordWakeup is an object that is used to signal the coordinator
             // thread. toWait is used to signal client threads.
@@ -915,7 +883,7 @@ namespace Tests.GeoClusterTests
 
             // Create a client thread corresponding to each configuration file.
             // The client thread will execute ThreadFunc function.
-            foreach (var configFile in configList)
+            foreach (var clientidentity in configList)
             {
                 // A client thread takes a list of tupes<int, int> as argument. The list is an ordered sequence of grains to invoke. tuple.item2
                 // is the grainId. tuple.item1 is never used (this should probably be cleaned up, but I don't want to break anything :).
@@ -928,7 +896,7 @@ namespace Tests.GeoClusterTests
 
                 // Given a config file, create client starts a client in a new appdomain. We also create a thread on which the client will run.
                 // The thread takes a "ClientThreadArgs" as argument.
-                var client = CreateClient<ClientWrapper>("Client"+index, configFile);
+                var client = NewClient<ClientWrapper>(clientidentity.cluster, clientidentity.number);
                 var thread = new Thread(ThreadFunc);
                 var threadFuncArgs = new ClientThreadArgs
                 {

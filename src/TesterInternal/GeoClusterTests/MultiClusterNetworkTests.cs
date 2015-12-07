@@ -56,20 +56,6 @@ namespace Tests.GeoClusterTests
             TestingSiloHost.StopAllSilos();
         }
 
-        // Kill all clients and silos.
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            try
-            {
-                StopAllClientsAndClusters();
-            }
-            catch (Exception e)
-            {
-                WriteLog("Exception caught in test cleanup function: {0}", e);
-            }
-        }
-
         public class ClientWrapper : ClientWrapperBase
         {
             public ClientWrapper(string name, int gatewayport) : base(name, gatewayport)
