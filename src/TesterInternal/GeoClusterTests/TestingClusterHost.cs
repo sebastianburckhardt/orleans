@@ -97,7 +97,7 @@ namespace Tests.GeoClusterTests
 
             c.Globals.GlobalServiceId = "mctesting";
             c.Globals.ClusterId = "cluster" + clusternumber.ToString();
-            c.Globals.NumMultiClusterGateways = 2;
+            c.Globals.MaxMultiClusterGateways = 2;
             c.Globals.DefaultMultiCluster = null;
 
             c.Globals.GossipChannels = new List<Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelConfiguration>(1) { 

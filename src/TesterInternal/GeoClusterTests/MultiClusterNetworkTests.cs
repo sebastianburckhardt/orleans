@@ -222,7 +222,7 @@ namespace Tests.GeoClusterTests
                 c.Globals.GlobalServiceId = globalserviceid;
                 c.Globals.ClusterId = "A";
                 c.Globals.DefaultMultiCluster = null;
-                c.Globals.NumMultiClusterGateways = 2;
+                c.Globals.MaxMultiClusterGateways = 2;
                 c.Globals.DefaultMultiCluster = "A,B".Split(',').ToList();
             };
             var clusterA = NewCluster(3, customizerA);

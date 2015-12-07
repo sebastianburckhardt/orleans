@@ -51,7 +51,7 @@ namespace Orleans.Runtime.MembershipService
         internal string SiloName { get; private set; } // name of this silo.
  
         private readonly string GlobalServiceId; // set by configuration
-        private readonly int NumMultiClusterGatewaysPerCluster; // set by configuration
+        private readonly int MaxMultiClusterGateways; // set by configuration
         private int MyFaultZone;
         private int MyUpdateZone;
 
@@ -70,7 +70,7 @@ namespace Orleans.Runtime.MembershipService
             MyHostname = silo.LocalConfig.DNSHostName;
             SiloName = silo.LocalConfig.SiloName;
             GlobalServiceId = silo.GlobalConfig.GlobalServiceId;
-            NumMultiClusterGatewaysPerCluster = silo.GlobalConfig.NumMultiClusterGateways;
+            MaxMultiClusterGateways = silo.GlobalConfig.MaxMultiClusterGateways;
             CurrentStatus = SiloStatus.Created;
             clusterSizeStatistic = IntValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER_SIZE, () => localTableCopyOnlyActive.Count);
             clusterStatistic = StringValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER,
@@ -319,7 +319,7 @@ namespace Orleans.Runtime.MembershipService
             Debug.Assert(!string.IsNullOrEmpty(GlobalServiceId)); // call only if this is a multi cluster
 
             // take all the active silos if their count does not exceed the desired number of gateways
-            if (localTableCopyOnlyActive.Count <= NumMultiClusterGatewaysPerCluster)
+            if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)
                 return localTableCopyOnlyActive.Keys.ToList();
 
             var candidates = new SortedList<string, SiloAddress>();
@@ -354,7 +354,7 @@ namespace Orleans.Runtime.MembershipService
 
             // pick round-robin from groups
             var  result = new List<SiloAddress>();
-            for (int i = 0; result.Count < NumMultiClusterGatewaysPerCluster; i++)
+            for (int i = 0; result.Count < MaxMultiClusterGateways; i++)
             {
                 var list = groups[keys[i % keys.Count]];
                 var col = i / keys.Count;
