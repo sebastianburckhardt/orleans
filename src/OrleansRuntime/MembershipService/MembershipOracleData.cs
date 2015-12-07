@@ -52,8 +52,14 @@ namespace Orleans.Runtime.MembershipService
  
         private readonly string GlobalServiceId; // set by configuration
         private readonly int MaxMultiClusterGateways; // set by configuration
-        private int MyFaultZone;
-        private int MyUpdateZone;
+
+        private UpdateFaultCombo MyFaultAndUpdateZones;
+        private struct UpdateFaultCombo // define struct so we can use it as a key for group-by
+        {
+            public int UpdateZone;
+            public int FaultZone;
+        }
+ 
 
         internal MembershipOracleData(Silo silo, TraceLogger log)
         {
@@ -235,8 +241,8 @@ namespace Orleans.Runtime.MembershipService
 
         internal void UpdateMyFaultAndUpdateZone(MembershipEntry entry)
         {
-            MyFaultZone = entry.FaultZone;
-            MyUpdateZone = entry.UpdateZone;
+            MyFaultAndUpdateZones.FaultZone = entry.FaultZone;
+            MyFaultAndUpdateZones.UpdateZone = entry.UpdateZone;
         }
 
         internal bool TryUpdateStatusAndNotify(MembershipEntry entry)
@@ -300,17 +306,6 @@ namespace Orleans.Runtime.MembershipService
             }
         }
 
-        private struct UpdateFaultCombo : IComparable<UpdateFaultCombo>
-        {
-            public int UpdateZone;
-            public int FaultZone;
-        
-            public int CompareTo(UpdateFaultCombo other)
-            {
- 	             var i = UpdateZone.CompareTo(other.UpdateZone);
-                 return (i != 0) ? i : FaultZone.CompareTo(other.FaultZone);
-           }
-        }
     
 
         // deterministic function for designating the silos that should act as gateways
@@ -334,8 +329,7 @@ namespace Orleans.Runtime.MembershipService
                 UpdateFaultCombo key = default(UpdateFaultCombo);
                 if (c.Value.Equals(MyAddress))
                 {
-                    key.FaultZone = MyFaultZone;
-                    key.UpdateZone = MyUpdateZone;
+                    key = MyFaultAndUpdateZones;
                 }
                 else
                 {
