@@ -110,13 +110,13 @@ namespace Orleans.Runtime.Configuration
         {
             /// <summary>Default value to allow discrimination of override values.</summary>
             NotSpecified,
+
             /// <summary>An Azure Table serving as a channel. </summary>
             AzureTable,
         }
 
-
         /// <summary>
-        /// base of all gossip channel configuration classes.
+        /// Gossip channel configuration.
         /// </summary>
         [Serializable]
         public class GossipChannelConfiguration
@@ -124,10 +124,7 @@ namespace Orleans.Runtime.Configuration
             public GossipChannelType ChannelType { get; set; }
 
             public string ConnectionString { get; set; }
-
-
         }
-
   
         /// <summary>
         /// Configuration type that controls the type of the grain directory caching algorithm that silo use.
@@ -261,7 +258,7 @@ namespace Orleans.Runtime.Configuration
         /// <summary>
         /// How many silos per cluster should be designated to serve as gateways.
         /// </summary>
-        public int NumMultiClusterGateways { get; set; }
+        public int MaxMultiClusterGateways { get; set; }
 
         /// <summary>
         /// The number of seconds between background gossips.
@@ -272,8 +269,6 @@ namespace Orleans.Runtime.Configuration
         /// A list of connection strings for gossip channels.
         /// </summary>
         public IReadOnlyList<GossipChannelConfiguration> GossipChannels { get; set; }
-
-        
 
         #endregion
 
@@ -485,7 +480,7 @@ namespace Orleans.Runtime.Configuration
         private const int DEFAULT_LIVENESS_NUM_VOTES_FOR_DEATH_DECLARATION = 2;
         private const int DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT = 2;
         private const bool DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP = true;
-        private const int DEFAULT_NUM_MULTICLUSTER_GATEWAYS = 4;
+        private const int DEFAULT_MAX_MULTICLUSTER_GATEWAYS = 10;
         private static readonly TimeSpan DEFAULT_BACKGROUND_GOSSIP_INTERVAL = TimeSpan.FromSeconds(30);
         private const int DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE = 20;
         private const int DEFAULT_CACHE_SIZE = 1000000;
@@ -526,7 +521,7 @@ namespace Orleans.Runtime.Configuration
             NumMissedTableIAmAliveLimit = DEFAULT_LIVENESS_NUM_TABLE_I_AM_ALIVE_LIMIT;
             UseLivenessGossip = DEFAULT_LIVENESS_USE_LIVENESS_GOSSIP;
             MaxJoinAttemptTime = DEFAULT_LIVENESS_MAX_JOIN_ATTEMPT_TIME;
-            NumMultiClusterGateways = DEFAULT_NUM_MULTICLUSTER_GATEWAYS;
+            MaxMultiClusterGateways = DEFAULT_MAX_MULTICLUSTER_GATEWAYS;
             BackgroundGossipInterval = DEFAULT_BACKGROUND_GOSSIP_INTERVAL;
             ExpectedClusterSizeConfigValue = new ConfigValue<int>(DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE, true);
             ServiceId = Guid.Empty;
@@ -596,14 +591,17 @@ namespace Orleans.Runtime.Configuration
 
             if (HasMultiClusterNetwork)
             {
-                sb.AppendFormat("   MultiClusterNetwork:").AppendLine();
+                sb.AppendLine("   MultiClusterNetwork:");
                 sb.AppendFormat("      GlobalServiceId: {0}", GlobalServiceId ?? "").AppendLine();
                 sb.AppendFormat("      ClusterId: {0}", ClusterId ?? "").AppendLine();
-                sb.AppendFormat("      DefaultMultiCluster: {0}", 
-                    DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
-                sb.AppendFormat("      NumMultiClusterGateways: {0}", NumMultiClusterGateways).AppendLine();
+                sb.AppendFormat("      DefaultMultiCluster: {0}", DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
+                sb.AppendFormat("      MaxMultiClusterGateways: {0}", MaxMultiClusterGateways).AppendLine();
                 sb.AppendFormat("      BackgroundGossipInterval: {0}", BackgroundGossipInterval).AppendLine();
                 sb.AppendFormat("      GossipChannels: {0}", string.Join(",", GossipChannels.Select(conf => conf.ChannelType.ToString() + ":" + conf.ConnectionString))).AppendLine();
+            }
+            else
+            {
+                sb.AppendLine("   MultiClusterNetwork: N/A");
             }
 
             sb.AppendFormat("   SystemStore:").AppendLine();
@@ -858,10 +856,10 @@ namespace Orleans.Runtime.Configuration
                             BackgroundGossipInterval = ConfigUtilities.ParseTimeSpan(child.GetAttribute("BackgroundGossipInterval"),
                                 "Invalid time value for the BackgroundGossipInterval attribute on the MultiClusterNetwork element");
                         }
-                        if (child.HasAttribute("NumMultiClusterGateways"))
+                        if (child.HasAttribute("MaxMultiClusterGateways"))
                         {
-                            NumMultiClusterGateways = ConfigUtilities.ParseInt(child.GetAttribute("NumMultiClusterGateways"),
-                                "Invalid time value for the NumMultiClusterGateways attribute on the MultiClusterNetwork element");
+                            MaxMultiClusterGateways = ConfigUtilities.ParseInt(child.GetAttribute("MaxMultiClusterGateways"),
+                                "Invalid time value for the MaxMultiClusterGateways attribute on the MultiClusterNetwork element");
                         }
                         var channels = new List<GossipChannelConfiguration>();
                         foreach (XmlNode childchild in child.ChildNodes)
