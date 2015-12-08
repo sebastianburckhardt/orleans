@@ -40,10 +40,8 @@ namespace Tests.GeoClusterTests
     [DeploymentItem("TestGrains.dll")]
     [DeploymentItem("OrleansAzureUtils.dll")]
     [DeploymentItem("OrleansProviders.dll")]
-    [DeploymentItem("Config_Cluster0.xml")]
-    [DeploymentItem("Config_Cluster1.xml")]
-    [DeploymentItem("Config_Client0.xml")]
-    [DeploymentItem("Config_Client1.xml")]
+    [DeploymentItem("OrleansConfigurationForTesting.xml")]
+    [DeploymentItem("ClientConfigurationForTesting.xml")]
     public class ReplicationTest
     {
 
@@ -66,21 +64,33 @@ namespace Tests.GeoClusterTests
             Action<ClusterConfiguration> customizer = (ClusterConfiguration x) =>
             {
                 x.Globals.GlobalServiceId = globalserviceid;
+
+                // configure storage provider
+                //   <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="..."/>
+                var props = new Dictionary<string, string>();
+                props.Add("DataConnectionString", StorageTestConstants.DataConnectionString); 
+                x.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
+                
+                // configure replication provider
+                //   <Provider Type="Orleans.Providers.Replication.SharedStorageProvider" Name="SharedStorage" GlobalStorageProvider="AzureStore"/>
+                props = new Dictionary<string,string>();
+                props.Add("GlobalStorageProvider", "AzureStore");
+                x.Globals.RegisterReplicationProvider("Orleans.Providers.Replication.SharedStorageProvider", "SharedStorage", props);
             };
 
             host = new TestingClusterHost();
 
             // Create two clusters, each with 2 silos. 
-            Cluster0 = host.NewCluster(TestingClusterHost.GetConfigFile("Config_Cluster0.xml"), 2, customizer);
-            Cluster1 = host.NewCluster(TestingClusterHost.GetConfigFile("Config_Cluster1.xml"), 2, customizer);
+            Cluster0 = host.NewCluster(2, customizer);
+            Cluster1 = host.NewCluster(2, customizer);
 
             TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
             // Create clients.
-            Client0 = host.CreateClient<ClientWrapper>("Client0", TestingClusterHost.GetConfigFile("Config_Client0.xml"));
-            Client1 = host.CreateClient<ClientWrapper>("Client1", TestingClusterHost.GetConfigFile("Config_Client1.xml"));
+            Client0 = host.NewClient<ClientWrapper>(Cluster0, 0);
+            Client1 = host.NewClient<ClientWrapper>(Cluster1, 0);
 
-            Client1.InjectClusterConfiguration("0,1");
+            Client1.InjectClusterConfiguration(Cluster0, Cluster1);
             TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false).WaitWithThrow(waitTimeout);
 
         }
@@ -102,13 +112,12 @@ namespace Tests.GeoClusterTests
 
         #region client wrappers
 
-        public class ClientWrapper : MarshalByRefObject
+        public class ClientWrapper : Tests.GeoClusterTests.TestingClusterHost.ClientWrapperBase
         {
-            public ClientWrapper(string configFile)
+            public ClientWrapper(string name, int gatewayport)
+               : base(name, gatewayport)
             {
-                Console.WriteLine("Initializing client in AppDomain {0}", AppDomain.CurrentDomain.FriendlyName);
-                GrainClient.Initialize(configFile);
-                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
+                 systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
             }
 
             public string GetGrainRef(string grainclass, int i)
@@ -187,9 +196,9 @@ namespace Tests.GeoClusterTests
                 grainRef.SynchronizeGlobalState().Wait();
             }
 
-            public void InjectClusterConfiguration(string clusters)
+            public void InjectClusterConfiguration(params string[] clusters)
             {
-                systemManagement.InjectMultiClusterConfiguration(clusters.Split(',')).Wait();
+                systemManagement.InjectMultiClusterConfiguration(clusters).Wait();
             }
             IManagementGrain systemManagement;
 
@@ -210,13 +219,21 @@ namespace Tests.GeoClusterTests
             await FourCheckers(grainClass, phases);
         }
 
-      
+     
 
         private async Task FourCheckers(string grainClass, int phases)
         {
+            Random random = new Random();
+
+            Func<int> GetRandom = () =>
+            {
+               lock (random)
+                   return random.Next();
+            };
+
              Func<Task> checker1 = () => Task.Run(() =>
             {
-                int x = TestingSiloHost.GetRandom();
+                int x = GetRandom();
                 // force creation of replicas
                 Assert.AreEqual(0, Client0.GetALocal(grainClass, x));
                 Assert.AreEqual(0, Client1.GetALocal(grainClass, x));
@@ -232,7 +249,7 @@ namespace Tests.GeoClusterTests
 
             Func<Task> checker2 = () => Task.Run(() =>
             {
-                int x = TestingSiloHost.GetRandom();
+                int x = GetRandom();
                 // increment on replica 1
                 Client1.IncrementAGlobal(grainClass, x);
                 // expect on replica 0
@@ -242,7 +259,7 @@ namespace Tests.GeoClusterTests
 
             Func<Task> checker2b = () => Task.Run(() =>
             {
-                int x = TestingSiloHost.GetRandom();
+                int x = GetRandom();
                 // force creation on replica 0
                 Assert.AreEqual(0, Client0.GetAGlobal(grainClass, x));
                 // increment on replica 1
@@ -254,7 +271,7 @@ namespace Tests.GeoClusterTests
 
             Func<int,Task> checker3 = (int numupdates) => Task.Run(() =>
             {
-                int x = TestingSiloHost.GetRandom();
+                int x = GetRandom();
 
                 // concurrently chaotically increment (numupdates) times
                 Parallel.For(0, numupdates, i => (i % 2 == 0 ? Client0 : Client1).IncrementALocal(grainClass, x));
@@ -266,7 +283,7 @@ namespace Tests.GeoClusterTests
 
             Func<Task> checker4 = () => Task.Run(() =>
             {
-                int x = TestingSiloHost.GetRandom();
+                int x = GetRandom();
                 Task.WaitAll(
                   Task.Run(() => Assert.IsTrue(Client0.GetALocal(grainClass, x) == 0)),
                   Task.Run(() => Assert.IsTrue(Client1.GetALocal(grainClass, x) == 0)),
@@ -277,7 +294,7 @@ namespace Tests.GeoClusterTests
 
             Func<Task> checker5 = () => Task.Run(() =>
             {
-                var x = TestingSiloHost.GetRandom();
+                var x = GetRandom();
                 Task.WaitAll(
                    Task.Run(() =>
                   {
@@ -300,7 +317,7 @@ namespace Tests.GeoClusterTests
 
             Func<int, Task> checker6 = async (int preload) => 
             {
-                var x = TestingSiloHost.GetRandom();
+                var x = GetRandom();
                
                 if (preload % 2 == 0)
                     Client1.GetAGlobal(grainClass, x);

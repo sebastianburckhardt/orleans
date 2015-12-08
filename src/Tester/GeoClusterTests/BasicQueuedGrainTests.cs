@@ -85,8 +85,14 @@ namespace Tester.GeoClusterTests
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainSharedStorage");
         }
-    
-    
+
+        private int GetRandom()
+        {
+            lock (random)
+                return random.Next();
+        }
+
+
         private async Task DoBasicQueuedGrainTest(string grainClass, int phases = 100)
         {
             await ThreeCheckers(grainClass, phases);
