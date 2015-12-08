@@ -44,6 +44,8 @@ namespace Examples.Grains
 
     /// <summary>
     /// The grain implementation for the counter grain.
+    /// It favors availability over consistency - an approximate counter value is returned in
+    /// situations where cluster communication is not working.
     /// </summary>
     [ReplicationProvider(ProviderName = "SharedStorage")]
     public class CounterGrain : QueuedGrain<CounterState>, ICounterGrain
@@ -62,7 +64,7 @@ namespace Examples.Grains
 
     /// <summary>
     /// Another version of the counter grain that favors consistency over availability.
-    /// All operations are linearizable.
+    /// All operations are linearizable. Meaning they block if communication is not working.
     /// </summary>
     [ReplicationProvider(ProviderName = "SharedStorage")]
     public class LinearizableCounterGrain : QueuedGrain<CounterState>, ICounterGrain

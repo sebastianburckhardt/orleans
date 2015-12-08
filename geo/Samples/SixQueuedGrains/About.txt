@@ -1,4 +1,4 @@
-This solution contains several examples of how the queued grain may be used in various contexts.
+This solution contains six examples of how the queued grain may be used in various contexts.
 
 It shows several different grain (each with an interface and an implementation).
 
