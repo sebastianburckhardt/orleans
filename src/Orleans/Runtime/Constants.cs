@@ -103,6 +103,7 @@ namespace Orleans.Runtime
             {MembershipOracleId,"MembershipOracle"},
             {ReminderServiceId,"ReminderService"},
             {TypeManagerId,"TypeManagerId"},
+            {ReplicationProtocolGatewayId,"ReplicationProtocolGateway"},
             {ProviderManagerSystemTargetId, "ProviderManagerSystemTarget"},
             {DeploymentLoadPublisherSystemTargetId, "DeploymentLoadPublisherSystemTarge"},
         };
