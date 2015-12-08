@@ -40,10 +40,8 @@ namespace Tests.GeoClusterTests
     [DeploymentItem("TestGrains.dll")]
     [DeploymentItem("OrleansAzureUtils.dll")]
     [DeploymentItem("OrleansProviders.dll")]
-    [DeploymentItem("Config_Cluster0.xml")]
-    [DeploymentItem("Config_Cluster1.xml")]
-    [DeploymentItem("Config_Client0.xml")]
-    [DeploymentItem("Config_Client1.xml")]
+    [DeploymentItem("OrleansConfigurationForTesting.xml")]
+    [DeploymentItem("ClientConfigurationForTesting.xml")]
     public class ReplicationTest
     {
 
@@ -66,6 +64,18 @@ namespace Tests.GeoClusterTests
             Action<ClusterConfiguration> customizer = (ClusterConfiguration x) =>
             {
                 x.Globals.GlobalServiceId = globalserviceid;
+
+                // configure storage provider
+                //   <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="..."/>
+                var props = new Dictionary<string, string>();
+                props.Add("DataConnectionString", StorageTestConstants.DataConnectionString); 
+                x.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
+                
+                // configure replication provider
+                //   <Provider Type="Orleans.Providers.Replication.SharedStorageProvider" Name="SharedStorage" GlobalStorageProvider="AzureStore"/>
+                props = new Dictionary<string,string>();
+                props.Add("GlobalStorageProvider", "AzureStore");
+                x.Globals.RegisterReplicationProvider("Orleans.Providers.Replication.SharedStorageProvider", "SharedStorage", props);
             };
 
             host = new TestingClusterHost();
@@ -80,7 +90,7 @@ namespace Tests.GeoClusterTests
             Client0 = host.NewClient<ClientWrapper>(Cluster0, 0);
             Client1 = host.NewClient<ClientWrapper>(Cluster1, 0);
 
-            Client1.InjectClusterConfiguration("0,1");
+            Client1.InjectClusterConfiguration(Cluster0, Cluster1);
             TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false).WaitWithThrow(waitTimeout);
 
         }
@@ -186,9 +196,9 @@ namespace Tests.GeoClusterTests
                 grainRef.SynchronizeGlobalState().Wait();
             }
 
-            public void InjectClusterConfiguration(string clusters)
+            public void InjectClusterConfiguration(params string[] clusters)
             {
-                systemManagement.InjectMultiClusterConfiguration(clusters.Split(',')).Wait();
+                systemManagement.InjectMultiClusterConfiguration(clusters).Wait();
             }
             IManagementGrain systemManagement;
 
@@ -213,7 +223,7 @@ namespace Tests.GeoClusterTests
 
         private async Task FourCheckers(string grainClass, int phases)
         {
-            Random random = new Random(1111);
+            Random random = new Random();
 
             Func<int> GetRandom = () =>
             {
