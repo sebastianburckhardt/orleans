@@ -65,11 +65,6 @@ namespace Orleans.Runtime
     /// </summary>
     public class Silo : MarshalByRefObject // for hosting multiple silos in app domains of the same process
     {
-        public override object InitializeLifetimeService()
-        {
-            return null; // do not garbage collect this object when in app domain
-        }
-
         /// <summary> Silo Types. </summary>
         public enum SiloType
         {

@@ -101,6 +101,7 @@ namespace Orleans.Runtime
             {ClientObserverRegistrarId,"ClientObserverRegistrar"},
             {CatalogId,"Catalog"},
             {MembershipOracleId,"MembershipOracle"},
+            {MultiClusterOracleId,"MultiClusterOracle"},
             {ReminderServiceId,"ReminderService"},
             {TypeManagerId,"TypeManagerId"},
             {ReplicationProtocolGatewayId,"ReplicationProtocolGateway"},
