@@ -904,10 +904,10 @@
               </xs:documentation>
             </xs:annotation>
           </xs:attribute>
-          <xs:attribute name="NumMultiClusterGateways" type="xs:positiveInteger" use="optional">
+          <xs:attribute name="MaxMultiClusterGateways" type="xs:positiveInteger" use="optional">
             <xs:annotation>
               <xs:documentation>
-                The number of silos that are designated to act as multicluster gateways.
+                The maximum number of silos per cluster should be designated to serve as gateways..
               </xs:documentation>
             </xs:annotation>
           </xs:attribute>
