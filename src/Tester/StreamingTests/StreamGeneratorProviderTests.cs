@@ -100,7 +100,7 @@ namespace UnitTests.StreamingTests
             StopAllSilos();
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Streaming")]
+        [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Streaming")]
         public async Task ValidateGeneratedStreamsTest()
         {
             logger.Info("************************ ValidateGeneratedStreamsTest *********************************");
