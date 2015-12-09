@@ -104,14 +104,12 @@ namespace Tests.GeoClusterTests
         {
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
-            {
-                c.Globals.GlobalServiceId = globalserviceid;
-            };
 
             // Create two clusters, each with a single silo.
-            var cluster0 = NewCluster(1, customizer);
-            var cluster1 = NewCluster(1, customizer);
+            var cluster0 = "cluster0";
+            var cluster1 = "cluster1";
+            NewCluster(globalserviceid, cluster0, 1);
+            NewCluster(globalserviceid, cluster1, 1);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -181,14 +179,12 @@ namespace Tests.GeoClusterTests
         {
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
-            {
-                c.Globals.GlobalServiceId = globalserviceid;
-            };
-
+            
             // Create two clusters, each with 5 silos.
-            var cluster0 = NewCluster(5, customizer);
-            var cluster1 = NewCluster(5, customizer);
+            var cluster0 = "cluster0";
+            var cluster1 = "cluster1";
+            NewCluster(globalserviceid, cluster0, 5);
+            NewCluster(globalserviceid, cluster1, 5);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -297,8 +293,10 @@ namespace Tests.GeoClusterTests
             };
 
             // Create two clusters, each with 1 silo. 
-            var cluster0 = NewCluster(1, customizer);
-            var cluster1 = NewCluster(1, customizer);
+            var cluster0 = "cluster0";
+            var cluster1 = "cluster1";
+            NewCluster(globalserviceid, cluster0, 1);
+            NewCluster(globalserviceid, cluster1, 1);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -337,14 +335,12 @@ namespace Tests.GeoClusterTests
         {  
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
-            {
-                c.Globals.GlobalServiceId = globalserviceid;
-            };
 
             // Create two clusters, each with 5 silos.
-            var cluster0 = NewCluster(5, customizer);
-            var cluster1 = NewCluster(5, customizer);
+            var cluster0 = "cluster0";
+            var cluster1 = "cluster1";
+            NewCluster(globalserviceid, cluster0, 5);
+            NewCluster(globalserviceid, cluster1, 5);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -446,15 +442,17 @@ namespace Tests.GeoClusterTests
         {
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
+            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
             {
-                c.Globals.GlobalServiceId = globalserviceid;
                 // run the retry process every 5 seconds to keep this test shorter
                 c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
             };
 
-            var cluster0 = NewCluster(1, customizer);
-            var cluster1 = NewCluster(1, customizer);
+            // create two clusters with 1 silo each
+            var cluster0 = "cluster0";
+            var cluster1 = "cluster1";
+            NewCluster(globalserviceid, cluster0, 1, configurationcustomizer);
+            NewCluster(globalserviceid, cluster1, 1, configurationcustomizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -533,15 +531,17 @@ namespace Tests.GeoClusterTests
         {
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
+            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
             {
-                c.Globals.GlobalServiceId = globalserviceid;
                 // run the retry process every 5 seconds to keep this test shorter
                 c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
             };
 
-            var cluster0 = NewCluster(3, customizer);
-            var cluster1 = NewCluster(3, customizer);
+            // create two clusters with 3 silos each
+            var cluster0 = "cluster0";
+            var cluster1 = "cluster1";
+            NewCluster(globalserviceid, cluster0, 3, configurationcustomizer);
+            NewCluster(globalserviceid, cluster1, 3, configurationcustomizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -704,7 +704,7 @@ namespace Tests.GeoClusterTests
         private List<GrainId> GetGrainsInClusterWithStatus(string clusterId, MultiClusterStatus? status = null)
         {
             List<GrainId> grains = new List<GrainId>();
-            var silos = GetSilosInCluster(clusterId);
+            var silos = Clusters[clusterId].Silos;
             int totalSoFar = 0;
             foreach (var silo in silos)
             {
@@ -742,7 +742,7 @@ namespace Tests.GeoClusterTests
             int graincount = 0;
             int instancecount = 0;
 
-            foreach(var kvp in clusters)
+            foreach(var kvp in Clusters)
                 foreach (var silo in kvp.Value.Silos)
                 {
                     var dir = silo.Silo.TestHookup.GetDirectoryForTypenamesContaining("ClusterTestGrain");
