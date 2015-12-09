@@ -1,4 +1,4 @@
-/*
+﻿/*
 Project Orleans Cloud Service SDK ver. 1.0
  
 Copyright (c) Microsoft Corporation
@@ -21,50 +21,30 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Runtime.Serialization;
-using Orleans.Runtime.Configuration;
-using UnitTests.SerializerTests;
-
-namespace UnitTests.General
+namespace Orleans.CodeGeneration
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Reflection;
 
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-    using Orleans.CodeGeneration;
-    using Orleans.Runtime;
-    using Orleans.Serialization;
-
-    using UnitTests.GrainInterfaces;
-
     /// <summary>
-    /// Tests for the serialization system.
+    /// The attribute which informs the code generator that code should be generated an assembly.
     /// </summary>
-    [TestClass]
-    public class FallbackBuiltInSerializationTests : BuiltInSerializerTests
+    [AttributeUsage(AttributeTargets.Assembly)]
+    public class KnownAssemblyAttribute : Attribute
     {
+        public KnownAssemblyAttribute(Type type)
+        {
+            this.Assembly = type.Assembly;
+        }
+
+        public KnownAssemblyAttribute(string assemblyName)
+        {
+            this.Assembly = Assembly.Load(assemblyName);
+        }
+
         /// <summary>
-        /// Initializes the system for testing.
+        /// Gets or sets the assembly to include in code generation.
         /// </summary>
-        [TestInitialize]
-        public new void InitializeForTesting()
-        {
-            TraceLogger.Initialize(new NodeConfiguration());
-            SerializationManager.Initialize(false, null, true);
-            BufferPool.InitGlobalBufferPool(new MessagingConfiguration(false));
-        }
-
-        public override void Serialize_Predicate()
-        {
-            // there's no ability to serialize expressions with Json.Net serializer yet.
-        }
-
-        public override void Serialize_Func()
-        {
-            // there's no ability to serialize expressions with Json.Net serializer yet.
-        }
+        public Assembly Assembly { get; set; }
     }
 }
