@@ -1,4 +1,4 @@
-/*
+﻿/*
 Project Orleans Cloud Service SDK ver. 1.0
  
 Copyright (c) Microsoft Corporation
@@ -21,24 +21,21 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHE
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace UnitTests.General
+namespace Orleans.CodeGeneration
 {
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Orleans.Serialization;
+    using System;
 
     /// <summary>
-    /// Tests for the serialization system.
+    /// The attribute which informs the code generator that code should be generated a type.
     /// </summary>
-    [TestClass]
-    public class JsonFallbackSerializationTests : SerializationTests
+    [AttributeUsage(AttributeTargets.Assembly)]
+    public class KnownTypeAttribute : Attribute
     {
-        /// <summary>
-        /// Initializes the system for testing.
-        /// </summary>
-        [TestInitialize]
-        public new void InitializeForTesting()
+        public KnownTypeAttribute(Type type)
         {
-            SerializationManager.InitializeForTesting(useJsonFallbackSerializer: true);
+            this.Type = type;
         }
+
+        public Type Type { get; set; }
     }
 }
