@@ -360,9 +360,9 @@ namespace UnitTests.General
         }
 
         [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Generics")]
-        public async Task Generic_SelfManagedGrainControlFlow()
+        public async Task Generic_BasicGrainControlFlow()
         {
-            IGenericSelfManagedGrain<int, float> g = GrainFactory.GetGrain<IGenericSelfManagedGrain<int, float>>(0);
+            IBasicGenericGrain<int, float> g = GrainFactory.GetGrain<IBasicGenericGrain<int, float>>(0);
             await g.SetA(3);
             await g.SetB(1.25f);
             Assert.AreEqual("3x1.25", await g.GetAxB());
@@ -670,7 +670,7 @@ namespace UnitTests.General
         }
 
         [TestMethod, TestCategory("Functional"), TestCategory("Generics"), TestCategory("Serialization")]
-        public async Task Generic_CircularReferenceTest()
+        public async Task SerializationTests_Generic_CircularReferenceTest()
         {
             var grainId = Guid.NewGuid();
             var grain = GrainFactory.GetGrain<ICircularStateTestGrain>(primaryKey: grainId, keyExtension: grainId.ToString("N"));

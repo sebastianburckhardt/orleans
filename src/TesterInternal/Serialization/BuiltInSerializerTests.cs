@@ -7,8 +7,6 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Orleans;
-using Orleans.Concurrency;
 using Orleans.Messaging;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
@@ -18,7 +16,7 @@ using Orleans.GrainDirectory;
 
 // ReSharper disable NotAccessedVariable
 
-namespace UnitTests.SerializerTests
+namespace UnitTests.Serialization
 {
     /// <summary>
     /// Test the built-in serializers
@@ -831,7 +829,7 @@ namespace UnitTests.SerializerTests
         }
 
         [TestMethod, TestCategory("Functional"), TestCategory("Serialization")]
-        public void ValidateBuildSegmentListWithLengthLimit()
+        public void Serialize_ValidateBuildSegmentListWithLengthLimit()
         {
             byte[] array1 = { 1 };
             byte[] array2 = { 2, 3 };
@@ -1009,7 +1007,7 @@ namespace UnitTests.SerializerTests
         }
 
         [TestMethod, TestCategory("Functional"), TestCategory("Serialization")]
-        public void IsOrleansShallowCopyable()
+        public void SerializationTests_IsOrleansShallowCopyable()
         {
             Type t = typeof(Dictionary<string, object>);
             Assert.IsFalse(t.IsOrleansShallowCopyable(), "IsOrleansShallowCopyable: {0}", t.Name);
