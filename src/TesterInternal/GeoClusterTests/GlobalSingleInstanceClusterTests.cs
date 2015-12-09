@@ -301,7 +301,7 @@ namespace Tests.GeoClusterTests
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             //Configure multicluster
-            var cfgclient = NewClient<ClientWrapper>(cluster1, 2);
+            var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
             cfgclient.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
@@ -345,7 +345,7 @@ namespace Tests.GeoClusterTests
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
             //Configure multicluster
-            var cfgclient = NewClient<ClientWrapper>(cluster1, 2);
+            var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
             cfgclient.InjectMultiClusterConf(cluster0, cluster1);
             await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
 
