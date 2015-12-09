@@ -47,8 +47,8 @@ namespace Tests.GeoClusterTests
 
         private static TestingClusterHost host;
 
-        private static string Cluster0;
-        private static string Cluster1;
+        private const string Cluster0 = "A";
+        private const string Cluster1 = "B";
 
         private static ClientWrapper Client0;
         private static ClientWrapper Client1;
@@ -61,10 +61,8 @@ namespace Tests.GeoClusterTests
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
 
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration x) =>
+            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration x) =>
             {
-                x.Globals.GlobalServiceId = globalserviceid;
-
                 // configure storage provider
                 //   <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="..."/>
                 var props = new Dictionary<string, string>();
@@ -81,8 +79,8 @@ namespace Tests.GeoClusterTests
             host = new TestingClusterHost();
 
             // Create two clusters, each with 2 silos. 
-            Cluster0 = host.NewCluster(2, customizer);
-            Cluster1 = host.NewCluster(2, customizer);
+            host.NewCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
+            host.NewCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
 
             TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
