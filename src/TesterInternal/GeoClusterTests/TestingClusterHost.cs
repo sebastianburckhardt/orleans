@@ -95,10 +95,7 @@ namespace Tests.GeoClusterTests
             c.Globals.SeedNodes.Add(new IPEndPoint(IPAddress.Loopback, portbase));
             NodeOverride(c, "Primary", portbase, proxybase);
             for (int i = 1; i < maxsilos; i++)
-                if (i <= 1)
-                    NodeOverride(c, "Secondary_" + i, portbase + i, proxybase + i);
-                else
-                    NodeOverride(c, "Secondary_" + i, portbase + i);
+                NodeOverride(c, "Secondary_" + i, portbase + i, proxybase + i);
         }
 
         private void NodeOverride(ClusterConfiguration config, string siloName, int port, int proxyGatewayEndpoint = 0)
@@ -109,8 +106,7 @@ namespace Tests.GeoClusterTests
             nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
             nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
             nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
-            if (proxyGatewayEndpoint != 0)
-                nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(IPAddress.Loopback, proxyGatewayEndpoint);
+            nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(IPAddress.Loopback, proxyGatewayEndpoint);
             config.Overrides[siloName] = nodeConfig;
         }
      
