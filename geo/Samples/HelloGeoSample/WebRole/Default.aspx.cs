@@ -28,6 +28,7 @@ using Orleans.Runtime.Host;
 
 namespace Orleans.Azure.Samples.Web
 {
+
     public partial class _Default : System.Web.UI.Page
     {
         protected void Page_Load(object sender, EventArgs e)
@@ -52,16 +53,14 @@ namespace Orleans.Azure.Samples.Web
                     }
                 }
             }
-        }
-
+        }      
+      
         protected async void ButtonSayHello_Click(object sender, EventArgs e)
         {
-            this.ReplyText.Text = "Contacting Environment Grain in Orleans...";
-
             IHelloEnvironment grainRef = GrainClient.GrainFactory.GetGrain<IHelloEnvironment>(0, "HelloGeoGrains.RegularGrain");
 
             try
-            {
+            {   
                 string reply = await grainRef.RequestDetails();
                 this.ReplyText.Text = "Grain answered: " + reply + "\n\n at " + DateTime.UtcNow + " UTC";
             }
@@ -75,8 +74,6 @@ namespace Orleans.Azure.Samples.Web
 
         protected async void ButtonSayHelloSingleInstance_Click(object sender, EventArgs e)
         {
-            this.ReplyText.Text = "Contacting Global-Single-instance Environment Grain in Orleans...";
-
             IHelloEnvironment grainRef = GrainClient.GrainFactory.GetGrain<IHelloEnvironment>(0, "HelloGeoGrains.SingleInstanceGrain");
 
             try
