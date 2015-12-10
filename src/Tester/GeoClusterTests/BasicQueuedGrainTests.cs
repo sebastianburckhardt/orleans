@@ -24,11 +24,12 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Orleans.TestingHost;
 using UnitTests.GrainInterfaces;
 using UnitTests.Tester;
-using System.Collections.Generic;
+using Orleans.Runtime.Configuration;
+using Orleans.TestingHost;
 
 namespace Tester.GeoClusterTests
 {
@@ -36,16 +37,17 @@ namespace Tester.GeoClusterTests
     [DeploymentItem("TestGrainInterfaces.dll")]
     [DeploymentItem("TestGrains.dll")]
     [DeploymentItem("OrleansProviders.dll")]
-    [DeploymentItem("OrleansConfigurationForRepProviderTesting.xml")]
+    [DeploymentItem("OrleansConfigurationForTesting.xml")]
     public class BasicQueuedGrainTests : UnitTestSiloHost
     {
         private static readonly TestingSiloOptions siloOptions = new TestingSiloOptions
-        { 
+        {
             StartFreshOrleans = true,
-            StartPrimary = true, 
+            StartPrimary = true,
             StartSecondary = false,
-            SiloConfigFile = new FileInfo("OrleansConfigurationForRepProviderTesting.xml"),
-            DataConnectionString = StorageTestConstants.DataConnectionString
+            SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
+            DataConnectionString = StorageTestConstants.DataConnectionString,
+            ConfigurationCustomizer = ReplicationProviderConfiguration.Adjust
         };
 
         public BasicQueuedGrainTests()
@@ -57,7 +59,7 @@ namespace Tester.GeoClusterTests
         public static void ClassInitialize(TestContext testContext)
         {
             CheckForAzureStorage();
-            }
+        }
 
         [ClassCleanup]
         public static void MyClassCleanup()
