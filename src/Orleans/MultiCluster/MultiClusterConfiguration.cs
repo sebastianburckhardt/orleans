@@ -49,14 +49,13 @@ namespace Orleans.MultiCluster
         /// </summary>
         public string Comment { get; private set; }
 
-        public MultiClusterConfiguration(DateTime Timestamp, IReadOnlyList<string> Clusters, string Comment = "")
+        public MultiClusterConfiguration(DateTime timestamp, IReadOnlyList<string> clusters, string comment = "")
         {
-            if (Clusters == null)
-                throw new ArgumentException("Clusters must not be null");
+            if (clusters == null) throw new ArgumentNullException("clusters");
 
-            this.AdminTimestamp = Timestamp;
-            this.Clusters = Clusters;
-            this.Comment = Comment;
+            this.AdminTimestamp = timestamp;
+            this.Clusters = clusters;
+            this.Comment = comment;
         }
 
         public override string ToString()
