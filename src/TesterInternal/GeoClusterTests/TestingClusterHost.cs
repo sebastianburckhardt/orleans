@@ -39,6 +39,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.GeoClusterTests
 {
+    /// <summary>
+    /// A utility class for tests that include multiple clusters.
+    /// It calls static methods on TestingSiloHost for starting and stopping silos.
+    /// </summary>
     public class TestingClusterHost   
     {
         protected readonly Dictionary<string, ClusterInfo> Clusters;
@@ -54,16 +58,10 @@ namespace Tests.GeoClusterTests
         {
             public List<SiloHandle> Silos;  // currently active silos
             public int SequenceNumber; // we number created clusters in order of creation
-            public int MaxSilos; 
         }
 
-        private static readonly string ConfigPrefix =
-              Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    
 
-        public static string GetConfigFile(string fileName)
-        {
-            return Path.Combine(ConfigPrefix, fileName);
-        }
         public static void WriteLog(string format, params object[] args)
         {
             Console.WriteLine(format, args);
@@ -115,11 +113,9 @@ namespace Tests.GeoClusterTests
         }
 
 
-        public void NewCluster(string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null, int maxsilos = 5)
+        public void NewCluster(string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null)
         {
-            if (numSilos > maxsilos)
-                throw new ArgumentException();
-
+            
             lock (Clusters)
             {
                 WriteLog("Starting Cluster {0}...", clusterid);
@@ -145,8 +141,7 @@ namespace Tests.GeoClusterTests
                 Clusters[clusterid] = new ClusterInfo
                 {
                     Silos = silohandles.ToList(),
-                    SequenceNumber = mycount,
-                    MaxSilos = maxsilos
+                    SequenceNumber = mycount
                 };
 
                 WriteLog("Cluster {0} started.", clusterid);
@@ -156,9 +151,6 @@ namespace Tests.GeoClusterTests
         public void AddSiloToCluster(string clusterId, string siloName, Action<ClusterConfiguration> customizer = null)
         {
             var clusterinfo = Clusters[clusterId];
-
-            if (clusterinfo.Silos.Count >= clusterinfo.MaxSilos)
-                Assert.Fail("Cannot create more silos");
 
             var options = new TestingSiloOptions
             {
@@ -275,7 +267,7 @@ namespace Tests.GeoClusterTests
 
         #endregion
 
-        #region Cluster Config
+         
 
 
         public void BlockAllClusterCommunication(string from, string to)
@@ -297,6 +289,6 @@ namespace Tests.GeoClusterTests
             if (Clusters[clusterId].Silos == null) return null;
             return Clusters[clusterId].Silos.Find(s => s.Name == siloName);
         }
-        #endregion
+        
     }
 }
