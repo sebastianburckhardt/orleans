@@ -89,6 +89,7 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GeoClusterTests\BasicMultiClusterTest.cs" />
     <Compile Include="Serialization\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
     <Compile Include="GeoClusterTests\GlobalSingleInstanceClusterTests.cs" />
@@ -109,7 +110,6 @@
     <Compile Include="RemindersTest\SqlServerRemindersTableTests.cs" />
     <Compile Include="General\InternalSerializationTests.cs" />
     <Compile Include="Serialization\SerializerGenerationTests.cs" />
-    <Compile Include="GeoClusterTests\AzureClusterMembershipOracleTests_Standalone.cs" />
     <Compile Include="GeoClusterTests\AzureGossipTableTests.cs" />
     <Compile Include="StorageTests\AzureTableDataManagerStressTests.cs" />
     <Compile Include="StorageTests\AzureTableErrorCodeTests.cs" />
