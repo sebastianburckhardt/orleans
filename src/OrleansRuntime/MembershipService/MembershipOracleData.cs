@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Orleans.Runtime.Configuration;
-using System.Diagnostics;
 
 namespace Orleans.Runtime.MembershipService
 {
@@ -36,7 +35,6 @@ namespace Orleans.Runtime.MembershipService
         private Dictionary<SiloAddress, SiloStatus> localTableCopy;            // a cached copy of a local table, including current silo, for fast access
         private Dictionary<SiloAddress, SiloStatus> localTableCopyOnlyActive;  // a cached copy of a local table, for fast access, including only active nodes and current silo (if active)
         private Dictionary<SiloAddress, string> localNamesTableCopy;           // a cached copy of a map from SiloAddress to Silo Name, not including current silo, for fast access
-        private List<SiloAddress> localMultiClusterGatewaysCopy;                           // a cached copy of the silos that are designated gateways
 
         private readonly List<ISiloStatusListener> statusListeners;
         private readonly TraceLogger logger;
@@ -49,17 +47,6 @@ namespace Orleans.Runtime.MembershipService
         internal readonly string MyHostname;
         internal SiloStatus CurrentStatus { get; private set; } // current status of this silo.
         internal string SiloName { get; private set; } // name of this silo.
- 
-        private readonly string GlobalServiceId; // set by configuration
-        private readonly int MaxMultiClusterGateways; // set by configuration
-
-        private UpdateFaultCombo MyFaultAndUpdateZones;
-        private struct UpdateFaultCombo // define struct so we can use it as a key for group-by
-        {
-            public int UpdateZone;
-            public int FaultZone;
-        }
- 
 
         internal MembershipOracleData(Silo silo, TraceLogger log)
         {
@@ -67,16 +54,13 @@ namespace Orleans.Runtime.MembershipService
             localTable = new Dictionary<SiloAddress, MembershipEntry>();  
             localTableCopy = new Dictionary<SiloAddress, SiloStatus>();       
             localTableCopyOnlyActive = new Dictionary<SiloAddress, SiloStatus>();
-            localNamesTableCopy = new Dictionary<SiloAddress, string>();
-            localMultiClusterGatewaysCopy = new List<SiloAddress>();
+            localNamesTableCopy = new Dictionary<SiloAddress, string>();  
             statusListeners = new List<ISiloStatusListener>();
             
             SiloStartTime = DateTime.UtcNow;
             MyAddress = silo.SiloAddress;
             MyHostname = silo.LocalConfig.DNSHostName;
             SiloName = silo.LocalConfig.SiloName;
-            GlobalServiceId = silo.GlobalConfig.GlobalServiceId;
-            MaxMultiClusterGateways = silo.GlobalConfig.MaxMultiClusterGateways;
             CurrentStatus = SiloStatus.Created;
             clusterSizeStatistic = IntValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER_SIZE, () => localTableCopyOnlyActive.Count);
             clusterStatistic = StringValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER,
@@ -116,12 +100,6 @@ namespace Orleans.Runtime.MembershipService
             Dictionary<SiloAddress, SiloStatus> dict = onlyActive ? localTableCopyOnlyActive : localTableCopy;
             if (logger.IsVerbose3) logger.Verbose3("-GetApproximateSiloStatuses returned {0} silos: {1}", dict.Count, Utils.DictionaryToString(dict));
             return dict;
-        }
-
-        internal List<SiloAddress> GetApproximateMultiClusterGateways()
-        {
-            if (logger.IsVerbose3) logger.Verbose3("-GetApproximateMultiClusterGateways returned {0} silos: {1}", localMultiClusterGatewaysCopy.Count, string.Join(",", localMultiClusterGatewaysCopy));
-            return localMultiClusterGatewaysCopy;
         }
 
         internal bool TryGetSiloName(SiloAddress siloAddress, out string siloName)
@@ -178,10 +156,6 @@ namespace Orleans.Runtime.MembershipService
             localTableCopy = tmpLocalTableCopy;
             localTableCopyOnlyActive = tmpLocalTableCopyOnlyActive;
             localNamesTableCopy = tmpLocalTableNamesCopy;
-
-            if (!string.IsNullOrEmpty(GlobalServiceId))
-                localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
-
             NotifyLocalSubscribers(MyAddress, CurrentStatus);
         }
 
@@ -239,12 +213,6 @@ namespace Orleans.Runtime.MembershipService
             return entry;
         }
 
-        internal void UpdateMyFaultAndUpdateZone(MembershipEntry entry)
-        {
-            MyFaultAndUpdateZones.FaultZone = entry.FaultZone;
-            MyFaultAndUpdateZones.UpdateZone = entry.UpdateZone;
-        }
-
         internal bool TryUpdateStatusAndNotify(MembershipEntry entry)
         {
             if (!TryUpdateStatus(entry)) return false;
@@ -252,9 +220,6 @@ namespace Orleans.Runtime.MembershipService
             localTableCopy = GetSiloStatuses(status => true, true); // all the silos including me.
             localTableCopyOnlyActive = GetSiloStatuses(status => status.Equals(SiloStatus.Active), true);    // only active silos including me.
             localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.InstanceName);   // all the silos excluding me.
-            
-            if (!string.IsNullOrEmpty(GlobalServiceId))
-                localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
 
             if (logger.IsVerbose) logger.Verbose("-Updated my local view of {0} status. It is now {1}.", entry.SiloAddress.ToLongString(), GetSiloStatus(entry.SiloAddress));
 
@@ -305,61 +270,6 @@ namespace Orleans.Runtime.MembershipService
                 }
             }
         }
-
-    
-
-        // deterministic function for designating the silos that should act as gateways
-        private List<SiloAddress> DetermineMultiClusterGateways()
-        {
-            // function should never be called if we are not in a multicluster
-            if (string.IsNullOrEmpty(GlobalServiceId))
-                throw new OrleansException("internal error: should not call this function without multicluster network");
-
-            // take all the active silos if their count does not exceed the desired number of gateways
-            if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)
-                return localTableCopyOnlyActive.Keys.ToList();
-
-            var candidates = new SortedList<string, SiloAddress>();
-
-            foreach(var x in localTableCopyOnlyActive)
-                candidates.Add(x.Key.Endpoint.ToString(), x.Key);
-
-            // group by fault/update zones
-            var groups = new Dictionary<UpdateFaultCombo, List<SiloAddress>>();
-            foreach (var c in candidates)
-            {
-                UpdateFaultCombo key = default(UpdateFaultCombo);
-                if (c.Value.Equals(MyAddress))
-                {
-                    key = MyFaultAndUpdateZones;
-                }
-                else
-                {
-                    var e = localTable[c.Value];
-                    key.FaultZone = e.FaultZone;
-                    key.UpdateZone = e.UpdateZone;
-                }
-                List<SiloAddress> list;
-                if (!groups.TryGetValue(key, out list))
-                    groups[key] = list = new List<SiloAddress>();
-                list.Add(c.Value);
-            }
-              
-            var keys = groups.Keys.ToList();
-            keys.Sort();
-
-            // pick round-robin from groups
-            var  result = new List<SiloAddress>();
-            for (int i = 0; result.Count < MaxMultiClusterGateways; i++)
-            {
-                var list = groups[keys[i % keys.Count]];
-                var col = i / keys.Count;
-                if (col < list.Count)
-                    result.Add(list[col]); // keep only endpoint
-            }
-            return result;
-        }
-
 
         public override string ToString()
         {

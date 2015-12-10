@@ -263,12 +263,6 @@ namespace Orleans.Runtime.MembershipService
             return membershipOracleData.GetApproximateSiloStatuses(onlyActive);
         }
 
-        // ONLY access gatewaysLocalCopy to prevent races
-        public IEnumerable<SiloAddress> GetApproximateMultiClusterGateways()
-        {
-            return membershipOracleData.GetApproximateMultiClusterGateways();
-        }
-
         public bool TryGetSiloName(SiloAddress siloAddress, out string siloName)
         {
             return membershipOracleData.TryGetSiloName(siloAddress, out siloName);
@@ -527,16 +521,12 @@ namespace Orleans.Runtime.MembershipService
             // only process the table if in the active or ShuttingDown state. In other states I am not ready yet.
             if (IsFunctionalMBR(CurrentStatus))
             {
-                foreach (var entry in table.Members.Select(tuple => tuple.Item1))
-                    if (!entry.SiloAddress.Endpoint.Equals(MyAddress.Endpoint))
-                    {
-                        bool changed = membershipOracleData.TryUpdateStatusAndNotify(entry);
-                        localViewChanged = localViewChanged || changed;
-                    }
-                    else
-                    {
-                        membershipOracleData.UpdateMyFaultAndUpdateZone(entry);
-                    }
+                foreach (var entry in table.Members.Select(tuple => tuple.Item1).Where(
+                    item => !item.SiloAddress.Endpoint.Equals(MyAddress.Endpoint)))
+                {
+                    bool changed = membershipOracleData.TryUpdateStatusAndNotify(entry);
+                    localViewChanged = localViewChanged || changed;
+                }
                 if (localViewChanged)
                     UpdateListOfProbedSilos();
             }

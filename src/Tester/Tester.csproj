@@ -119,7 +119,6 @@
     <Compile Include="CodeGenTests\GeneratorGrainTest.cs" />
     <Compile Include="CodeGenTests\IRuntimeCodeGenGrain.cs" />
     <Compile Include="CodeGenTests\RuntimeCodeGenerationTests.cs" />
-    <Compile Include="GeoClusterTests\MultiClusterDataTests.cs" />
     <Compile Include="ConcreteStateClassTests.cs" />
     <Compile Include="ExternalTypesTests.cs" />
     <Compile Include="SerializationTests\ConfigurationTests\SerializationProviderTests.cs" />

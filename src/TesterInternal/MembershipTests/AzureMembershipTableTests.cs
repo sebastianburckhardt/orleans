@@ -31,7 +31,6 @@ using Orleans.Runtime.MembershipService;
 using Orleans.TestingHost;
 using Orleans.AzureUtils;
 using UnitTests.StorageTests;
-using UnitTests.Tester;
 
 
 namespace UnitTests.MembershipTests
@@ -61,7 +60,11 @@ namespace UnitTests.MembershipTests
             // Set shorter init timeout for these tests
             OrleansSiloInstanceManager.initTimeout = TimeSpan.FromSeconds(20);
 
-            UnitTestSiloHost.CheckForAzureStorage();
+            //Starts the storage emulator if not started already and it exists (i.e. is installed).
+            if(!StorageEmulator.TryStart())
+            {
+                Console.WriteLine("Azure Storage Emulator could not be started.");
+            }            
         }
 
         private async Task Initialize()

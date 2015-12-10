@@ -6,7 +6,7 @@
     <ProjectGuid>{09610024-F5B9-4065-9557-BD9E36A32421}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Tests</RootNamespace>
+    <RootNamespace>UnitTests</RootNamespace>
     <AssemblyName>TesterInternal</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -108,8 +108,6 @@
     <Compile Include="RemindersTest\SqlServerRemindersTableTests.cs" />
     <Compile Include="General\InternalSerializationTests.cs" />
     <Compile Include="Serialization\SerializerGenerationTests.cs" />
-    <Compile Include="GeoClusterTests\AzureClusterMembershipOracleTests_Standalone.cs" />
-    <Compile Include="GeoClusterTests\AzureGossipTableTests.cs" />
     <Compile Include="StorageTests\AzureTableDataManagerStressTests.cs" />
     <Compile Include="StorageTests\AzureTableErrorCodeTests.cs" />
     <Compile Include="MembershipTests\AzureMembershipTableTests.cs" />
@@ -209,7 +207,6 @@
     <Content Include="..\OrleansTestingHost\ClientConfigurationForTesting.xml">
       <Link>ClientConfigurationForTesting.xml</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
     </Content>
     <Content Include="..\OrleansTestingHost\OrleansConfigurationForTesting.xml">
       <Link>OrleansConfigurationForTesting.xml</Link>
