@@ -39,6 +39,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.GeoClusterTests
 {
+    /// <summary>
+    /// A utility class for tests that include multiple clusters.
+    /// It calls static methods on TestingSiloHost for starting and stopping silos.
+    /// </summary>
     public class TestingClusterHost   
     {
         protected readonly Dictionary<string, ClusterInfo> Clusters;
@@ -54,16 +58,10 @@ namespace Tests.GeoClusterTests
         {
             public List<SiloHandle> Silos;  // currently active silos
             public int SequenceNumber; // we number created clusters in order of creation
-            public int MaxSilos; 
         }
 
-        private static readonly string ConfigPrefix =
-              Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    
 
-        public static string GetConfigFile(string fileName)
-        {
-            return Path.Combine(ConfigPrefix, fileName);
-        }
         public static void WriteLog(string format, params object[] args)
         {
             Console.WriteLine(format, args);
@@ -74,115 +72,79 @@ namespace Tests.GeoClusterTests
 
         private static int GetPortBase(int clusternumber)
         {
-            return 21000 + (clusternumber + 1) * 100 + 11;
+            return 21000 + (clusternumber + 1) * 100;
         }
         private static int GetProxyBase(int clusternumber)
         {
-            return 22000 + (clusternumber + 2) * 100 + 22;
+            return 22000 + (clusternumber + 2) * 100;
         }
         private static int DetermineGatewayPort(int clusternumber, int clientnumber)
         {
             return GetProxyBase(clusternumber) + clientnumber % 3;
         }
-
-        public void AdjustClusterPortDefaults(ClusterConfiguration c, int clusternumber, int maxsilos = 5)
-        {
-
-            var portbase = GetPortBase(clusternumber);
-            var proxybase = GetProxyBase(clusternumber);
-
-            c.Globals.SeedNodes.Clear();
-            c.Globals.SeedNodes.Add(new IPEndPoint(IPAddress.Loopback, portbase));
-            NodeOverride(c, "Primary", portbase, proxybase);
-            for (int i = 1; i < maxsilos; i++)
-                NodeOverride(c, "Secondary_" + i, portbase + i, proxybase + i);
-        }
-
-        private void NodeOverride(ClusterConfiguration config, string siloName, int port, int proxyGatewayEndpoint = 0)
-        {
-            NodeConfiguration nodeConfig = config.GetConfigurationForNode(siloName);
-            nodeConfig.HostNameOrIPAddress = "loopback";
-            nodeConfig.Port = port;
-            nodeConfig.DefaultTraceLevel = config.Defaults.DefaultTraceLevel;
-            nodeConfig.PropagateActivityId = config.Defaults.PropagateActivityId;
-            nodeConfig.BulkMessageLimit = config.Defaults.BulkMessageLimit;
-            nodeConfig.ProxyGatewayEndpoint = new IPEndPoint(IPAddress.Loopback, proxyGatewayEndpoint);
-            config.Overrides[siloName] = nodeConfig;
-        }
      
         #endregion
 
+
         #region Cluster Creation
 
-
-        public void NewCluster(string globalserviceid, string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null, int maxsilos = 5)
+        public void NewGeoCluster(string globalserviceid, string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null)
         {
-            if (numSilos > maxsilos)
-                throw new ArgumentException();
+            Action<ClusterConfiguration> extendedcustomizer = (config) =>
+                {
+                    // configure multi-cluster network
+                    config.Globals.GlobalServiceId = globalserviceid;
+                    config.Globals.ClusterId = clusterid;
+                    config.Globals.MaxMultiClusterGateways = 2;
+                    config.Globals.DefaultMultiCluster = null;
 
-            lock (Clusters)
-            {
-                WriteLog("Starting Cluster {0}...", clusterid);
-                var mycount = Clusters.Count;
-
-                Action<ClusterConfiguration> configurationcustomizer = (config) =>
-                    {
-                        // configure ports
-                        AdjustClusterPortDefaults(config, mycount, maxsilos);
-
-                        // configure multi-cluster network
-                        config.Globals.GlobalServiceId = globalserviceid;
-                        config.Globals.ClusterId = clusterid;
-                        config.Globals.MaxMultiClusterGateways = 2;
-                        config.Globals.DefaultMultiCluster = null;
-
-                        config.Globals.GossipChannels = new List<Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelConfiguration>(1) { 
+                    config.Globals.GossipChannels = new List<Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelConfiguration>(1) { 
                           new Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelConfiguration()
                           {
                               ChannelType = Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelType.AzureTable,
                               ConnectionString = StorageTestConstants.DataConnectionString
                           }};
 
+                    if (customizer != null)
+                        customizer(config);
+                };
 
-                        // add custom configurations
-                        if (customizer != null)
-                            customizer(config);
-                    };
+            NewCluster(clusterid, numSilos, extendedcustomizer);
+        }
+
+
+        public void NewCluster(string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null)
+        {
+            
+            lock (Clusters)
+            {
+                WriteLog("Starting Cluster {0}...", clusterid);
+
+                var mycount = Clusters.Count;
 
                 var silohandles = new SiloHandle[numSilos];
 
-                var primaryOption = new TestingSiloOptions
+                var options = new TestingSiloOptions
                 {
                     StartClient = false,
-                    AutoConfigNodeSettings = false,
-                    SiloName = "Primary",
-                    ConfigurationCustomizer = configurationcustomizer
+                    ConfigurationCustomizer = customizer,
+                    BasePort = GetPortBase(mycount),
+                    ProxyBasePort = GetProxyBase(mycount)
                 };
-                silohandles[0] = TestingSiloHost.StartOrleansSilo(null, Silo.SiloType.Primary, primaryOption, 0);
+                silohandles[0] = TestingSiloHost.StartOrleansSilo(null, Silo.SiloType.Primary, options, 0);
 
                 Parallel.For(1, numSilos, i =>
                 {
-                    var options = new TestingSiloOptions
-                    {
-                        StartClient = false,
-                        AutoConfigNodeSettings = false,
-                        SiloName = "Secondary_" + i,
-                        ConfigurationCustomizer = configurationcustomizer
-                    };
-
                     silohandles[i] = TestingSiloHost.StartOrleansSilo(null, Silo.SiloType.Secondary, options, i);
                 });
 
-                string clusterId = silohandles[0].Silo.GlobalConfig.ClusterId;
-
-                Clusters[clusterId] = new ClusterInfo
+                Clusters[clusterid] = new ClusterInfo
                 {
                     Silos = silohandles.ToList(),
-                    SequenceNumber = mycount,
-                    MaxSilos = maxsilos
+                    SequenceNumber = mycount
                 };
 
-                WriteLog("Cluster {0} started.", clusterId);
+                WriteLog("Cluster {0} started.", clusterid);
             }
         }
 
@@ -190,14 +152,9 @@ namespace Tests.GeoClusterTests
         {
             var clusterinfo = Clusters[clusterId];
 
-            if (clusterinfo.Silos.Count >= clusterinfo.MaxSilos)
-                Assert.Fail("Cannot create more silos");
-
             var options = new TestingSiloOptions
             {
                 StartClient = false,
-                AutoConfigNodeSettings = false,
-                SiloName = siloName, 
                 ConfigurationCustomizer = customizer
             };
 
@@ -310,7 +267,7 @@ namespace Tests.GeoClusterTests
 
         #endregion
 
-        #region Cluster Config
+         
 
 
         public void BlockAllClusterCommunication(string from, string to)
@@ -332,6 +289,6 @@ namespace Tests.GeoClusterTests
             if (Clusters[clusterId].Silos == null) return null;
             return Clusters[clusterId].Silos.Find(s => s.Name == siloName);
         }
-        #endregion
+        
     }
 }

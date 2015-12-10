@@ -79,8 +79,8 @@ namespace Tests.GeoClusterTests
             host = new TestingClusterHost();
 
             // Create two clusters, each with 2 silos. 
-            host.NewCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
-            host.NewCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
+            host.NewGeoCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
+            host.NewGeoCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
 
             TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
