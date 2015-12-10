@@ -41,12 +41,9 @@ namespace Tests.GeoClusterTests
     // This allows us to create multiple clients that are connected to different silos.
 
     [TestClass]
-    [DeploymentItem("OrleansAzureUtils.dll")]
-    [DeploymentItem("TestGrainInterfaces.dll")]
-    [DeploymentItem("TestGrains.dll")]
     [DeploymentItem("ClientConfigurationForTesting.xml")]
     [DeploymentItem("OrleansConfigurationForTesting.xml")]
-    public class MultiClusterNetworkTests : TestingClusterHost
+    public class BasicMultiClusterTest : TestingClusterHost
     {
         [ClassInitialize]
         public static void ClassInitialize(TestContext testContext)
@@ -84,7 +81,7 @@ namespace Tests.GeoClusterTests
 
         [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
         [Timeout(120000)]
-        public void TwoIndependentClusters()
+        public void CreateTwoIndependentClusters()
         {
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
