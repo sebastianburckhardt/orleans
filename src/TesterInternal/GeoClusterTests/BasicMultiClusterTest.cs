@@ -83,17 +83,15 @@ namespace Tests.GeoClusterTests
         [Timeout(120000)]
         public void CreateTwoIndependentClusters()
         {
-            // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
-
+           
             // create cluster A with one silo and clientA
             var clusterA = "A";
-            NewCluster(globalserviceid, clusterA, 1);
+            NewCluster(clusterA, 1);
             var clientA = NewClient<ClientWrapper>(clusterA, 0);
 
             // create cluster B with 5 silos and clientB
             var clusterB = "B";
-            NewCluster(globalserviceid, clusterB, 5);
+            NewCluster(clusterB, 5);
             var clientB = NewClient<ClientWrapper>(clusterB, 0);
 
             // call management grain in each cluster to count the silos

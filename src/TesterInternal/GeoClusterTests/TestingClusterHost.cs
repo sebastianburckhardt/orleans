@@ -91,7 +91,7 @@ namespace Tests.GeoClusterTests
         #region Cluster Creation
 
 
-        public void NewCluster(string globalserviceid, string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null, int maxsilos = 5)
+        public void NewCluster(string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null, int maxsilos = 5)
         {
             if (numSilos > maxsilos)
                 throw new ArgumentException();
