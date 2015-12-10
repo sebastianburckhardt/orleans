@@ -38,7 +38,6 @@ namespace Orleans.Runtime.Messaging
         private readonly MessageCenter messageCenter;
         private readonly TraceLogger logger;
         private bool stopped;
-        private SafeRandom random;
 
         public int Count
         {
@@ -128,21 +127,12 @@ namespace Orleans.Runtime.Messaging
                 }
 
                 // check for simulation of lost messages
-                if (Silo.CurrentSilo.TestHookup.SimulatedMessageLoss != null)
+                if(Silo.CurrentSilo.TestHookup.ShouldDrop(msg))
                 {
-                    double blockedpercentage = 0.0;
-                    Silo.CurrentSilo.TestHookup.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
-                    if (random == null)
-                        random = new SafeRandom();   
-                    if (random.NextDouble() * 100 < blockedpercentage)
-                    {
-                        string errorMsg = "Message blocked by TestHookup.SimulatedMessageLoss";
-                        logger.Error(ErrorCode.Messaging_SimulatedMessageLoss, errorMsg);
-                        messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, errorMsg);
-                        return;
-                    }
+                    logger.Info(ErrorCode.Messaging_SimulatedMessageLoss, "Message blocked by test");
+                    messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, "Message blocked by test");
                 }
-                
+
                 // Prioritize system messages
                 switch (msg.Category)
                 {
