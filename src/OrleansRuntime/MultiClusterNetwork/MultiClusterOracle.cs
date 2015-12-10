@@ -23,7 +23,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
@@ -50,7 +49,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public MultiClusterOracle(SiloAddress silo, string clusterid, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.MultiClusterOracleId, silo)
         {
-            if (sources == null || silo == null) throw new ArgumentException();
+            if (sources == null) throw new ArgumentNullException("sources");
+            if (silo == null) throw new ArgumentNullException("silo");
+
             logger = TraceLogger.GetLogger("MultiClusterOracle");
             gossipChannels = sources;
             localData = new MultiClusterOracleData(logger);
