@@ -38,7 +38,7 @@ namespace Orleans.Runtime.Messaging
         private readonly MessageCenter messageCenter;
         private readonly TraceLogger logger;
         private bool stopped;
-        private Random random;
+        private SafeRandom random;
 
         public int Count
         {
@@ -133,7 +133,7 @@ namespace Orleans.Runtime.Messaging
                     double blockedpercentage = 0.0;
                     Silo.CurrentSilo.TestHookup.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
                     if (random == null)
-                        random = new Random();   
+                        random = new SafeRandom();   
                     if (random.NextDouble() * 100 < blockedpercentage)
                     {
                         string errorMsg = "Message blocked by TestHookup.SimulatedMessageLoss";
