@@ -590,7 +590,8 @@ namespace Orleans.TestingHost
             }
 
             _livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
-            
+            _gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
+           
             string siloName;
             switch (type)
             {
