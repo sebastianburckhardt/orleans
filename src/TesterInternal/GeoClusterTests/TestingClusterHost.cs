@@ -90,6 +90,30 @@ namespace Tests.GeoClusterTests
 
         #region Cluster Creation
 
+        public void NewGeoCluster(string globalserviceid, string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null)
+        {
+            Action<ClusterConfiguration> extendedcustomizer = (config) =>
+                {
+                    // configure multi-cluster network
+                    config.Globals.GlobalServiceId = globalserviceid;
+                    config.Globals.ClusterId = clusterid;
+                    config.Globals.MaxMultiClusterGateways = 2;
+                    config.Globals.DefaultMultiCluster = null;
+
+                    config.Globals.GossipChannels = new List<Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelConfiguration>(1) { 
+                          new Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelConfiguration()
+                          {
+                              ChannelType = Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelType.AzureTable,
+                              ConnectionString = StorageTestConstants.DataConnectionString
+                          }};
+
+                    if (customizer != null)
+                        customizer(config);
+                };
+
+            NewCluster(clusterid, numSilos, extendedcustomizer);
+        }
+
 
         public void NewCluster(string clusterid, int numSilos, Action<ClusterConfiguration> customizer = null, int maxsilos = 5)
         {
