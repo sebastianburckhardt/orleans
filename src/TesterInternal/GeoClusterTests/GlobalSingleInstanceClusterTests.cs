@@ -108,8 +108,8 @@ namespace Tests.GeoClusterTests
             // Create two clusters, each with a single silo.
             var cluster0 = "cluster0";
             var cluster1 = "cluster1";
-            NewCluster(globalserviceid, cluster0, 1);
-            NewCluster(globalserviceid, cluster1, 1);
+            NewGeoCluster(globalserviceid, cluster0, 1);
+            NewGeoCluster(globalserviceid, cluster1, 1);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -183,8 +183,8 @@ namespace Tests.GeoClusterTests
             // Create two clusters, each with 5 silos.
             var cluster0 = "cluster0";
             var cluster1 = "cluster1";
-            NewCluster(globalserviceid, cluster0, 5);
-            NewCluster(globalserviceid, cluster1, 5);
+            NewGeoCluster(globalserviceid, cluster0, 5);
+            NewGeoCluster(globalserviceid, cluster1, 5);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -295,8 +295,8 @@ namespace Tests.GeoClusterTests
             // Create two clusters, each with 1 silo. 
             var cluster0 = "cluster0";
             var cluster1 = "cluster1";
-            NewCluster(globalserviceid, cluster0, 1);
-            NewCluster(globalserviceid, cluster1, 1);
+            NewGeoCluster(globalserviceid, cluster0, 1);
+            NewGeoCluster(globalserviceid, cluster1, 1);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -339,8 +339,8 @@ namespace Tests.GeoClusterTests
             // Create two clusters, each with 5 silos.
             var cluster0 = "cluster0";
             var cluster1 = "cluster1";
-            NewCluster(globalserviceid, cluster0, 5);
-            NewCluster(globalserviceid, cluster1, 5);
+            NewGeoCluster(globalserviceid, cluster0, 5);
+            NewGeoCluster(globalserviceid, cluster1, 5);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -451,8 +451,8 @@ namespace Tests.GeoClusterTests
             // create two clusters with 1 silo each
             var cluster0 = "cluster0";
             var cluster1 = "cluster1";
-            NewCluster(globalserviceid, cluster0, 1, configurationcustomizer);
-            NewCluster(globalserviceid, cluster1, 1, configurationcustomizer);
+            NewGeoCluster(globalserviceid, cluster0, 1, configurationcustomizer);
+            NewGeoCluster(globalserviceid, cluster1, 1, configurationcustomizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
@@ -540,8 +540,8 @@ namespace Tests.GeoClusterTests
             // create two clusters with 3 silos each
             var cluster0 = "cluster0";
             var cluster1 = "cluster1";
-            NewCluster(globalserviceid, cluster0, 3, configurationcustomizer);
-            NewCluster(globalserviceid, cluster1, 3, configurationcustomizer);
+            NewGeoCluster(globalserviceid, cluster0, 3, configurationcustomizer);
+            NewGeoCluster(globalserviceid, cluster1, 3, configurationcustomizer);
 
             await TestingSiloHost.WaitForLivenessToStabilizeAsync();
 
