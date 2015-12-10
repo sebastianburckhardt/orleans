@@ -161,8 +161,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public static async Task<GossipTableInstanceManager> GetManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
-            if (string.IsNullOrEmpty(globalServiceId)) throw new ArgumentException();
-            if (logger == null) throw new ArgumentException();
+            if (string.IsNullOrEmpty(globalServiceId)) throw new ArgumentException("globalServiceId");
+            if (logger == null) throw new ArgumentNullException("logger");
             
             var instance = new GossipTableInstanceManager(globalServiceId, storageConnectionString, logger);
             try
@@ -208,7 +208,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal async Task<bool> TryCreateConfigurationEntryAsync(MultiClusterConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentException();
+            if (configuration == null) throw new ArgumentNullException("configuration");
 
             var entry = new GossipTableEntry
             {
@@ -225,7 +225,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         internal async Task<bool> TryUpdateConfigurationEntryAsync(MultiClusterConfiguration configuration, GossipTableEntry entry, string eTag)
         {
-            if (configuration == null) throw new ArgumentException();
+            if (configuration == null) throw new ArgumentNullException("configuration");
 
             //Debug.Assert(entry.ETag == eTag);
             //Debug.Assert(entry.PartitionKey == GlobalServiceId);

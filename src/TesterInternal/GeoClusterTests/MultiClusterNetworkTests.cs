@@ -110,7 +110,7 @@ namespace Tests.GeoClusterTests
          
             // create cluster A and clientA
             var clusterA = "A";
-            NewCluster(globalserviceid, clusterA, 1);
+            NewGeoCluster(globalserviceid, clusterA, 1);
             var siloA = Clusters[clusterA].Silos[0].Silo.SiloAddress.Endpoint;
             var clientA = NewClient<ClientWrapper>(clusterA, 0);
 
@@ -130,7 +130,7 @@ namespace Tests.GeoClusterTests
 
             // create cluster B and clientB
             var clusterB = "B";
-            NewCluster(globalserviceid, clusterB, 1);
+            NewGeoCluster(globalserviceid, clusterB, 1);
             var siloB = Clusters[clusterB].Silos[0].Silo.SiloAddress.Endpoint;
             var clientB = NewClient<ClientWrapper>(clusterB, 0);
 
@@ -214,14 +214,14 @@ namespace Tests.GeoClusterTests
             };
       
             // create cluster A and clientA
-            NewCluster(globalserviceid, clusterA, 3, configcustomizer);
+            NewGeoCluster(globalserviceid, clusterA, 3, configcustomizer);
             var clientA = NewClient<ClientWrapper>(clusterA, 0);
             var portA0 = Clusters[clusterA].Silos[0].Endpoint.Port;
             var portA1 = Clusters[clusterA].Silos[1].Endpoint.Port;
             var portA2 = Clusters[clusterA].Silos[2].Endpoint.Port;
 
             // create cluster B and clientB
-            NewCluster(globalserviceid, clusterB, 3, configcustomizer);
+            NewGeoCluster(globalserviceid, clusterB, 3, configcustomizer);
             var clientB = NewClient<ClientWrapper>(clusterB, 0);
             var portB0 = Clusters[clusterB].Silos[0].Endpoint.Port;
             var portB1 = Clusters[clusterB].Silos[1].Endpoint.Port;
