@@ -24,6 +24,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime;
@@ -31,6 +32,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Orleans.CodeGeneration;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
@@ -48,13 +50,8 @@ using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.Timers;
 
-
 namespace Orleans.Runtime
 {
-    using System.Collections.ObjectModel;
-
-    using Orleans.CodeGeneration;
-    using Orleans.CodeGenerator;
 
     /// <summary>
     /// Orleans silo.
@@ -189,8 +186,8 @@ namespace Orleans.Runtime
             ActivationData.Init(config, nodeConfig);
             StatisticsCollector.Initialize(nodeConfig);
             
-            RoslynCodeGenerator.Instance.GenerateAndLoadForAllAssemblies();
-            SerializationManager.Initialize(globalConfig.UseStandardSerializer);
+            CodeGeneratorManager.GenerateAndCacheCodeForAllAssemblies();
+            SerializationManager.Initialize(globalConfig.UseStandardSerializer, globalConfig.SerializationProviders, globalConfig.UseJsonFallbackSerializer);
             initTimeout = globalConfig.MaxJoinAttemptTime;
             if (Debugger.IsAttached)
             {
@@ -223,7 +220,24 @@ namespace Orleans.Runtime
                 LocalDataStoreInstance.LocalDataStore = keyStore;
             }
 
-            services = ConfigureStartupBuilder.ConfigureStartup(nodeConfig.StartupTypeName);
+            services = new DefaultServiceProvider();
+            var startupBuilder = AssemblyLoader.TryLoadAndCreateInstance<IStartupBuilder>("OrleansDependencyInjection", logger);
+            if (startupBuilder != null)
+            {
+                logger.Info(ErrorCode.SiloLoadedDI, "Successfully loaded {0} from OrleansDependencyInjection.dll", startupBuilder.GetType().FullName);
+                try
+                {
+                    services = startupBuilder.ConfigureStartup(nodeConfig.StartupTypeName);
+                }
+                catch (FileNotFoundException exc)
+                {
+                    logger.Warn(ErrorCode.SiloFileNotFoundLoadingDI, "Caught a FileNotFoundException calling ConfigureStartup(). Ignoring it. {0}", exc);
+                }
+            }
+            else
+            {
+                logger.Warn(ErrorCode.SiloFailedToLoadDI, "Failed to load an implementation of IStartupBuilder from OrleansDependencyInjection.dll");
+            }
 
             healthCheckParticipants = new List<IHealthCheckParticipant>();
             allSiloProviders = new List<IProvider>();
@@ -262,7 +276,8 @@ namespace Orleans.Runtime
                 grainFactory,
                 new TimerRegistry(),
                 new ReminderRegistry(),
-                new StreamProviderManager());
+                new StreamProviderManager(),
+                Services);
 
 
             // Now the router/directory service
@@ -430,7 +445,7 @@ namespace Orleans.Runtime
             // Set up an execution context for this thread so that the target creation steps can use asynch values.
             RuntimeContext.InitializeMainThread();
 
-            SiloProviderRuntime.Initialize(GlobalConfig, SiloIdentity, grainFactory);
+            SiloProviderRuntime.Initialize(GlobalConfig, SiloIdentity, grainFactory, Services);
             InsideRuntimeClient.Current.CurrentStreamProviderRuntime = SiloProviderRuntime.Instance;
             statisticsProviderManager = new StatisticsProviderManager("Statistics", SiloProviderRuntime.Instance);
             string statsProviderName =  statisticsProviderManager.LoadProvider(GlobalConfig.ProviderConfigurations)
@@ -460,7 +475,7 @@ namespace Orleans.Runtime
             if (logger.IsVerbose) {  logger.Verbose("System grains created successfully."); }
 
             // Initialize storage providers once we have a basic silo runtime environment operating
-            storageProviderManager = new StorageProviderManager(grainFactory);
+            storageProviderManager = new StorageProviderManager(grainFactory, Services);
             scheduler.QueueTask(
                 () => storageProviderManager.LoadStorageProviders(GlobalConfig.ProviderConfigurations),
                 providerManagerSystemTarget.SchedulingContext)
@@ -523,11 +538,6 @@ namespace Orleans.Runtime
                     }
                 }
 
-                // Start stream providers after silo is active (so the pulling agents don't start sending messages before silo is active).
-                scheduler.QueueTask(siloStreamProviderManager.StartStreamProviders, providerManagerSystemTarget.SchedulingContext)
-                    .WaitWithThrow(initTimeout);
-                if (logger.IsVerbose) { logger.Verbose("Stream providers started successfully."); }
-
                 bootstrapProviderManager = new BootstrapProviderManager();
                 scheduler.QueueTask(
                     () => bootstrapProviderManager.LoadAppBootstrapProviders(GlobalConfig.ProviderConfigurations),
@@ -537,6 +547,12 @@ namespace Orleans.Runtime
                 allSiloProviders.AddRange(BootstrapProviders);
 
                 if (logger.IsVerbose) { logger.Verbose("App bootstrap calls done successfully."); }
+
+                // Start stream providers after silo is active (so the pulling agents don't start sending messages before silo is active).
+                // also after bootstrap provider started so bootstrap provider can initialize everything stream before events from this silo arrive.
+                scheduler.QueueTask(siloStreamProviderManager.StartStreamProviders, providerManagerSystemTarget.SchedulingContext)
+                    .WaitWithThrow(initTimeout);
+                if (logger.IsVerbose) { logger.Verbose("Stream providers started successfully."); }
 
                 // Now that we're active, we can start the gateway
                 var mc = messageCenter as MessageCenter;
@@ -854,7 +870,7 @@ namespace Orleans.Runtime
             /// <param name="collection">The collection to populate.</param>
             public void UpdateGeneratedAssemblies(GeneratedAssemblies collection)
             {
-                var generatedAssemblies = RoslynCodeGenerator.Instance.GetGeneratedAssemblies();
+                var generatedAssemblies = CodeGeneratorManager.GetGeneratedAssemblies();
                 foreach (var asm in generatedAssemblies)
                 {
                     collection.Add(asm.Key, asm.Value);
@@ -994,7 +1010,7 @@ namespace Orleans.Runtime
                 /// <param name="cachedAssembly">The generated assembly.</param>
                 public void AddCachedAssembly(string targetAssemblyName, byte[] cachedAssembly)
                 {
-                    RoslynCodeGenerator.AddCachedAssembly(targetAssemblyName, cachedAssembly);
+                    CodeGeneratorManager.AddGeneratedAssembly(targetAssemblyName, cachedAssembly);
                 }
             }
         }

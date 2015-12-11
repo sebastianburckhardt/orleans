@@ -401,7 +401,7 @@ namespace Orleans.Runtime
 
         internal static MethodInfo GetStaticMethodThroughReflection(string assemblyName, string className, string methodName, Type[] argumentTypes)
         {
-            var asm = Assembly.Load(assemblyName);
+            var asm = Assembly.Load(new AssemblyName(assemblyName));
             if (asm == null)
                 throw new InvalidOperationException(string.Format("Cannot find assembly {0}", assemblyName));
 
@@ -411,7 +411,7 @@ namespace Orleans.Runtime
 
             MethodInfo method;
             method = argumentTypes == null
-                ? cl.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                ? cl.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(m=>m.Name == methodName).FirstOrDefault()
                 : cl.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, argumentTypes, null);
 
             if (method == null)
@@ -428,7 +428,7 @@ namespace Orleans.Runtime
 
         internal static Type LoadTypeThroughReflection(string assemblyName, string className)
         {
-            var asm = Assembly.Load(assemblyName);
+            var asm = Assembly.Load(new AssemblyName(assemblyName));
             if (asm == null) throw new InvalidOperationException(string.Format("Cannot find assembly {0}", assemblyName));
 
             var cl = asm.GetType(className);

@@ -41,6 +41,57 @@ namespace Orleans.Runtime.Configuration
     /// </summary>
     public static class ConfigUtilities
     {
+        internal static void ParseTelemetry(XmlElement root)
+        {
+            foreach (var node in root.ChildNodes)
+            {
+                var grandchild = node as XmlElement;
+                if (grandchild == null) continue;
+
+                if (!grandchild.LocalName.Equals("TelemetryConsumer"))
+                {
+                    continue;
+                }
+                else
+                {
+                    if (!grandchild.HasAttribute("Type"))
+                        throw new FormatException("Missing 'Type' attribute on TelemetryConsumer element.");
+
+                    if (!grandchild.HasAttribute("Assembly"))
+                        throw new FormatException("Missing 'Type' attribute on TelemetryConsumer element.");
+
+                    var className = grandchild.Attributes["Type"].Value;
+                    var assemblyName = new AssemblyName(grandchild.Attributes["Assembly"].Value);
+
+                    Assembly assembly = null;
+                    try
+                    {
+                        assembly = Assembly.Load(assemblyName);
+                        
+                        var pluginType = assembly.GetType(className);
+                        if (pluginType == null) throw new TypeLoadException("Cannot locate plugin class " + className + " in assembly " + assembly.FullName);
+
+                        var args = grandchild.Attributes.Cast<XmlAttribute>().Where(a => a.LocalName != "Type" && a.LocalName != "Assembly").ToArray();
+
+                        var plugin = Activator.CreateInstance(pluginType, args);
+                        
+                        if (plugin is ITelemetryConsumer)
+                        {
+                            Logger.TelemetryConsumers.Add(plugin as ITelemetryConsumer);
+                        }
+                        else
+                        {
+                            throw new InvalidCastException("TelemetryConsumer class " + className + " must implement one of Orleans.Runtime.ITelemetryConsumer based interfaces");
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        throw new TypeLoadException("Cannot load TelemetryConsumer class " + className + " from assembly " + assembly + " - Error=" + exc);
+                    }
+                }
+            }
+        }
+
         internal static void ParseTracing(ITraceConfiguration config, XmlElement root, string nodeName)
         {
             if (root.HasAttribute("DefaultTraceLevel"))
@@ -85,7 +136,7 @@ namespace Orleans.Runtime.Configuration
 
                 if (grandchild.LocalName.Equals("TraceLevelOverride") && grandchild.HasAttribute("TraceLevel") && grandchild.HasAttribute("LogPrefix"))
                 {
-                    config.TraceLevelOverrides.Add(new Tuple<string, Logger.Severity>(grandchild.GetAttribute("LogPrefix"),
+                    config.TraceLevelOverrides.Add(new Tuple<string, Severity>(grandchild.GetAttribute("LogPrefix"),
                         ParseSeverity(grandchild.GetAttribute("TraceLevel"),
                             "Invalid trace level TraceLevel attribute value on TraceLevelOverride element for " + nodeName + " prefix " +
                             grandchild.GetAttribute("LogPrefix"))));
@@ -101,14 +152,15 @@ namespace Orleans.Runtime.Configuration
                         {
                             var assemblyName = className.Substring(pos + 1).Trim();
                             className = className.Substring(0, pos).Trim();
-                            assembly = Assembly.Load(assemblyName);
+                            assembly = Assembly.Load(new AssemblyName(assemblyName));
                         }
                         else
                         {
-                            assembly = Assembly.GetExecutingAssembly();
+                            assembly = typeof(ConfigUtilities).GetTypeInfo().Assembly;
                         }
-                        var plugin = assembly.CreateInstance(className);
-                        if (plugin == null) throw new TypeLoadException("Cannot locate plugin class " + className + " in assembly " + assembly.FullName);
+                        var pluginType = assembly.GetType(className);
+                        if (pluginType == null) throw new TypeLoadException("Cannot locate plugin class " + className + " in assembly " + assembly.FullName);
+                        var plugin = Activator.CreateInstance(pluginType);
 
                         if (plugin is ILogConsumer)
                         {
@@ -281,6 +333,60 @@ namespace Orleans.Runtime.Configuration
             return p;
         }
 
+        internal static Type ParseFullyQualifiedType(string input, string errorMessage)
+        {
+            Type returnValue;
+            try
+            {
+                returnValue = Type.GetType(input);
+            }
+            catch(Exception e)
+            {
+                throw new FormatException(errorMessage, e);
+            }
+
+            if (returnValue == null)
+            {
+                throw new FormatException(errorMessage);
+            }
+
+            return returnValue;
+        }
+
+        internal static void ValidateSerializationProvider(Type type)
+        {
+            if (type.IsClass == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} was not a class", type.FullName));
+            }
+
+            if (type.IsAbstract)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} was an abstract class", type.FullName));
+            }
+
+            if (type.IsPublic == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} is not public", type.FullName));
+            }
+
+            if (type.IsGenericType && type.IsConstructedGenericType == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} is generic and has a missing type parameter specification", type.FullName));
+            }
+
+            var constructor = type.GetConstructor(Type.EmptyTypes);
+            if (constructor == null)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} does not have a parameterless constructor", type.FullName));
+            }
+
+            if (constructor.IsPublic == false)
+            {
+                throw new FormatException(string.Format("The serialization provider type {0} has a non-public parameterless constructor", type.FullName));
+            }
+        }
+
         // Time spans are entered as a string of decimal digits, optionally followed by a unit string: "ms", "s", "m", "hr"
         internal static TimeSpan ParseTimeSpan(string input, string errorMessage)
         {
@@ -336,10 +442,10 @@ namespace Orleans.Runtime.Configuration
             return s;
         }
 
-        internal static Logger.Severity ParseSeverity(string input, string errorMessage)
+        internal static Severity ParseSeverity(string input, string errorMessage)
         {
-            Logger.Severity s;
-            if (!Enum.TryParse<Logger.Severity>(input, out s))
+            Severity s;
+            if (!Enum.TryParse<Severity>(input, out s))
             {
                 throw new FormatException(errorMessage + ". Tried to parse " + input);
             }
@@ -476,7 +582,7 @@ namespace Orleans.Runtime.Configuration
         public static string FindConfigFile(bool isSilo)
         {
             // Add directory containing Orleans binaries to the search locations for config files
-            defaultConfigDirs[0] = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            defaultConfigDirs[0] = Path.GetDirectoryName(typeof(ConfigUtilities).GetTypeInfo().Assembly.Location);
 
             var notFound = new List<string>();
             foreach (string dir in defaultConfigDirs)

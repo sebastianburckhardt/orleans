@@ -72,6 +72,38 @@ namespace UnitTests.Grains
         }
     }
 
+    [StorageProvider(ProviderName = "AzureStore")]
+    public class SimpleGenericGrainUsingAzureTableStorage<T> : Grain<SimpleGenericGrainState<T>>, ISimpleGenericGrainUsingAzureTableStorage<T>
+    {
+        public async Task<T> EchoAsync(T entity)
+        {
+            State.A = entity;
+            await WriteStateAsync();
+            return entity;
+        }
+
+        public async Task ClearState()
+        {
+            await ClearStateAsync();
+        }
+    }
+
+    [StorageProvider(ProviderName = "AzureStore")]
+    public class TinyNameGrain<T> : Grain<SimpleGenericGrainState<T>>, ITinyNameGrain<T>
+    {
+        public async Task<T> EchoAsync(T entity)
+        {
+            State.A = entity;
+            await WriteStateAsync();
+            return entity;
+        }
+
+        public async Task ClearState()
+        {
+            await ClearStateAsync();
+        }
+    }
+
     public class SimpleGenericGrainUState<U> : GrainState
     {
         public U A { get; set; }
@@ -321,7 +353,7 @@ namespace UnitTests.Grains
         }
     }
 
-    public class GenericSelfManagedGrain<T, U> : Grain, IGenericSelfManagedGrain<T, U>
+    public class BasicGenericGrain<T, U> : Grain, IBasicGenericGrain<T, U>
     {
         private T _a;
         private U _b;
@@ -556,6 +588,25 @@ namespace UnitTests.Grains
         {
             Console.WriteLine("***Deactivating*** {0}", this.GetPrimaryKey());
             return TaskDone.Done;
+        }
+    }
+
+    public class LongRunningTaskGrain<T> : Grain, ILongRunningTaskGrain<T>
+    {
+        public async Task<T> CallOtherLongRunningTask(ILongRunningTaskGrain<T> target, T t, TimeSpan delay)
+        {
+            return await target.LongRunningTask(t, delay);
+        }
+
+        public async Task<T> LongRunningTask(T t, TimeSpan delay)
+        {
+            await Task.Delay(delay);
+            return await Task.FromResult(t);
+        }
+
+        public Task<string> GetRuntimeInstanceId()
+        {
+            return Task.FromResult(RuntimeIdentity);
         }
     }
 }

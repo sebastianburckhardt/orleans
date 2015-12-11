@@ -57,7 +57,7 @@ namespace Orleans.Counter.Control
         {
             using (var usageStr = new StringWriter())
             {
-                usageStr.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + ".exe {command}");
+                usageStr.WriteLine(typeof(CounterControl).GetTypeInfo().Assembly.GetName().Name + ".exe {command}");
                 usageStr.WriteLine("Where commands are:");
                 usageStr.WriteLine(" /? or /help       = Display usage info");
                 usageStr.WriteLine(" /r or /register   = Register Windows performance counters for Orleans [default]");
@@ -146,7 +146,7 @@ namespace Orleans.Counter.Control
             }
             catch (Exception exc) 
             {
-                ConsoleText.WriteError("Error running " + Assembly.GetExecutingAssembly().GetName().Name + ".exe", exc);
+                ConsoleText.WriteError("Error running " + typeof(CounterControl).GetTypeInfo().Assembly.GetName().Name + ".exe", exc);
 
                 if (!BruteForce) return 2;
 
@@ -163,8 +163,10 @@ namespace Orleans.Counter.Control
             Trace.Listeners.Clear();
             var cfg = new NodeConfiguration {TraceFilePattern = null, TraceToConsole = false};
             TraceLogger.Initialize(cfg);
-            var logWriter = new LogWriterToConsole(true, true); // Use compact console output & no timestamps / log message metadata
-            TraceLogger.LogConsumers.Add(logWriter);
+
+            //TODO: Move it to use the APM APIs
+            //var logWriter = new LogWriterToConsole(true, true); // Use compact console output & no timestamps / log message metadata
+            //TraceLogger.LogConsumers.Add(logWriter);
         }
 
         /// <summary>

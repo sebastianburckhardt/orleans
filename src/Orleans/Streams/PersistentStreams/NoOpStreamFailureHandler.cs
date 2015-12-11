@@ -28,6 +28,11 @@ namespace Orleans.Streams
 {
     public class NoOpStreamDeliveryFailureHandler : IStreamFailureHandler
     {
+        public NoOpStreamDeliveryFailureHandler()
+            : this(true)
+        {
+        }
+
         public NoOpStreamDeliveryFailureHandler(bool faultOnError)
         {
             ShouldFaultSubsriptionOnError = faultOnError;

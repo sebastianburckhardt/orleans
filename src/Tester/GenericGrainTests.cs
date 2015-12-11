@@ -31,6 +31,7 @@ using Orleans.TestingHost;
 using UnitTests.GrainInterfaces;
 using UnitTests.Tester;
 using System.Collections.Generic;
+using TestGrainInterfaces;
 
 namespace UnitTests.General
 {
@@ -284,7 +285,7 @@ namespace UnitTests.General
             var grain = GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
             await grain.GetA();
         }
-
+        
         [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Generics")]
         public async Task Generic_SimpleGrainControlFlow()
         {
@@ -359,9 +360,9 @@ namespace UnitTests.General
         }
 
         [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Generics")]
-        public async Task Generic_SelfManagedGrainControlFlow()
+        public async Task Generic_BasicGrainControlFlow()
         {
-            IGenericSelfManagedGrain<int, float> g = GrainFactory.GetGrain<IGenericSelfManagedGrain<int, float>>(0);
+            IBasicGenericGrain<int, float> g = GrainFactory.GetGrain<IBasicGenericGrain<int, float>>(0);
             await g.SetA(3);
             await g.SetB(1.25f);
             Assert.AreEqual("3x1.25", await g.GetAxB());
@@ -666,6 +667,14 @@ namespace UnitTests.General
             await Task.Delay(TimeSpan.FromSeconds(6));
             var s2 = await grain.GetLastValue();
             Assert.AreEqual(s1, s2);
+        }
+
+        [TestMethod, TestCategory("Functional"), TestCategory("Generics"), TestCategory("Serialization")]
+        public async Task SerializationTests_Generic_CircularReferenceTest()
+        {
+            var grainId = Guid.NewGuid();
+            var grain = GrainFactory.GetGrain<ICircularStateTestGrain>(primaryKey: grainId, keyExtension: grainId.ToString("N"));
+            var c1 = await grain.GetState();
         }
     }
 }

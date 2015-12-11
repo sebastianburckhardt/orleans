@@ -154,7 +154,7 @@ namespace Orleans
 
             if (!TraceLogger.IsInitialized) TraceLogger.Initialize(config);
             StatisticsCollector.Initialize(config);
-            SerializationManager.Initialize(config.UseStandardSerializer);
+            SerializationManager.Initialize(config.UseStandardSerializer, cfg.SerializationProviders, config.UseJsonFallbackSerializer);
             logger = TraceLogger.GetLogger("OutsideRuntimeClient", TraceLogger.LoggerType.Runtime);
             appLogger = TraceLogger.GetLogger("Application", TraceLogger.LoggerType.Application);
 
@@ -174,7 +174,7 @@ namespace Orleans
                 // Ensure SerializationManager static constructor is called before AssemblyLoad event is invoked
                 SerializationManager.GetDeserializer(typeof(String));
 
-                clientProviderRuntime = new ClientProviderRuntime(grainFactory);
+                clientProviderRuntime = new ClientProviderRuntime(grainFactory, new DefaultServiceProvider());
                 statisticsProviderManager = new StatisticsProviderManager("Statistics", clientProviderRuntime);
                 var statsProviderName = statisticsProviderManager.LoadProvider(config.ProviderConfigurations)
                     .WaitForResultWithThrow(initTimeout);
@@ -241,7 +241,7 @@ namespace Orleans
                 new Dictionary<string, SearchOption>
                     {
                         {
-                            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), 
+                            Path.GetDirectoryName(typeof(OutsideRuntimeClient).GetTypeInfo().Assembly.Location), 
                             SearchOption.AllDirectories
                         }
                     };
@@ -903,6 +903,17 @@ namespace Orleans
         public IGrainMethodInvoker GetInvoker(int interfaceId, string genericGrainType = null)
         {
             throw new NotImplementedException();
+        }
+
+        public void BreakOutstandingMessagesToDeadSilo(SiloAddress deadSilo)
+        {
+            foreach (var callback in callbacks)
+            {
+                if (deadSilo.Equals(callback.Value.Message.TargetSilo))
+                {
+                    callback.Value.OnTargetSiloFail();
+                }
+            }
         }
     }
 }

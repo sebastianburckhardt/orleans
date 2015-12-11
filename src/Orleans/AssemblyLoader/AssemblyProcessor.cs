@@ -26,6 +26,7 @@ namespace Orleans.Runtime
     using System;
     using System.Collections.Generic;
     using System.Reflection;
+    using System.Linq;
 
     using Orleans.CodeGeneration;
     using Orleans.Serialization;
@@ -112,8 +113,8 @@ namespace Orleans.Runtime
         /// <param name="assembly">The assembly to process.</param>
         private static void ProcessAssembly(Assembly assembly)
         {
-            // If the assembly is loaded for reflection only or it does not reference Orleans, avoid processing it.
-            if (assembly.ReflectionOnly || !TypeUtils.IsOrleansOrReferencesOrleans(assembly))
+            // If the assembly is loaded for reflection only avoid processing it.
+            if (assembly.ReflectionOnly)
             {
                 return;
             }
@@ -127,15 +128,19 @@ namespace Orleans.Runtime
                 }
             }
 
-            // Code generation occurs in a self-contained assembly, so invoke it separately.
-            CodeGeneratorManager.GenerateAndCacheCodeForAssembly(assembly);
+            // If the assembly does not reference Orleans, avoid generating code for it.
+            if (TypeUtils.IsOrleansOrReferencesOrleans(assembly))
+            {
+                // Code generation occurs in a self-contained assembly, so invoke it separately.
+                CodeGeneratorManager.GenerateAndCacheCodeForAssembly(assembly);
+            }
 
             // Process each type in the assembly.
             var shouldProcessSerialization = SerializationManager.ShouldFindSerializationInfo(assembly);
-            Type[] assemblyTypes;
+            TypeInfo[] assemblyTypes;
             try
             {
-                assemblyTypes = assembly.GetTypes();
+                assemblyTypes = assembly.DefinedTypes.ToArray();
             }
             catch (Exception exception)
             {
@@ -146,10 +151,7 @@ namespace Orleans.Runtime
                             "AssemblyLoader encountered an exception loading types from assembly '{0}': {1}",
                             assembly.FullName,
                             exception);
-                    Logger.Warn(
-                        ErrorCode.Loader_TypeLoadError_5,
-                        message,
-                        exception);
+                    Logger.Warn(ErrorCode.Loader_TypeLoadError_5, message, exception);
                 }
 
                 return;

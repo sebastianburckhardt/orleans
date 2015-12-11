@@ -22,6 +22,9 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Xml;
 
@@ -106,6 +109,11 @@ namespace Orleans.Runtime.Configuration
         /// The maximum batch size for automatic batching of messages, when message batching is used.
         /// </summary>
         int MaxMessageBatchingSize { get; set; }
+
+        /// <summary>
+        /// The list of serialization providers
+        /// </summary>
+        List<TypeInfo> SerializationProviders { get; }
     }
 
     /// <summary>
@@ -124,6 +132,7 @@ namespace Orleans.Runtime.Configuration
         public int GatewaySenderQueues { get; set; }
         public int ClientSenderBuckets { get; set; }
         public bool UseStandardSerializer { get; set; }
+        public bool UseJsonFallbackSerializer { get; set; }
 
         public int BufferPoolBufferSize { get; set; }
         public int BufferPoolMaxSize { get; set; }
@@ -138,6 +147,8 @@ namespace Orleans.Runtime.Configuration
         /// In such times the messages might not be routed correctly to destination, and runtime attempts to forward such messages a number of times before rejecting them.
         /// </summary>
         public int MaxForwardCount { get; set; }
+
+        public List<TypeInfo> SerializationProviders { get; private set; }
         internal double RejectionInjectionRate { get; set; }
         internal double MessageLossInjectionRate { get; set; }
 
@@ -192,6 +203,7 @@ namespace Orleans.Runtime.Configuration
             }
             UseMessageBatching = DEFAULT_USE_MESSAGE_BATCHING;
             MaxMessageBatchingSize = DEFAULT_MAX_MESSAGE_BATCH_SIZE;
+            SerializationProviders = new List<TypeInfo>();
         }
 
         public override string ToString()
@@ -215,6 +227,8 @@ namespace Orleans.Runtime.Configuration
             }
             sb.AppendFormat("       Use standard (.NET) serializer: {0}", UseStandardSerializer)
                 .AppendLine(isSiloConfig ? "" : "   [NOTE: This *MUST* match the setting on the server or nothing will work!]");
+            sb.AppendFormat("       Use fallback json serializer: {0}", UseJsonFallbackSerializer)
+                .AppendLine(isSiloConfig ? "" : "   [NOTE: This *MUST* match the setting on the server or nothing will work!]");
             sb.AppendFormat("       Buffer Pool Buffer Size: {0}", BufferPoolBufferSize).AppendLine();
             sb.AppendFormat("       Buffer Pool Max Size: {0}", BufferPoolMaxSize).AppendLine();
             sb.AppendFormat("       Buffer Pool Preallocation Size: {0}", BufferPoolPreallocationSize).AppendLine();
@@ -225,6 +239,9 @@ namespace Orleans.Runtime.Configuration
             {
                 sb.AppendFormat("       Maximum forward count: {0}", MaxForwardCount).AppendLine();
             }
+
+            SerializationProviders.ForEach(sp =>
+                sb.AppendFormat("       Serialization provider: {0}", sp.FullName).AppendLine());
             return sb.ToString();
         }
 
@@ -283,6 +300,14 @@ namespace Orleans.Runtime.Configuration
                     ConfigUtilities.ParseBool(child.GetAttribute("UseStandardSerializer"),
                                               "invalid boolean value for the UseStandardSerializer attribute on the Messaging element");
             }
+
+            if (child.HasAttribute("UseJsonFallbackSerializer"))
+            {
+                UseJsonFallbackSerializer =
+                    ConfigUtilities.ParseBool(child.GetAttribute("UseJsonFallbackSerializer"),
+                                              "invalid boolean value for the UseJsonFallbackSerializer attribute on the Messaging element");
+            }
+            
             //--
             if (child.HasAttribute("BufferPoolBufferSize"))
             {
@@ -316,6 +341,29 @@ namespace Orleans.Runtime.Configuration
                 {
                     MaxForwardCount = ConfigUtilities.ParseInt(child.GetAttribute("MaxForwardCount"),
                                                               "Invalid integer value for the MaxForwardCount attribute on the Messaging element");
+                }
+            }
+
+            if (child.HasChildNodes)
+            {
+                var serializerNode = child.ChildNodes.Cast<XmlElement>().FirstOrDefault(n => n.Name == "SerializationProviders");
+                if (serializerNode != null && serializerNode.HasChildNodes)
+                {
+                    var typeNames = serializerNode.ChildNodes.Cast<XmlElement>()
+                        .Where(n => n.Name == "Provider")
+                        .Select(e => e.Attributes["type"])
+                        .Where(a => a != null)
+                        .Select(a => a.Value);
+                    var types = typeNames.Select(t => ConfigUtilities.ParseFullyQualifiedType(t, "The type specification for the 'type' attribute of the Provider element could not be loaded"));
+                    foreach (var type in types)
+                    {
+                        ConfigUtilities.ValidateSerializationProvider(type);
+                        var typeinfo = type.GetTypeInfo();
+                        if (SerializationProviders.Contains(typeinfo) == false)
+                        {
+                            SerializationProviders.Add(typeinfo);
+                        }
+                    }
                 }
             }
         }

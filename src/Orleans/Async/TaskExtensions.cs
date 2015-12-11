@@ -22,14 +22,13 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Runtime;
 
 namespace Orleans
 {
-    using System.Diagnostics.CodeAnalysis;
-
     /// <summary>
     /// Utility functions for dealing with Task's.
     /// </summary>
@@ -43,15 +42,19 @@ namespace Orleans
         /// </summary>
         /// <param name="task">The task to be ignored.</param>
         [SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "ignored")]
-        public static async void Ignore(this Task task)
+        public static void Ignore(this Task task)
         {
-            try
+            if (task.IsCompleted)
             {
-                await task;
+                var ignored = task.Exception;
             }
-            catch (Exception)
+            else
             {
-                var ignored = task.Exception; // Observe exception
+                task.ContinueWith(
+                    t => { var ignored = t.Exception; },
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
             }
         }
 
@@ -66,12 +69,24 @@ namespace Orleans
         /// </returns>
         public static Task<object> Box(this Task task)
         {
-            return task.ContinueWith(
-                antecedent =>
-                {
-                    antecedent.GetAwaiter().GetResult();
-                    return default(object);
-                });
+            switch (task.Status)
+            {
+                case TaskStatus.RanToCompletion:
+                    return Task.FromResult(default(object));
+
+                case TaskStatus.Faulted:
+                    {
+                        return TaskFromFaulted(task);
+                    }
+
+                case TaskStatus.Canceled:
+                    {
+                        return CancelledTask;
+                    }
+
+                default:
+                    return BoxAwait(task);
+            }
         }
 
         /// <summary>
@@ -88,7 +103,69 @@ namespace Orleans
         /// </returns>
         public static Task<object> Box<T>(this Task<T> task)
         {
-            return task.ContinueWith(antecedent => (object)antecedent.GetAwaiter().GetResult());
+            switch (task.Status)
+            {
+                case TaskStatus.RanToCompletion:
+                    return Task.FromResult((object)task.GetResult());
+
+                case TaskStatus.Faulted:
+                    {
+                        return TaskFromFaulted(task);
+                    }
+
+                case TaskStatus.Canceled:
+                    {
+                        return CancelledTask;
+                    }
+
+                default:
+                    return BoxAwait(task);
+            }
+        }
+
+        /// <summary>
+        /// Returns a <see cref="Task{Object}"/> for the provided <see cref="Task{Object}"/>.
+        /// </summary>
+        /// <typeparam name="object">
+        /// The underlying type of <paramref name="task"/>.
+        /// </typeparam>
+        /// <param name="task">
+        /// The task.
+        /// </param>
+        /// <returns>
+        /// The response.
+        /// </returns>
+        public static Task<object> Box(this Task<object> task)
+        {
+            return task;
+        }
+
+        private static async Task<object> BoxAwait(Task task)
+        {
+            await task;
+            return default(object);
+        }
+
+        private static async Task<object> BoxAwait<T>(Task<T> task)
+        {
+            return await task;
+        }
+
+        private static Task<object> CancelledTask
+        {
+            get
+            {
+                var completion = new TaskCompletionSource<object>();
+                completion.SetCanceled();
+                return completion.Task;
+            }
+        }
+
+        private static Task<object> TaskFromFaulted(Task task)
+        {
+            var completion = new TaskCompletionSource<object>();
+            completion.SetException(task.Exception);
+            return completion.Task;
         }
     }
 

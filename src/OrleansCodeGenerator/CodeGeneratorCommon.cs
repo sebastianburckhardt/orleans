@@ -103,7 +103,7 @@ namespace Orleans.CodeGenerator
                 if (logger.IsVerbose3)
                 {
                     logger.LogWithoutBulkingAndTruncating(
-                        Logger.Severity.Verbose3,
+                        Severity.Verbose3,
                         ErrorCode.CodeGenSourceGenerated,
                         "Generating assembly {0} with source:\n{1}",
                         assemblyName,
@@ -123,7 +123,12 @@ namespace Orleans.CodeGenerator
                 {
                     source = source ?? GenerateSourceCode(code);
                     var errors = string.Join("\n", compilationResult.Diagnostics.Select(_ => _.ToString()));
-                    logger.Warn(ErrorCode.CodeGenCompilationFailed, "Compilation of assembly {0} failed with errors:\n{1}", assemblyName, errors, source);
+                    logger.Warn(
+                        ErrorCode.CodeGenCompilationFailed,
+                        "Compilation of assembly {0} failed with errors:\n{1}\nGenerated Source Code:\n{2}",
+                        assemblyName,
+                        errors,
+                        source);
                     throw new CodeGenerationException(errors);
                 }
                 
@@ -180,7 +185,7 @@ namespace Orleans.CodeGenerator
             var all =
                 AppDomain.CurrentDomain.GetAssemblies()
                     .Where(_ => _.GetCustomAttribute<GeneratedCodeAttribute>() != null)
-                    .SelectMany(_ => _.GetTypes());
+                    .SelectMany(_ => _.DefinedTypes);
 
             // Get all generated types in each assembly.
             var attributes = all.SelectMany(_ => _.GetCustomAttributes()).OfType<GeneratedAttribute>();

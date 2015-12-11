@@ -15,7 +15,7 @@ Orleans - Distributed Actor Model
 
 Orleans is a framework that provides a straight-forward approach to building distributed high-scale computing applications, without the need to learn and apply complex concurrency or other scaling patterns. 
 It was created by [Microsoft Research][MSR-ProjectOrleans] and designed for use in the cloud. 
-Orleans has been used extensively running in Microsoft Azure by several Microsoft product groups, most notably by 343 Industries as a platform for all of Halo 4 cloud services, as well as by [a number of other projects and companies](http://dotnet.github.io/orleans/Who-Is-Using-Orleans).
+Orleans has been used extensively running in Microsoft Azure by several Microsoft product groups, most notably by 343 Industries as a platform for all of Halo 4 and Halo 5 cloud services, as well as by [a number of other projects and companies](http://dotnet.github.io/orleans/Who-Is-Using-Orleans).
 
 Installation
 =======
@@ -80,7 +80,7 @@ Call the grain from your Web service (or anywhere else):
 // Get a reference to the IHello grain with id '0'.
 var friend = GrainClient.GrainFactory.GetGrain<IHello>(0);
 
-// Send a greeting to the grain an await the response.
+// Send a greeting to the grain and await the response.
 Console.WriteLine(await friend.SayHello("Good morning, my friend!"));
 ```
 

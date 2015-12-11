@@ -43,6 +43,28 @@ namespace UnitTests.GrainInterfaces
         Task SetB(T b);
     }
 
+    /// <summary>
+    /// Long named grain type, which can cause issues in AzureTableStorage
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface ISimpleGenericGrainUsingAzureTableStorage<T> : IGrainWithGuidKey
+    {
+        Task<T> EchoAsync(T entity);
+
+        Task ClearState();
+    }
+
+    /// <summary>
+    /// Short named grain type, which shouldn't cause issues in AzureTableStorage
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface ITinyNameGrain<T> : IGrainWithGuidKey
+    {
+        Task<T> EchoAsync(T entity);
+
+        Task ClearState();
+    }
+
     public interface ISimpleGenericGrainU<U> : IGrainWithIntegerKey
     {
         Task<U> GetA();
@@ -119,7 +141,7 @@ namespace UnitTests.GrainInterfaces
     {
     }
 
-    public interface IGenericSelfManagedGrain<T, U> : IGrainWithIntegerKey
+    public interface IBasicGenericGrain<T, U> : IGrainWithIntegerKey
     {
         Task<T> GetA();
         Task<string> GetAxB();
@@ -180,5 +202,12 @@ namespace UnitTests.GrainInterfaces
         Task<T> GetLastValue();
         Task ScheduleDelayedPing(IGenericPingSelf<T> target, T t, TimeSpan delay);
         Task ScheduleDelayedPingToSelfAndDeactivate(IGenericPingSelf<T> target, T t, TimeSpan delay);
+    }
+
+    public interface ILongRunningTaskGrain<T> : IGrainWithGuidKey
+    {
+        Task<string> GetRuntimeInstanceId();
+        Task<T> LongRunningTask(T t, TimeSpan delay);
+        Task<T> CallOtherLongRunningTask(ILongRunningTaskGrain<T> target, T t, TimeSpan delay);
     }
 }

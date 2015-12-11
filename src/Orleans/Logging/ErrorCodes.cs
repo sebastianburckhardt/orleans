@@ -406,6 +406,9 @@ namespace Orleans
         SiloShutdownEventCreated        = SiloBase + 42,
         SiloShutdownEventOpened         = SiloBase + 43,
         SiloShutdownEventReceived       = SiloBase + 44,
+        SiloLoadedDI                    = SiloBase + 45,
+        SiloFailedToLoadDI              = SiloBase + 46,
+        SiloFileNotFoundLoadingDI       = SiloBase + 47,
 
         CatalogBase                     = Runtime + 500,
         CatalogNonExistingActivation1   = CatalogBase + 1,
@@ -730,7 +733,7 @@ namespace Orleans
         SchedulerWorkGroupShuttingDown          = SchedulerBase + 16,
         SchedulerNotEnqueuWorkWhenShutdown      = SchedulerBase + 17,
         SchedulerNotExecuteWhenShutdown         = SchedulerBase + 18,
-        SchedulerAppTurnsStopped                = SchedulerBase + 19,
+        SchedulerAppTurnsStopped_1              = SchedulerBase + 19,
         SchedulerWorkGroupStopping              = SchedulerBase + 20,
         SchedulerSkipWorkStopping               = SchedulerBase + 21,
         SchedulerSkipWorkCancelled              = SchedulerBase + 22,
@@ -743,6 +746,7 @@ namespace Orleans
         SchedulerTaskWaitIncomplete             = SchedulerBase + 29,
         SchedulerWorkerThreadExc                = SchedulerBase + 30,
         SchedulerQueueWorkItemWrongContext      = SchedulerBase + 31,
+        SchedulerAppTurnsStopped_2              = SchedulerBase + 32,
 
         GatewayBase                             = Runtime + 1300,
         GatewayClientOpenedSocket               = GatewayBase + 1,
@@ -899,6 +903,7 @@ namespace Orleans
         SerMgr_IgnoreAssembly                   = SerializationManagerBase + 8,
         SerMgr_TypeRegistrationFailureIgnore    = SerializationManagerBase + 9,
         SerMgr_ArtifactReport                   = SerializationManagerBase + 10,
+        SerMgr_UnavailableSerializer            = SerializationManagerBase + 11,
 
         WatchdogBase                            = Runtime + 2600,
         Watchdog_ParticipantThrownException     = WatchdogBase + 1,

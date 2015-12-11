@@ -34,6 +34,7 @@ namespace Orleans.Streams
     internal class PersistentStreamPullingAgent : SystemTarget, IPersistentStreamPullingAgent
     {
         private static readonly IBackoffProvider DefaultBackoffProvider = new ExponentialBackoff(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
+        private static readonly IStreamFilterPredicateWrapper DefaultStreamFilter =new DefaultStreamFilterPredicateWrapper();
         private const int StreamInactivityCheckFrequency = 10;
 
         private readonly string streamProviderName;
@@ -88,7 +89,8 @@ namespace Orleans.Streams
             numReadMessagesCounter = CounterStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_NUM_READ_MESSAGES, statUniquePostfix));
             numSentMessagesCounter = CounterStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_NUM_SENT_MESSAGES, statUniquePostfix));
             IntValueStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_PUBSUB_CACHE_SIZE, statUniquePostfix), () => pubSubCache.Count);
-            IntValueStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_QUEUE_CACHE_SIZE, statUniquePostfix), () => queueCache !=null ? queueCache.Size : 0);
+            // TODO: move queue cache size statistics tracking into queue cache implementation once Telemetry APIs and LogStatistics have been reconciled.
+            //IntValueStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_QUEUE_CACHE_SIZE, statUniquePostfix), () => queueCache != null ? queueCache.Size : 0);
         }
 
         /// <summary>
@@ -240,12 +242,12 @@ namespace Orleans.Streams
 
             StreamConsumerData data;
             if (!streamDataCollection.TryGetConsumer(subscriptionId, out data))
-                data = streamDataCollection.AddConsumer(subscriptionId, streamId, streamConsumer, filter);
+                data = streamDataCollection.AddConsumer(subscriptionId, streamId, streamConsumer, filter ?? DefaultStreamFilter);
 
             if (await DoHandshakeWithConsumer(data, cacheToken))
             {
                 if (data.State == StreamConsumerDataState.Inactive)
-                    RunConsumerCursor(data, filter).Ignore(); // Start delivering events if not actively doing so
+                    RunConsumerCursor(data, data.Filter).Ignore(); // Start delivering events if not actively doing so
             }
         }
 

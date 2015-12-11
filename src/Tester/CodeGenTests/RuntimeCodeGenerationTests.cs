@@ -36,6 +36,7 @@ namespace Tester.CodeGenTests
     /// <summary>
     /// Tests runtime code generation.
     /// </summary>
+    [DeploymentItem("OrleansCodeGenerator.dll")]
     [TestClass]
     public class RuntimeCodeGenerationTests : UnitTestSiloHost
     {
@@ -54,13 +55,14 @@ namespace Tester.CodeGenTests
         [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("CodeGen")]
         public async Task RuntimeCodeGenTest()
         {
-            var grain = this.GrainFactory.GetGrain<IRuntimeCodeGenGrain<@event>>(Guid.NewGuid());
+            var grain = GrainFactory.GetGrain<IRuntimeCodeGenGrain<@event>>(Guid.NewGuid());
             var expected = new @event
             {
                 Id = Guid.NewGuid(),
                 @if = new List<@event> { new @event { Id = Guid.NewGuid() } },
                 PrivateId = Guid.NewGuid(),
-                @public = new @event { Id = Guid.NewGuid() }
+                @public = new @event { Id = Guid.NewGuid() },
+                Enum = @event.@enum.@int
             };
 
             var actual = await grain.SetState(expected);
@@ -75,7 +77,7 @@ namespace Tester.CodeGenTests
         public async Task RuntimeCodeGenNestedGenericTest()
         {
             const int Expected = 123985;
-            var grain = this.GrainFactory.GetGrain<INestedGenericGrain>(Guid.NewGuid());
+            var grain = GrainFactory.GetGrain<INestedGenericGrain>(Guid.NewGuid());
             
             var nestedGeneric = new NestedGeneric<int> { Payload = new NestedGeneric<int>.Nested { Value = Expected } };
             var actual = await grain.Do(nestedGeneric);

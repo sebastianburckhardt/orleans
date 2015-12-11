@@ -106,13 +106,13 @@ namespace Orleans.Runtime
         {
             try
             {
-                var assembly = Assembly.Load(assemblyName);
+                var assembly = Assembly.Load(new AssemblyName(assemblyName));
                 var foundType =
                     TypeUtils.GetTypes(
                         assembly,
                         type =>
-                        typeof(T).IsAssignableFrom(type) && !type.IsInterface
-                        && type.GetConstructor(Type.EmptyTypes) != null).FirstOrDefault();
+                        typeof(T).GetTypeInfo().IsAssignableFrom(type) && !type.GetTypeInfo().IsInterface
+                        && type.GetTypeInfo().GetConstructor(Type.EmptyTypes) != null).FirstOrDefault();
                 if (foundType == null)
                 {
                     return null;
@@ -136,7 +136,7 @@ namespace Orleans.Runtime
         {
             try
             {
-                var assembly = Assembly.Load(assemblyName);
+                var assembly = Assembly.Load(new AssemblyName(assemblyName));
                 var foundType = TypeUtils.GetTypes(assembly, type => typeof(T).IsAssignableFrom(type)).First();
 
                 return (T)Activator.CreateInstance(foundType, true);
@@ -228,7 +228,7 @@ namespace Orleans.Runtime
                 // that appear not to automatically resolve dependencies.
                 // We are trying to pre-load all dlls we find in the folder, so that if one of these
                 // assemblies happens to be a dependency of an assembly we later on call 
-                // Assembly.GetTypes() on, the dependency will be already loaded and will get
+                // Assembly.DefinedTypes on, the dependency will be already loaded and will get
                 // automatically resolved. Ugly, but seems to solve the problem.
 
                 foreach (var j in candidates)
