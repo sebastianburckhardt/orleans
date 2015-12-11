@@ -319,35 +319,38 @@ namespace Orleans.Runtime.MembershipService
             if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)
                 return localTableCopyOnlyActive.Keys.ToList();
 
-            var candidates = new SortedList<string, SiloAddress>();
+            var candidates = new List<SiloAddress>();
 
             foreach(var x in localTableCopyOnlyActive)
-                candidates.Add(x.Key.Endpoint.ToString(), x.Key);
+                candidates.Add(x.Key);
+            candidates.Sort();
 
             // group by fault/update zones
             var groups = new Dictionary<UpdateFaultCombo, List<SiloAddress>>();
+            var keys = new List<UpdateFaultCombo>();
             foreach (var c in candidates)
             {
                 UpdateFaultCombo key = default(UpdateFaultCombo);
-                if (c.Value.Equals(MyAddress))
+                if (c.Equals(MyAddress))
                 {
                     key = MyFaultAndUpdateZones;
                 }
                 else
                 {
-                    var e = localTable[c.Value];
+                    var e = localTable[c];
                     key.FaultZone = e.FaultZone;
                     key.UpdateZone = e.UpdateZone;
                 }
                 List<SiloAddress> list;
                 if (!groups.TryGetValue(key, out list))
+                {
                     groups[key] = list = new List<SiloAddress>();
-                list.Add(c.Value);
+                    keys.Add(key);
+                }
+                list.Add(c);
             }
-              
-            var keys = groups.Keys.ToList();
             keys.Sort();
-
+              
             // pick round-robin from groups
             var  result = new List<SiloAddress>();
             for (int i = 0; result.Count < MaxMultiClusterGateways; i++)
@@ -355,7 +358,7 @@ namespace Orleans.Runtime.MembershipService
                 var list = groups[keys[i % keys.Count]];
                 var col = i / keys.Count;
                 if (col < list.Count)
-                    result.Add(list[col]); // keep only endpoint
+                    result.Add(list[col]); 
             }
             return result;
         }
