@@ -191,6 +191,10 @@ namespace Tests.GeoClusterTests
 
         private readonly List<AppDomain> activeClients = new List<AppDomain>();
 
+
+        // The following is a base class to use for creating client wrappers.
+        // We use ClientWrappers to load an Orleans client in its own app domain. 
+        // This allows us to create multiple clients that are connected to different silos.
         public class ClientWrapperBase : MarshalByRefObject {
 
             public string Name { get; private set; }

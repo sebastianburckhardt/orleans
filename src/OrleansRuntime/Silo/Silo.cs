@@ -997,6 +997,20 @@ namespace Orleans.Runtime
                 SimulatedMessageLoss = null;
             }
 
+            SafeRandom random = new SafeRandom();
+
+            internal bool ShouldDrop(Message msg)
+            {
+                if (SimulatedMessageLoss != null)
+                {
+                    double blockedpercentage = 0.0;
+                    Silo.CurrentSilo.TestHookup.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
+                    return (random.NextDouble() * 100 < blockedpercentage);
+                }
+                else
+                    return false;
+            }
+
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 
             internal void SendMessageInternal(Message message)
