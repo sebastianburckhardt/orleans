@@ -92,7 +92,7 @@
     <Compile Include="GeoClusterTests\BasicMultiClusterTest.cs" />
     <Compile Include="Serialization\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
-    <Compile Include="GeoClusterTests\ReplicatedGrainTests.cs" />
+    <Compile Include="GeoClusterTests\QueuedGrainTests.cs" />
     <Compile Include="General\InterfaceRules.cs" />
     <Compile Include="GeoClusterTests\MultiClusterNetworkTests.cs" />
     <Compile Include="Serialization\FallbackBuiltInSerializationTests.cs" />

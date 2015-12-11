@@ -32,8 +32,9 @@ using UnitTests.GrainInterfaces;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime;
 using Orleans.MultiCluster;
+using Tests.GeoClusterTests;
 
-namespace Tests.GeoClusterTests
+namespace Tester.GeoClusterTests
 {
     [TestClass]
     [DeploymentItem("TestGrainInterfaces.dll")]
@@ -42,7 +43,7 @@ namespace Tests.GeoClusterTests
     [DeploymentItem("OrleansProviders.dll")]
     [DeploymentItem("OrleansConfigurationForTesting.xml")]
     [DeploymentItem("ClientConfigurationForTesting.xml")]
-    public class ReplicationTest
+    public class QueuedGrainTests
     {
 
         private static TestingClusterHost host;
@@ -61,26 +62,15 @@ namespace Tests.GeoClusterTests
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
 
-            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration x) =>
-            {
-                // configure storage provider
-                //   <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="..."/>
-                var props = new Dictionary<string, string>();
-                props.Add("DataConnectionString", StorageTestConstants.DataConnectionString); 
-                x.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
-                
-                // configure replication provider
-                //   <Provider Type="Orleans.Providers.Replication.SharedStorageProvider" Name="SharedStorage" GlobalStorageProvider="AzureStore"/>
-                props = new Dictionary<string,string>();
-                props.Add("GlobalStorageProvider", "AzureStore");
-                x.Globals.RegisterReplicationProvider("Orleans.Providers.Replication.SharedStorageProvider", "SharedStorage", props);
-            };
+            // configure replication providers
+            Action<ClusterConfiguration> configurationcustomizer = ReplicationProviderConfiguration.Adjust;
+
 
             host = new TestingClusterHost();
 
             // Create two clusters, each with 2 silos. 
-            host.NewCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
-            host.NewCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
+            host.NewGeoCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
+            host.NewGeoCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
 
             TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
