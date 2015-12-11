@@ -37,8 +37,6 @@ using Orleans.TestingHost;
 
 namespace Tests.GeoClusterTests
 {
-    // We need use ClientWrapper to load a client object in a new app domain. 
-    // This allows us to create multiple clients that are connected to different silos.
 
     [TestClass]
     [DeploymentItem("ClientConfigurationForTesting.xml")]
@@ -65,6 +63,9 @@ namespace Tests.GeoClusterTests
             }
         }
 
+        // We use ClientWrapper to load a client object in a new app domain. 
+        // This allows us to create multiple clients that are connected to different silos.
+        // this client is used to call into the management grain.
         public class ClientWrapper : ClientWrapperBase
         {
             public ClientWrapper(string name, int gatewayport) : base(name, gatewayport)
@@ -101,7 +102,7 @@ namespace Tests.GeoClusterTests
             Assert.AreEqual(1, silos_in_A);
             Assert.AreEqual(5, silos_in_B);
 
-            StopAllClientsAndClusters();
+            StopAllClientsAndClusters(); // don't rely on VS to clean up in a timely way... do it explicitly
         }
 
        

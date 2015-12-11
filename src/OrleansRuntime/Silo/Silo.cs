@@ -967,7 +967,7 @@ namespace Orleans.Runtime
             {
                 return silo.localGrainDirectory.DirectoryPartition.GetItems();
             }
-
+          
             internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypenamesContaining(string expr)
             {
                 var x = new Dictionary<GrainId, IGrainInfo>();
@@ -985,7 +985,7 @@ namespace Orleans.Runtime
             {
                 silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
             }
-          
+
             // store silos for which we simulate faulty communication
             // number indicates how many percent of requests are lost
             internal ConcurrentDictionary<IPEndPoint, double> SimulatedMessageLoss; 
@@ -1003,7 +1003,21 @@ namespace Orleans.Runtime
                 SimulatedMessageLoss = null;
             }
 
-             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
+            SafeRandom random = new SafeRandom();
+
+            internal bool ShouldDrop(Message msg)
+            {
+                if (SimulatedMessageLoss != null)
+                {
+                    double blockedpercentage = 0.0;
+                    Silo.CurrentSilo.TestHookup.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
+                    return (random.NextDouble() * 100 < blockedpercentage);
+                }
+                else
+                    return false;
+            }
+
+            // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 
             internal void SendMessageInternal(Message message)
             {
