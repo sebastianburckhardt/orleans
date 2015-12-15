@@ -1,27 +1,4 @@
-﻿/*
-Project Orleans Cloud Service SDK ver. 1.0
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the ""Software""), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,8 +14,6 @@ using Orleans.TestingHost;
 
 namespace Tests.GeoClusterTests
 {
-    // We need use ClientWrapper to load a client object in a new app domain. 
-    // This allows us to create multiple clients that are connected to different silos.
 
     [TestClass]
     [DeploymentItem("ClientConfigurationForTesting.xml")]
@@ -65,6 +40,9 @@ namespace Tests.GeoClusterTests
             }
         }
 
+        // We use ClientWrapper to load a client object in a new app domain. 
+        // This allows us to create multiple clients that are connected to different silos.
+        // this client is used to call into the management grain.
         public class ClientWrapper : ClientWrapperBase
         {
             public ClientWrapper(string name, int gatewayport) : base(name, gatewayport)
@@ -101,7 +79,7 @@ namespace Tests.GeoClusterTests
             Assert.AreEqual(1, silos_in_A);
             Assert.AreEqual(5, silos_in_B);
 
-            StopAllClientsAndClusters();
+            StopAllClientsAndClusters(); // don't rely on VS to clean up in a timely way... do it explicitly
         }
 
        

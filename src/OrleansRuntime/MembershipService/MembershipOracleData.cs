@@ -1,26 +1,3 @@
-/*
-Project Orleans Cloud Service SDK ver. 1.0
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the ""Software""), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,11 +31,6 @@ namespace Orleans.Runtime.MembershipService
         private readonly int MaxMultiClusterGateways; // set by configuration
 
         private UpdateFaultCombo MyFaultAndUpdateZones;
-        private struct UpdateFaultCombo // define struct so we can use it as a key for group-by
-        {
-            public int UpdateZone;
-            public int FaultZone;
-        }
  
 
         internal MembershipOracleData(Silo silo, TraceLogger log)
@@ -241,8 +213,7 @@ namespace Orleans.Runtime.MembershipService
 
         internal void UpdateMyFaultAndUpdateZone(MembershipEntry entry)
         {
-            MyFaultAndUpdateZones.FaultZone = entry.FaultZone;
-            MyFaultAndUpdateZones.UpdateZone = entry.UpdateZone;
+            MyFaultAndUpdateZones = new UpdateFaultCombo(entry.FaultZone, entry.UpdateZone);
         }
 
         internal bool TryUpdateStatusAndNotify(MembershipEntry entry)
@@ -306,9 +277,7 @@ namespace Orleans.Runtime.MembershipService
             }
         }
 
-    
-
-        // deterministic function for designating the silos that should act as gateways
+        // deterministic function for designating the silos that should act as multi-cluster gateways
         private List<SiloAddress> DetermineMultiClusterGateways()
         {
             // function should never be called if we are not in a multicluster
@@ -319,47 +288,75 @@ namespace Orleans.Runtime.MembershipService
             if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)
                 return localTableCopyOnlyActive.Keys.ToList();
 
-            var candidates = new SortedList<string, SiloAddress>();
+            return DeterministicBalancedChoice<SiloAddress,UpdateFaultCombo>(localTableCopyOnlyActive.Keys, MaxMultiClusterGateways,
+               (SiloAddress a) => a.Equals(MyAddress) ? MyFaultAndUpdateZones : new UpdateFaultCombo(localTable[a]));
+        }
 
-            foreach(var x in localTableCopyOnlyActive)
-                candidates.Add(x.Key.Endpoint.ToString(), x.Key);
-
-            // group by fault/update zones
-            var groups = new Dictionary<UpdateFaultCombo, List<SiloAddress>>();
+        // pick a specified number of elements from a set of candidates
+        // - in a balanced way (try to pick evenly from groups)
+        // - in a deterministic way (using sorting order on candidates and keys)
+        internal static List<T> DeterministicBalancedChoice<T, K>(IEnumerable<T> candidates, int count, Func<T, K> group)
+            where T:IComparable where K:IComparable
+        {
+            // organize candidates by groups
+            var groups = new Dictionary<K, List<T>>();
+            var keys = new List<K>();
+            int numcandidates = 0;
             foreach (var c in candidates)
             {
-                UpdateFaultCombo key = default(UpdateFaultCombo);
-                if (c.Value.Equals(MyAddress))
-                {
-                    key = MyFaultAndUpdateZones;
-                }
-                else
-                {
-                    var e = localTable[c.Value];
-                    key.FaultZone = e.FaultZone;
-                    key.UpdateZone = e.UpdateZone;
-                }
-                List<SiloAddress> list;
+                var key = group(c);
+                List<T> list;
                 if (!groups.TryGetValue(key, out list))
-                    groups[key] = list = new List<SiloAddress>();
-                list.Add(c.Value);
+                {
+                    groups[key] = list = new List<T>();
+                    keys.Add(key);
+                }
+                list.Add(c);
+                numcandidates++;
             }
-              
-            var keys = groups.Keys.ToList();
-            keys.Sort();
 
+            if (numcandidates < count)
+                throw new ArgumentException("not enough candidates");
+
+            // sort the keys and the groups to guarantee deterministic result
+            keys.Sort();
+            foreach(var kvp in groups)
+                kvp.Value.Sort();
+              
             // pick round-robin from groups
-            var  result = new List<SiloAddress>();
-            for (int i = 0; result.Count < MaxMultiClusterGateways; i++)
+            var  result = new List<T>();
+            for (int i = 0; result.Count < count; i++)
             {
                 var list = groups[keys[i % keys.Count]];
                 var col = i / keys.Count;
                 if (col < list.Count)
-                    result.Add(list[col]); // keep only endpoint
+                    result.Add(list[col]); 
             }
             return result;
         }
 
+       internal struct UpdateFaultCombo : IComparable
+        {
+            public readonly int UpdateZone;
+            public readonly int FaultZone;
+            public UpdateFaultCombo(int updateZone, int faultZone)
+            {
+                UpdateZone = updateZone;
+                FaultZone = faultZone;
+            }
+            public UpdateFaultCombo(MembershipEntry e) {
+                UpdateZone = e.UpdateZone;
+                FaultZone = e.FaultZone;
+            }
+            public int CompareTo(object x)
+            {
+                var other = (UpdateFaultCombo) x;
+                int comp = UpdateZone.CompareTo(other.UpdateZone);
+                if (comp != 0) return comp;
+                return FaultZone.CompareTo(other.FaultZone);
+            }
+        }
+ 
 
         public override string ToString()
         {
