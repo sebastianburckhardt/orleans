@@ -61,9 +61,9 @@ namespace Orleans.TestingHost
             {
                 string connString = DataConnectionString;
                 bool usingLocalWAS = DEFAULT_STORAGE_DATA_CONNECTION_STRING.Equals(connString, StringComparison.OrdinalIgnoreCase);
-                string msg = string.Format("Using Azure local storage emulator = {0}", usingLocalWAS);
-                Console.WriteLine(msg);
-                Trace.WriteLine(msg);
+                //string msg = string.Format("Using Azure local storage emulator = {0}", usingLocalWAS);
+                //Console.WriteLine(msg);
+                //Trace.WriteLine(msg);
                 return usingLocalWAS;
             }
         }
