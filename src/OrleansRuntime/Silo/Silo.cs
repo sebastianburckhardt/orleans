@@ -493,7 +493,7 @@ namespace Orleans.Runtime
             if (logger.IsVerbose) { logger.Verbose("Storage provider manager created successfully."); }
 
             // Initialize replication providers once we have a basic silo runtime environment operating
-            replicationProviderManager = new ReplicationProviderManager(grainFactory, Services);
+            replicationProviderManager = new ReplicationProviderManager(grainFactory, Services, storageProviderManager);
             scheduler.QueueTask(
                 () => replicationProviderManager.LoadReplicationProviders(GlobalConfig.ProviderConfigurations),
                 providerManagerSystemTarget.SchedulingContext)

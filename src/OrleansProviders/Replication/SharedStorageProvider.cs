@@ -41,24 +41,24 @@ namespace Orleans.Providers.Replication
             if (!config.Properties.TryGetValue(GLOBAL_STORAGE_PARAMETER, out globalstorageprovidername))
                 throw new Orleans.Storage.BadProviderConfigException("Shared Storage Replication Provider is missing configuration parameter " + GLOBAL_STORAGE_PARAMETER);
 
+            if (!((IReplicationProviderRuntime)providerRuntime).TryGetStorageProvider(globalstorageprovidername, out globalstorageprovider, true))
+            {
+                 throw new Orleans.Storage.BadProviderConfigException("Could not find storage provider " + name);
+           }
+
             return TaskDone.Done;
         }
 
         string globalstorageprovidername;
-
         IStorageProvider globalstorageprovider;
-
-        public void SetupDependedOnStorageProviders(Func<string, Storage.IStorageProvider> providermanagerlookup)
-        {
-            globalstorageprovider = providermanagerlookup(globalstorageprovidername);
-        }
+      
 
         public Task Close()
         {
             return TaskDone.Done;
         }
 
-        public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(QueuedGrain<T> hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
+        public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(IReplicationAdaptorHost hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
         {
             return new SharedStorageAdaptor<T>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
         }

@@ -38,11 +38,13 @@ namespace Orleans.Runtime.Replication
     {
         private ProviderLoader<IReplicationProvider> replicationProviderLoader;
         private IProviderRuntime providerRuntime;
+        private IStorageProviderManager storageProviderManager;
 
-        public ReplicationProviderManager(IGrainFactory grainFactory, IServiceProvider serviceProvider)
+        public ReplicationProviderManager(IGrainFactory grainFactory, IServiceProvider serviceProvider, IStorageProviderManager storageProviderManager)
         {
             GrainFactory = grainFactory;
             ServiceProvider = serviceProvider;
+            this.storageProviderManager = storageProviderManager;
         }
 
         internal Task LoadReplicationProviders(IDictionary<string, ProviderCategoryConfiguration> configs)
@@ -54,7 +56,7 @@ namespace Orleans.Runtime.Replication
                 return TaskDone.Done;
 
             replicationProviderLoader.LoadProviders(configs[ProviderCategoryConfiguration.REPLICATION_PROVIDER_CATEGORY_NAME].Providers, this);
-            return replicationProviderLoader.InitProviders(providerRuntime);
+            return replicationProviderLoader.InitProviders(this);
         }
 
         internal void UnloadReplicationProviders()
@@ -122,20 +124,20 @@ namespace Orleans.Runtime.Replication
             return new WrappedStorageProvider() { globalstorageprovider = storageprovider };
         }
 
+        public bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false)
+        {
+            return storageProviderManager.TryGetProvider(name, out provider, caseInsensitive);
+        }
+
 
         // A pseudo-replication provider that is really just a wrapper around the storage provider
         private class WrappedStorageProvider : IReplicationProvider
         {
             internal IStorageProvider globalstorageprovider;
 
-            public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(QueuedGrain<T> hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
+            public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(IReplicationAdaptorHost hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
             {
                 return new SharedStorageAdaptor<T>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
-            }
-
-            public void SetupDependedOnStorageProviders(Func<string, IStorageProvider> providermanagerlookup)
-            {
-                // not called
             }
 
             public string Name
@@ -174,5 +176,7 @@ namespace Orleans.Runtime.Replication
             await provider.Init(name, this, config);
             replicationProviderLoader.AddProvider(name, provider, config);
         }
+
+  
     }
 }

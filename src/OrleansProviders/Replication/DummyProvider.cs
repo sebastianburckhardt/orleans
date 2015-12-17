@@ -47,29 +47,22 @@ namespace Orleans.Providers.Replication
             return TaskDone.Done;
         }
 
-        public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(QueuedGrain<T> hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
+        public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(IReplicationAdaptorHost hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
         {
             return new DummyReplicationAdaptor<T>(hostgrain, this, initialstate, services);
         }
-    
-
-        public void SetupDependedOnStorageProviders(Func<string,Storage.IStorageProvider> providermanagerlookup)
-        {
- 	        // not needed for this provider
-        }
-}
+    }
 
     public class DummyReplicationAdaptor<T> : QueuedGrainAdaptorBase<T,IUpdateOperation<T>> where T : GrainState, new()
     {
         // in this dummy replication protocol, the "global" state is just locally stored
         T PseudoGlobalState;
 
-        public DummyReplicationAdaptor(QueuedGrain<T> host, IReplicationProvider provider, T initialstate, IReplicationProtocolServices services)
+        public DummyReplicationAdaptor(IReplicationAdaptorHost host, IReplicationProvider provider, T initialstate, IReplicationProtocolServices services)
             : base(host, provider, initialstate, services)
         {
             PseudoGlobalState = initialstate;
         }
-
 
         T CachedState;
 

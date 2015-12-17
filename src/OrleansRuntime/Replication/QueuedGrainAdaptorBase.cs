@@ -113,7 +113,7 @@ namespace Orleans.Runtime.Replication
         /// <summary>
         /// The grain that is using this adaptor
         /// </summary>
-        protected QueuedGrain<TGrainState> Host { get; private set; }
+        protected IReplicationAdaptorHost Host { get; private set; }
 
         protected IReplicationProtocolServices Services { get; private set; }
 
@@ -126,7 +126,7 @@ namespace Orleans.Runtime.Replication
 
         protected Dictionary<string, NotificationStatus> notificationtracker;
 
-        protected QueuedGrainAdaptorBase(QueuedGrain<TGrainState> host, IReplicationProvider provider,
+        protected QueuedGrainAdaptorBase(IReplicationAdaptorHost host, IReplicationProvider provider,
             TGrainState initialstate, IReplicationProtocolServices services)
         {
             Debug.Assert(host != null && services != null && initialstate != null);

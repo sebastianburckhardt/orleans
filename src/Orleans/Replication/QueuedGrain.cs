@@ -34,7 +34,7 @@ namespace Orleans.Replication
     /// <summary>
     /// Queued grain base class. 
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : Grain, IProtocolParticipant, IQueuedGrainAdaptorHost,
+    public abstract class QueuedGrain<TGrainState> : Grain, IProtocolParticipant, IReplicationAdaptorHost,
                                                          IQueuedGrain<TGrainState> where TGrainState : GrainState, new()
     {
         protected QueuedGrain()
@@ -50,7 +50,7 @@ namespace Orleans.Replication
         /// <summary>
         /// Called right after grain is constructed, to install the replication adaptor.
         /// </summary>
-        void IQueuedGrainAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialstate, string graintypename, IReplicationProtocolServices services)
+        void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialstate, string graintypename, IReplicationProtocolServices services)
         {
             // call the replication provider to construct the adaptor, passing the type argument
             Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, (TGrainState) initialstate, graintypename, services);            

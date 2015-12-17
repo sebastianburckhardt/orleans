@@ -18,7 +18,7 @@ namespace Orleans.Runtime.Replication
     /// <typeparam name="T"></typeparam>
     public class SharedStorageAdaptor<T> : QueuedGrainAdaptorBase<T, IUpdateOperation<T>> where T : GrainState, new()
     {
-        public SharedStorageAdaptor(QueuedGrain<T> host, T initialstate, IReplicationProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IReplicationProtocolServices services)
+        public SharedStorageAdaptor(IReplicationAdaptorHost host, T initialstate, IReplicationProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IReplicationProtocolServices services)
             : base(host, repprovider, initialstate, services)
         {
             this.globalstorageprovider = globalstorageprovider;
