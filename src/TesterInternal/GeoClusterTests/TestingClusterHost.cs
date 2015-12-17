@@ -104,7 +104,7 @@ namespace Tests.GeoClusterTests
                 var options = new TestingSiloOptions
                 {
                     StartClient = false,
-                    ConfigurationCustomizer = customizer,
+                    AdjustConfig = customizer,
                     BasePort = GetPortBase(mycount),
                     ProxyBasePort = GetProxyBase(mycount)
                 };
@@ -132,7 +132,7 @@ namespace Tests.GeoClusterTests
             var options = new TestingSiloOptions
             {
                 StartClient = false,
-                ConfigurationCustomizer = customizer
+                AdjustConfig = customizer
             };
 
             var silo = TestingSiloHost.StartOrleansSilo(null, Silo.SiloType.Secondary, options, clusterinfo.Silos.Count);
