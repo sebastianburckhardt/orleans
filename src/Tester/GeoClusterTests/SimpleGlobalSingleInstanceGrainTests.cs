@@ -48,12 +48,6 @@ namespace Tester.GeoClusterTests
             return GrainFactory.GetGrain<ISimpleGlobalSingleInstanceGrain>(GetRandomGrainId(), SimpleGrainNamePrefix);
         }
 
-        private static int GetRandomGrainId()
-        {
-            return random.Next();
-        }
-
-
         [TestCleanup]
         public void TestCleanup()
         {
