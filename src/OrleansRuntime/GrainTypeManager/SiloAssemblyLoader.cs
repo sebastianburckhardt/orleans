@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
+using Orleans.Core;
 using Orleans.Providers;
 using Orleans.CodeGeneration;
 using Orleans.Replication;
@@ -63,8 +64,8 @@ namespace Orleans.Runtime
                 if (result.ContainsKey(className))
                     throw new InvalidOperationException(
                         string.Format("Precondition violated: GetLoadedGrainTypes should not return a duplicate type ({0})", className));
-                
-                bool isQueuedGrain = false; 
+
+                StorageInterface storageInterface = StorageInterface.None; 
                 Type grainStateType = null;
 
                 // check if grainType derives from Grain<T> where T is a concrete class
@@ -75,22 +76,14 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                            if (definition == typeof(Grain<>) || definition == typeof(QueuedGrain<>))
-                            {
-                                var stateArg = parentType.GetGenericArguments()[0];
-                                if (stateArg.IsClass)
-                                {
-                                    grainStateType = stateArg;
-                                    isQueuedGrain = (definition == typeof(QueuedGrain<>));
-                                    break;
-                                }
-                            }
-                            else if (definition == typeof(QueuedGrain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(QueuedGrain<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
-                            if (stateArg.GetTypeInfo().IsClass)
+                            if (stateArg.IsClass)
                             {
                                 grainStateType = stateArg;
+                                storageInterface = (definition == typeof(Grain<>)) ? 
+                                    StorageInterface.ReadWriteClear : StorageInterface.Queued;
                                 break;
                             }
                         }
@@ -99,7 +92,7 @@ namespace Orleans.Runtime
                     parentType = parentType.BaseType;
                 }
 
-                GrainTypeData typeData = GetTypeData(grainType, grainStateType, isQueuedGrain);
+                GrainTypeData typeData = GetTypeData(grainType, grainStateType, storageInterface);
                 result.Add(className, typeData);
             }
 
@@ -130,11 +123,11 @@ namespace Orleans.Runtime
         /// <summary>
         /// Get type data for the given grain type
         /// </summary>
-        private static GrainTypeData GetTypeData(Type grainType, Type stateObjectType, bool isQueued)
+        private static GrainTypeData GetTypeData(Type grainType, Type stateObjectType, StorageInterface storageInterface)
         {
-            return grainType.GetTypeInfo().IsGenericTypeDefinition ? 
-                new GenericGrainTypeData(grainType, stateObjectType, isQueued) : 
-                new GrainTypeData(grainType, stateObjectType, isQueued);
+            return grainType.GetTypeInfo().IsGenericTypeDefinition ?
+                new GenericGrainTypeData(grainType, stateObjectType, storageInterface) :
+                new GrainTypeData(grainType, stateObjectType, storageInterface);
         }
 
         private static void LogGrainTypesFound(TraceLogger logger, Dictionary<string, GrainTypeData> grainTypeData)

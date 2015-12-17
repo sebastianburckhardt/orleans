@@ -23,4 +23,11 @@ namespace Orleans.Core
         /// </summary>
         Task ReadStateAsync();
     }
+
+    public enum StorageInterface
+    {
+        None,
+        ReadWriteClear,
+        Queued
+    }
 }

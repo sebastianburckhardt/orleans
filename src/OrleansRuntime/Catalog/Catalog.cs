@@ -641,8 +641,8 @@ namespace Orleans.Runtime
             // TODO: Change back to GetRequiredService after stable Microsoft.Framework.DependencyInjection is released and can be referenced here
             var services = Runtime.Silo.CurrentSilo.Services;
             var grain = services != null
-                ? (Grain) services.GetService(grainType)
-                : (Grain) Activator.CreateInstance(grainType);
+                ? (Grain)services.GetService(grainType)
+                : (Grain)Activator.CreateInstance(grainType);
 
             // Inject runtime hooks into grain instance
             grain.Runtime = grainRuntime;
@@ -652,7 +652,7 @@ namespace Orleans.Runtime
             GrainState state;
             if (stateObjectType != null)
             {
-                state = (GrainState) Activator.CreateInstance(stateObjectType);
+                state = (GrainState)Activator.CreateInstance(stateObjectType);
                 state.InitState(null);
             }
             else
@@ -665,111 +665,82 @@ namespace Orleans.Runtime
                 grain.Identity = data.Identity;
                 data.SetGrainInstance(grain);
 
-                if (state != null)
+                var attr = GetProviderAttribute(data);
+
+                if (grainTypeData.StorageInterface == StorageInterface.ReadWriteClear)  // Grain<T>
                 {
-                    if (!grainTypeData.IsQueued)
-                    {
-                    SetupStorageProvider(data);
+                    SetupStorageProvider(data, attr);
+                        data.GrainInstance.GrainState = state;
+                        data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
+                    }
 
-                    data.GrainInstance.GrainState = state;
-                    data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
-                }
-                    else
+                else if (grainTypeData.StorageInterface == StorageInterface.Queued)  // QueuedGrain<T> 
                     {
-                        var repprovider = SetupReplicationProvider(data);
+                    var repprovider = SetupReplicationProvider(data, attr);
                         var svc = new ReplicationServices(grain, repprovider);
-                        ((IQueuedGrainAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
-            }
-
+                    ((IReplicationAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
+                    }
                 }
-            }
+
 
             activations.IncrementGrainCounter(grainClassName);
 
             if (logger.IsVerbose) logger.Verbose("CreateGrainInstance {0}{1}", data.Grain, data.ActivationId);
         }
 
-        private void SetupStorageProvider(ActivationData data)
+
+        private static ProviderAttribute DefaultProviderAttribute = new StorageProviderAttribute();
+
+        private ProviderAttribute GetProviderAttribute(ActivationData data)
+        {
+            var attrs = data.GrainInstanceType.GetCustomAttributes(typeof(ProviderAttribute), true);
+
+            if (attrs.Length == 0)
+                return DefaultProviderAttribute;
+            else
+                return (ProviderAttribute)attrs[0];
+        }
+
+
+        private IStorageProvider SetupStorageProvider(ActivationData data, ProviderAttribute attr)
         {
             var grainTypeName = data.GrainInstanceType.FullName;
 
-            // Get the storage provider name, using the default if not specified.
-            var attrs = data.GrainInstanceType.GetCustomAttributes(typeof(StorageProviderAttribute), true);
-            var attr = attrs.FirstOrDefault() as StorageProviderAttribute;
-            var storageProviderName = attr != null ? attr.ProviderName : Constants.DEFAULT_STORAGE_PROVIDER_NAME;
+            if (!(attr is StorageProviderAttribute))
+            {
+                var errMsg = string.Format("Unsupported provider attribute for grain {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogUnsupportedProviderAttribute, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
 
-            var provider = FindStorageProvider(storageProviderName, grainTypeName);
+            var provider = FindStorageProvider(attr.ProviderName, grainTypeName);
             data.StorageProvider = provider;
 
             if (logger.IsVerbose2)
             {
                 string msg = string.Format("Assigned storage provider with Name={0} to grain type {1}",
-                    storageProviderName, grainTypeName);
+                    attr.ProviderName, grainTypeName);
                 logger.Verbose2(ErrorCode.Provider_CatalogStorageProviderAllocated, msg);
             }
-        }
 
-        private IStorageProvider FindStorageProvider(string storageProviderName, string grainTypeName)
-        {
-            IStorageProvider provider;
-            if (storageProviderManager == null || storageProviderManager.GetNumLoadedProviders() == 0)
-            {
-                var errMsg = string.Format("No storage providers found loading grain type {0}", grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_1, errMsg);
-                throw new BadProviderConfigException(errMsg);
-            }
-            if (string.IsNullOrWhiteSpace(storageProviderName))
-            {
-                // Use default storage provider
-                provider = storageProviderManager.GetDefaultProvider();
-            }
-            else
-            {
-                // Look for MemoryStore provider as special case name
-                bool caseInsensitive = Constants.MEMORY_STORAGE_PROVIDER_NAME.Equals(storageProviderName, StringComparison.OrdinalIgnoreCase);
-                storageProviderManager.TryGetProvider(storageProviderName, out provider, caseInsensitive);
-                if (provider == null)
-                {
-                    var errMsg = string.Format(
-                        "Cannot find storage provider with Name={0} for grain type {1}", storageProviderName,
-                        grainTypeName);
-                    logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_2, errMsg);
-                    throw new BadProviderConfigException(errMsg);
-                }
-            }
             return provider;
         }
 
-        private IReplicationProvider SetupReplicationProvider(ActivationData data)
-        {
-            var grainTypeName = data.GrainInstanceType.FullName;
 
-            var attrs = data.GrainInstanceType.GetCustomAttributes(typeof(ReplicationProviderAttribute), true);
-            var attr = attrs.Length > 0 ? attrs[0] as ReplicationProviderAttribute : null;
-
-            if (attr == null)
+        private IReplicationProvider SetupReplicationProvider(ActivationData data, ProviderAttribute attr)
             {
-                // there is no replication provider specified.
-                // wrap storage provider
-
-                SetupStorageProvider(data); // find storage provider, possibly the default provider
-
-                if (replicationProviderManager == null)
+            if (attr is StorageProviderAttribute)
                 {
-                    var errMsg = string.Format("Cannot create queued grain {0} : replication provider manager is null", grainTypeName);
-                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
-                    throw new BadProviderConfigException(errMsg);
+                SetupStorageProvider(data, attr);
+                return replicationProviderManager.WrapStorageProvider(data.StorageProvider);
                 }
 
-                return replicationProviderManager.WrapStorageProvider(data.StorageProvider);
-            }
-            else
-            {
-                var replicationProviderName = attr.ProviderName;
-                if (string.IsNullOrEmpty(replicationProviderName))
+            var grainTypeName = data.GrainInstanceType.FullName;
+
+            if (!(attr is ReplicationProviderAttribute))
                 {
-                    var errMsg = string.Format("ReplicationProvider attribute is missing name for grain type {0}", grainTypeName);
-                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                var errMsg = string.Format("Unsupported provider attribute for grain {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogUnsupportedProviderAttribute, errMsg);
                     throw new BadProviderConfigException(errMsg);
                 }
 
@@ -780,37 +751,54 @@ namespace Orleans.Runtime
                     logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
                     throw new BadProviderConfigException(errMsg);
                 }
-                if (string.IsNullOrWhiteSpace(replicationProviderName))
-                {
-                    var errMsg = string.Format("No replication providers found loading grain type {0}", grainTypeName);
-                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
-                    throw new BadProviderConfigException(errMsg);
-                }
-                replicationProviderManager.TryGetProvider(replicationProviderName, out provider, false);
+
+            replicationProviderManager.TryGetProvider(attr.ProviderName, out provider, false);
 
                 if (provider == null)
                 {
                     var errMsg = string.Format(
-                        "Cannot find replication provider with Name={0} for grain type {1}", replicationProviderName,
+                    "Cannot find replication provider with Name={0} for grain type {1}", attr.ProviderName,
                         grainTypeName);
                     logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
                     throw new BadProviderConfigException(errMsg);
                 }
 
-                provider.SetupDependedOnStorageProviders((string providername) =>
-                    FindStorageProvider(string.IsNullOrEmpty(providername) ? Constants.DEFAULT_STORAGE_PROVIDER_NAME : providername, grainTypeName)
-                );
-
             if (logger.IsVerbose2)
             {
                     string msg = string.Format("Assigned replication provider with Name={0} to grain type {1}",
-                        replicationProviderName, grainTypeName);
+                    attr.ProviderName, grainTypeName);
                     logger.Verbose2(ErrorCode.Provider_CatalogReplicationProviderAllocated, msg);
                 }
 
                 return provider;
             }
+
+        private IStorageProvider FindStorageProvider(string storageProviderName, string grainTypeName)
+        {
+            IStorageProvider provider;
+            if (storageProviderManager == null || storageProviderManager.GetNumLoadedProviders() == 0)
+            {
+                var errMsg = string.Format("No storage providers found loading grain type {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_1, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
+
+            // Look for MemoryStore provider as special case name
+            bool caseInsensitive = Constants.MEMORY_STORAGE_PROVIDER_NAME.Equals(storageProviderName, StringComparison.OrdinalIgnoreCase);
+            storageProviderManager.TryGetProvider(storageProviderName, out provider, caseInsensitive);
+            if (provider == null)
+            {
+                var errMsg = string.Format(
+                    "Cannot find storage provider with Name={0} for grain type {1}", storageProviderName,
+                    grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_2, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
+
+            return provider;
         }
+
+    
 
         private async Task SetupActivationState(ActivationData result, string grainType)
         {
@@ -1271,8 +1259,8 @@ namespace Orleans.Runtime
                     throw new DuplicateActivationException(id);
                 }
             }
-            // We currently don't have any other case for multiple activations except for StatelessWorker. 
-            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext); 
+            // We currently don't have any other case for multiple activations except for StatelessWorker.
+            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext);
         }
 
         #endregion

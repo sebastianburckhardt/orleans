@@ -249,17 +249,13 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class StorageProviderAttribute : Attribute
+        public sealed class StorageProviderAttribute : ProviderAttribute
         {
             public StorageProviderAttribute()
             {
-                    ProviderName = Runtime.Constants.DEFAULT_STORAGE_PROVIDER_NAME;
+                ProviderName = Runtime.Constants.DEFAULT_STORAGE_PROVIDER_NAME;
             }
-            /// <summary>
-            /// The name of the storage provider to ne used for persisting state for this grain.
-            /// </summary>
-            public string ProviderName { get; set; }
-        }
+         }
 
 
         /// <summary>
@@ -270,13 +266,21 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class ReplicationProviderAttribute : Attribute
+        public sealed class ReplicationProviderAttribute : ProviderAttribute
         {
             public ReplicationProviderAttribute()
             {
             }
+        }
+
+
+        /// <summary>
+        /// The common superclass of storage and replication provider attributes.
+        /// </summary>
+        public class ProviderAttribute : Attribute
+        {
             /// <summary>
-            /// The name of the storage provider to ne used for persisting state for this grain.
+            /// The name of the provider to ne used for persisting state for this grain.
             /// </summary>
             public string ProviderName { get; set; }
         }

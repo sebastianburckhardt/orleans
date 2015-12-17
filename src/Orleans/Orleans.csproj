@@ -103,7 +103,7 @@
     <Compile Include="MultiCluster\IProtocolParticipant.cs" />
     <Compile Include="Replication\IQueuedGrainAdaptor.cs" />
     <Compile Include="Replication\IQueuedGrain.cs" />
-    <Compile Include="Replication\IQueuedGrainAdaptorHost.cs" />
+    <Compile Include="Replication\IReplicationAdaptorHost.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GrainDirectory\MultiClusterRegistrationStrategy.cs" />

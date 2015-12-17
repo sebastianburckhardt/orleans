@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using Orleans.Core;
 
 namespace Orleans.Runtime
 {
@@ -8,18 +9,17 @@ namespace Orleans.Runtime
     {
         private readonly Type activationType;
         private readonly Type stateObjectType;
-        private readonly bool isQueued;
+        private readonly StorageInterface storageInterface;
 
-        public GenericGrainTypeData(Type activationType, Type stateObjectType, bool isQueued) :
-            base(activationType, stateObjectType, isQueued)
+        public GenericGrainTypeData(Type activationType, Type stateObjectType, StorageInterface storageInterface) :
+            base(activationType, stateObjectType, storageInterface)
         {
             if (!activationType.GetTypeInfo().IsGenericTypeDefinition)
                 throw new ArgumentException("Activation type is not generic: " + activationType.Name);
 
             this.activationType = activationType;
             this.stateObjectType = stateObjectType;
-            this.isQueued = isQueued;
-
+            this.storageInterface = storageInterface;
         }
 
         public GrainTypeData MakeGenericType(Type[] typeArgs)
@@ -28,7 +28,8 @@ namespace Orleans.Runtime
             var concreteActivationType = activationType.MakeGenericType(typeArgs);
             var concreteStateObjectType = (stateObjectType != null && stateObjectType.GetTypeInfo().IsGenericType) ? stateObjectType.GetGenericTypeDefinition().MakeGenericType(typeArgs) : stateObjectType;
 
-            return new GrainTypeData(concreteActivationType, concreteStateObjectType, isQueued);
+            return new GrainTypeData(concreteActivationType, concreteStateObjectType, storageInterface);
         }
     }
+
 }

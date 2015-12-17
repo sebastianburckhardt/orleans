@@ -1,6 +1,7 @@
 using System;
 using Orleans.Core;
 using Orleans.Runtime;
+using Orleans.Storage;
 
 namespace Orleans.Providers
 {
@@ -61,6 +62,7 @@ namespace Orleans.Providers
     /// </summary>
     public interface IReplicationProviderRuntime : IProviderRuntime
     {
-        // for now empty, later can add storage specific runtime capabilities.
+        bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false);
+ 
     }
 }

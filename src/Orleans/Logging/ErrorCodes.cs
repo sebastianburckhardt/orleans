@@ -965,6 +965,7 @@ namespace Orleans
 
         Provider_CatalogNoReplicationProvider = ProviderManagerBase + 14,
         Provider_CatalogReplicationProviderAllocated = ProviderManagerBase + 15,
+        Provider_CatalogUnsupportedProviderAttribute = ProviderManagerBase + 16,
 
         AzureQueueBase = Runtime + 3200,
         AzureQueue_01 = AzureQueueBase + 1,
