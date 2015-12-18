@@ -27,7 +27,7 @@ namespace Orleans.Core
     public enum StorageInterface
     {
         None,
-        ReadWriteClear,
-        Queued
+        StorageBridge,
+        QueuedGrainAdaptor,
     }
 }

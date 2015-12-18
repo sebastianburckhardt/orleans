@@ -34,7 +34,7 @@ namespace Orleans.Replication
     /// <summary>
     /// Queued grain base class. 
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : Grain, IProtocolParticipant, IReplicationAdaptorHost,
+    public abstract class QueuedGrain<TGrainState> : ReplicatedGrain<TGrainState>, IProtocolParticipant, IReplicationAdaptorHost,
                                                          IQueuedGrain<TGrainState> where TGrainState : GrainState, new()
     {
         protected QueuedGrain()

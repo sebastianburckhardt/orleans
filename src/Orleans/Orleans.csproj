@@ -92,6 +92,7 @@
     <Compile Include="CodeGeneration\KnownTypeAttribute.cs" />
     <Compile Include="CodeGeneration\SkipCodeGenerationAttribute.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
+    <Compile Include="Replication\ReplicatedGrain.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
     <Compile Include="Configuration\LimitValue.cs" />

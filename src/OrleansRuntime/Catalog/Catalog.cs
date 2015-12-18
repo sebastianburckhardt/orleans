@@ -656,14 +656,14 @@ namespace Orleans.Runtime
 
                 var attr = GetProviderAttribute(data);
 
-                if (grainTypeData.StorageInterface == StorageInterface.ReadWriteClear)  // Grain<T>
+                if (grainTypeData.StorageInterface == StorageInterface.StorageBridge)  // Grain<T>
                 {
                     SetupStorageProvider(data, attr);
                     data.GrainInstance.GrainState = state;
                     data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
                 }
 
-                else if (grainTypeData.StorageInterface == StorageInterface.Queued)  // QueuedGrain<T> 
+                else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor)  // QueuedGrain<T> 
                 {
                     var repprovider = SetupReplicationProvider(data, attr);
                     var svc = new ReplicationServices(grain, repprovider);
