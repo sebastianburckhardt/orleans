@@ -12,7 +12,7 @@ namespace Orleans.EventSourcing
     /// The stored state of an event sourced grain is a journal of events.
     /// </summary>
     [Serializable]
-    internal class Journal  : GrainState
+    public class Journal  : GrainState
     {
         public List<object> Events { get; set; }
 
@@ -29,7 +29,7 @@ namespace Orleans.EventSourcing
     /// The journal is updated by appending an event.
     /// </summary>
     [Serializable]
-    internal class JournalUpdate : IUpdateOperation<Journal>
+    public class JournalUpdate : IUpdateOperation<Journal>
     {
         public object Event { get; set; }
 

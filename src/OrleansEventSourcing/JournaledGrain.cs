@@ -11,7 +11,7 @@ namespace Orleans.EventSourcing
     /// <summary>
     /// The base class for all grain classes that have event-sourced state.
     /// </summary>
-    public abstract class JournaledGrain<StateType> : Grain, IProtocolParticipant, IReplicationAdaptorHost
+    public abstract class JournaledGrain<StateType> : ReplicatedGrain<Journal>, IProtocolParticipant, IReplicationAdaptorHost
                                                           where StateType : class, new()
     {
         protected JournaledGrain()  { }
