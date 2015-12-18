@@ -12,7 +12,9 @@ namespace TestGrains
     {
         public Task RegisterBirth(PersonAttributes props)
         {
-            return RaiseStateEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
+            RaiseStateEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
+
+            return WaitForWriteCompletion();
         }
 
         public async Task Marry(IJournaledPersonGrain spouse)
@@ -22,20 +24,14 @@ namespace TestGrains
 
             var spouseData = await spouse.GetPersonalAttributes();
 
-            await RaiseStateEvent(
-                new PersonMarried(spouse.GetPrimaryKey(), spouseData.FirstName, spouseData.LastName),
-                commit: false); // We are not storing the first event here
+            RaiseStateEvent(new PersonMarried(spouse.GetPrimaryKey(), spouseData.FirstName, spouseData.LastName));
 
             if (State.LastName != spouseData.LastName)
             {
-                await RaiseStateEvent(
-                    new PersonLastNameChanged(spouseData.LastName),
-                    commit: false);
+                RaiseStateEvent(new PersonLastNameChanged(spouseData.LastName));
             }
 
-            // We might need a different, more explicit, persstence API for ES. 
-            // Reusing the current API for now.
-            await this.WriteStateAsync();
+            await WaitForWriteCompletion();
         }
         
         public Task<PersonAttributes> GetPersonalAttributes()

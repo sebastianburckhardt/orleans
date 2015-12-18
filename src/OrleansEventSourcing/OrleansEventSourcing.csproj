@@ -48,7 +48,7 @@
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="JournaledGrain.cs" />
-    <Compile Include="JournaledGrainState.cs" />
+    <Compile Include="Journal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
