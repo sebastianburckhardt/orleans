@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -57,7 +57,7 @@ namespace Orleans.Runtime.GrainDirectory
             return router.DeleteGrainAsync(grain, hopcount);
         }
 
-        public async Task<Tuple<List<ActivationAddress>, int>> LookupAsync(GrainId gid, int hopcount)
+        public async Task<AddressesAndTag> LookupAsync(GrainId gid, int hopcount)
         {
             return await router.LookupAsync(gid, hopcount);
         }
@@ -82,9 +82,9 @@ namespace Orleans.Runtime.GrainDirectory
                     // the grain entry has been updated -- fetch and return its current version
                     var lookupResult = await router.LookupAsync(tuple.Item1, 1);
                     // validate that the entry is still in the directory (i.e., it was not removed concurrently)
-                    if (lookupResult != null)
+                    if (lookupResult.Addresses != null)
                     {
-                        result.Add(new Tuple<GrainId, int, List<ActivationAddress>>(tuple.Item1, lookupResult.Item2, lookupResult.Item1));
+                        result.Add(new Tuple<GrainId, int, List<ActivationAddress>>(tuple.Item1, lookupResult.VersionTag, lookupResult.Addresses));
                     }
                     else
                     {

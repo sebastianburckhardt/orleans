@@ -711,7 +711,7 @@ namespace Orleans.Runtime.GrainDirectory
         }
 
 
-        public bool LocalLookup(GrainId grain, out List<ActivationAddress> addresses)
+        public bool LocalLookup(GrainId grain, out AddressesAndTag result)
         {
             localLookups.Increment();
 
@@ -724,39 +724,41 @@ namespace Orleans.Runtime.GrainDirectory
             if (silo.Equals(MyAddress))
             {
                 LocalDirectoryLookups.Increment();
-                addresses = GetLocalDirectoryData(grain);
-                if (addresses == null)
+                result = GetLocalDirectoryData(grain);
+                if (result.Addresses == null)
                 {
                     // it can happen that we cannot find the grain in our partition if there were 
                     // some recent changes in the membership
                     if (log.IsVerbose2) log.Verbose2("LocalLookup mine {0}=null", grain);
                     return false;
                 }
-                if (log.IsVerbose2) log.Verbose2("LocalLookup mine {0}={1}", grain, addresses.ToStrings());
+                if (log.IsVerbose2) log.Verbose2("LocalLookup mine {0}={1}", grain, result.Addresses.ToStrings());
                 LocalDirectorySuccesses.Increment();
                 localSuccesses.Increment();
                 return true;
             }
 
             // handle cache
+            result = new AddressesAndTag();
             cacheLookups.Increment();
-            addresses = GetLocalCacheData(grain);
-            if (addresses == null)
+            result.Addresses = GetLocalCacheData(grain);
+            if (result.Addresses == null)
             {
                 if (log.IsVerbose2) log.Verbose2("TryFullLookup else {0}=null", grain);
                 return false;
             }
-            if (log.IsVerbose2) log.Verbose2("LocalLookup cache {0}={1}", grain, addresses.ToStrings());
+            if (log.IsVerbose2) log.Verbose2("LocalLookup cache {0}={1}", grain, result.Addresses.ToStrings());
             cacheSuccesses.Increment();
             localSuccesses.Increment();
             return true;
         }
 
-        public List<ActivationAddress> GetLocalDirectoryData(GrainId grain)
+        public AddressesAndTag GetLocalDirectoryData(GrainId grain)
         {
             var result = DirectoryPartition.LookUpGrain(grain);
-            return result == null ? null : 
-                result.Item1.Where(addr => IsValidSilo(addr.Silo)).ToList();
+            if (result.Addresses != null)
+                result.Addresses = result.Addresses.Where(addr => IsValidSilo(addr.Silo)).ToList();
+            return result;
         }
 
         public List<ActivationAddress> GetLocalCacheData(GrainId grain)
@@ -772,7 +774,7 @@ namespace Orleans.Runtime.GrainDirectory
             throw new NotImplementedException();
         }*/
 
-        public async Task<Tuple<List<ActivationAddress>, int>> LookupAsync(GrainId grain, int hopcount = 0)
+        public async Task<AddressesAndTag> LookupAsync(GrainId grain, int hopcount = 0)
         {
             (hopcount > 0 ? RemoteLookupsReceived : fullLookups).Increment();
 
@@ -791,43 +793,45 @@ namespace Orleans.Runtime.GrainDirectory
                 // we are the owner
                 LocalDirectoryLookups.Increment();
                 var localResult = DirectoryPartition.LookUpGrain(grain);
-                if (localResult == null)
+                if (localResult.Addresses == null)
                 {
                     // it can happen that we cannot find the grain in our partition if there were 
                     // some recent changes in the membership
                     if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}=none", grain);
-                    return Tuple.Create(new List<ActivationAddress>(), GrainInfo.NO_ETAG);
+                    localResult.Addresses = new List<ActivationAddress>();
+                    localResult.VersionTag = GrainInfo.NO_ETAG;
+                    return localResult;
                 }
-                var a = localResult.Item1.Where(addr => IsValidSilo(addr.Silo)).ToList();
+                localResult.Addresses = localResult.Addresses.Where(addr => IsValidSilo(addr.Silo)).ToList();
 
-                if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grain, a.ToStrings());
+                if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grain, localResult.Addresses.ToStrings());
                 LocalDirectorySuccesses.Increment();
-                return Tuple.Create(a, localResult.Item2);
+                return localResult;
             }
             else
             {
-            // Just a optimization. Why sending a message to someone we know is not valid.
+                // Just a optimization. Why sending a message to someone we know is not valid.
                 if (!IsValidSilo(forwardaddress))
-            {
+                {
                     throw new OrleansException(String.Format("Current directory at {0} is not stable to perform the lookup for grain {1} (it maps to {2}, which is not a valid silo). Retry later.", MyAddress, grain, forwardaddress));
-            }
+                }
 
-            RemoteLookupsSent.Increment();
-                Tuple<List<ActivationAddress>, int> result = await GetDirectoryReference(forwardaddress).LookupAsync(grain, hopcount + 1);
+                RemoteLookupsSent.Increment();
+                var result = await GetDirectoryReference(forwardaddress).LookupAsync(grain, hopcount + 1);
 
-            // update the cache
+                // update the cache
                 //List<Tuple<SiloAddress, ActivationId>> entries = result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
                 //List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grain, t.Item2)).ToList();
-                var addresses = result.Item1.Where(t => IsValidSilo(t.Silo)).ToList();
-            if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, addresses.ToStrings());
+                result.Addresses = result.Addresses.Where(t => IsValidSilo(t.Silo)).ToList();
+                if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grain, result.Addresses.ToStrings());
 
-                var entries = addresses.Select(t => Tuple.Create(t.Silo, t.Activation)).ToList();
+                var entries = result.Addresses.Select(t => Tuple.Create(t.Silo, t.Activation)).ToList();
 
-            if (entries.Count > 0)
-                DirectoryCache.AddOrUpdate(grain, entries, result.Item2);
-            
-                return Tuple.Create(addresses, result.Item2);
-            }         
+                if (entries.Count > 0)
+                    DirectoryCache.AddOrUpdate(grain, entries, result.VersionTag);
+
+                return result;
+            }
         }
 
         public async Task DeleteGrainAsync(GrainId grain, int hopcount)
@@ -912,7 +916,7 @@ namespace Orleans.Runtime.GrainDirectory
                 log.Assert(ErrorCode.DirectoryBothPrimaryAndBackupForGrain, backupData == null,
                     "Silo contains both primary and backup directory data for grain " + grain);
                 isPrimary = true;
-                return GetLocalDirectoryData(grain);
+                return GetLocalDirectoryData(grain).Addresses;
             }
 
             isPrimary = false;

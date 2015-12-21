@@ -38,10 +38,10 @@ namespace Orleans.Runtime.GrainDirectory
             foreach (var partition in directoryPartitionsMap.Values)
             {
                 var result = partition.LookUpGrain(grain);
-                if (result != null)
+                if (result.Addresses != null)
                 {
                     // Force the list to be created in order to avoid race conditions
-                    return result.Item1.Select(a => ActivationAddress.GetAddress(a.Silo, grain, a.Activation, a.Status)).ToList();
+                    return result.Addresses.Select(a => ActivationAddress.GetAddress(a.Silo, grain, a.Activation, a.Status)).ToList();
                 }
             }
             return null;
