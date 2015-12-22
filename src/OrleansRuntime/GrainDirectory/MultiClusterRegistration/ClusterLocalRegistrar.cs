@@ -19,17 +19,17 @@ namespace Orleans.Runtime.GrainDirectory
             DirectoryPartition = partition;
         }
 
-        public virtual Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation)
+        public virtual Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation)
         {
             if (singleActivation)
             {
-                var returnedAddress = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
-                return Task.FromResult(returnedAddress);
+                var result = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
+                return Task.FromResult(result);
             }
             else
             {
-                var etag = DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
-                return Task.FromResult(new Tuple<ActivationAddress,int>(address, etag));
+                var tag = DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
+                return Task.FromResult(new AddressAndTag() { Address = address, VersionTag = tag });
             }
         }
   

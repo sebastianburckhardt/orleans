@@ -271,23 +271,26 @@ namespace Orleans.Runtime.GrainDirectory
         /// <param name="silo"></param>
         /// <param name="registrationStatus"></param>
         /// <returns>The registered ActivationAddress and version associated with this directory mapping</returns>
-        internal virtual Tuple<ActivationAddress, int> AddSingleActivation(GrainId grain, ActivationId activation, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.Owned)
+        internal virtual AddressAndTag AddSingleActivation(GrainId grain, ActivationId activation, SiloAddress silo, MultiClusterStatus registrationStatus = MultiClusterStatus.Owned)
         {
             if (log.IsVerbose3) log.Verbose3("Adding single activation for grain {0}{1}{2}", silo, grain, activation);
 
+            AddressAndTag result = new AddressAndTag();
+
             if (!IsValidSilo(silo))
-                return null;
+                return result;
             
-            ActivationAddress result;
             lock (lockable)
             {
                 if (!partitionData.ContainsKey(grain))
                 {
                     partitionData[grain] = new GrainInfo();
                 }
-                result = partitionData[grain].AddSingleActivation(grain, activation, silo, registrationStatus);
+                var graininfo = partitionData[grain];
+                result.Address = graininfo.AddSingleActivation(grain, activation, silo, registrationStatus);
+                result.VersionTag = graininfo.VersionTag;
             }
-            return Tuple.Create(result, partitionData[grain].VersionTag);
+            return result;
         }
 
         /// <summary>
