@@ -15,9 +15,9 @@ namespace Orleans.Runtime.Placement
         /// <param name="grain"></param>
         /// <param name="addresses">Local addresses will always be complete, remote may be partial</param>
         /// <returns>True if remote addresses are complete within freshness constraint</returns>
-        bool FastLookup(GrainId grain, out List<ActivationAddress> addresses);
+        bool FastLookup(GrainId grain, out AddressesAndTag addresses);
 
-        Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain);
+        Task<AddressesAndTag> FullLookup(GrainId grain);
 
         bool LocalLookup(GrainId grain, out List<ActivationData> addresses);
 
@@ -38,19 +38,10 @@ namespace Orleans.Runtime.Placement
 
     internal static class PlacementContextExtensions
     {
-        public static async Task<List<ActivationAddress>> Lookup(this IPlacementContext @this, GrainId grainId)
+        public static Task<AddressesAndTag> Lookup(this IPlacementContext @this, GrainId grainId)
         {
-            List<ActivationAddress> l;
-            if (@this.FastLookup(grainId, out l))
-            {
-                return l;
-            }
-            else
-            {
-                var result = await @this.FullLookup(grainId);
-                return result == null ? null : result.Item1;
-            }
-            
+            AddressesAndTag l;
+            return @this.FastLookup(grainId, out l) ? Task.FromResult(l) : @this.FullLookup(grainId); 
         }
 
         public static PlacementStrategy GetGrainPlacementStrategy(this IPlacementContext @this, int typeCode, string genericArguments = null)

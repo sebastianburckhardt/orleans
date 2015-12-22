@@ -276,7 +276,7 @@ namespace Orleans.Runtime
                 SiloAddress = LocalSilo,
                 SiloName = localSiloName,
                 LocalCacheActivationAddresses = directory.GetLocalCacheData(grain),
-                LocalDirectoryActivationAddresses = directory.GetLocalDirectoryData(grain),
+                LocalDirectoryActivationAddresses = directory.GetLocalDirectoryData(grain).Addresses,
                 PrimaryForGrain = directory.GetPrimaryForGrain(grain)
             };
             try
@@ -1198,9 +1198,9 @@ namespace Orleans.Runtime
             get { return logger; }
         }
 
-        public bool FastLookup(GrainId grain, out List<ActivationAddress> addresses)
+        public bool FastLookup(GrainId grain, out AddressesAndTag addresses)
         {
-            return directory.LocalLookup(grain, out addresses) && addresses != null && addresses.Count > 0;
+            return directory.LocalLookup(grain, out addresses) && addresses.Addresses != null && addresses.Addresses.Count > 0;
             // NOTE: only check with the local directory cache.
             // DO NOT check in the local activations TargetDirectory!!!
             // The only source of truth about which activation should be legit to is the state of the ditributed directory.
@@ -1209,7 +1209,7 @@ namespace Orleans.Runtime
             // thus volaiting the single-activation semantics and not converging even eventualy!
         }
 
-        public Task<Tuple<List<ActivationAddress>, int>> FullLookup(GrainId grain)
+        public Task<AddressesAndTag> FullLookup(GrainId grain)
         {
             return scheduler.RunOrQueueTask(() => directory.LookupAsync(grain), this.SchedulingContext);
         }
