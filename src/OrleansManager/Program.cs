@@ -185,7 +185,7 @@ namespace OrleansManager
             var lookupResult = await directory.LookupAsync(grainId);
 
             WriteStatus(string.Format("**LookupGrain finished OK. Lookup result is:"));
-            var list = lookupResult.Item1;
+            var list = lookupResult.Addresses;
             if (list == null)
             {
                 WriteStatus(string.Format("**The returned activation list is null."));

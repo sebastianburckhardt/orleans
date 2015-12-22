@@ -63,6 +63,12 @@ namespace Orleans.GrainDirectory
         /// <param name="grain">The ID of the grain to look up.</param>
         /// <param name="hopcount">Counts recursion depth across silos</param>
         /// <returns>A list of all known activations of the grain, and the e-tag.</returns>
-        Task<Tuple<List<ActivationAddress>, int>> LookupAsync(GrainId gid, int hopcount = 0);
+        Task<AddressesAndTag> LookupAsync(GrainId gid, int hopcount = 0);
+    }
+
+    internal struct AddressesAndTag 
+    {
+        public List<ActivationAddress> Addresses;
+        public int VersionTag;
     }
 }

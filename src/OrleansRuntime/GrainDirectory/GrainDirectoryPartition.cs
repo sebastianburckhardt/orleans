@@ -327,21 +327,23 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         /// <param name="grain"></param>
         /// <returns></returns>
-        internal Tuple<List<ActivationAddress>, int> LookUpGrain(GrainId grain)
+        internal AddressesAndTag LookUpGrain(GrainId grain)
         {
+            var result = new AddressesAndTag();
             lock (lockable)
             {
-                if (!partitionData.ContainsKey(grain)) return null;
-
-                var result = new Tuple<List<ActivationAddress>, int>(
-                    new List<ActivationAddress>(), partitionData[grain].VersionTag);
-
-                foreach (var route in partitionData[grain].Instances.Where(route => IsValidSilo(route.Value.SiloAddress)))
+                if (partitionData.ContainsKey(grain))
                 {
-                    result.Item1.Add(ActivationAddress.GetAddress(route.Value.SiloAddress, grain, route.Key, route.Value.RegistrationStatus));
+                    result.Addresses = new List<ActivationAddress>();
+                    result.VersionTag = partitionData[grain].VersionTag;
+
+                    foreach (var route in partitionData[grain].Instances.Where(route => IsValidSilo(route.Value.SiloAddress)))
+                    {
+                        result.Addresses.Add(ActivationAddress.GetAddress(route.Value.SiloAddress, grain, route.Key, route.Value.RegistrationStatus));
+                    }
                 }
-                return result;
             }
+            return result;
         }
 
         /// <summary>

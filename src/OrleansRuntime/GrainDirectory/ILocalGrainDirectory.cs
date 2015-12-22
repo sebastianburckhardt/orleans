@@ -45,7 +45,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// <param name="grain">The ID of the grain to look up.</param>
         /// <param name="addresses">An output parameter that receives the list of locally-known activations of the grain.</param>
         /// <returns>True if remote addresses are complete within freshness constraint</returns>
-        bool LocalLookup(GrainId grain, out List<ActivationAddress> addresses);
+        bool LocalLookup(GrainId grain, out AddressesAndTag addresses);
 
         /// <summary>
         /// Invalidates cache entry for the given activation address.
@@ -90,7 +90,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         /// <param name="grain"></param>
         /// <returns></returns>
-        List<ActivationAddress> GetLocalDirectoryData(GrainId grain);
+        AddressesAndTag GetLocalDirectoryData(GrainId grain);
 
         /// <summary>
         /// For testing and troubleshhoting purposes only.

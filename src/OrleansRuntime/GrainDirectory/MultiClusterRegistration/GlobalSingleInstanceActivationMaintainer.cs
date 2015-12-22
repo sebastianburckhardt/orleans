@@ -162,7 +162,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // transition to requesting state
                 if (router.DirectoryPartition.UpdateClusterRegistrationStatus(entry.Item1, entry.Item2.Key, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.Doubtful))
                 {
-                    var currentActivations = router.DirectoryPartition.LookUpGrain(entry.Item1).Item1;
+                    var currentActivations = router.DirectoryPartition.LookUpGrain(entry.Item1).Addresses;
                     var address = currentActivations.FirstOrDefault();
                     Debug.Assert(address != null && address.Status == MultiClusterStatus.RequestedOwnership);
                     addresses.Add(address); // TODO simplify the above code?
@@ -273,7 +273,7 @@ namespace Orleans.Runtime.GrainDirectory
                 }
 
                 // we were not successful, reread state to determine what is going on
-                var currentActivations = router.DirectoryPartition.LookUpGrain(address.Grain).Item1;
+                var currentActivations = router.DirectoryPartition.LookUpGrain(address.Grain).Addresses;
                 address = currentActivations.FirstOrDefault();
                 Debug.Assert(address != null);            
                 

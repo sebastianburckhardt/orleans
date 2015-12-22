@@ -95,7 +95,7 @@ namespace Orleans.Runtime.GrainDirectory
                 }
 
                 // we were not successful, reread state to determine what is going on
-                var currentActivations = DirectoryPartition.LookUpGrain(address.Grain).Item1;
+                var currentActivations = DirectoryPartition.LookUpGrain(address.Grain).Addresses;
                 address = currentActivations.FirstOrDefault();
                 Debug.Assert(address != null && address.Equals(MyActivation.Item1));
 
