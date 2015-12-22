@@ -76,14 +76,14 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>) || definition == typeof(QueuedGrain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(ReplicatedGrain<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.IsClass)
                             {
                                 grainStateType = stateArg;
                                 storageInterface = (definition == typeof(Grain<>)) ? 
-                                    StorageInterface.ReadWriteClear : StorageInterface.Queued;
+                                    StorageInterface.StorageBridge : StorageInterface.QueuedGrainAdaptor;
                                 break;
                             }
                         }

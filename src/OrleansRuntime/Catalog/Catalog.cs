@@ -667,20 +667,20 @@ namespace Orleans.Runtime
 
                 var attr = GetProviderAttribute(data);
 
-                if (grainTypeData.StorageInterface == StorageInterface.ReadWriteClear)  // Grain<T>
+                if (grainTypeData.StorageInterface == StorageInterface.StorageBridge)  // Grain<T>
                 {
                     SetupStorageProvider(data, attr);
-                        data.GrainInstance.GrainState = state;
-                        data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
-                    }
-
-                else if (grainTypeData.StorageInterface == StorageInterface.Queued)  // QueuedGrain<T> 
-                    {
-                    var repprovider = SetupReplicationProvider(data, attr);
-                        var svc = new ReplicationServices(grain, repprovider);
-                    ((IReplicationAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
-                    }
+                    data.GrainInstance.GrainState = state;
+                    data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
                 }
+
+                else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor)  // QueuedGrain<T> 
+                {
+                    var repprovider = SetupReplicationProvider(data, attr);
+                    var svc = new ReplicationServices(grain, repprovider);
+                    ((IReplicationAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
+                }
+            }
 
 
             activations.IncrementGrainCounter(grainClassName);
@@ -728,50 +728,50 @@ namespace Orleans.Runtime
 
 
         private IReplicationProvider SetupReplicationProvider(ActivationData data, ProviderAttribute attr)
-            {
+        {
             if (attr is StorageProviderAttribute)
-                {
+            {
                 SetupStorageProvider(data, attr);
                 return replicationProviderManager.WrapStorageProvider(data.StorageProvider);
-                }
+            }
 
             var grainTypeName = data.GrainInstanceType.FullName;
 
             if (!(attr is ReplicationProviderAttribute))
-                {
+            {
                 var errMsg = string.Format("Unsupported provider attribute for grain {0}", grainTypeName);
                 logger.Error(ErrorCode.Provider_CatalogUnsupportedProviderAttribute, errMsg);
-                    throw new BadProviderConfigException(errMsg);
-                }
+                throw new BadProviderConfigException(errMsg);
+            }
 
-                IReplicationProvider provider;
-                if (replicationProviderManager == null || replicationProviderManager.GetNumLoadedProviders() == 0)
-                {
-                    var errMsg = string.Format("No replication providers found loading grain type {0}", grainTypeName);
-                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
-                    throw new BadProviderConfigException(errMsg);
-                }
+            IReplicationProvider provider;
+            if (replicationProviderManager == null || replicationProviderManager.GetNumLoadedProviders() == 0)
+            {
+                var errMsg = string.Format("No replication providers found loading grain type {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
 
             replicationProviderManager.TryGetProvider(attr.ProviderName, out provider, false);
 
-                if (provider == null)
-                {
-                    var errMsg = string.Format(
+            if (provider == null)
+            {
+                var errMsg = string.Format(
                     "Cannot find replication provider with Name={0} for grain type {1}", attr.ProviderName,
-                        grainTypeName);
-                    logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
-                    throw new BadProviderConfigException(errMsg);
-                }
+                    grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
 
             if (logger.IsVerbose2)
             {
-                    string msg = string.Format("Assigned replication provider with Name={0} to grain type {1}",
+                string msg = string.Format("Assigned replication provider with Name={0} to grain type {1}",
                     attr.ProviderName, grainTypeName);
-                    logger.Verbose2(ErrorCode.Provider_CatalogReplicationProviderAllocated, msg);
-                }
-
-                return provider;
+                logger.Verbose2(ErrorCode.Provider_CatalogReplicationProviderAllocated, msg);
             }
+
+            return provider;
+        }
 
         private IStorageProvider FindStorageProvider(string storageProviderName, string grainTypeName)
         {
