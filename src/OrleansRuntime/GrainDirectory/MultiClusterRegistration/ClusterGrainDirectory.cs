@@ -46,7 +46,6 @@ namespace Orleans.Runtime.GrainDirectory
  
                 response = new RemoteClusterActivationResponse();
                 response.ResponseStatus = ActivationResponseStatus.FAILED;
-                response.ExistingActivationAddress = null;
                 return response;
             }
 
@@ -92,24 +91,26 @@ namespace Orleans.Runtime.GrainDirectory
                 {
                     //Find the Activation Status for the entry and return appropriate value.
 
-                    var addresses = localResult.Addresses;
-                    
                     //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
-                    var act = addresses.FirstOrDefault();
+                    var addressandtag = new AddressAndTag()
+                    {
+                        Address = localResult.Addresses.FirstOrDefault(),
+                        VersionTag = localResult.VersionTag
+                    };
 
-                    if (act == null)
+                    if (addressandtag.Address == null)
                     {
                         response.ResponseStatus = ActivationResponseStatus.PASS;
                     }
                     else
                     {
-                        var existingActivationStatus = act.Status;
+                        var existingActivationStatus = addressandtag.Address.Status;
 
                         switch (existingActivationStatus)
                         {
                             case MultiClusterStatus.Owned:
                                 response.ResponseStatus = ActivationResponseStatus.FAILED;
-                                response.ExistingActivationAddress = act;
+                                response.ExistingActivationAddress = addressandtag;
                                 response.ClusterId = ClusterId;
                                 response.Owned = true;
                                 break;
@@ -117,7 +118,6 @@ namespace Orleans.Runtime.GrainDirectory
                             case MultiClusterStatus.Cached:
                             case MultiClusterStatus.RaceLoser:
                                 response.ResponseStatus = ActivationResponseStatus.PASS;
-                                response.ExistingActivationAddress = null;
                                 break;
 
                             case MultiClusterStatus.RequestedOwnership:
@@ -128,18 +128,17 @@ namespace Orleans.Runtime.GrainDirectory
                                 if (iWin)
                                 {
                                     response.ResponseStatus = ActivationResponseStatus.FAILED;
-                                    response.ExistingActivationAddress = act;
+                                    response.ExistingActivationAddress = addressandtag;
                                     response.ClusterId = ClusterId;
                                     response.Owned = false;
                                 }
                                 else
                                 {
                                     response.ResponseStatus = ActivationResponseStatus.PASS;
-                                    response.ExistingActivationAddress = null;
                                     //update own activation status to race loser.
                                     if (existingActivationStatus == MultiClusterStatus.RequestedOwnership)
                                     {
-                                        var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, act.Activation, MultiClusterStatus.RaceLoser, MultiClusterStatus.RequestedOwnership);
+                                        var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, addressandtag.Address.Activation, MultiClusterStatus.RaceLoser, MultiClusterStatus.RequestedOwnership);
                                         if (!success)
                                         {
                                             // there was a race. retry.

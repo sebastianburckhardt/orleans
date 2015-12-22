@@ -22,7 +22,7 @@ namespace Orleans.Runtime.GrainDirectory
         private static int NUM_RETRIES = 3;
         private Logger logger;
 
-        public override async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleact)
+        public override async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleact)
         {
             var globalconfig = Silo.CurrentSilo.OrleansConfig.Globals;
 
@@ -51,7 +51,7 @@ namespace Orleans.Runtime.GrainDirectory
             // Try to go into REQUESTED_OWNERSHIP state
             var MyActivation = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.RequestedOwnership);
 
-            if (!MyActivation.Item1.Equals(address)) 
+            if (!MyActivation.Address.Equals(address)) 
             {
                 //This implies that the registration already existed in some state? return the existing activation.
                 return MyActivation;
@@ -64,7 +64,7 @@ namespace Orleans.Runtime.GrainDirectory
             while (retries-- > 0)
             {
                 if (logger.IsVerbose)
-                    logger.Verbose("GSIP:R {0} Round={1} Act={2}", address.Grain.ToString(), NUM_RETRIES - retries, MyActivation.Item1.ToString());
+                    logger.Verbose("GSIP:R {0} Round={1} Act={2}", address.Grain.ToString(), NUM_RETRIES - retries, MyActivation.Address.ToString());
 
                 var responses = SendRequestRound(address, RemoteClusters);
 
@@ -78,8 +78,8 @@ namespace Orleans.Runtime.GrainDirectory
                     case GlobalSingleInstanceResponseTracker.Outcome.REMOTE_OWNER:
                     case GlobalSingleInstanceResponseTracker.Outcome.REMOTE_OWNER_LIKELY:
                         {
-                            DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, responses.RemoteOwner);
-                            return Tuple.Create(responses.RemoteOwner, responses.RemoteOwnerETag);
+                            DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, responses.RemoteOwner.Address);
+                            return responses.RemoteOwner;
                         }
                     case GlobalSingleInstanceResponseTracker.Outcome.SUCCEED:
                         {
@@ -97,7 +97,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // we were not successful, reread state to determine what is going on
                 var currentActivations = DirectoryPartition.LookUpGrain(address.Grain).Addresses;
                 address = currentActivations.FirstOrDefault();
-                Debug.Assert(address != null && address.Equals(MyActivation.Item1));
+                Debug.Assert(address != null && address.Equals(MyActivation.Address));
 
                 if (address.Status == MultiClusterStatus.RequestedOwnership)
                 {
