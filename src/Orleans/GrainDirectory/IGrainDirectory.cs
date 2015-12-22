@@ -24,7 +24,7 @@ namespace Orleans.GrainDirectory
         /// <param name="withRetry">Indicates whether or not to retry the operation.</param>
         /// <param name="hopcount">Counts recursion depth across silos</param>
         /// <returns>The registered address and the version associated with this directory mapping.</returns>
-        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount = 0);
+        Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount = 0);
 
         /// <summary>
         /// Removes the record for an existing activation from the directory service.
@@ -66,6 +66,16 @@ namespace Orleans.GrainDirectory
         Task<AddressesAndTag> LookupAsync(GrainId gid, int hopcount = 0);
     }
 
+
+    [Serializable]
+    internal struct AddressAndTag
+    {
+        public ActivationAddress Address;
+        public int VersionTag;
+    }
+    
+
+    [Serializable]
     internal struct AddressesAndTag 
     {
         public List<ActivationAddress> Addresses;

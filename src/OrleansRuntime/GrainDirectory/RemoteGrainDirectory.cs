@@ -22,7 +22,7 @@ namespace Orleans.Runtime.GrainDirectory
             logger = TraceLogger.GetLogger("Orleans.GrainDirectory.CacheValidator", TraceLogger.LoggerType.Runtime);
         }
 
-        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
+        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
         {
             (singleActivation ? router.RegistrationsSingleActRemoteReceived : router.RegistrationsRemoteReceived).Increment();
             

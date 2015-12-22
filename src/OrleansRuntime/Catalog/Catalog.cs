@@ -1148,11 +1148,11 @@ namespace Orleans.Runtime
 
             if (singleActivationMode)
             {
-                Tuple<ActivationAddress,int> returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
-                if (address.Equals(returnedAddress.Item1)) return;
+                var result = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
+                if (address.Equals(result.Address)) return;
                
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
-                throw new DuplicateActivationException(returnedAddress.Item1, primaryDirectoryForGrain);
+                throw new DuplicateActivationException(result.Address, primaryDirectoryForGrain);
             }
             else
             {
