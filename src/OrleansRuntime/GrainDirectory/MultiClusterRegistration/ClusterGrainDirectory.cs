@@ -83,7 +83,7 @@ namespace Orleans.Runtime.GrainDirectory
                 //since we are the owner, we can look directly into the partition. No need to lookinto the cache.
                 var localResult = router.DirectoryPartition.LookUpGrain(grain);
 
-                if (localResult == null)
+                if (localResult.Addresses == null)
                 {
                     //If no activation found in the cluster, return response as PASS.
                     response.ResponseStatus = ActivationResponseStatus.PASS;
@@ -92,7 +92,7 @@ namespace Orleans.Runtime.GrainDirectory
                 {
                     //Find the Activation Status for the entry and return appropriate value.
 
-                    var addresses = localResult.Item1;
+                    var addresses = localResult.Addresses;
                     
                     //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
                     var act = addresses.FirstOrDefault();
