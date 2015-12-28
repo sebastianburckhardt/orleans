@@ -13,6 +13,8 @@ namespace Orleans.EventSourcing
         Task<IEnumerable<object>> LoadStreamFromVersion(string streamId, int version);
 
         Task AppendToStream(string streamId, IEnumerable<object> events);
+
+        Task DeleteStream(string streamId);
     }
 
     public interface ISnapshot
