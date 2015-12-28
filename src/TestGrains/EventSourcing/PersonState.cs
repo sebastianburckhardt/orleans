@@ -1,10 +1,11 @@
 using System;
+using Orleans;
 using Orleans.EventSourcing;
 using TestGrainInterfaces;
 
 namespace TestGrains
 {
-    public class PersonState 
+    public class PersonState : GrainState
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }

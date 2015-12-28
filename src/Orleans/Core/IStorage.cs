@@ -28,6 +28,7 @@ namespace Orleans.Core
     {
         None,
         StorageBridge,
+        JournaledStorageBridge,
         QueuedGrainAdaptor,
     }
 }

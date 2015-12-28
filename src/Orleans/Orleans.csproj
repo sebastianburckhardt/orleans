@@ -79,6 +79,13 @@
     <Compile Include="Async\TaskUtility.cs" />
     <Compile Include="Async\UnobservedExceptionsHandlerClass.cs" />
     <Compile Include="Async\TaskExtensions.cs" />
+    <Compile Include="EventSourcing\GrainJournaledStateStorageBridge.cs" />
+    <Compile Include="EventSourcing\IEventStore.cs" />
+    <Compile Include="EventSourcing\IJournaledStorageProvider.cs" />
+    <Compile Include="EventSourcing\Journal.cs" />
+    <Compile Include="EventSourcing\JournaledGrain.cs" />
+    <Compile Include="EventSourcing\JournaledStorageProvider.cs" />
+    <Compile Include="EventSourcing\MemoryEventStore.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />
     <Compile Include="CodeGeneration\GrainState.cs" />

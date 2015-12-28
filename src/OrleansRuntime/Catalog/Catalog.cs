@@ -16,6 +16,7 @@ using Orleans.Runtime.Placement;
 using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.Replication;
 using Orleans.Storage;
+using Orleans.EventSourcing;
 
 namespace Orleans.Runtime
 {
@@ -123,6 +124,7 @@ namespace Orleans.Runtime
         private readonly OrleansTaskScheduler scheduler;
         private readonly ActivationDirectory activations;
         private IStorageProviderManager storageProviderManager;
+        private IJournaledStorageProviderManager journaledStorageProviderManager;
         private IReplicationProviderManager replicationProviderManager;
         private Dispatcher dispatcher;
         private readonly TraceLogger logger;
@@ -191,6 +193,11 @@ namespace Orleans.Runtime
         internal void SetStorageManager(IStorageProviderManager storageManager)
         {
             storageProviderManager = storageManager;
+        }
+
+        internal void SetStorageManager(IJournaledStorageProviderManager storageManager)
+        {
+            journaledStorageProviderManager = storageManager;
         }
 
         internal void SetReplicationManager(IReplicationProviderManager replicationManager)
@@ -663,6 +670,13 @@ namespace Orleans.Runtime
                     data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
                 }
 
+                else if (grainTypeData.StorageInterface == StorageInterface.JournaledStorageBridge)  // JournaledGrain<T>
+                {
+                    SetupJournaledStorageProvider(data, attr);
+                    data.GrainInstance.GrainState = state;
+                    data.GrainInstance.Storage = new GrainJournaledStateStorageBridge(data.GrainTypeName, data.GrainInstance as JournaledGrain, data.JournaledStorageProvider);
+                }
+
                 else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor)  // QueuedGrain<T> 
                 {
                     var repprovider = SetupReplicationProvider(data, attr);
@@ -704,6 +718,30 @@ namespace Orleans.Runtime
 
             var provider = FindStorageProvider(attr.ProviderName, grainTypeName);
             data.StorageProvider = provider;
+
+            if (logger.IsVerbose2)
+            {
+                string msg = string.Format("Assigned storage provider with Name={0} to grain type {1}",
+                    attr.ProviderName, grainTypeName);
+                logger.Verbose2(ErrorCode.Provider_CatalogStorageProviderAllocated, msg);
+            }
+
+            return provider;
+        }
+
+        private IJournaledStorageProvider SetupJournaledStorageProvider(ActivationData data, ProviderAttribute attr)
+        {
+            var grainTypeName = data.GrainInstanceType.FullName;
+
+            if (!(attr is JournaledStorageProviderAttribute))
+            {
+                var errMsg = string.Format("Unsupported provider attribute for grain {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogUnsupportedProviderAttribute, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
+
+            var provider = FindJournaledStorageProvider(attr.ProviderName, grainTypeName);
+            data.JournaledStorageProvider = provider;
 
             if (logger.IsVerbose2)
             {
@@ -787,7 +825,32 @@ namespace Orleans.Runtime
             return provider;
         }
 
-    
+
+        private IJournaledStorageProvider FindJournaledStorageProvider(string storageProviderName, string grainTypeName)
+        {
+            IJournaledStorageProvider provider;
+            if (journaledStorageProviderManager == null || journaledStorageProviderManager.GetNumLoadedProviders() == 0)
+            {
+                var errMsg = string.Format("No journaled storage providers found loading grain type {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_1, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
+
+            // Look for MemoryStore provider as special case name
+            bool caseInsensitive = Constants.MEMORY_STORAGE_PROVIDER_NAME.Equals(storageProviderName, StringComparison.OrdinalIgnoreCase);
+            journaledStorageProviderManager.TryGetProvider(storageProviderName, out provider, caseInsensitive);
+            if (provider == null)
+            {
+                var errMsg = string.Format(
+                    "Cannot find journaled storage provider with Name={0} for grain type {1}", storageProviderName,
+                    grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_2, errMsg);
+                throw new BadProviderConfigException(errMsg);
+            }
+
+            return provider;
+        }
+
 
         private async Task SetupActivationState(ActivationData result, string grainType)
         {

@@ -45,7 +45,7 @@ namespace Orleans.EventSourcing
             Log = providerRuntime.GetLogger("Storage.JournaledStorageProvider." + id);
 
             // Instantiate event store based on provider configuration
-            // this.eventStore = ....;
+            this.eventStore = Activator.CreateInstance(Type.GetType(config.GetProperty("EventStore", ""))) as IEventStore;
 
             return TaskDone.Done;
         }

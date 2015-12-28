@@ -7,7 +7,7 @@ using TestGrainInterfaces;
 
 namespace TestGrains
 {
-    [StorageProvider(ProviderName = "MemoryStore")]
+    [JournaledStorageProvider(ProviderName = "MemoryStore")]
     public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain
     {
         public Task RegisterBirth(PersonAttributes props)

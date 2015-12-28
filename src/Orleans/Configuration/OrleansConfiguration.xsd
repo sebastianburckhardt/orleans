@@ -785,6 +785,18 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
+      <xs:element name="JournaledStorageProviders" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>
+            The optional JournaledStorageProviders element contains information relating to journaled storage provider instances used for grain persistence.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Provider" type="tns:ProviderInstanceConfig" minOccurs="0" maxOccurs="unbounded" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
       <xs:element name="ReplicationProviders" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>

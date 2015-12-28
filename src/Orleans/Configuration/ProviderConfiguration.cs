@@ -194,6 +194,7 @@ namespace Orleans.Runtime.Configuration
     {
         public const string BOOTSTRAP_PROVIDER_CATEGORY_NAME = "Bootstrap";
         public const string STORAGE_PROVIDER_CATEGORY_NAME = "Storage";
+        public const string JOURNALED_STORAGE_PROVIDER_CATEGORY_NAME = "JournaledStorage";
         public const string STREAM_PROVIDER_CATEGORY_NAME = "Stream";
         public const string REPLICATION_PROVIDER_CATEGORY_NAME = "Replication";
 

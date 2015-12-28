@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 using Orleans.Storage;
 using Orleans.CodeGeneration;
+using Orleans.EventSourcing;
 
 namespace Orleans.Runtime
 {
@@ -242,6 +243,7 @@ namespace Orleans.Runtime
         }
 
         public IStorageProvider StorageProvider { get; set; }
+        public IJournaledStorageProvider JournaledStorageProvider { get; set; }
 
         private Streams.StreamDirectory streamDirectory;
         internal Streams.StreamDirectory GetStreamDirectory()

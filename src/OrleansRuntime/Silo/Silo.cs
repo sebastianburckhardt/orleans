@@ -73,6 +73,7 @@ namespace Orleans.Runtime
         private readonly MembershipFactory membershipFactory;
         private readonly MultiClusterOracleFactory multiClusterFactory;
         private StorageProviderManager storageProviderManager;
+        private JournaledStorageProviderManager journaledStorageProviderManager;
         private ReplicationProviderManager replicationProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private BootstrapProviderManager bootstrapProviderManager;
@@ -108,6 +109,7 @@ namespace Orleans.Runtime
         internal IConsistentRingProvider RingProvider { get; private set; }
         internal IReplicationProviderManager ReplicationProviderManager { get { return replicationProviderManager; } }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
+        internal IJournaledStorageProviderManager JournaledStorageProviderManager { get { return journaledStorageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
         internal ISiloPerformanceMetrics Metrics { get { return siloStatistics.MetricsTable; } }
@@ -491,6 +493,16 @@ namespace Orleans.Runtime
             catalog.SetStorageManager(storageProviderManager);
             allSiloProviders.AddRange(storageProviderManager.GetProviders());
             if (logger.IsVerbose) { logger.Verbose("Storage provider manager created successfully."); }
+
+            // Initialize storage providers once we have a basic silo runtime environment operating
+            journaledStorageProviderManager = new JournaledStorageProviderManager(grainFactory, Services);
+            scheduler.QueueTask(
+                () => journaledStorageProviderManager.LoadStorageProviders(GlobalConfig.ProviderConfigurations),
+                providerManagerSystemTarget.SchedulingContext)
+                    .WaitWithThrow(initTimeout);
+            catalog.SetStorageManager(journaledStorageProviderManager);
+            allSiloProviders.AddRange(journaledStorageProviderManager.GetProviders());
+            if (logger.IsVerbose) { logger.Verbose("Journaled storage provider manager created successfully."); }
 
             // Initialize replication providers once we have a basic silo runtime environment operating
             replicationProviderManager = new ReplicationProviderManager(grainFactory, Services, storageProviderManager);

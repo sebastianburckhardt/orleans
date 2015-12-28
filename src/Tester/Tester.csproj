@@ -120,6 +120,7 @@
     <Compile Include="CodeGenTests\GeneratorGrainTest.cs" />
     <Compile Include="CodeGenTests\IRuntimeCodeGenGrain.cs" />
     <Compile Include="CodeGenTests\RuntimeCodeGenerationTests.cs" />
+    <Compile Include="EventSourcingTests\JournaledGrainTests.cs" />
     <Compile Include="GeoClusterTests\MultiClusterDataTests.cs" />
     <Compile Include="GeoClusterTests\BasicQueuedGrainTests.cs" />
     <Compile Include="ConcreteStateClassTests.cs" />

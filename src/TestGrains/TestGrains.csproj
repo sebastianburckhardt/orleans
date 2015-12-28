@@ -101,10 +101,6 @@
     <Compile Include="StreamLifecycleTestGrains.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OrleansEventSourcing\OrleansEventSourcing.csproj">
-      <Project>{cf7ee78b-39e1-4660-beaf-0e2606098f8c}</Project>
-      <Name>OrleansEventSourcing</Name>
-    </ProjectReference>
     <ProjectReference Include="..\OrleansSQLUtils\OrleansSqlUtils.csproj">
       <Project>{47e9ae37-4eae-48d5-a778-2c80e9a6375f}</Project>
       <Name>OrleansSqlUtils</Name>

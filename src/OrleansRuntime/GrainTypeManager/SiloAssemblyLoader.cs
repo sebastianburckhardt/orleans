@@ -10,6 +10,7 @@ using Orleans.Providers;
 using Orleans.CodeGeneration;
 using Orleans.Replication;
 using Orleans.Serialization;
+using Orleans.EventSourcing;
 
 namespace Orleans.Runtime
 {
@@ -76,14 +77,17 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>) || definition == typeof(ReplicatedGrain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(JournaledGrain<>) || definition == typeof(ReplicatedGrain<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.IsClass)
                             {
                                 grainStateType = stateArg;
-                                storageInterface = (definition == typeof(Grain<>)) ? 
-                                    StorageInterface.StorageBridge : StorageInterface.QueuedGrainAdaptor;
+                                storageInterface = (definition == typeof(Grain<>)) 
+                                    ? StorageInterface.StorageBridge 
+                                    : (definition == typeof(JournaledGrain<>))
+                                        ? StorageInterface.JournaledStorageBridge
+                                        : StorageInterface.QueuedGrainAdaptor;
                                 break;
                             }
                         }
