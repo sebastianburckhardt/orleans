@@ -10,12 +10,20 @@ namespace Orleans.EventSourcing
 {
     public abstract class JournaledGrain : Grain
     {
+        public int Version { get; internal set; }
+
+        public int UncommitedVersion
+        {
+            get { return Version + this.UncommitedEvents.Count; }
+        }
+
         private readonly List<object> uncommitedEvents = new List<object>();
 
-        internal IEnumerable<object> UncommitedEvents
+        internal IReadOnlyCollection<object> UncommitedEvents
         {
             get { return this.uncommitedEvents; }
         }
+
         /// <summary>
         /// Raise an event.
         /// </summary>
@@ -27,11 +35,13 @@ namespace Orleans.EventSourcing
             if (@event == null) throw new ArgumentNullException("event");
 
             this.uncommitedEvents.Add(@event);
+
             this.StateTransition(this.GrainState, @event);
         }
 
-        internal virtual void CommitEvents()
+        internal virtual void CommitEvents(int version)
         {
+            this.Version = version;
             this.uncommitedEvents.Clear();
         }
 

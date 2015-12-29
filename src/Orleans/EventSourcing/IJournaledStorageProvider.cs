@@ -13,10 +13,19 @@ namespace Orleans.EventSourcing
         /// <seealso cref="Logger"/>
         Logger Log { get; }
 
-        Task ClearState(string streamName);
+        /// <summary>
+        /// Deletes the stream. If <paramref name="expectedVersion"/> is provided an optimistic concurrency check will be made.
+        /// </summary>
+        Task ClearState(string streamName, int? expectedVersion);
 
+        /// <summary>
+        /// Reads the state from the stream.
+        /// </summary>
         Task ReadState(string streamName, GrainState grainState);
 
-        Task WriteState(string streamName, IEnumerable<object> newEvents);
+        /// <summary>
+        /// Writes <paramref name="newEvents"/> to the stream. If <paramref name="expectedVersion"/> is provided an optimistic concurrency check will be made.
+        /// </summary>
+        Task WriteState(string streamName, int? expectedVersion, IEnumerable<object> newEvents);
     }
 }

@@ -17,35 +17,45 @@ namespace Orleans.EventSourcing
             return TaskDone.Done;
         }
 
-        public Task AppendToStream(string streamId, IEnumerable<object> events)
+        public Task AppendToStream(string streamName, int? expectedVersion, IEnumerable<object> events)
         {
-            var stream = streams.GetOrAdd(streamId, x => new List<object>());
+            var stream = streams.GetOrAdd(streamName, x => new List<object>());
+
+            if (expectedVersion.HasValue && expectedVersion.Value != stream.Count)
+                throw new OptimisticConcurrencyException(streamName, expectedVersion.Value);
+
             stream.AddRange(events);
 
             return TaskDone.Done;
         }
 
-        public Task DeleteStream(string streamId)
+        public Task DeleteStream(string streamName, int? expectedVersion)
         {
-            List<object> dummy;
+            if(streams.ContainsKey(streamName))
+            {
+                var stream = streams[streamName];
 
-            streams.TryRemove(streamId, out dummy);
+                if (expectedVersion.HasValue && expectedVersion.Value != stream.Count)
+                    throw new OptimisticConcurrencyException(streamName, expectedVersion.Value);
+
+                streams.TryRemove(streamName, out stream);
+            }
 
             return TaskDone.Done;
         }
 
-        public Task<IEnumerable<object>> LoadStream(string streamId)
+        public Task<IEventStream> LoadStream(string streamName)
         {
-            var stream = streams.GetOrAdd(streamId, x => new List<object>());
+            var stream = streams.GetOrAdd(streamName, x => new List<object>());
 
-            return Task.FromResult(stream as IEnumerable<object>);
+            return Task.FromResult(new EventStream(streamName, stream.Count, stream) as IEventStream);
         }
 
-        public Task<IEnumerable<object>> LoadStreamFromVersion(string streamId, int version)
+        public Task<IEventStream> LoadStreamFromVersion(string streamName, int version)
         {
-            var stream = streams.GetOrAdd(streamId, x => new List<object>());
+            var stream = streams.GetOrAdd(streamName, x => new List<object>());
 
-            return Task.FromResult(stream.Skip(version));
+            return Task.FromResult(new EventStream(streamName, stream.Count, stream.Skip(version).ToList()) as IEventStream);
         }
     }
 }

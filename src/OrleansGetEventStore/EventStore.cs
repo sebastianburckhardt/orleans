@@ -36,26 +36,29 @@ namespace OrleansGetEventStore
             return this.Connection.ConnectAsync();
         }
 
-        public async Task AppendToStream(string streamId, IEnumerable<object> events)
+        public async Task AppendToStream(string streamId, int? expectedVersion, IEnumerable<object> events)
         {
             var writePageSize = 500;
             var commitHeaders = new Dictionary<string, object>();
 
-            // Waiting for the design of optimistic concurrency
-            //var originalVersion = aggregate.Version - newEvents.Count - 1;
-            //var expectedVersion = originalVersion == -1 ? ExpectedVersion.NoStream : originalVersion;
             var eventsToSave = events.Select(e => ToEventData(Guid.NewGuid(), e, commitHeaders)).ToArray();
 
             if (eventsToSave.Length == 0)
                 return;
 
+            var version = expectedVersion.HasValue 
+                ? expectedVersion.Value == 0 
+                    ? ExpectedVersion.NoStream 
+                    : expectedVersion.Value - 1
+                : ExpectedVersion.Any;
+
             if (eventsToSave.Length < writePageSize)
             {
-                await this.Connection.AppendToStreamAsync(streamId, ExpectedVersion.Any, eventsToSave);
+                await this.Connection.AppendToStreamAsync(streamId, version, eventsToSave);
             }
             else
             {
-                var transaction = await this.Connection.StartTransactionAsync(streamId, ExpectedVersion.Any);
+                var transaction = await this.Connection.StartTransactionAsync(streamId, version);
 
                 var position = 0;
                 while (position < eventsToSave.Length)
@@ -69,17 +72,24 @@ namespace OrleansGetEventStore
             }
         }
 
-        public Task DeleteStream(string streamId)
+        public Task DeleteStream(string streamName, int? expectedVersion)
         {
-            return this.Connection.DeleteStreamAsync(streamId, ExpectedVersion.Any);
+            try
+            {
+                return this.Connection.DeleteStreamAsync(streamName, expectedVersion.GetValueOrDefault(ExpectedVersion.Any));
+            }
+            catch (global::EventStore.ClientAPI.Exceptions.WrongExpectedVersionException)
+            {
+                throw new OptimisticConcurrencyException(streamName, expectedVersion.GetValueOrDefault(ExpectedVersion.Any));
+            }
         }
 
-        public Task<IEnumerable<object>> LoadStream(string streamId)
+        public Task<IEventStream> LoadStream(string streamName)
         {
-            return LoadStreamFromVersion(streamId, 0);
+            return LoadStreamFromVersion(streamName, 0);
         }
 
-        public async Task<IEnumerable<object>> LoadStreamFromVersion(string streamId, int version)
+        public async Task<IEventStream> LoadStreamFromVersion(string streamName, int version)
         {
             var sliceStart = version;
             var readPageSize = 500;
@@ -89,13 +99,13 @@ namespace OrleansGetEventStore
 
             do
             {
-                currentSlice = await this.Connection.ReadStreamEventsForwardAsync(streamId, sliceStart, readPageSize, true);
+                currentSlice = await this.Connection.ReadStreamEventsForwardAsync(streamName, sliceStart, readPageSize, true);
 
                 if (currentSlice.Status == SliceReadStatus.StreamNotFound)
-                    return events;
+                    return new EventStream(streamName, -1, new List<object>());
 
                 if (currentSlice.Status == SliceReadStatus.StreamDeleted)
-                    return events;
+                    return new EventStream(streamName, -1, new List<object>());
 
                 sliceStart = currentSlice.NextEventNumber;
 
@@ -104,7 +114,7 @@ namespace OrleansGetEventStore
 
             } while (version >= currentSlice.NextEventNumber && !currentSlice.IsEndOfStream);
 
-            return events;
+            return new EventStream(streamName, events.Count, events);
         }
 
         public static object DeserializeEvent(RecordedEvent @event)

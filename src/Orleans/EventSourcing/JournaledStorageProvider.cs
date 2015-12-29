@@ -27,9 +27,9 @@ namespace Orleans.EventSourcing
             id = Interlocked.Increment(ref counter);
         }
 
-        public Task ClearState(string streamName)
+        public Task ClearState(string streamName, int? expectedVersion)
         {
-            return this.eventStore.DeleteStream(streamName);
+            return this.eventStore.DeleteStream(streamName, expectedVersion);
         }
 
         public Task Close()
@@ -51,7 +51,7 @@ namespace Orleans.EventSourcing
 
         public async Task ReadState(string streamName, GrainState grainState)
         {
-            IEnumerable<object> eventsToApply;
+            IEventStream eventsToApply;
 
             if (this.eventStore is ISupportSnapshots)
             {
@@ -66,13 +66,13 @@ namespace Orleans.EventSourcing
             else
                 eventsToApply = await this.eventStore.LoadStream(streamName);
 
-            foreach(var @event in eventsToApply)
+            foreach(var @event in eventsToApply.Events)
                 ApplyEvent(grainState, @event);
         }
 
-        public Task WriteState(string streamName, IEnumerable<object> newEvents)
+        public Task WriteState(string streamName, int? expectedVersion, IEnumerable<object> newEvents)
         {
-            return this.eventStore.AppendToStream(streamName, newEvents);
+            return this.eventStore.AppendToStream(streamName, expectedVersion, newEvents);
         }
 
         private static void ApplyEvent(dynamic state, dynamic @event)

@@ -1,23 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Orleans.Providers;
 
 namespace Orleans.EventSourcing
 {
+    public interface IEventStream
+    {
+        string StreamName { get; }
+        int Version { get; }
+        IReadOnlyCollection<object> Events { get; }
+    }
+
     public interface IEventStore
     {
         Task Init(IProviderConfiguration config);
 
-        Task<IEnumerable<object>> LoadStream(string streamId);
+        Task<IEventStream> LoadStream(string streamName);
 
-        Task<IEnumerable<object>> LoadStreamFromVersion(string streamId, int version);
+        Task<IEventStream> LoadStreamFromVersion(string streamName, int version);
 
-        Task AppendToStream(string streamId, IEnumerable<object> events);
+        Task AppendToStream(string streamName, int? expectedVersion, IEnumerable<object> events);
 
-        Task DeleteStream(string streamId);
+        Task DeleteStream(string streamName, int? expectedVersion);
     }
 
     public interface ISnapshot
@@ -28,8 +33,8 @@ namespace Orleans.EventSourcing
 
     public interface ISupportSnapshots
     {
-        Task<ISnapshot> LoadLatest(string streamId);
+        Task<ISnapshot> LoadLatest(string streamName);
 
-        Task Create(string streamId, int version, object payload);
+        Task Create(string streamName, int version, object payload);
     }
 }

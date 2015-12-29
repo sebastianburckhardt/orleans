@@ -75,9 +75,8 @@ namespace Orleans.EventSourcing
             Exception errorOccurred;
             try
             {
-                await store.WriteState(GetStreamName(), grain.UncommitedEvents);
-
-                grain.CommitEvents();
+                await store.WriteState(GetStreamName(), grain.Version, grain.UncommitedEvents);
+                grain.CommitEvents(grain.UncommitedVersion);
 
                 StorageStatisticsGroup.OnStorageWrite(store, grainTypeName, grainRef, sw.Elapsed);
                 errorOccurred = null;
@@ -132,7 +131,7 @@ namespace Orleans.EventSourcing
             try
             {
                 // Clear (most likely Delete) state from external storage
-                await store.ClearState(GetStreamName());
+                await store.ClearState(GetStreamName(), grain.Version);
                 // Null out the in-memory copy of the state
                 grain.GrainState.SetAll(null);
 

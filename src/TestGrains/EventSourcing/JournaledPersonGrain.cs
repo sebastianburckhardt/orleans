@@ -8,6 +8,7 @@ using TestGrainInterfaces;
 namespace TestGrains
 {
     [JournaledStorageProvider(ProviderName = "GetEventStore")]
+    //[JournaledStorageProvider(ProviderName = "MemoryStore")]
     public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain, ICustomStreamName
     {
         public Task RegisterBirth(PersonAttributes props)
