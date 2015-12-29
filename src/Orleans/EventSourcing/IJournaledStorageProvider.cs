@@ -13,10 +13,10 @@ namespace Orleans.EventSourcing
         /// <seealso cref="Logger"/>
         Logger Log { get; }
 
-        Task ClearStateAsync(string grainType, GrainReference grainReference);
+        Task ClearState(string streamName);
 
-        Task ReadStateAsync(string grainType, GrainReference grainReference, GrainState grainState);
+        Task ReadState(string streamName, GrainState grainState);
 
-        Task WriteStateAsync(string grainType, GrainReference grainReference, IEnumerable<object> newEvents);
+        Task WriteState(string streamName, IEnumerable<object> newEvents);
     }
 }

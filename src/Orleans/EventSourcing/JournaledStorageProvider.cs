@@ -27,11 +27,9 @@ namespace Orleans.EventSourcing
             id = Interlocked.Increment(ref counter);
         }
 
-        public Task ClearStateAsync(string grainType, GrainReference grainReference)
+        public Task ClearState(string streamName)
         {
-            var streamId = GetStreamId(grainType, grainReference);
-
-            return this.eventStore.DeleteStream(streamId);
+            return this.eventStore.DeleteStream(streamName);
         }
 
         public Task Close()
@@ -51,39 +49,30 @@ namespace Orleans.EventSourcing
             return TaskDone.Done;
         }
 
-        public async Task ReadStateAsync(string grainType, GrainReference grainReference, GrainState grainState)
+        public async Task ReadState(string streamName, GrainState grainState)
         {
-            var streamId = GetStreamId(grainType, grainReference);
-
             IEnumerable<object> eventsToApply;
 
             if (this.eventStore is ISupportSnapshots)
             {
                 var snapshotProvider = this.eventStore as ISupportSnapshots;
-                var snapshot = await snapshotProvider.LoadLatest(streamId);
+                var snapshot = await snapshotProvider.LoadLatest(streamName);
 
                 // Deserialize the state from snapshot
                 // grainState = snapshot.Payload;
 
-                eventsToApply = await this.eventStore.LoadStreamFromVersion(streamId, snapshot.AsOfVersion + 1);
+                eventsToApply = await this.eventStore.LoadStreamFromVersion(streamName, snapshot.AsOfVersion + 1);
             }
             else
-                eventsToApply = await this.eventStore.LoadStream(streamId);
+                eventsToApply = await this.eventStore.LoadStream(streamName);
 
             foreach(var @event in eventsToApply)
                 ApplyEvent(grainState, @event);
         }
 
-        public Task WriteStateAsync(string grainType, GrainReference grainReference, IEnumerable<object> newEvents)
+        public Task WriteState(string streamName, IEnumerable<object> newEvents)
         {
-            var streamId = GetStreamId(grainType, grainReference);
-
-            return this.eventStore.AppendToStream(streamId, newEvents);
-        }
-
-        private static string GetStreamId(string grainType, GrainReference grainReference)
-        {
-            return string.Format("{0}-{1}", grainType, grainReference.ToKeyString());
+            return this.eventStore.AppendToStream(streamName, newEvents);
         }
 
         private static void ApplyEvent(dynamic state, dynamic @event)

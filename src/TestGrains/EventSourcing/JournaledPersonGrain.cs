@@ -8,7 +8,7 @@ using TestGrainInterfaces;
 namespace TestGrains
 {
     [JournaledStorageProvider(ProviderName = "GetEventStore")]
-    public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain
+    public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain, ICustomStreamName
     {
         public Task RegisterBirth(PersonAttributes props)
         {
@@ -47,6 +47,11 @@ namespace TestGrains
                     LastName = State.LastName,
                     Gender = State.Gender
                 });
+        }
+
+        public string GetStreamName()
+        {
+            return string.Concat(this.GetType().Name, "-", this.GetPrimaryKey().ToString());
         }
     }
 }

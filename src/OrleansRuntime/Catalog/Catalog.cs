@@ -889,15 +889,14 @@ namespace Orleans.Runtime
                 // Populate state data
                 try
                 {
-                    var grainRef = result.GrainReference;
+                    result.GrainInstance.GrainState = state;
 
                     await scheduler.RunOrQueueTask(() =>
-                        result.JournaledStorageProvider.ReadStateAsync(grainType, grainRef, state),
+                        result.GrainInstance.Storage.ReadStateAsync(),
                         new SchedulingContext(result));
 
                     sw.Stop();
                     StorageStatisticsGroup.OnStorageActivate(result.JournaledStorageProvider, grainType, result.GrainReference, sw.Elapsed);
-                    result.GrainInstance.GrainState = state;
                 }
                 catch (Exception ex)
                 {
@@ -905,8 +904,6 @@ namespace Orleans.Runtime
                     sw.Stop();
                     if (!(ex.GetBaseException() is KeyNotFoundException))
                         throw;
-
-                    result.GrainInstance.GrainState = state; // Just keep original empty state object
                 }
             }
         }

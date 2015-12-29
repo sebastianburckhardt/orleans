@@ -30,5 +30,22 @@ namespace UnitTests.EventSourcingTests
             Assert.IsNotNull(attributes);
             Assert.AreEqual("Luke", attributes.FirstName);
         }
+
+        [TestMethod, TestCategory("Functional")]
+        public async Task JournaledGrainTests_AppendMoreEvents()
+        {
+            var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
+            await leia.RegisterBirth(new PersonAttributes { FirstName = "Leia", LastName = "Organa", Gender = GenderType.Female });
+
+            var han = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
+            await han.RegisterBirth(new PersonAttributes { FirstName = "Han", LastName = "Solo", Gender = GenderType.Male });
+
+            await leia.Marry(han);
+
+            var attributes = await leia.GetPersonalAttributes();
+            Assert.IsNotNull(attributes);
+            Assert.AreEqual("Leia", attributes.FirstName);
+            Assert.AreEqual("Solo", attributes.LastName);
+        }
     }
 }
