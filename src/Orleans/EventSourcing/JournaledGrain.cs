@@ -4,12 +4,17 @@ using Orleans.Replication;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Orleans.Runtime;
 
 namespace Orleans.EventSourcing
 {
-    public abstract class JournaledGrain : Grain
+    /// <summary>
+    /// The base class for all grain classes that have event-sourced state.
+    /// </summary>
+    public abstract class JournaledGrain<TGrainState> : Grain, IReplicationAdaptorHost, IProtocolParticipant
+        where TGrainState : GrainState, IJournaledGrainState, new()
     {
+        protected JournaledGrain()  { }
+
         public int Version { get; internal set; }
 
         public int UncommitedVersion
@@ -34,105 +39,75 @@ namespace Orleans.EventSourcing
         {
             if (@event == null) throw new ArgumentNullException("event");
 
-            this.uncommitedEvents.Add(@event);
-
-            this.StateTransition(this.GrainState, @event);
+            if (Adaptor != null)
+                Adaptor.EnqueueUpdate(new JournalUpdate<TGrainState>() { Event = @event });
+            else
+            {
+                this.uncommitedEvents.Add(@event);
+                this.tentativeState.TransitionState(@event);
+            }
         }
 
-        internal virtual void CommitEvents(int version)
+        internal void CommitEvents(int version)
         {
             this.Version = version;
             this.uncommitedEvents.Clear();
+            this.tentativeState = null;
         }
 
-        // subclasses can override this if they want to implement transitions differently
-        // for example, if they want to use static typing
-        protected virtual void StateTransition<TEvent>(dynamic state, TEvent @event)
-            where TEvent : class
-        {
-            try
-            {
-                state.Apply(@event);
-            }
-            catch (MissingMethodException)
-            {
-                OnMissingStateTransition(@event);
-            }
-        }
-
-        protected virtual void OnMissingStateTransition(object @event)
-        {
-            // Log
-        }
-    }
-
-    /// <summary>
-    /// The base class for all grain classes that have event-sourced state.
-    /// </summary>
-    public abstract class JournaledGrain<TGrainState> : JournaledGrain//, IReplicationAdaptorHost, IProtocolParticipant
-        where TGrainState : GrainState, new()
-    {
-        protected JournaledGrain()  { }
 
         /// <summary>
         /// Adaptor for storage interface (queued grain).
         /// The storage keeps the journal.
-        /// The journal has no dependency on the type TGrainState.
         /// </summary>
-        internal IQueuedGrainAdaptor<Journal> Adaptor { get; private set; }
+        internal IQueuedGrainAdaptor<TGrainState> Adaptor { get; private set; }
 
         /// <summary>
         /// Called right after grain is constructed, to install the adaptor.
         /// </summary>
-        //void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialstate, string graintypename, IReplicationProtocolServices services)
-        //{
-        //    version = 0;
-        //    state = (TGrainState)initialstate;
+        void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialState, string graintypename, IReplicationProtocolServices services)
+        {
+            var grainState = (TGrainState)initialState;
+            this.GrainState = grainState;
 
-        //    // call the replication provider to construct the adaptor, passing the type argument
-        //    Adaptor = provider.MakeReplicationAdaptor<Journal>(this, new Journal(), graintypename, services);
-        //}
+            // call the replication provider to construct the adaptor, passing the type argument
+            Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, grainState, graintypename, services);
+        }
 
-
-        // the version and state are constructed from the journal
-        // for now I am basing this off the confirmed state only
-        // we can consider exposing the tentative state
-        private int version = 0;
-        private TGrainState state;
+        private TGrainState tentativeState;
 
         protected TGrainState State
         {
             get
             {
                 if (Adaptor != null)
+                    return this.Adaptor.TentativeState;
+                else
                 {
-                    var confirmedstate = Adaptor.ConfirmedState;
+                    if(tentativeState == null)
+                    {
+                        tentativeState = this.ConfirmedState;
 
-                    while (version < confirmedstate.Version)
-                        StateTransition(state, confirmedstate.Events[version++]);
+                        foreach (dynamic @event in this.UncommitedEvents)
+                            tentativeState.TransitionState(@event);
+                    }
 
-                    return state;
+                    return tentativeState;
                 }
+            }
+        }
+
+        protected TGrainState ConfirmedState
+        {
+            get
+            {
+                if (Adaptor != null)
+                    return this.Adaptor.ConfirmedState;
                 else
                     return base.GrainState as TGrainState;
             }
         }
         
-        /// <summary>
-        /// Raise an event.
-        /// </summary>
-        /// <param name="event">Event to raise</param>
-        /// <returns></returns>
-        protected override void RaiseEvent<TEvent>(TEvent @event)
-        {
-            if (@event == null) throw new ArgumentNullException("event");
-
-            if (Adaptor != null)
-                Adaptor.EnqueueUpdate(new JournalUpdate() { Event = @event });
-            else
-                base.RaiseEvent(@event);
-        }
-
         /// <summary>
         /// Waits until all previously raised events have been written. 
         /// </summary>
@@ -160,35 +135,34 @@ namespace Orleans.EventSourcing
         /// <summary>
         /// Notify replication adaptor of activation
         /// </summary>
-        //public Task ActivateProtocolParticipant()
-        //{
-        //    return Adaptor.Activate();
-        //}
+        Task IProtocolParticipant.ActivateProtocolParticipant()
+        {
+            return Adaptor == null ? TaskDone.Done : Adaptor.Activate();
+        }
 
         /// <summary>
         /// Notify replication adaptor of deactivation
         /// </summary>
-        //public Task DeactivateProtocolParticipant()
-        //{
-        //    return Adaptor.Deactivate();
-        //}
+        Task IProtocolParticipant.DeactivateProtocolParticipant()
+        {
+            return Adaptor == null ? TaskDone.Done : Adaptor.Deactivate();
+        }
 
         /// <summary>
         /// Receive a message from other replicas, pass on to replication adaptor.
         /// </summary>
-        //[AlwaysInterleave]
-        //Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
-        //{
-        //    return Adaptor.OnProtocolMessageReceived(payload);
-        //}
+        [AlwaysInterleave]
+        Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
+        {
+            return Adaptor == null ? Task.FromResult(payload) : Adaptor.OnProtocolMessageReceived(payload);
+        }
 
-        //[AlwaysInterleave]
-        //Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
-        //{
-        //    return Adaptor.OnMultiClusterConfigurationChange(next);
-        //}
+        [AlwaysInterleave]
+        Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
+        {
+            return Adaptor == null ? TaskDone.Done : Adaptor.OnMultiClusterConfigurationChange(next);
+        }
 
         #endregion
-
     }
 }

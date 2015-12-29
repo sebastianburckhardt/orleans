@@ -674,7 +674,10 @@ namespace Orleans.Runtime
                 {
                     SetupJournaledStorageProvider(data, attr);
                     data.GrainInstance.GrainState = state;
-                    data.GrainInstance.Storage = new GrainJournaledStateStorageBridge(data.GrainTypeName, data.GrainInstance as JournaledGrain, data.JournaledStorageProvider);
+
+                    var bridgeType = typeof(GrainJournaledStateStorageBridge<>).MakeGenericType(stateObjectType);
+
+                    data.GrainInstance.Storage = Activator.CreateInstance(bridgeType, data.GrainTypeName, data.GrainInstance, data.JournaledStorageProvider) as IStorage;
                 }
 
                 else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor)  // QueuedGrain<T> 

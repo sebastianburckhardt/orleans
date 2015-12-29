@@ -83,6 +83,8 @@
     <Compile Include="EventSourcing\GrainJournaledStateStorageBridge.cs" />
     <Compile Include="EventSourcing\ICustomStreamName.cs" />
     <Compile Include="EventSourcing\IEventStore.cs" />
+    <Compile Include="EventSourcing\JournaledGrainState.cs" />
+    <Compile Include="EventSourcing\IJournaledGrainState.cs" />
     <Compile Include="EventSourcing\IJournaledStorageProvider.cs" />
     <Compile Include="EventSourcing\Journal.cs" />
     <Compile Include="EventSourcing\JournaledGrain.cs" />

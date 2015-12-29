@@ -7,38 +7,18 @@ using Orleans.Replication;
 
 namespace Orleans.EventSourcing
 {
-
-    /// <summary>
-    /// The stored state of an event sourced grain is a journal of events.
-    /// </summary>
-    [Serializable]
-    public class Journal  : GrainState
-    {
-        public List<object> Events { get; set; }
-
-        public int Version { get { return Events.Count; } }
-
-        public Journal()
-        {
-            Events = new List<object>();
-        }
-
-    }
-
     /// <summary>
     /// The journal is updated by appending an event.
     /// </summary>
     [Serializable]
-    public class JournalUpdate : IUpdateOperation<Journal>
+    public class JournalUpdate<TGrainState> : IUpdateOperation<TGrainState>
+        where TGrainState : GrainState, IJournaledGrainState
     {
         public object Event { get; set; }
 
-        public void Update(Journal state)
+        public void Update(TGrainState state)
         {
-            state.Events.Add(Event);
+            state.TransitionState((dynamic)this.Event);
         }
     }
-
-
- 
 }

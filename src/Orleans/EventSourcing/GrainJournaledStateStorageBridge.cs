@@ -10,13 +10,14 @@ using Orleans.Storage;
 
 namespace Orleans.EventSourcing
 {
-    internal class GrainJournaledStateStorageBridge : IStorage
+    internal class GrainJournaledStateStorageBridge<TGrainState> : IStorage
+        where TGrainState : GrainState, IJournaledGrainState, new()
     {
         private readonly IJournaledStorageProvider store;
-        private readonly JournaledGrain grain;
+        private readonly JournaledGrain<TGrainState> grain;
         private readonly string grainTypeName;
 
-        public GrainJournaledStateStorageBridge(string grainTypeName, JournaledGrain grain, IJournaledStorageProvider store)
+        public GrainJournaledStateStorageBridge(string grainTypeName, JournaledGrain<TGrainState> grain, IJournaledStorageProvider store)
         {
             if (grainTypeName == null)
             {
