@@ -15,9 +15,9 @@ namespace TestGrains
         {
             if (this.State.FirstName == null)
             {
-                RaiseStateEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
+                RaiseEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
 
-                return WaitForWriteCompletion();
+                return Commit();
             }
 
             return TaskDone.Done;
@@ -30,14 +30,14 @@ namespace TestGrains
 
             var spouseData = await spouse.GetPersonalAttributes();
 
-            RaiseStateEvent(new PersonMarried(spouse.GetPrimaryKey(), spouseData.FirstName, spouseData.LastName));
+            RaiseEvent(new PersonMarried(spouse.GetPrimaryKey(), spouseData.FirstName, spouseData.LastName));
 
             if (State.LastName != spouseData.LastName)
             {
-                RaiseStateEvent(new PersonLastNameChanged(spouseData.LastName));
+                RaiseEvent(new PersonLastNameChanged(spouseData.LastName));
             }
 
-            await WaitForWriteCompletion();
+            await Commit();
         }
         
         public Task<PersonAttributes> GetPersonalAttributes()

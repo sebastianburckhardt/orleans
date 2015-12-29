@@ -29,7 +29,7 @@ namespace Orleans.EventSourcing
         /// </summary>
         /// <param name="event">Event to raise</param>
         /// <returns></returns>
-        protected virtual void RaiseStateEvent<TEvent>(TEvent @event)
+        protected virtual void RaiseEvent<TEvent>(TEvent @event)
             where TEvent : class
         {
             if (@event == null) throw new ArgumentNullException("event");
@@ -123,21 +123,21 @@ namespace Orleans.EventSourcing
         /// </summary>
         /// <param name="event">Event to raise</param>
         /// <returns></returns>
-        protected override void RaiseStateEvent<TEvent>(TEvent @event)
+        protected override void RaiseEvent<TEvent>(TEvent @event)
         {
             if (@event == null) throw new ArgumentNullException("event");
 
             if (Adaptor != null)
                 Adaptor.EnqueueUpdate(new JournalUpdate() { Event = @event });
             else
-                base.RaiseStateEvent(@event);
+                base.RaiseEvent(@event);
         }
 
         /// <summary>
         /// Waits until all previously raised events have been written. 
         /// </summary>
         /// <returns></returns>
-        protected Task WaitForWriteCompletion()
+        protected Task Commit()
         {
             if (Adaptor != null)
                 return Adaptor.CurrentQueueHasDrained();
