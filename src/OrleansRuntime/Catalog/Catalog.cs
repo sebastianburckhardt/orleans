@@ -882,6 +882,33 @@ namespace Orleans.Runtime
                     result.GrainInstance.GrainState = state; // Just keep original empty state object
                 }
             }
+
+            if (result.JournaledStorageProvider != null && state != null)
+            {
+                var sw = Stopwatch.StartNew();
+                // Populate state data
+                try
+                {
+                    var grainRef = result.GrainReference;
+
+                    await scheduler.RunOrQueueTask(() =>
+                        result.JournaledStorageProvider.ReadStateAsync(grainType, grainRef, state),
+                        new SchedulingContext(result));
+
+                    sw.Stop();
+                    StorageStatisticsGroup.OnStorageActivate(result.JournaledStorageProvider, grainType, result.GrainReference, sw.Elapsed);
+                    result.GrainInstance.GrainState = state;
+                }
+                catch (Exception ex)
+                {
+                    StorageStatisticsGroup.OnStorageActivateError(result.JournaledStorageProvider, grainType, result.GrainReference);
+                    sw.Stop();
+                    if (!(ex.GetBaseException() is KeyNotFoundException))
+                        throw;
+
+                    result.GrainInstance.GrainState = state; // Just keep original empty state object
+                }
+            }
         }
 
         /// <summary>

@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Orleans.Providers;
 
 namespace Orleans.EventSourcing
 {
     public interface IEventStore
     {
+        Task Init(IProviderConfiguration config);
+
         Task<IEnumerable<object>> LoadStream(string streamId);
 
         Task<IEnumerable<object>> LoadStreamFromVersion(string streamId, int version);

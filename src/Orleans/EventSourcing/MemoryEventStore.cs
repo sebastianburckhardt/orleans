@@ -4,12 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Orleans.Providers;
 
 namespace Orleans.EventSourcing
 {
     class MemoryEventStore : IEventStore
     {
         private readonly ConcurrentDictionary<string, List<object>> streams = new ConcurrentDictionary<string, List<object>>();
+
+        public Task Init(IProviderConfiguration config)
+        {
+            return TaskDone.Done;
+        }
 
         public Task AppendToStream(string streamId, IEnumerable<object> events)
         {

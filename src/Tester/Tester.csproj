@@ -263,6 +263,10 @@
       <Project>{58cf4453-987a-4ed5-8640-7b27838c12fd}</Project>
       <Name>OrleansDependencyInjection</Name>
     </ProjectReference>
+    <ProjectReference Include="..\OrleansGetEventStore\OrleansGetEventStore.csproj">
+      <Project>{7ac8caf2-426e-4a20-8de7-e2e62ab5c85f}</Project>
+      <Name>OrleansGetEventStore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OrleansHost\OrleansHost.csproj">
       <Project>{5c177f58-a40c-449f-8c2f-a2657f963edc}</Project>
       <Name>OrleansHost</Name>

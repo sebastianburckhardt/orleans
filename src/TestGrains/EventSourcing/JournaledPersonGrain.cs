@@ -7,14 +7,19 @@ using TestGrainInterfaces;
 
 namespace TestGrains
 {
-    [JournaledStorageProvider(ProviderName = "MemoryStore")]
+    [JournaledStorageProvider(ProviderName = "GetEventStore")]
     public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain
     {
         public Task RegisterBirth(PersonAttributes props)
         {
-            RaiseStateEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
+            if (this.State.FirstName == null)
+            {
+                RaiseStateEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
 
-            return WaitForWriteCompletion();
+                return WaitForWriteCompletion();
+            }
+
+            return TaskDone.Done;
         }
 
         public async Task Marry(IJournaledPersonGrain spouse)

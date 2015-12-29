@@ -19,7 +19,7 @@ namespace Orleans.EventSourcing
         public string Name { get; private set; }
 
         /// <summary> Logger used by this storage provider instance. </summary>
-        /// <see cref="IStorageProvider.Log"/>
+        /// <see cref="IJournaledStorageProvider.Log"/>
         public Logger Log { get; private set; }
 
         public JournaledStorageProvider()
@@ -46,6 +46,7 @@ namespace Orleans.EventSourcing
 
             // Instantiate event store based on provider configuration
             this.eventStore = Activator.CreateInstance(Type.GetType(config.GetProperty("EventStore", ""))) as IEventStore;
+            this.eventStore.Init(config);
 
             return TaskDone.Done;
         }
