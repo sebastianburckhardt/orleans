@@ -26,5 +26,12 @@ namespace TestGrainInterfaces
         Task Marry(IJournaledPersonGrain spouse);
 
         Task<PersonAttributes> GetPersonalAttributes();
+
+        // Testing
+        Task<PersonAttributes> GetConfirmedPersonalAttributes();
+        Task<int> GetConfirmedVersion();
+        Task<int> GetVersion();
+        Task ChangeLastName(string lastName);
+        Task SaveChanges();
     }
 }

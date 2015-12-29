@@ -47,7 +47,7 @@ namespace Orleans.EventSourcing
             GrainReference grainRef = grain.GrainReference;
             try
             {
-                await store.ReadState(GetStreamName(), grain.GrainState);
+                await store.ReadState(GetStreamName(), grain.ConfirmedState);
                 
                 StorageStatisticsGroup.OnStorageRead(store, grainTypeName, grainRef, sw.Elapsed);
             }
@@ -76,8 +76,8 @@ namespace Orleans.EventSourcing
             Exception errorOccurred;
             try
             {
-                await store.WriteState(GetStreamName(), grain.Version, grain.UncommitedEvents);
-                grain.CommitEvents(grain.UncommitedVersion);
+                await store.WriteState(GetStreamName(), grain.ConfirmedState.Version, grain.UncommitedEvents);
+                grain.CommitEvents();
 
                 StorageStatisticsGroup.OnStorageWrite(store, grainTypeName, grainRef, sw.Elapsed);
                 errorOccurred = null;
@@ -132,7 +132,7 @@ namespace Orleans.EventSourcing
             try
             {
                 // Clear (most likely Delete) state from external storage
-                await store.ClearState(GetStreamName(), grain.Version);
+                await store.ClearState(GetStreamName(), grain.ConfirmedState.Version);
                 // Null out the in-memory copy of the state
                 grain.GrainState.SetAll(null);
 
@@ -171,7 +171,6 @@ namespace Orleans.EventSourcing
         {
             return (grain as ICustomStreamName)?.GetStreamName() ?? GetDefaultStreamName(grainTypeName, grain.GrainReference);
         }
-
 
         private static string GetDefaultStreamName(string grainType, GrainReference grainReference)
         {

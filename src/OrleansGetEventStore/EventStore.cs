@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using EventStore.ClientAPI.Exceptions;
 using EventStore.ClientAPI.SystemData;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -36,7 +37,7 @@ namespace OrleansGetEventStore
             return this.Connection.ConnectAsync();
         }
 
-        public async Task AppendToStream(string streamId, int? expectedVersion, IEnumerable<object> events)
+        public async Task AppendToStream(string streamName, int? expectedVersion, IEnumerable<object> events)
         {
             var writePageSize = 500;
             var commitHeaders = new Dictionary<string, object>();
@@ -54,21 +55,35 @@ namespace OrleansGetEventStore
 
             if (eventsToSave.Length < writePageSize)
             {
-                await this.Connection.AppendToStreamAsync(streamId, version, eventsToSave);
+                try
+                {
+                    await this.Connection.AppendToStreamAsync(streamName, version, eventsToSave);
+                }
+                catch (WrongExpectedVersionException)
+                {
+                    throw new OptimisticConcurrencyException(streamName, version);
+                }
             }
             else
             {
-                var transaction = await this.Connection.StartTransactionAsync(streamId, version);
-
-                var position = 0;
-                while (position < eventsToSave.Length)
+                try
                 {
-                    var pageEvents = eventsToSave.Skip(position).Take(writePageSize);
-                    await transaction.WriteAsync(pageEvents);
-                    position += writePageSize;
-                }
+                    var transaction = await this.Connection.StartTransactionAsync(streamName, version);
 
-                await transaction.CommitAsync();
+                    var position = 0;
+                    while (position < eventsToSave.Length)
+                    {
+                        var pageEvents = eventsToSave.Skip(position).Take(writePageSize);
+                        await transaction.WriteAsync(pageEvents);
+                        position += writePageSize;
+                    }
+
+                    await transaction.CommitAsync();
+                }
+                catch (WrongExpectedVersionException)
+                {
+                    throw new OptimisticConcurrencyException(streamName, version);
+                }
             }
         }
 
@@ -78,7 +93,7 @@ namespace OrleansGetEventStore
             {
                 return this.Connection.DeleteStreamAsync(streamName, expectedVersion.GetValueOrDefault(ExpectedVersion.Any));
             }
-            catch (global::EventStore.ClientAPI.Exceptions.WrongExpectedVersionException)
+            catch (WrongExpectedVersionException)
             {
                 throw new OptimisticConcurrencyException(streamName, expectedVersion.GetValueOrDefault(ExpectedVersion.Any));
             }

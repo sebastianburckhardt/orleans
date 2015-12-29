@@ -47,5 +47,44 @@ namespace UnitTests.EventSourcingTests
             Assert.AreEqual("Leia", attributes.FirstName);
             Assert.AreEqual("Solo", attributes.LastName);
         }
+
+        [TestMethod, TestCategory("Functional")]
+        public async Task JournaledGrainTests_TentativeConfirmedState()
+        {
+            var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
+
+            Assert.AreEqual(0, await leia.GetConfirmedVersion());
+            Assert.AreEqual(0, await leia.GetVersion());
+            Assert.AreEqual(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.AreEqual(null, (await leia.GetPersonalAttributes()).LastName);
+
+            await leia.ChangeLastName("Organa");
+
+            Assert.AreEqual(0, await leia.GetConfirmedVersion());
+            Assert.AreEqual(1, await leia.GetVersion());
+            Assert.AreEqual(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.AreEqual("Organa", (await leia.GetPersonalAttributes()).LastName);
+
+            await leia.SaveChanges();
+
+            Assert.AreEqual(1, await leia.GetConfirmedVersion());
+            Assert.AreEqual(1, await leia.GetVersion());
+            Assert.AreEqual("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.AreEqual("Organa", (await leia.GetPersonalAttributes()).LastName);
+
+            await leia.ChangeLastName("Solo");
+
+            Assert.AreEqual(1, await leia.GetConfirmedVersion());
+            Assert.AreEqual(2, await leia.GetVersion());
+            Assert.AreEqual("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.AreEqual("Solo", (await leia.GetPersonalAttributes()).LastName);
+
+            await leia.SaveChanges();
+
+            Assert.AreEqual(2, await leia.GetConfirmedVersion());
+            Assert.AreEqual(2, await leia.GetVersion());
+            Assert.AreEqual("Solo", (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.AreEqual("Solo", (await leia.GetPersonalAttributes()).LastName);
+        }
     }
 }

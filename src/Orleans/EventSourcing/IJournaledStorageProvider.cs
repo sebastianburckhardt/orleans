@@ -21,7 +21,7 @@ namespace Orleans.EventSourcing
         /// <summary>
         /// Reads the state from the stream.
         /// </summary>
-        Task ReadState(string streamName, GrainState grainState);
+        Task ReadState(string streamName, IJournaledGrainState grainState);
 
         /// <summary>
         /// Writes <paramref name="newEvents"/> to the stream. If <paramref name="expectedVersion"/> is provided an optimistic concurrency check will be made.

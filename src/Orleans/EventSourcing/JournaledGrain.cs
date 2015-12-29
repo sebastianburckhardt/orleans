@@ -15,13 +15,6 @@ namespace Orleans.EventSourcing
     {
         protected JournaledGrain()  { }
 
-        public int Version { get; internal set; }
-
-        public int UncommitedVersion
-        {
-            get { return Version + this.UncommitedEvents.Count; }
-        }
-
         private readonly List<object> uncommitedEvents = new List<object>();
 
         internal IReadOnlyCollection<object> UncommitedEvents
@@ -48,13 +41,13 @@ namespace Orleans.EventSourcing
             }
         }
 
-        internal void CommitEvents(int version)
+        internal void CommitEvents()
         {
-            this.Version = version;
-            this.uncommitedEvents.Clear();
-            this.tentativeState = null;
-        }
+            foreach (dynamic @event in this.uncommitedEvents)
+                this.ConfirmedState.TransitionState(@event);
 
+            this.uncommitedEvents.Clear();
+        }
 
         /// <summary>
         /// Adaptor for storage interface (queued grain).
@@ -74,30 +67,20 @@ namespace Orleans.EventSourcing
             Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, grainState, graintypename, services);
         }
 
-        private TGrainState tentativeState;
+        private TGrainState tentativeState = new TGrainState();
 
-        protected TGrainState State
+        protected internal TGrainState State
         {
             get
             {
                 if (Adaptor != null)
                     return this.Adaptor.TentativeState;
                 else
-                {
-                    if(tentativeState == null)
-                    {
-                        tentativeState = this.ConfirmedState;
-
-                        foreach (dynamic @event in this.UncommitedEvents)
-                            tentativeState.TransitionState(@event);
-                    }
-
-                    return tentativeState;
-                }
+                    return this.tentativeState;
             }
         }
 
-        protected TGrainState ConfirmedState
+        protected internal TGrainState ConfirmedState
         {
             get
             {

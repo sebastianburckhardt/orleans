@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Providers;
 using Orleans.Runtime;
-using Orleans.Storage;
 
 namespace Orleans.EventSourcing
 {
@@ -49,7 +48,7 @@ namespace Orleans.EventSourcing
             return TaskDone.Done;
         }
 
-        public async Task ReadState(string streamName, GrainState grainState)
+        public async Task ReadState(string streamName, IJournaledGrainState grainState)
         {
             IEventStream eventsToApply;
 
@@ -66,18 +65,13 @@ namespace Orleans.EventSourcing
             else
                 eventsToApply = await this.eventStore.LoadStream(streamName);
 
-            foreach(var @event in eventsToApply.Events)
-                ApplyEvent(grainState, @event);
+            foreach(dynamic @event in eventsToApply.Events)
+                grainState.TransitionState(@event);
         }
 
         public Task WriteState(string streamName, int? expectedVersion, IEnumerable<object> newEvents)
         {
             return this.eventStore.AppendToStream(streamName, expectedVersion, newEvents);
-        }
-
-        private static void ApplyEvent(dynamic state, dynamic @event)
-        {
-            state.Apply(@event);
         }
     }
 }
