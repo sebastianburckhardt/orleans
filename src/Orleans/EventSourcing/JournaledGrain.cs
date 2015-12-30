@@ -58,13 +58,13 @@ namespace Orleans.EventSourcing
         /// <summary>
         /// Called right after grain is constructed, to install the adaptor.
         /// </summary>
-        void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialState, string graintypename, IReplicationProtocolServices services)
+        void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialState, string grainTypeName, IReplicationProtocolServices services)
         {
             var grainState = (TGrainState)initialState;
             this.GrainState = grainState;
 
             // call the replication provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, grainState, graintypename, services);
+            Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, grainState, grainTypeName, services);
         }
 
         private TGrainState tentativeState = new TGrainState();

@@ -105,6 +105,7 @@
     <Compile Include="Replication\ReplicationServices.cs" />
     <Compile Include="Replication\ReplicationProviderManager.cs" />
     <Compile Include="Replication\GrainStateWithMetaData.cs" />
+    <Compile Include="Replication\SharedJournaledStorageAdaptor.cs" />
     <Compile Include="Replication\SharedStorageAdaptor.cs" />
     <Compile Include="Scheduler\ITaskScheduler.cs" />
     <Compile Include="Silo\IStartupBuilder.cs" />

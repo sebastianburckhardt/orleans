@@ -22,12 +22,9 @@ namespace Orleans.Replication
         /// Construct a replication adaptor to be installed in the given host grain.
         /// </summary>
         IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>( 
-            IReplicationAdaptorHost hostgrain, 
-            T initialstate, 
-            string graintypename, 
+            IReplicationAdaptorHost hostGrain, 
+            T initialState, 
+            string grainTypeName, 
             IReplicationProtocolServices services) where T : GrainState, new();
-
     }
-
-   
 }

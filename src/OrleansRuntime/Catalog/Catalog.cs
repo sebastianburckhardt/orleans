@@ -680,7 +680,8 @@ namespace Orleans.Runtime
                     data.GrainInstance.Storage = Activator.CreateInstance(bridgeType, data.GrainTypeName, data.GrainInstance, data.JournaledStorageProvider) as IStorage;
                 }
 
-                else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor)  // QueuedGrain<T> 
+                else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor ||   // QueuedGrain<T> 
+                         grainTypeData.StorageInterface == StorageInterface.JournaledGrainAdaptor)  // JournaledGrain<T> with replication
                 {
                     var repprovider = SetupReplicationProvider(data, attr);
                     var svc = new ReplicationServices(grain, repprovider);
@@ -763,6 +764,12 @@ namespace Orleans.Runtime
             {
                 SetupStorageProvider(data, attr);
                 return replicationProviderManager.WrapStorageProvider(data.StorageProvider);
+            }
+
+            if (attr is JournaledStorageProviderAttribute)
+            {
+                SetupJournaledStorageProvider(data, attr);
+                return replicationProviderManager.WrapStorageProvider(data.JournaledStorageProvider);
             }
 
             var grainTypeName = data.GrainInstanceType.FullName;

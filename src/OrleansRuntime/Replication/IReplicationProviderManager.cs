@@ -41,8 +41,6 @@ namespace Orleans.Replication
 
         IReplicationProvider WrapStorageProvider(Orleans.Storage.IStorageProvider provider);
 
-    
+        IReplicationProvider WrapStorageProvider(Orleans.EventSourcing.IJournaledStorageProvider provider);
     }
-
-
 }

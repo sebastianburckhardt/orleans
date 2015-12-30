@@ -31,6 +31,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Providers;
 using Orleans.Replication;
 using Orleans.Storage;
+using Orleans.EventSourcing;
 
 namespace Orleans.Runtime.Replication
 {
@@ -124,6 +125,12 @@ namespace Orleans.Runtime.Replication
             return new WrappedStorageProvider() { globalstorageprovider = storageprovider };
         }
 
+        public IReplicationProvider WrapStorageProvider(IJournaledStorageProvider storageProvider)
+        {
+            // create a wrapping provider.
+            return new WrappedJournaledStorageProvider(storageProvider);
+        }
+
         public bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false)
         {
             return storageProviderManager.TryGetProvider(name, out provider, caseInsensitive);
@@ -146,6 +153,40 @@ namespace Orleans.Runtime.Replication
             }
 
             public Logger Log { get { return globalstorageprovider.Log;  } }
+
+            public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
+            {
+                // not called
+                return TaskDone.Done;
+            }
+
+            public Task Close()
+            {
+                return TaskDone.Done;
+            }
+        }
+
+        // A pseudo-replication provider that is really just a wrapper around the storage provider
+        private class WrappedJournaledStorageProvider : IReplicationProvider
+        {
+            internal IJournaledStorageProvider GlobalStorageProvider { get; }
+
+            public WrappedJournaledStorageProvider(IJournaledStorageProvider globalStorageProvider)
+            {
+                this.GlobalStorageProvider = globalStorageProvider;
+            }
+
+            public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(IReplicationAdaptorHost hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
+            {
+                return new SharedJournaledStorageAdaptor<T>(hostgrain, initialstate, this, GlobalStorageProvider, graintypename, services);
+            }
+
+            public string Name
+            {
+                get { return GlobalStorageProvider.Name; }
+            }
+
+            public Logger Log { get { return GlobalStorageProvider.Log; } }
 
             public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
             {

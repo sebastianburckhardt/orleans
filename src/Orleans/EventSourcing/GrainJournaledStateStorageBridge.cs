@@ -47,7 +47,7 @@ namespace Orleans.EventSourcing
             GrainReference grainRef = grain.GrainReference;
             try
             {
-                await store.ReadState(GetStreamName(), grain.ConfirmedState);
+                await store.ReadState(StreamName.GetName(grainTypeName, grainRef, grain.ConfirmedState as ICustomStreamName), grain.ConfirmedState);
                 
                 StorageStatisticsGroup.OnStorageRead(store, grainTypeName, grainRef, sw.Elapsed);
             }
@@ -76,7 +76,7 @@ namespace Orleans.EventSourcing
             Exception errorOccurred;
             try
             {
-                await store.WriteState(GetStreamName(), grain.ConfirmedState.Version, grain.UncommitedEvents);
+                await store.WriteState(StreamName.GetName(grainTypeName, grainRef, grain.ConfirmedState as ICustomStreamName), grain.ConfirmedState.Version, grain.UncommitedEvents);
                 grain.CommitEvents();
 
                 StorageStatisticsGroup.OnStorageWrite(store, grainTypeName, grainRef, sw.Elapsed);
@@ -132,7 +132,7 @@ namespace Orleans.EventSourcing
             try
             {
                 // Clear (most likely Delete) state from external storage
-                await store.ClearState(GetStreamName(), grain.ConfirmedState.Version);
+                await store.ClearState(StreamName.GetName(grainTypeName, grainRef, grain.ConfirmedState as ICustomStreamName), grain.ConfirmedState.Version);
                 // Null out the in-memory copy of the state
                 grain.GrainState.SetAll(null);
 
@@ -165,16 +165,6 @@ namespace Orleans.EventSourcing
             GrainReference grainReference = grain.GrainReference;
             return string.Format("Error from storage provider during {0} for grain Type={1} Pk={2} Id={3} Error={4}" + Environment.NewLine + " {5}",
                 what, grainTypeName, grainReference.GrainId.ToDetailedString(), grainReference, errorCode, TraceLogger.PrintException(exc));
-        }
-
-        private string GetStreamName()
-        {
-            return (grain as ICustomStreamName)?.GetStreamName() ?? GetDefaultStreamName(grainTypeName, grain.GrainReference);
-        }
-
-        private static string GetDefaultStreamName(string grainType, GrainReference grainReference)
-        {
-            return string.Format("{0}-{1}", grainType, grainReference.ToKeyString());
         }
     }
 }

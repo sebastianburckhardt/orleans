@@ -30,5 +30,6 @@ namespace Orleans.Core
         StorageBridge,
         JournaledStorageBridge,
         QueuedGrainAdaptor,
+        JournaledGrainAdaptor
     }
 }
