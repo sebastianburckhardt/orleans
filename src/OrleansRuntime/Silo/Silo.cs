@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Orleans.Core;
 using Orleans.CodeGeneration;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Placement;
@@ -23,7 +23,7 @@ using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.MembershipService;
 using Orleans.Runtime.Messaging;
 using Orleans.Runtime.Providers;
-using Orleans.Runtime.Replication;
+using Orleans.Runtime.LogViews;
 using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.Startup;
 using Orleans.Runtime.Storage;
@@ -73,7 +73,7 @@ namespace Orleans.Runtime
         private readonly MembershipFactory membershipFactory;
         private readonly MultiClusterOracleFactory multiClusterFactory;
         private StorageProviderManager storageProviderManager;
-        private ReplicationProviderManager replicationProviderManager;
+        private LogViewProviderManager logViewProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private BootstrapProviderManager bootstrapProviderManager;
         private readonly LocalReminderServiceFactory reminderFactory;
@@ -106,7 +106,7 @@ namespace Orleans.Runtime
         internal ISiloStatusOracle LocalSiloStatusOracle { get { return membershipOracle; } }
         internal IMultiClusterOracle LocalMultiClusterOracle { get { return multiClusterOracle; } }
         internal IConsistentRingProvider RingProvider { get; private set; }
-        internal IReplicationProviderManager ReplicationProviderManager { get { return replicationProviderManager; } }
+        internal ILogViewProviderManager LogViewProviderManager { get { return logViewProviderManager; } }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
@@ -341,8 +341,8 @@ namespace Orleans.Runtime
             logger.Verbose("Creating {0} System Target", "SiloControl");
             RegisterSystemTarget(new SiloControl(this));
 
-            logger.Verbose("Creating {0} System Target", "ReplicationAgent");
-            RegisterSystemTarget(new ReplicationProtocolGateway(this.SiloAddress));
+            logger.Verbose("Creating {0} System Target", "ProtocolGateway");
+            RegisterSystemTarget(new ProtocolGateway(this.SiloAddress));
 
             logger.Verbose("Creating {0} System Target", "DeploymentLoadPublisher");
             RegisterSystemTarget(DeploymentLoadPublisher.Instance);
@@ -492,14 +492,14 @@ namespace Orleans.Runtime
             allSiloProviders.AddRange(storageProviderManager.GetProviders());
             if (logger.IsVerbose) { logger.Verbose("Storage provider manager created successfully."); }
 
-            // Initialize replication providers once we have a basic silo runtime environment operating
-            replicationProviderManager = new ReplicationProviderManager(grainFactory, Services, storageProviderManager);
+            // Initialize log view providers once we have a basic silo runtime environment operating
+            logViewProviderManager = new LogViewProviderManager(grainFactory, Services, storageProviderManager);
             scheduler.QueueTask(
-                () => replicationProviderManager.LoadReplicationProviders(GlobalConfig.ProviderConfigurations),
+                () => logViewProviderManager.LoadLogViewProviders(GlobalConfig.ProviderConfigurations),
                 providerManagerSystemTarget.SchedulingContext)
                     .WaitWithThrow(initTimeout);
-            catalog.SetReplicationManager(replicationProviderManager);
-            if (logger.IsVerbose) { logger.Verbose("Replication provider manager created successfully."); }
+            catalog.SetLogViewManager(logViewProviderManager);
+            if (logger.IsVerbose) { logger.Verbose("Log view provider manager created successfully."); }
 
             // Load and init stream providers before silo becomes active
             var siloStreamProviderManager = (StreamProviderManager) grainRuntime.StreamProviderManager;

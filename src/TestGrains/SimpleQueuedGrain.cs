@@ -27,14 +27,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.QueuedGrains;
 using UnitTests.GrainInterfaces;
 
 
 namespace UnitTests.Grains
 {
     [Serializable]
-    public class MyGrainState : GrainState
+    public class MyGrainState : QueuedGrainState<MyGrainState>
     {
         public int A { get; set; }
         public int B { get; set; }

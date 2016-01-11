@@ -8,7 +8,7 @@ using Orleans.Core;
 using Orleans.Runtime;
 using Orleans.Storage;
 using Orleans.Streams;
-using Orleans.Replication;
+using Orleans.LogViews;
 
 namespace Orleans
 {

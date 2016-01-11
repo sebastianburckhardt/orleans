@@ -29,39 +29,39 @@ using Orleans.Core;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Providers;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.Storage;
 
-namespace Orleans.Runtime.Replication
+namespace Orleans.Runtime.LogViews
 {
-    internal class ReplicationProviderManager : IReplicationProviderManager, IReplicationProviderRuntime
+    internal class LogViewProviderManager : ILogViewProviderManager, ILogViewProviderRuntime
     {
-        private ProviderLoader<IReplicationProvider> replicationProviderLoader;
+        private ProviderLoader<ILogViewProvider> logViewProviderLoader;
         private IProviderRuntime providerRuntime;
         private IStorageProviderManager storageProviderManager;
 
-        public ReplicationProviderManager(IGrainFactory grainFactory, IServiceProvider serviceProvider, IStorageProviderManager storageProviderManager)
+        public LogViewProviderManager(IGrainFactory grainFactory, IServiceProvider serviceProvider, IStorageProviderManager storageProviderManager)
         {
             GrainFactory = grainFactory;
             ServiceProvider = serviceProvider;
             this.storageProviderManager = storageProviderManager;
         }
 
-        internal Task LoadReplicationProviders(IDictionary<string, ProviderCategoryConfiguration> configs)
+        internal Task LoadLogViewProviders(IDictionary<string, ProviderCategoryConfiguration> configs)
         {
-            replicationProviderLoader = new ProviderLoader<IReplicationProvider>();
+            logViewProviderLoader = new ProviderLoader<ILogViewProvider>();
             providerRuntime = SiloProviderRuntime.Instance;
 
-            if (!configs.ContainsKey(ProviderCategoryConfiguration.REPLICATION_PROVIDER_CATEGORY_NAME))
+            if (!configs.ContainsKey(ProviderCategoryConfiguration.LOG_VIEW_PROVIDER_CATEGORY_NAME))
                 return TaskDone.Done;
 
-            replicationProviderLoader.LoadProviders(configs[ProviderCategoryConfiguration.REPLICATION_PROVIDER_CATEGORY_NAME].Providers, this);
-            return replicationProviderLoader.InitProviders(this);
+            logViewProviderLoader.LoadProviders(configs[ProviderCategoryConfiguration.LOG_VIEW_PROVIDER_CATEGORY_NAME].Providers, this);
+            return logViewProviderLoader.InitProviders(this);
         }
 
-        internal void UnloadReplicationProviders()
+        internal void UnloadLogViewProviders()
         {
-            foreach (var provider in replicationProviderLoader.GetProviders())
+            foreach (var provider in logViewProviderLoader.GetProviders())
             {
                 var disp = provider as IDisposable;
                 if (disp != null)
@@ -71,12 +71,12 @@ namespace Orleans.Runtime.Replication
 
         public int GetNumLoadedProviders()
         {
-            return replicationProviderLoader.GetNumLoadedProviders();
+            return logViewProviderLoader.GetNumLoadedProviders();
         }
 
-        public IList<IReplicationProvider> GetProviders()
+        public IList<ILogViewProvider> GetProviders()
         {
-            return replicationProviderLoader.GetProviders();
+            return logViewProviderLoader.GetProviders();
         }
 
 
@@ -104,21 +104,21 @@ namespace Orleans.Runtime.Replication
         /// <returns></returns>
         public IEnumerable<string> GetProviderNames()
         {
-            var providers = replicationProviderLoader.GetProviders();
+            var providers = logViewProviderLoader.GetProviders();
             return providers.Select(p => p.GetType().FullName).ToList();
         }
 
-        public bool TryGetProvider(string name, out IReplicationProvider provider, bool caseInsensitive = false)
+        public bool TryGetProvider(string name, out ILogViewProvider provider, bool caseInsensitive = false)
         {
-            return replicationProviderLoader.TryGetProvider(name, out provider, caseInsensitive);
+            return logViewProviderLoader.TryGetProvider(name, out provider, caseInsensitive);
         }
 
         public IProvider GetProvider(string name)
         {
-            return replicationProviderLoader.GetProvider(name, true);
+            return logViewProviderLoader.GetProvider(name, true);
         }
 
-        public IReplicationProvider WrapStorageProvider(IStorageProvider storageprovider)
+        public ILogViewProvider WrapStorageProvider(IStorageProvider storageprovider)
         {
             // create a wrapping provider.
             return new WrappedStorageProvider() { globalstorageprovider = storageprovider };
@@ -130,14 +130,14 @@ namespace Orleans.Runtime.Replication
         }
 
 
-        // A pseudo-replication provider that is really just a wrapper around the storage provider
-        private class WrappedStorageProvider : IReplicationProvider
+        // A log view provider that is really just a wrapper around the storage provider
+        private class WrappedStorageProvider : ILogViewProvider
         {
             internal IStorageProvider globalstorageprovider;
 
-            public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(IReplicationAdaptorHost hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
+            public ILogViewAdaptor<T,E> MakeLogViewAdaptor<T,E>(ILogViewAdaptorHost hostgrain, T initialstate, string graintypename, IProtocolServices services) where T : LogViewType<E>, new() where E: class
             {
-                return new SharedStorageAdaptor<T>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
+                return new StorageBasedLogViewAdaptor<T,E>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
             }
 
             public string Name
@@ -159,24 +159,6 @@ namespace Orleans.Runtime.Replication
             }
         }
 
-
-        // used only for testing
-        internal Task LoadEmptyReplicationProviders(IProviderRuntime providerRtm)
-        {
-            replicationProviderLoader = new ProviderLoader<IReplicationProvider>();
-            providerRuntime = providerRtm;
-
-            replicationProviderLoader.LoadProviders(new Dictionary<string, IProviderConfiguration>(), this);
-            return replicationProviderLoader.InitProviders(providerRuntime);
-        }
-
-        // used only for testing
-        internal async Task AddAndInitProvider(string name, IReplicationProvider provider, IProviderConfiguration config = null)
-        {
-            await provider.Init(name, this, config);
-            replicationProviderLoader.AddProvider(name, provider, config);
-        }
-
-  
+    
     }
 }

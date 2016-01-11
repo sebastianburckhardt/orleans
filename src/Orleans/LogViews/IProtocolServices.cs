@@ -8,15 +8,15 @@ using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.MultiCluster;
 
-namespace Orleans.Replication
+namespace Orleans.LogViews
 {
     /// <summary>
-    /// Functionality for use by  replication provider implementations. 
+    /// Functionality for use by log view adaptors that use custom consistency or replication protocols.
     /// </summary>
-    public interface IReplicationProtocolServices
+    public interface IProtocolServices
     {
         /// <summary>
-        /// Send a message to a remote replica.
+        /// Send a message to a remote cluster.
         /// </summary>
         /// <param name="payload">the message</param>
         /// <param name="clusterId">the destination cluster id</param>
@@ -50,21 +50,22 @@ namespace Orleans.Replication
     }
 
 
+
     /// <summary>
-    /// Exception thrown by messaging layer of multicluster configuration.
+    /// Exception thrown by protocol messaging layer.
     /// </summary>
     [Serializable]
-    public class ReplicationTransportException : OrleansException
+    public class ProtocolTransportException : OrleansException
     {
-        public ReplicationTransportException()
+        public ProtocolTransportException()
         { }
-        public ReplicationTransportException(string msg)
+        public ProtocolTransportException(string msg)
             : base(msg)
         { }
-        public ReplicationTransportException(string msg, Exception exc)
+        public ProtocolTransportException(string msg, Exception exc)
             : base(msg, exc)
         { }
-        protected ReplicationTransportException(SerializationInfo info, StreamingContext context)
+        protected ProtocolTransportException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         { }
     }

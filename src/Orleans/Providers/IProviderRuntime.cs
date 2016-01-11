@@ -58,9 +58,9 @@ namespace Orleans.Providers
     }
 
     /// <summary>
-    /// Provider-facing interface for manager of replication providers
+    /// Provider-facing interface for manager of log view providers
     /// </summary>
-    public interface IReplicationProviderRuntime : IProviderRuntime
+    public interface ILogViewProviderRuntime : IProviderRuntime
     {
         bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false);
  

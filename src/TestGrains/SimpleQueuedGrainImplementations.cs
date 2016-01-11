@@ -9,7 +9,7 @@ namespace UnitTests.Grains
 {
 
     // use the explictly specified "SharedStorage" replication provider
-    [ReplicationProvider(ProviderName = "SharedStorage")]
+    [LogViewProvider(ProviderName = "SharedStorage")]
     public class SimpleQueuedGrainSharedStorage : SimpleQueuedGrain
     {
     }
@@ -26,9 +26,9 @@ namespace UnitTests.Grains
     }
 
     // use an explicitly specified replication provider
-    [ReplicationProvider(ProviderName = "Dummy")]
-    public class SimpleQueuedGrainDummyStorage : SimpleQueuedGrain
+    [LogViewProvider(ProviderName = "LocalMemory")]
+    public class SimpleQueuedGrainLocalMemoryStorage : SimpleQueuedGrain
     {
     }
- 
+
 }

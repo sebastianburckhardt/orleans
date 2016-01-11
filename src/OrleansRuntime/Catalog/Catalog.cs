@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 using Orleans.Core;
 using Orleans.MultiCluster;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Placement;
 using Orleans.Runtime.Scheduler;
-using Orleans.Runtime.Replication;
+using Orleans.Runtime.LogViews;
 using Orleans.Storage;
 
 namespace Orleans.Runtime
@@ -123,7 +123,7 @@ namespace Orleans.Runtime
         private readonly OrleansTaskScheduler scheduler;
         private readonly ActivationDirectory activations;
         private IStorageProviderManager storageProviderManager;
-        private IReplicationProviderManager replicationProviderManager;
+        private ILogViewProviderManager logViewProviderManager;
         private Dispatcher dispatcher;
         private readonly TraceLogger logger;
         private int collectionNumber;
@@ -193,9 +193,9 @@ namespace Orleans.Runtime
             storageProviderManager = storageManager;
         }
 
-        internal void SetReplicationManager(IReplicationProviderManager replicationManager)
+        internal void SetLogViewManager(ILogViewProviderManager logViewManager)
         {
-            replicationProviderManager = replicationManager;
+            logViewProviderManager = logViewManager;
         } 
 
         internal void Start()
@@ -663,11 +663,11 @@ namespace Orleans.Runtime
                     data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
                 }
 
-                else if (grainTypeData.StorageInterface == StorageInterface.QueuedGrainAdaptor)  // QueuedGrain<T> 
+                else if (grainTypeData.StorageInterface == StorageInterface.LogViewAdaptor)  // QueuedGrain<T> 
                 {
-                    var repprovider = SetupReplicationProvider(data, attr);
-                    var svc = new ReplicationServices(grain, repprovider);
-                    ((IReplicationAdaptorHost)grain).InstallAdaptor(repprovider, state, data.GrainTypeName, svc);
+                    var logviewprovider = SetupLogViewProvider(data, attr);
+                    var svc = new ProtocolServices(grain, logviewprovider);
+                    ((ILogViewAdaptorHost)grain).InstallAdaptor(logviewprovider, state, data.GrainTypeName, svc);
                 }
             }
 
@@ -716,47 +716,47 @@ namespace Orleans.Runtime
         }
 
 
-        private IReplicationProvider SetupReplicationProvider(ActivationData data, ProviderAttribute attr)
+        private ILogViewProvider SetupLogViewProvider(ActivationData data, ProviderAttribute attr)
         {
             if (attr is StorageProviderAttribute)
             {
                 SetupStorageProvider(data, attr);
-                return replicationProviderManager.WrapStorageProvider(data.StorageProvider);
+                return logViewProviderManager.WrapStorageProvider(data.StorageProvider);
             }
 
             var grainTypeName = data.GrainInstanceType.FullName;
 
-            if (!(attr is ReplicationProviderAttribute))
+            if (!(attr is LogViewProviderAttribute))
             {
                 var errMsg = string.Format("Unsupported provider attribute for grain {0}", grainTypeName);
                 logger.Error(ErrorCode.Provider_CatalogUnsupportedProviderAttribute, errMsg);
                 throw new BadProviderConfigException(errMsg);
             }
 
-            IReplicationProvider provider;
-            if (replicationProviderManager == null || replicationProviderManager.GetNumLoadedProviders() == 0)
+            ILogViewProvider provider;
+            if (logViewProviderManager == null || logViewProviderManager.GetNumLoadedProviders() == 0)
             {
-                var errMsg = string.Format("No replication providers found loading grain type {0}", grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                var errMsg = string.Format("No log view providers found loading grain type {0}", grainTypeName);
+                logger.Error(ErrorCode.Provider_CatalogNoLogViewProvider, errMsg);
                 throw new BadProviderConfigException(errMsg);
             }
 
-            replicationProviderManager.TryGetProvider(attr.ProviderName, out provider, false);
+            logViewProviderManager.TryGetProvider(attr.ProviderName, out provider, false);
 
             if (provider == null)
             {
                 var errMsg = string.Format(
-                    "Cannot find replication provider with Name={0} for grain type {1}", attr.ProviderName,
+                    "Cannot find log view provider with Name={0} for grain type {1}", attr.ProviderName,
                     grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogNoReplicationProvider, errMsg);
+                logger.Error(ErrorCode.Provider_CatalogNoLogViewProvider, errMsg);
                 throw new BadProviderConfigException(errMsg);
             }
 
             if (logger.IsVerbose2)
             {
-                string msg = string.Format("Assigned replication provider with Name={0} to grain type {1}",
+                string msg = string.Format("Assigned log view provider with Name={0} to grain type {1}",
                     attr.ProviderName, grainTypeName);
-                logger.Verbose2(ErrorCode.Provider_CatalogReplicationProviderAllocated, msg);
+                logger.Verbose2(ErrorCode.Provider_CatalogLogViewProviderAllocated, msg);
             }
 
             return provider;

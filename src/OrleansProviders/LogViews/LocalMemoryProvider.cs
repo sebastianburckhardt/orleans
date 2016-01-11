@@ -5,18 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
-using Orleans.Replication;
-using Orleans.Runtime.Replication;
+using Orleans.LogViews;
+using Orleans.Runtime.LogViews;
 using Orleans.Runtime;
 using System.Threading;
 
-namespace Orleans.Providers.Replication
+namespace Orleans.Providers.LogViews
 {
     /// <summary>
-    /// A replication provider that doesn't actually replicate, but just stores the global state locally.
-    /// Meant to be used for testing only.
+    /// A simple log view provider that keeps the latest view in local memory.
+    /// Does not synchronize between clusters.
     /// </summary>
-    public class DummyProvider : IReplicationProvider
+    public class LocalMemoryProvider : ILogViewProvider
     {
         public string Name { get; private set; }
 
@@ -27,7 +27,7 @@ namespace Orleans.Providers.Replication
 
         protected virtual string GetLoggerName()
         {
-            return string.Format("Replication.{0}.{1}", GetType().Name, id);
+            return string.Format("LogViews.{0}.{1}", GetType().Name, id);
         }
 
         public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
@@ -37,8 +37,6 @@ namespace Orleans.Providers.Replication
             Log = providerRuntime.GetLogger(GetLoggerName());
             Log.Info("Init (Severity={0})", Log.SeverityLevel);
 
-            // nothing to do for this dummy provider
-            // in general, may read configuration and throw BadReplicationProviderConfigException
             return TaskDone.Done;
         }
 
@@ -47,43 +45,54 @@ namespace Orleans.Providers.Replication
             return TaskDone.Done;
         }
 
-        public IQueuedGrainAdaptor<T> MakeReplicationAdaptor<T>(IReplicationAdaptorHost hostgrain, T initialstate, string graintypename, IReplicationProtocolServices services) where T : GrainState, new()
+        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewAdaptorHost hostgrain, TView initialstate, string graintypename, IProtocolServices services)
+            where TView : LogViewType<TEntry>, new()
+            where TEntry : class
         {
-            return new DummyReplicationAdaptor<T>(hostgrain, this, initialstate, services);
+            return new MemoryLogViewAdaptor<TView, TEntry>(hostgrain, this, initialstate, services);
         }
     }
 
-    public class DummyReplicationAdaptor<T> : QueuedGrainAdaptorBase<T,IUpdateOperation<T>> where T : GrainState, new()
+    public class MemoryLogViewAdaptor<TView, TEntry> : PrimaryBasedLogViewAdaptor<TView, TEntry, TEntry>
+        where TView : LogViewType<TEntry>, new()
+        where TEntry : class
     {
-        // in this dummy replication protocol, the "global" state is just locally stored
-        T PseudoGlobalState;
+        // the latest log view is simply stored here, in memory
+        TView GlobalSnapshot;
 
-        public DummyReplicationAdaptor(IReplicationAdaptorHost host, IReplicationProvider provider, T initialstate, IReplicationProtocolServices services)
+        public MemoryLogViewAdaptor(ILogViewAdaptorHost host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
             : base(host, provider, initialstate, services)
         {
-            PseudoGlobalState = initialstate;
+            GlobalSnapshot = initialstate;
         }
 
-        T CachedState;
+        TView LocalSnapshot;
 
-        protected override T LastConfirmedGlobalState()
+        // no tagging is required, thus the following two are identity functions
+        protected override TEntry TagEntry(TEntry entry)
         {
-            return CachedState;
+            return entry;
         }
-        protected override void InitializeCachedGlobalState(T initialstate)
+        protected override TEntry UntagEntry(TEntry taggedentry)
         {
-            CachedState = initialstate;
+            return taggedentry;
         }
 
-     
-
+        protected override TView LastConfirmedView()
+        {
+            return LocalSnapshot;
+        }
+        protected override void InitializeConfirmedView(TView initialstate)
+        {
+            LocalSnapshot = initialstate;
+        }
        
         protected override async Task ReadAsync()
         {
             Trace.TraceInformation("ReadAsync");
             //await Task.Delay(5000);
             await Task.Delay(1);
-            CachedState = PseudoGlobalState;
+            LocalSnapshot = GlobalSnapshot;
         }
 
         /// <summary>
@@ -95,12 +104,12 @@ namespace Orleans.Providers.Replication
         {
             Trace.TraceInformation("WriteAsync");
 
-            List<IUpdateOperation<T>> updates = CopyListOfUpdates();
+            var updates = CopyListOfUpdates();
 
             foreach (var u in updates)
                 try
                 {
-                    u.Update(PseudoGlobalState);
+                    GlobalSnapshot.TransitionView(u);
                 }
                 catch
                 {
