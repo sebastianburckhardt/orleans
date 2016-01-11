@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -116,9 +117,9 @@ namespace Orleans.Runtime
         public WaitHandle SiloTerminatedEvent { get { return siloTerminatedEvent; } } // one event for all types of termination (shutdown, stop and fast kill).
 
         /// <summary>
-        /// Test hookup connection for white-box testing of silo.
+        /// Test hook connection for white-box testing of silo.
         /// </summary>
-        public TestHookups TestHookup;
+        public TestHooks TestHook;
         
         /// <summary>
         /// Creates and initializes the silo from the specified config data.
@@ -311,7 +312,7 @@ namespace Orleans.Runtime
             StringValueStatistic.FindOrCreate(StatisticNames.SILO_START_TIME,
                 () => TraceLogger.PrintDate(startTime)); // this will help troubleshoot production deployment when looking at MDS logs.
 
-            TestHookup = new TestHookups(this);
+            TestHook = new TestHooks(this);
 
             logger.Info(ErrorCode.SiloInitializingFinished, "-------------- Started silo {0}, ConsistentHashCode {1:X} --------------", SiloAddress.ToLongString(), SiloAddress.GetConsistentHashCode());
         }
@@ -808,7 +809,7 @@ namespace Orleans.Runtime
                     SystemStatus.Current = SystemStatus.Stopping;
                 }
 
-                if (!TestHookup.ExecuteFastKillInProcessExit) return;
+                if (!TestHook.ExecuteFastKillInProcessExit) return;
 
                 logger.Info(ErrorCode.SiloStopping, "Silo.HandleProcessExit() - starting to FastKill()");
                 FastKill();
@@ -820,9 +821,9 @@ namespace Orleans.Runtime
         }
 
         /// <summary>
-        /// Test hookup functions for white box testing.
+        /// Test hook functions for white box testing.
         /// </summary>
-        public class TestHookups : MarshalByRefObject
+        public class TestHooks : MarshalByRefObject
         {
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
@@ -859,7 +860,7 @@ namespace Orleans.Runtime
 
             internal Action<GrainId> Debug_OnDecideToCollectActivation { get; set; }
 
-            internal TestHookups(Silo s)
+            internal TestHooks(Silo s)
             {
                 silo = s;
                 ExecuteFastKillInProcessExit = true;
@@ -902,22 +903,35 @@ namespace Orleans.Runtime
                 ExecuteFastKillInProcessExit = false;
             }
 
-            internal IDictionary<GrainId, IGrainInfo> GetDirectory()
+            // store silos for which we simulate faulty communication
+            // number indicates how many percent of requests are lost
+            internal ConcurrentDictionary<IPEndPoint, double> SimulatedMessageLoss; 
+
+            internal void BlockSiloCommunication(IPEndPoint destination, double lost_percentage)
             {
-                return silo.localGrainDirectory.DirectoryPartition.GetItems();
+                if (SimulatedMessageLoss == null)
+                    SimulatedMessageLoss = new ConcurrentDictionary<IPEndPoint, double>();
+
+                SimulatedMessageLoss[destination] = lost_percentage;
             }
 
-            internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypenamesContaining(string expr)
+            internal void UnblockSiloCommunication()
             {
-                var x = new Dictionary<GrainId, IGrainInfo>();
-                foreach (var kvp in silo.localGrainDirectory.DirectoryPartition.GetItems())
+                SimulatedMessageLoss = null;
+            }
+
+            SafeRandom random = new SafeRandom();
+
+            internal bool ShouldDrop(Message msg)
+            {
+                if (SimulatedMessageLoss != null)
                 {
-                    if (kvp.Key.IsSystemTarget || kvp.Key.IsClient || !kvp.Key.IsGrain)
-                        continue;// Skip system grains, system targets and clients
-                    if (silo.catalog.GetGrainTypeName(kvp.Key).Contains(expr))
-                        x.Add(kvp.Key, kvp.Value);
+                    double blockedpercentage = 0.0;
+                    Silo.CurrentSilo.TestHook.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
+                    return (random.NextDouble() * 100 < blockedpercentage);
                 }
-                return x;
+                else
+                    return false;
             }
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead

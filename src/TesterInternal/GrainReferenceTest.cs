@@ -1,14 +1,8 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
-using Orleans.Runtime;
-using Orleans.Serialization;
-using Orleans.Storage;
-using TestInternalGrainInterfaces;
 using UnitTests.GrainInterfaces;
 using UnitTests.Tester;
 
@@ -80,14 +74,14 @@ namespace UnitTests.General
             TestGrainReferenceSerialization(id, false, false);
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Serialization"), TestCategory("Json"), TestCategory("GrainReference")]
+        [TestMethod, TestCategory("Functional"), TestCategory("Serialization"), TestCategory("JSON"), TestCategory("GrainReference")]
         public void GrainReference_Json_Serialization()
         {
             int id = random.Next();
             TestGrainReferenceSerialization(id, true, true);
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Serialization"), TestCategory("Json"), TestCategory("GrainReference")]
+        [TestMethod, TestCategory("Functional"), TestCategory("Serialization"), TestCategory("JSON"), TestCategory("GrainReference")]
         public void GrainReference_Json_Serialization_Unresolved()
         {
             int id = random.Next();

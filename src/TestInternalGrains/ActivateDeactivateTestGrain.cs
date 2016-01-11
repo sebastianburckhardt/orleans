@@ -4,10 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.Runtime;
-using TestInternalGrainInterfaces;
 using UnitTests.GrainInterfaces;
 
-namespace TestInternalGrains
+namespace UnitTests.Grains
 {
     internal class SimpleActivateDeactivateTestGrain : Grain, ISimpleActivateDeactivateTestGrain
     {
@@ -140,10 +139,11 @@ namespace TestInternalGrains
             logger.Info("OnActivateAsync");
 
             // Spawn Task to run on default .NET thread pool
-            Task task = Task.Factory.StartNew(() =>
+            var task = Task.Factory.StartNew(() =>
             {
                 logger.Info("Started-OnActivateAsync-SubTask");
-                Assert.IsTrue(TaskScheduler.Current == TaskScheduler.Default, "Running under default .NET Task scheduler");
+                Assert.IsTrue(TaskScheduler.Current == TaskScheduler.Default,
+                    "Running under default .NET Task scheduler");
                 Assert.IsTrue(doingActivate, "Still doing Activate in Sub-Task");
                 logger.Info("Finished-OnActivateAsync-SubTask");
             }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
@@ -212,7 +212,7 @@ namespace TestInternalGrains
         {
             logger = GetLogger();
 
-            var startMe = 
+            var startMe =
                 new Task(
                     () =>
                     {
@@ -242,7 +242,7 @@ namespace TestInternalGrains
                     }
                     catch (Exception exc)
                     {
-                        string msg = "RecordActivateCall failed with error " + exc;
+                        var msg = "RecordActivateCall failed with error " + exc;
                         logger.Error(0, msg);
                         Assert.Fail(msg);
                     }
@@ -271,14 +271,15 @@ namespace TestInternalGrains
 
             logger.Info("Started-OnDeactivateAsync");
             return watcher.RecordDeactivateCall(Data.ActivationId.ToString())
-            .ContinueWith((Task t) =>
-            {
-                Assert.IsFalse(t.IsFaulted, "RecordDeactivateCall failed");
-                Assert.IsTrue(doingDeactivate, "Doing Deactivate");
-                Thread.Sleep(TimeSpan.FromSeconds(1));
-                doingDeactivate = false;
-            })
-            .ContinueWith((Task t) => logger.Info("Finished-OnDeactivateAsync"), TaskContinuationOptions.ExecuteSynchronously);
+                .ContinueWith((Task t) =>
+                {
+                    Assert.IsFalse(t.IsFaulted, "RecordDeactivateCall failed");
+                    Assert.IsTrue(doingDeactivate, "Doing Deactivate");
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    doingDeactivate = false;
+                })
+                .ContinueWith((Task t) => logger.Info("Finished-OnDeactivateAsync"),
+                    TaskContinuationOptions.ExecuteSynchronously);
         }
 
         public Task<string> DoSomething()
@@ -378,7 +379,7 @@ namespace TestInternalGrains
         public async Task<string> DoSomething()
         {
             logger.Info("DoSomething");
-            Guid guid = Guid.NewGuid();
+            var guid = Guid.NewGuid();
             await grain.SetLabel(guid.ToString());
             var label = await grain.GetLabel();
 
@@ -386,7 +387,7 @@ namespace TestInternalGrains
             {
                 throw new ArgumentException("Bad data: Null label returned");
             }
-            return this.Data.ActivationId.ToString();
+            return Data.ActivationId.ToString();
         }
 
         public async Task ForwardCall(IBadActivateDeactivateTestGrain otherGrain)
@@ -394,6 +395,5 @@ namespace TestInternalGrains
             logger.Info("ForwardCall to " + otherGrain);
             await otherGrain.ThrowSomething();
         }
-
     }
 }
