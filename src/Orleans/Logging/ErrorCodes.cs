@@ -962,9 +962,8 @@ namespace Orleans
         Provider_NotLoaded                      = ProviderManagerBase + 11,
         Provider_Manager_Already_Loaded         = ProviderManagerBase + 12,
         Provider_CatalogNoStorageProvider_3     = ProviderManagerBase + 13,
-
-        Provider_CatalogNoReplicationProvider = ProviderManagerBase + 14,
-        Provider_CatalogReplicationProviderAllocated = ProviderManagerBase + 15,
+        Provider_CatalogNoLogViewProvider       = ProviderManagerBase + 14,
+        Provider_CatalogLogViewProviderAllocated = ProviderManagerBase + 15,
         Provider_CatalogUnsupportedProviderAttribute = ProviderManagerBase + 16,
 
         AzureQueueBase = Runtime + 3200,
@@ -1058,10 +1057,6 @@ namespace Orleans
         CodeGenIgnoringTypes                = CodeGenBase + 5,
         CodeGenDllMissing                   = CodeGenBase + 6,
         CodeGenSystemTypeRequiresSerializer = CodeGenBase + 7,
-
-        ReplicationProviderBase = Runtime + 3800,
-        ReplicationProvider_ReadFailed = ReplicationProviderBase + 2,
-        ReplicationProvider_WriteFailed = ReplicationProviderBase + 3,
 
         MultiClusterNetworkBase = Runtime + 3900,
         MultiClusterNetwork_Starting = MultiClusterNetworkBase + 1,

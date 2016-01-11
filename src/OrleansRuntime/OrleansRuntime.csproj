@@ -106,13 +106,13 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ReminderService\MockReminderTable.cs" />
-    <Compile Include="Replication\QueuedGrainAdaptorBase.cs" />
-    <Compile Include="Replication\ReplicationProtocolGateway.cs" />
-    <Compile Include="Replication\IReplicationProviderManager.cs" />
-    <Compile Include="Replication\ReplicationServices.cs" />
-    <Compile Include="Replication\ReplicationProviderManager.cs" />
-    <Compile Include="Replication\GrainStateWithMetaData.cs" />
-    <Compile Include="Replication\SharedStorageAdaptor.cs" />
+    <Compile Include="LogViews\PrimaryBasedLogViewAdaptor.cs" />
+    <Compile Include="LogViews\ProtocolGateway.cs" />
+    <Compile Include="LogViews\ILogViewProviderManager.cs" />
+    <Compile Include="LogViews\ProtocolServices.cs" />
+    <Compile Include="LogViews\LogViewProviderManager.cs" />
+    <Compile Include="LogViews\GrainStateWithMetaData.cs" />
+    <Compile Include="LogViews\StorageBasedLogViewAdaptor.cs" />
     <Compile Include="Scheduler\ITaskScheduler.cs" />
     <Compile Include="Silo\IStartupBuilder.cs" />
     <Compile Include="Storage\IStorageProviderManager.cs" />

@@ -28,6 +28,6 @@ namespace Orleans.Core
     {
         None,
         StorageBridge,
-        QueuedGrainAdaptor,
+        LogViewAdaptor,
     }
 }

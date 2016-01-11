@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Orleans.Replication
+namespace Orleans.QueuedGrains
 {
     /// <summary>
     /// Interface for objects that represent an update of a state object.

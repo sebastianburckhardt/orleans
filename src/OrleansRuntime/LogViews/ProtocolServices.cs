@@ -5,24 +5,24 @@ using System.Text;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Core;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.MultiCluster;
 using Orleans.Runtime;
 using Orleans.SystemTargetInterfaces;
 
-namespace Orleans.Runtime.Replication
+namespace Orleans.Runtime.LogViews
 {
     /// <summary>
-    /// Functionality for use by  replication provider implementations. 
+    /// Functionality for use by log view adaptors that run distributed protocols. 
     /// This class allows access to these services to providers that cannot see runtime-internals.
     /// It also stores grain-specific information like the grain reference, and caches 
     /// </summary>
-    internal class ReplicationServices : IReplicationProtocolServices
+    internal class ProtocolServices : IProtocolServices
     {
 
         public GrainReference GrainReference { get { return grain.GrainReference; } }
 
-        public IReplicationProvider Provider { get; private set; }
+        public ILogViewProvider Provider { get; private set; }
 
         
         private Grain grain;   // links to the grain that owns this service object
@@ -30,7 +30,7 @@ namespace Orleans.Runtime.Replication
         // cached 
 
 
-        internal ReplicationServices(Grain gr, IReplicationProvider provider)
+        internal ProtocolServices(Grain gr, ILogViewProvider provider)
         {
             this.grain = gr;
             this.Provider = provider;
@@ -55,7 +55,7 @@ namespace Orleans.Runtime.Replication
             }
 
             if (PseudoMultiClusterConfiguration != null)
-               throw new ReplicationTransportException("no such cluster");
+               throw new ProtocolTransportException("no such cluster");
 
             if (Provider.Log.IsVerbose3)
             {
@@ -66,9 +66,9 @@ namespace Orleans.Runtime.Replication
             var clusterGateway = Silo.CurrentSilo.LocalMultiClusterOracle.GetRandomClusterGateway(clusterId);
             
             if (clusterGateway == null)
-                throw new ReplicationTransportException("no active gateways found for cluster");
+                throw new ProtocolTransportException("no active gateways found for cluster");
 
-            var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IReplicationProtocolGateway>(Constants.ReplicationProtocolGatewayId, clusterGateway);
+            var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
 
             try
             {
@@ -77,7 +77,7 @@ namespace Orleans.Runtime.Replication
             }
             catch (Exception e)
             {
-                throw new ReplicationTransportException("failed sending message to replica", e);
+                throw new ProtocolTransportException("failed sending message to cluster", e);
             }
         }
 

@@ -84,8 +84,8 @@ namespace Tester.GeoClusterTests
         }
 
         // Kill all clients and silos.
-        [TestCleanup]
-        public void CleanupCluster()
+        [ClassCleanup]
+        public static void CleanupCluster()
         {
             try
             {

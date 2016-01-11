@@ -27,9 +27,9 @@ using Orleans.Runtime;
 using Orleans.Providers;
 
 
-namespace Orleans.Replication
+namespace Orleans.LogViews
 {
-    internal interface IReplicationProviderManager : IProviderManager
+    internal interface ILogViewProviderManager : IProviderManager
     {
         Logger GetLogger(string loggerName);
 
@@ -37,9 +37,9 @@ namespace Orleans.Replication
 
         int GetNumLoadedProviders();
 
-        bool TryGetProvider(string name, out IReplicationProvider provider, bool caseInsensitive = false);
+        bool TryGetProvider(string name, out ILogViewProvider provider, bool caseInsensitive = false);
 
-        IReplicationProvider WrapStorageProvider(Orleans.Storage.IStorageProvider provider);
+        ILogViewProvider WrapStorageProvider(Orleans.Storage.IStorageProvider provider);
 
     
     }

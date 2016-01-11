@@ -5,20 +5,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.Runtime;
 using Orleans.Storage;
 
-namespace Orleans.Runtime.Replication
+namespace Orleans.Runtime.LogViews
 {
   
     /// <summary>
-    /// An queued grain adaptor that wraps around a traditional storage adaptor
+    /// A log view adaptor that wraps around a traditional storage adaptor
+    ///<para>
+    /// The log itself is transient, i.e. not actually saved to storage - only the latest view and some 
+    /// metadata (the log position, and write flags) are stored. 
+    /// </para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class SharedStorageAdaptor<T> : QueuedGrainAdaptorBase<T, IUpdateOperation<T>> where T : GrainState, new()
+    public class StorageBasedLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,E> where T : LogViewType<E>, new() where E: class
     {
-        public SharedStorageAdaptor(IReplicationAdaptorHost host, T initialstate, IReplicationProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IReplicationProtocolServices services)
+        public StorageBasedLogViewAdaptor(ILogViewAdaptorHost host, T initialstate, ILogViewProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IProtocolServices services)
             : base(host, repprovider, initialstate, services)
         {
             this.globalstorageprovider = globalstorageprovider;
@@ -31,17 +35,25 @@ namespace Orleans.Runtime.Replication
         // stores the confirmed state including metadata
         GrainStateWithMetaData<T> GlobalStateCache;
 
-        protected override T LastConfirmedGlobalState()
+        protected override T LastConfirmedView()
         {
             return GlobalStateCache.GrainState;
         }
 
-        protected override void InitializeCachedGlobalState(T initialstate)
+        protected override void InitializeConfirmedView(T initialstate)
         {
             GlobalStateCache = new GrainStateWithMetaData<T>(initialstate);
         }
 
-
+        // no tagging is required, thus the following two are identity functions
+        protected override E TagEntry(E entry)
+        {
+            return entry;
+        }
+        protected override E UntagEntry(E taggedupdate)
+        {
+            return taggedupdate;
+        }
 
         protected override async Task ReadAsync()
         {
@@ -114,7 +126,7 @@ namespace Orleans.Runtime.Replication
             int backoff_msec = -1;
 
             T state;
-            List<IUpdateOperation<T>> updates;
+            List<E> updates;
 
             while (true)
             {
@@ -221,7 +233,7 @@ namespace Orleans.Runtime.Replication
 
             public string Origin { get; set; }
 
-            public List<IUpdateOperation<T>> Updates { get; set; }
+            public List<E> Updates { get; set; }
 
             public string Etag { get; set; }
 
@@ -236,14 +248,7 @@ namespace Orleans.Runtime.Replication
 
                 // Apply all operations in pending 
                 foreach (var u in Updates)
-                    try
-                    {
-                        u.Update(globalstate.GrainState);
-                    }
-                    catch
-                    {
-                        //TODO trace
-                    }
+                    globalstate.GrainState.TransitionView(u);
 
                 globalstate.GlobalVersion++;
 

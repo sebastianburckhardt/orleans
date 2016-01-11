@@ -42,8 +42,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Replication\DummyProvider.cs" />
-    <Compile Include="Replication\SharedStorageProvider.cs" />
+    <Compile Include="LogViews\LocalMemoryProvider.cs" />
+    <Compile Include="LogViews\SharedStorageProvider.cs" />
     <Compile Include="Streams\Common\SimpleQueueCache.cs" />
     <Compile Include="Streams\Common\SimpleQueueCacheCursor.cs" />
     <Compile Include="Streams\Common\SimpleQueueAdapterCache.cs" />

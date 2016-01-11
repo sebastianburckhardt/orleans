@@ -13,7 +13,7 @@ namespace Orleans.Providers
     /// </summary>
     /// <seealso cref="Orleans.Providers.IBootstrapProvider"/>
     /// <seealso cref="Orleans.Storage.IStorageProvider"/>
-    /// <seealso cref="Orleans.Storage.IReplicationProvider"/>
+    /// <seealso cref="Orleans.Storage.ILogViewProvider"/>
 
     public interface IProvider
     {
