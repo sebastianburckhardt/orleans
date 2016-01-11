@@ -231,23 +231,23 @@ namespace Orleans
         }
 
         /// <summary>
-        /// The [Orleans.Providers.ReplicationProvider] attribute is used to specify a replication provider for grains that extend QueuedGrain&lt;T&gt;.
+        /// The [Orleans.Providers.LogViewProvider] attribute is used to specify a log view provider for grains that extend LogViewGrain&lt;T&gt;.
         /// <para>
-        /// If present, the [Orleans.Providers.ReplicationProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute,
+        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute,
         /// otherwise we try to find a storage provider as for all other grains. 
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class ReplicationProviderAttribute : ProviderAttribute
+        public sealed class LogViewProviderAttribute : ProviderAttribute
         {
-            public ReplicationProviderAttribute()
+            public LogViewProviderAttribute()
             {
             }
         }
 
 
         /// <summary>
-        /// The common superclass of storage and replication provider attributes.
+        /// The common superclass of storage and log view provider attributes.
         /// </summary>
         public class ProviderAttribute : Attribute
         {

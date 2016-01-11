@@ -8,7 +8,7 @@ using System.Text;
 using Orleans.Core;
 using Orleans.Providers;
 using Orleans.CodeGeneration;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.Serialization;
 using Orleans.EventSourcing;
 
@@ -77,7 +77,7 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>) || definition == typeof(JournaledGrain<>) || definition == typeof(ReplicatedGrain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(JournaledGrain<>) || definition == typeof(LogViewGrain<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.IsClass)
@@ -87,7 +87,7 @@ namespace Orleans.Runtime
                                     ? StorageInterface.StorageBridge 
                                     : (definition == typeof(JournaledGrain<>))
                                         ? StorageInterface.JournaledStorageBridge
-                                        : StorageInterface.QueuedGrainAdaptor;
+                                        : StorageInterface.LogViewAdaptor;
                                 break;
                             }
                         }

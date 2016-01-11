@@ -1,65 +1,39 @@
-﻿/*
-Project Orleans Cloud Service SDK ver. 1.0
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the ""Software""), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 using Orleans.MultiCluster;
 using System;
 using System.Collections.Generic;
+using Orleans.LogViews;
 
-namespace Orleans.Replication
+namespace Orleans.QueuedGrains
 {
 
     /// <summary>
     /// Queued grain base class. 
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : ReplicatedGrain<TGrainState>, IProtocolParticipant, IReplicationAdaptorHost,
-                                                         IQueuedGrain<TGrainState> where TGrainState : GrainState, new()
+    public abstract class QueuedGrain<TGrainState> : LogViewGrain<TGrainState>, IProtocolParticipant, ILogViewAdaptorHost
+                                                          where TGrainState : QueuedGrainState<TGrainState>, new()
     {
         protected QueuedGrain()
         { }
 
-        /// <summary>
-        /// this object is just a shell: all the state and logic is in the adaptor
-        /// Using an adaptor hides adaptor internals 
-        /// (while still allowing the latter to span class hierarchy and assemblies)
-        /// </summary>
-        internal IQueuedGrainAdaptor<TGrainState> Adaptor { get; private set; }
+        
+        internal ILogViewAdaptor<TGrainState,IUpdateOperation<TGrainState>> Adaptor { get; private set; }
 
         /// <summary>
-        /// Called right after grain is constructed, to install the replication adaptor.
+        /// Called right after grain is constructed, to install the log view adaptor.
         /// </summary>
-        void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialstate, string graintypename, IReplicationProtocolServices services)
+        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
         {
-            // call the replication provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, (TGrainState) initialstate, graintypename, services);            
+            // call the log view provider to construct the adaptor, passing the type argument
+            Adaptor = provider.MakeLogViewAdaptor<TGrainState,IUpdateOperation<TGrainState>>(this, (TGrainState) initialstate, graintypename, services);            
         }
 
 
 
         /// <summary>
-        /// Notify replication adaptor of activation
+        /// Notify log view adaptor of activation
         /// </summary>
         public Task ActivateProtocolParticipant()
         {
@@ -67,7 +41,7 @@ namespace Orleans.Replication
         }
 
         /// <summary>
-        /// Notify replication adaptor of deactivation
+        /// Notify log view adaptor of deactivation
         /// </summary>
         public Task DeactivateProtocolParticipant()
         {
@@ -75,7 +49,7 @@ namespace Orleans.Replication
         }
 
         /// <summary>
-        /// Receive a message from other replicas, pass on to replication adaptor.
+        /// Receive a message from other clusters, pass on to log view adaptor.
         /// </summary>
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
@@ -111,7 +85,7 @@ namespace Orleans.Replication
         /// </summary>
         public void EnqueueUpdate(IUpdateOperation<TGrainState> update)
         {
-            Adaptor.EnqueueUpdate(update);
+            Adaptor.Submit(update);
         }
 
 
@@ -120,7 +94,7 @@ namespace Orleans.Replication
         /// </summary>
         public IEnumerable<IUpdateOperation<TGrainState>> UnconfirmedUpdates
         { 
-           get { return Adaptor.UnconfirmedUpdates; } 
+           get { return Adaptor.UnconfirmedSuffix; } 
         }
 
         /// <summary>
@@ -129,7 +103,7 @@ namespace Orleans.Replication
         /// <returns></returns>
         public Task CurrentQueueHasDrained()
         {
-            return Adaptor.CurrentQueueHasDrained();
+            return Adaptor.ConfirmSubmittedEntriesAsync();
         }
 
 
@@ -139,7 +113,7 @@ namespace Orleans.Replication
         /// </summary>
         public TGrainState TentativeState
         {
-            get { return Adaptor.TentativeState; }
+            get { return Adaptor.TentativeView; }
         }
 
         /// <summary>
@@ -148,17 +122,17 @@ namespace Orleans.Replication
         /// </summary>
         public TGrainState ConfirmedState
         {
-            get { return Adaptor.ConfirmedState; }
+            get { return Adaptor.ConfirmedView; }
         }
 
-        public bool SubscribeConfirmedStateListener(IConfirmedStateListener listener)
+        public bool SubscribeConfirmedStateListener(IViewListener listener)
         {
-            return Adaptor.SubscribeConfirmedStateListener(listener);
+            return Adaptor.SubscribeViewListener(listener);
         }
 
-        public bool UnSubscribeConfirmedStateListener(IConfirmedStateListener listener)
+        public bool UnSubscribeConfirmedStateListener(IViewListener listener)
         {
-            return Adaptor.UnSubscribeConfirmedStateListener(listener);
+            return Adaptor.UnSubscribeViewListener(listener);
         }
 
         public Exception LastException 
@@ -176,7 +150,7 @@ namespace Orleans.Replication
             Adaptor.DisableStatsCollection();
         }
 
-        public QueuedGrainStatistics GetStats()
+        public LogViewStatistics GetStats()
         {
             return Adaptor.GetStats();
         }
@@ -187,4 +161,5 @@ namespace Orleans.Replication
 
 
     }
+     
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Orleans.Runtime.Replication
+namespace Orleans.Runtime.LogViews
 {
     [Serializable]
     public class GrainStateWithMetaData<TGrainState> : GrainState where TGrainState: GrainState,new()
@@ -15,11 +15,12 @@ namespace Orleans.Runtime.Replication
         public TGrainState GrainState { get; set; }
 
         /// <summary>
-        /// A sequence number for the global state. Starts at 0, and gets incremented each time a replica commits a batch of updates.
+        /// The length of the log.
         /// </summary>
         public long GlobalVersion { get; set; }
 
         /// <summary>
+        /// Used to avoid duplicate commits.
         /// A string representing a bit vector, with one bit per replica. 
         /// Bits are toggled when writing, so that the retry logic can avoid duplicating updates when retrying a failed update. 
         /// </summary>

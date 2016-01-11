@@ -10,7 +10,7 @@ namespace Orleans.MultiCluster
     public interface IProtocolParticipant  : IGrain  
     {
         /// <summary>
-        /// Called when a message is received from another replica.
+        /// Called when a message is received from another cluster.
         /// This MUST interleave with other calls to avoid deadlocks.
         /// </summary>
         /// <param name="payload"></param>

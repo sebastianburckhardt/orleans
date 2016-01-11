@@ -35,18 +35,16 @@ namespace Orleans.TestingHost
     {
         public static void Adjust(ClusterConfiguration config)
         {
-            //   <Provider Type="Orleans.Storage.AzureTableStorage" Name="AzureStore" DataConnectionString="..."/>
             var props = new Dictionary<string, string>();
             props.Add("DataConnectionString", StorageTestConstants.DataConnectionString);
             config.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
 
-            //   <Provider Type="Orleans.Providers.Replication.SharedStorageProvider" Name="SharedStorage" GlobalStorageProvider="AzureStore"/>
             props = new Dictionary<string, string>();
             props.Add("GlobalStorageProvider", "AzureStore");
-            config.Globals.RegisterReplicationProvider("Orleans.Providers.Replication.SharedStorageProvider", "SharedStorage", props);
+            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.StoredViewProvider", "SharedStorage", props);
 
-            //   <Provider Type="Orleans.Providers.Replication.DummyProvider" Name="Dummy" />
-            config.Globals.RegisterReplicationProvider("Orleans.Providers.Replication.DummyProvider", "Dummy");
+            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.LocalMemoryProvider", "LocalMemory");
+
         }
     }
 }

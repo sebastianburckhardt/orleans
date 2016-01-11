@@ -70,7 +70,7 @@ namespace Tester.GeoClusterTests
         [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
         public async Task BasicQueuedGrainTest_DummyStorage()
         {
-            await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainDummyStorage");
+            await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainLocalMemoryStorage");
         }
         [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
         public async Task BasicQueuedGrainTest_DefaultStorage()

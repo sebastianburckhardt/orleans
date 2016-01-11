@@ -797,10 +797,10 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-      <xs:element name="ReplicationProviders" minOccurs="0" maxOccurs="1">
+      <xs:element name="LogViewProviders" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>
-            The optional ReplicationProviders element contains information relating to storage provider instances used for grain persistence.
+            The optional LogViewProviders element contains configuration for log view provider instances used for grain persistence.
           </xs:documentation>
         </xs:annotation>
         <xs:complexType>

@@ -3,38 +3,52 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Orleans.Replication;
+using Orleans.LogViews;
 using System.Diagnostics;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.MultiCluster;
 
-namespace Orleans.Runtime.Replication
+namespace Orleans.Runtime.LogViews
 {
     /// <summary>
-    /// A general template for constructing replication adaptors based on
+    /// A general template for constructing log view adaptors based on
     /// a sequentially read and written primary.
+    ///<para>
+    /// The log itself is transient, i.e. not actually saved to storage - only the latest view and some 
+    /// metadata (the log position, and write flags) is stored in the primary. 
+    /// It is safe to interleave calls to this adaptor (on a cooperative scheduler).
+    /// </para>
+    ///<para>
     /// Suclasses override ReadAsync and WriteAsync to read from / write to primary.
+    /// Calls to the primary are serialized, i.e. never interleave.
+    /// </para>
     /// </summary>
-    /// <typeparam name="TGrainState">The user-defined grain state</typeparam>
-    /// <typeparam name="TUpdate">The implementation-defined update object</typeparam>
+    /// <typeparam name="TLogView">The user-defined view of the log</typeparam>
+    /// <typeparam name="TLogEntry">The type of the log entries</typeparam>
     /// 
-    public abstract class QueuedGrainAdaptorBase<TGrainState,TUpdate> :
-        IQueuedGrainAdaptor<TGrainState> where TGrainState : GrainState, new()  where TUpdate : IUpdateOperation<TGrainState>
+    public abstract class PrimaryBasedLogViewAdaptor<TLogView,TLogEntry,TTaggedEntry> : ILogViewAdaptor<TLogView,TLogEntry> 
+        where TLogView : LogViewType<TLogEntry>, new() 
+        where TLogEntry:class
     {
         #region interface to subclasses that implement specific providers
 
  
         /// <summary>
-        /// Set cached global state to initial value.
+        /// Set confirmed view the initial value (a view of the empty log)
         /// </summary>
-        protected abstract void InitializeCachedGlobalState(TGrainState initialstate);
+        protected abstract void InitializeConfirmedView(TLogView initialstate);
 
         /// <summary>
         /// Read cached global state.
         /// </summary>
-        protected abstract TGrainState LastConfirmedGlobalState();
+        protected abstract TLogView LastConfirmedView();
+
+        /// <summary>
+        /// Read version of cached global state.
+        /// </summary>
+        //protected abstract int LastConfirmedVersion();  //TODO
 
         /// <summary>
         /// Read the latest primary state. Must block/retry until successful.
@@ -43,10 +57,10 @@ namespace Orleans.Runtime.Replication
         protected abstract Task ReadAsync();
 
         /// <summary>
-        /// Write updates. Must block/retry until successful. 
+        /// Apply pending entries to the primary. Must block/retry until successful. 
         /// </summary>
         /// <param name="updates"></param>
-        /// <returns>If non-null, this message is broadcast to all replicas</returns>
+        /// <returns>If non-null, this message is broadcast to all clusters</returns>
         protected abstract Task<WriteResult> WriteAsync();
 
         protected struct WriteResult
@@ -59,14 +73,18 @@ namespace Orleans.Runtime.Replication
         /// If required by protocol, tag local update, e.g. with unique identifier
         /// </summary>
         /// <returns></returns>
-        protected virtual TUpdate TagUpdate(IUpdateOperation<TGrainState> update)
-        {
-            // by default, we don't tag.
-            return (TUpdate) update;
-        }
+        protected abstract TTaggedEntry TagEntry(TLogEntry entry);
 
         /// <summary>
-        /// Handle replication protocol messages.
+        /// Get the entry out from the tagged entry
+        /// </summary>
+        /// <param name="taggedentry"></param>
+        /// <returns></returns>
+        protected abstract TLogEntry UntagEntry(TTaggedEntry taggedentry);
+    
+
+        /// <summary>
+        /// Handle protocol messages.
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
@@ -113,27 +131,27 @@ namespace Orleans.Runtime.Replication
         /// <summary>
         /// The grain that is using this adaptor
         /// </summary>
-        protected IReplicationAdaptorHost Host { get; private set; }
+        protected ILogViewAdaptorHost Host { get; private set; }
 
-        protected IReplicationProtocolServices Services { get; private set; }
+        protected IProtocolServices Services { get; private set; }
 
         protected MultiClusterConfiguration Configuration { get; set; }
 
 
-        protected List<IConfirmedStateListener> listeners = new List<IConfirmedStateListener>();
+        protected List<IViewListener> listeners = new List<IViewListener>();
 
-        protected IReplicationProvider Provider;
+        protected ILogViewProvider Provider;
 
         protected Dictionary<string, NotificationStatus> notificationtracker;
 
-        protected QueuedGrainAdaptorBase(IReplicationAdaptorHost host, IReplicationProvider provider,
-            TGrainState initialstate, IReplicationProtocolServices services)
+        protected PrimaryBasedLogViewAdaptor(ILogViewAdaptorHost host, ILogViewProvider provider,
+            TLogView initialstate, IProtocolServices services)
         {
             Debug.Assert(host != null && services != null && initialstate != null);
             this.Host = host;
             this.Services = services;
             this.Provider = provider;
-            InitializeCachedGlobalState(initialstate);
+            InitializeConfirmedView(initialstate);
             worker = new BackgroundWorker(() => Work());
             Provider.Log.Verbose2("{0} Constructed {1}", Services.GrainReference, host.IdentityString);
         }
@@ -187,30 +205,24 @@ namespace Orleans.Runtime.Replication
 
         #endregion
 
-        // the currently pending updates. 
-        private readonly List<UpdateHolder> pending = new List<UpdateHolder>();
+        // the currently submitted, unconfirmed entries. 
+        private readonly List<TimedEntry> pending = new List<TimedEntry>();
 
-        struct UpdateHolder
+        struct TimedEntry
         {
-            public TUpdate updateObject;
+            public TTaggedEntry taggedEntry;
             public DateTime entryTime;
-
-            public UpdateHolder(TUpdate update)
-            {
-                this.updateObject = update;
-                this.entryTime = DateTime.UtcNow;
-            }
         }
 
-        protected TGrainState CopyTentativeState()
+        protected TLogView CopyTentativeState()
         {
-            var state = TentativeState;
+            var state = TentativeView;
             TentativeStateInternal = null; // to avoid aliasing
             return state;
         }
-        protected List<TUpdate> CopyListOfUpdates()
+        protected List<TTaggedEntry> CopyListOfUpdates()
         {
-            return pending.Select(uh => uh.updateObject).ToList(); // must use a copy
+            return pending.Select(uh => uh.taggedEntry).ToList(); // must use a copy
         }
       
      
@@ -219,7 +231,7 @@ namespace Orleans.Runtime.Replication
         ///  Tentative State. Represents Stable State + effects of pending updates.
         ///  Computed lazily (null if not in use)
         /// </summary>
-        private TGrainState TentativeStateInternal;
+        private TLogView TentativeStateInternal;
      
         /// <summary>
         /// A flag that indicates to the worker that the client wants to refresh the state
@@ -240,10 +252,10 @@ namespace Orleans.Runtime.Replication
      
 
         // statistics gathering. Is null unless stats collection is turned on.
-        protected QueuedGrainStatistics stats = null;
+        protected LogViewStatistics stats = null;
 
 
-        // For use by replication protocols. Determines if this cluster is part of the configured multicluster.
+        // For use by protocols. Determines if this cluster is part of the configured multicluster.
         protected bool IsMyClusterJoined()
         {
             return (Configuration != null && Configuration.Clusters.Contains(Services.MyClusterId));
@@ -277,22 +289,24 @@ namespace Orleans.Runtime.Replication
 
     
 
-        public void EnqueueUpdate(IUpdateOperation<TGrainState> updateoperation)
+        public void Submit(TLogEntry logentry)
         {
-            //Trace.TraceInformation("UpdateLocalAsync");
-
-            // add metadata to update if needed by replication protocol
-            var taggedupdate = this.TagUpdate(updateoperation);
+            // add metadata to update if needed by protocol
+            var taggedupdate = this.TagEntry(logentry);
 
             // add update to queue
-            pending.Add(new UpdateHolder(taggedupdate));
+            pending.Add(new TimedEntry()
+                {
+                    taggedEntry = taggedupdate,
+                    entryTime = DateTime.UtcNow
+                });
 
             // if we have a tentative state in use, update it
             if (this.TentativeStateInternal != null)
             {
                 try
                 {
-                    taggedupdate.Update(this.TentativeStateInternal);
+                    this.TentativeStateInternal.TransitionView(UntagEntry(taggedupdate));
                 }
                 catch
                 {
@@ -300,21 +314,21 @@ namespace Orleans.Runtime.Replication
                 }
             }
 
-            if (stats != null) stats.eventCounters["EnqueueUpdateCalled"]++;
+            if (stats != null) stats.eventCounters["SubmitCalled"]++;
 
-            Provider.Log.Verbose2("{0} EnqueueUpdate", Services.GrainReference);
+            Provider.Log.Verbose2("{0} Submit", Services.GrainReference);
 
             worker.Notify();
         }
 
 
 
-        public TGrainState TentativeState
+        public TLogView TentativeView
         {
             get
             {
                 if (stats != null)
-                    stats.eventCounters["TentativeStateCalled"]++;
+                    stats.eventCounters["TentativeViewCalled"]++;
 
                 if (TentativeStateInternal == null)
                     CalculateTentativeState();
@@ -334,14 +348,14 @@ namespace Orleans.Runtime.Replication
         }
 
     
-        public TGrainState ConfirmedState
+        public TLogView ConfirmedView
         {
             get
             {
                 if (stats != null)
-                    stats.eventCounters["ConfirmedStateCalled"]++;
+                    stats.eventCounters["ConfirmedViewCalled"]++;
 
-                return LastConfirmedGlobalState();
+                return LastConfirmedView();
             }
         }
 
@@ -429,17 +443,17 @@ namespace Orleans.Runtime.Replication
         // method is virtual so subclasses can add their own events
         public virtual void EnableStatsCollection() {
 
-            stats = new QueuedGrainStatistics()
+            stats = new LogViewStatistics()
             {
                 eventCounters = new Dictionary<string, long>(),
                 stabilizationLatenciesInMsecs = new List<int>()
             };
  
-            stats.eventCounters.Add("TentativeStateCalled", 0);
-            stats.eventCounters.Add("ConfirmedStateCalled", 0);
-            stats.eventCounters.Add("EnqueueUpdateCalled", 0);            
-            stats.eventCounters.Add("CurrentQueueHasDrainedCalled", 0);
-            stats.eventCounters.Add("SynchronizeNowAsyncCalled", 0);
+            stats.eventCounters.Add("TentativeViewCalled", 0);
+            stats.eventCounters.Add("ConfirmedViewCalled", 0);
+            stats.eventCounters.Add("SubmitCalled", 0);            
+            stats.eventCounters.Add("ConfirmSubmittedEntriesCalled", 0);
+            stats.eventCounters.Add("SynchronizeNowCalled", 0);
 
             stats.eventCounters.Add("WritebackEvents", 0);
 
@@ -451,7 +465,7 @@ namespace Orleans.Runtime.Replication
             stats = null;
         }
 
-        public QueuedGrainStatistics GetStats()
+        public LogViewStatistics GetStats()
         {
             return stats;
         }
@@ -462,13 +476,13 @@ namespace Orleans.Runtime.Replication
         private void CalculateTentativeState()
         {
             // copy the master
-            this.TentativeStateInternal = (TGrainState)LastConfirmedGlobalState().DeepCopy();
+            this.TentativeStateInternal = (TLogView)LastConfirmedView().DeepCopy();
 
             // Now apply all operations in pending 
             foreach (var u in this.pending)
                 try
                 {
-                    u.updateObject.Update(this.TentativeStateInternal);
+                     this.TentativeStateInternal.TransitionView(UntagEntry(u.taggedEntry));
                 }
                 catch
                 {
@@ -524,7 +538,7 @@ namespace Orleans.Runtime.Replication
             {
                 ConfirmedStateHasChanged = false;
                 foreach (var l in listeners)
-                    l.OnConfirmedStateChanged();
+                    l.OnViewChanged();
             }
 
             Provider.Log.Verbose("{0} WorkerCycle Done", Services.GrainReference);
@@ -571,8 +585,8 @@ namespace Orleans.Runtime.Replication
                 }
                 catch (Exception e)
                 {
-                    // should never get here... replication provider is supposed to retry on exceptions
-                    // because only the replication provider knows how to retry the right way
+                    // should never get here... subclass is supposed to retry on exceptions
+                    // because only that one knows how to retry the right way
                     LastExceptionInternal = e;
                     // if we get here anyway, we retry again
                     continue;
@@ -605,47 +619,49 @@ namespace Orleans.Runtime.Replication
         public async Task SynchronizeNowAsync()
         {
             if (stats != null)
-                stats.eventCounters["SynchronizeNowAsyncCalled"]++;
+                stats.eventCounters["SynchronizeNowCalled"]++;
 
-            Provider.Log.Verbose("{0} SynchronizeNowAsyncStart", Services.GrainReference);
+            Provider.Log.Verbose("{0} SynchronizeNowStart", Services.GrainReference);
 
             need_refresh = true;
             await worker.NotifyAndWait();
 
-            Provider.Log.Verbose("{0} SynchronizeNowAsyncComplete", Services.GrainReference);
+            Provider.Log.Verbose("{0} SynchronizeNowComplete", Services.GrainReference);
         }
 
-        public IEnumerable<IUpdateOperation<TGrainState>> UnconfirmedUpdates
+        public IEnumerable<TLogEntry> UnconfirmedSuffix
         {
             get 
-            { 
-                // extract original update objects from the pending queue
-                return pending.Select(uh => {
-                    var o = uh.updateObject;
-                    var t = o as ITaggedUpdate<TGrainState>;
-                    if (t != null)
-                        return t.OriginalUpdate;
-                    else
-                        return o;
-                });
+            {
+                return null;
+                //TODO 
+                //extract original update objects from the pending queue
+                ///return pending.Select(uh => {
+                //    var o = uh.taggedEntry;
+                //    var t = o as ITaggedUpdate<TLogView>;
+                //    if (t != null)
+                //        return t.OriginalUpdate;
+               //     else
+               //         return o;
+                //});
             }
         }
 
-        public async Task CurrentQueueHasDrained()
+        public async Task ConfirmSubmittedEntriesAsync()
         {
             if (stats != null)
-                stats.eventCounters["CurrentQueueHasDrainedCalled"]++;
+                stats.eventCounters["ConfirmSubmittedEntriesCalled"]++;
 
-            Provider.Log.Verbose("{0} CurrentQueueHasDrainedStart", Services.GrainReference);
+            Provider.Log.Verbose("{0} ConfirmSubmittedEntriesStart", Services.GrainReference);
 
             if (pending.Count != 0)
                 await worker.WaitForCurrentWorkToBeServiced();
 
-            Provider.Log.Verbose("{0} CurrentQueueHasDrainedEnd", Services.GrainReference);
+            Provider.Log.Verbose("{0} ConfirmSubmittedEntriesEnd", Services.GrainReference);
         }
     
 
-        public bool SubscribeConfirmedStateListener(IConfirmedStateListener listener)
+        public bool SubscribeViewListener(IViewListener listener)
         {
             if (listeners.Contains(listener))
             {
@@ -658,7 +674,7 @@ namespace Orleans.Runtime.Replication
             return true;
         }
 
-        public bool UnSubscribeConfirmedStateListener(IConfirmedStateListener listener)
+        public bool UnSubscribeViewListener(IViewListener listener)
         {
             return listeners.Remove(listener);
         }
@@ -741,19 +757,13 @@ namespace Orleans.Runtime.Replication
 
     }
 
-    public interface ITaggedUpdate<T> : IUpdateOperation<T> where T : GrainState, new()
-    {
-        IUpdateOperation<T> OriginalUpdate { get; }
-    }
-
-
 
     [Serializable]
     public class NotificationMessage: IProtocolMessage
     {
         // contains no info
         
-        // replication providers can subclass this to add more information
+        // log view providers can subclass this to add more information
     }
     
 }

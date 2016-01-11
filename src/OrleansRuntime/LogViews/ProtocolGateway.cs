@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 using Orleans;
 using Orleans.Core;
 using Orleans.MultiCluster;
-using Orleans.Replication;
+using Orleans.LogViews;
 using Orleans.Runtime;
 using Orleans.SystemTargetInterfaces;
 using Orleans.Concurrency;
 
-namespace Orleans.Runtime.Replication
+namespace Orleans.Runtime.LogViews
 {
     [Reentrant]
-    internal class ReplicationProtocolGateway : SystemTarget, IReplicationProtocolGateway
+    internal class ProtocolGateway : SystemTarget, IProtocolGateway
     {
-        public ReplicationProtocolGateway(SiloAddress silo)
-            : base(Constants.ReplicationProtocolGatewayId, silo)
+        public ProtocolGateway(SiloAddress silo)
+            : base(Constants.ProtocolGatewayId, silo)
         {
         }
 

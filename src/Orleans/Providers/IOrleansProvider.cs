@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace Orleans.Providers
 {
-#pragma warning disable 1574
+    #pragma warning disable 1574
     /// <summary>
     /// Base interface for all type-specific provider interfaces in Orleans
     /// </summary>
     /// <seealso cref="Orleans.Providers.IBootstrapProvider"/>
     /// <seealso cref="Orleans.Storage.IStorageProvider"/>
     /// <seealso cref="Orleans.EventSourcing.IJournaledStorageProvider"/>
-    /// <seealso cref="Orleans.Storage.IReplicationProvider"/>
+    /// <seealso cref="Orleans.Storage.ILogViewProvider"/>
 
     public interface IProvider
     {
