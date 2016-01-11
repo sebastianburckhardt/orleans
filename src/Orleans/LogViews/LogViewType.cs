@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.LogViews
 {
+
    [Serializable]
     public class LogViewType<TLogEntry> : GrainState
     {

@@ -28,7 +28,7 @@ namespace Orleans.EventSourcing
         { }
 
 
-        public string StreamName { get; }
-        public int ExpectedVersion { get; }
+        public string StreamName { get; set; }
+        public int ExpectedVersion { get; set; }
     }
 }

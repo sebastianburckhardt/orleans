@@ -15,8 +15,8 @@ namespace Orleans.EventSourcing
             this.Events = events;
         }
 
-        public string StreamName { get; }
-        public int Version { get; }
-        public IReadOnlyCollection<object> Events { get; }
+        public string StreamName { get; set;  }
+        public int Version { get; set;  }
+        public IReadOnlyCollection<object> Events { get; set; }
     }
 }

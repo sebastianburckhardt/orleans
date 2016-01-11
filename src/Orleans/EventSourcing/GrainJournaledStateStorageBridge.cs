@@ -11,7 +11,7 @@ using Orleans.Storage;
 namespace Orleans.EventSourcing
 {
     internal class GrainJournaledStateStorageBridge<TGrainState> : IStorage
-        where TGrainState : GrainState, IJournaledGrainState, new()
+        where TGrainState : JournaledGrainState, new()
     {
         private readonly IJournaledStorageProvider store;
         private readonly JournaledGrain<TGrainState> grain;
@@ -169,7 +169,7 @@ namespace Orleans.EventSourcing
 
         private string GetStreamName()
         {
-            return (grain as ICustomStreamName)?.GetStreamName() ?? GetDefaultStreamName(grainTypeName, grain.GrainReference);
+            return (grain as ICustomStreamName).GetStreamName() ?? GetDefaultStreamName(grainTypeName, grain.GrainReference);
         }
 
         private static string GetDefaultStreamName(string grainType, GrainReference grainReference)

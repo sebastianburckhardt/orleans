@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Orleans.LogViews;
+using System;
 
 namespace Orleans.EventSourcing
 {
-    public class JournaledGrainState : GrainState, IJournaledGrainState
+    public class JournaledGrainState : LogViewType<object>, IJournaledGrainState
     {
         public int Version { get; private set; }
 
@@ -20,9 +21,14 @@ namespace Orleans.EventSourcing
             }
         }
 
-        protected virtual void OnMissingStateTransition(object @event)
+        protected override void OnMissingStateTransition(object @event)
         {
             // Log
+        }
+
+        public override void TransitionView(object logentry)
+        {
+            this.TransitionState(logentry);
         }
     }
 }

@@ -1,6 +1,6 @@
 using Orleans.Concurrency;
 using Orleans.MultiCluster;
-using Orleans.Replication;
+using Orleans.LogViews;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,16 +10,16 @@ namespace Orleans.EventSourcing
     /// <summary>
     /// The base class for all grain classes that have event-sourced state.
     /// </summary>
-    public abstract class JournaledGrain<TGrainState> : Grain, IReplicationAdaptorHost, IProtocolParticipant
-        where TGrainState : GrainState, IJournaledGrainState, new()
+    public abstract class JournaledGrain<TGrainState> : Grain, ILogViewAdaptorHost, IProtocolParticipant
+        where TGrainState : JournaledGrainState, new()
     {
         protected JournaledGrain()  { }
 
-        private readonly List<object> uncommitedEvents = new List<object>();
+        private readonly List<object> unsubmittedEvents = new List<object>();
 
         internal IReadOnlyCollection<object> UncommitedEvents
         {
-            get { return this.uncommitedEvents; }
+            get { return this.unsubmittedEvents; }
         }
 
         /// <summary>
@@ -33,38 +33,38 @@ namespace Orleans.EventSourcing
             if (@event == null) throw new ArgumentNullException("event");
 
             if (Adaptor != null)
-                Adaptor.EnqueueUpdate(new JournalUpdate<TGrainState>() { Event = @event });
+                Adaptor.Submit(@event);
             else
             {
-                this.uncommitedEvents.Add(@event);
+                this.unsubmittedEvents.Add(@event);
                 this.tentativeState.TransitionState(@event);
             }
         }
 
         internal void CommitEvents()
         {
-            foreach (dynamic @event in this.uncommitedEvents)
+            foreach (dynamic @event in this.unsubmittedEvents)
                 this.ConfirmedState.TransitionState(@event);
 
-            this.uncommitedEvents.Clear();
+            this.unsubmittedEvents.Clear();
         }
 
         /// <summary>
         /// Adaptor for storage interface (queued grain).
         /// The storage keeps the journal.
         /// </summary>
-        internal IQueuedGrainAdaptor<TGrainState> Adaptor { get; private set; }
+        internal ILogViewAdaptor<TGrainState,object> Adaptor { get; private set; }
 
         /// <summary>
         /// Called right after grain is constructed, to install the adaptor.
         /// </summary>
-        void IReplicationAdaptorHost.InstallAdaptor(IReplicationProvider provider, object initialState, string graintypename, IReplicationProtocolServices services)
+        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialState, string graintypename, IProtocolServices services)
         {
             var grainState = (TGrainState)initialState;
             this.GrainState = grainState;
 
             // call the replication provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeReplicationAdaptor<TGrainState>(this, grainState, graintypename, services);
+            Adaptor = provider.MakeLogViewAdaptor<TGrainState,object>(this, grainState, graintypename, services);
         }
 
         private TGrainState tentativeState = new TGrainState();
@@ -74,7 +74,7 @@ namespace Orleans.EventSourcing
             get
             {
                 if (Adaptor != null)
-                    return this.Adaptor.TentativeState;
+                    return this.Adaptor.TentativeView;
                 else
                     return this.tentativeState;
             }
@@ -85,7 +85,7 @@ namespace Orleans.EventSourcing
             get
             {
                 if (Adaptor != null)
-                    return this.Adaptor.ConfirmedState;
+                    return this.Adaptor.ConfirmedView;
                 else
                     return base.GrainState as TGrainState;
             }
@@ -98,7 +98,7 @@ namespace Orleans.EventSourcing
         protected Task Commit()
         {
             if (Adaptor != null)
-                return Adaptor.CurrentQueueHasDrained();
+                return Adaptor.ConfirmSubmittedEntriesAsync();
             else
                 return this.Storage.WriteStateAsync();
         }
