@@ -414,7 +414,7 @@ namespace Orleans.Runtime
                     ActivationCollector.TryRescheduleCollection(result);
                     return result;
                 }
-
+                
                 int typeCode = address.Grain.GetTypeCode();
                 string actualGrainType = null;
                 MultiClusterRegistrationStrategy activationStrategy;
@@ -538,15 +538,15 @@ namespace Orleans.Runtime
                                 // If this was a duplicate, it's not an error, just a race.
                                 // Forward on all of the pending messages, and then forget about this activation.
                                 string logMsg = String.Format("Tried to create a duplicate activation {0}, but we'll use {1} instead. " +
-                                                            "GrainInstanceType is {2}. " +
+                                    "GrainInstanceType is {2}. " +
                                                             "{3}" +
                                                             "Full activation address is {4}. We have {5} messages to forward.",
-                                                address,
-                                                target,
-                                                activation.GrainInstanceType,
+                                    address,
+                                    target,
+                                    activation.GrainInstanceType,
                                                 primary != null ? "Primary Directory partition for this grain is " + primary + ". " : String.Empty,
-                                                address.ToFullString(),
-                                                activation.WaitingCount);
+                                    address.ToFullString(),
+                                    activation.WaitingCount);
                                 if (activation.IsStatelessWorker)
                                 {
                                     if (logger.IsVerbose) logger.Verbose(ErrorCode.Catalog_DuplicateActivation, logMsg);
@@ -654,7 +654,7 @@ namespace Orleans.Runtime
             {
                 state = Activator.CreateInstance(stateObjectType);
             }
-
+            
             lock (data)
             {
                 grain.Identity = data.Identity;
@@ -666,16 +666,16 @@ namespace Orleans.Runtime
                 {
                     SetupStorageProvider(data, attr);
                     var statefulGrain = grain as IStatefulGrain;
-                    statefulGrain.GrainState.State = state;
+                        statefulGrain.GrainState.State = state;
                     statefulGrain.SetStorage(new GrainStateStorageBridge(data.GrainTypeName, statefulGrain, data.StorageProvider));
-                }
+                    }
 
                 else if (grainTypeData.StorageInterface == StorageInterface.LogViewAdaptor)  // QueuedGrain<T> 
                 {
                     var logviewprovider = SetupLogViewProvider(data, attr);
                     var svc = new ProtocolServices(grain, logviewprovider);
                     ((ILogViewAdaptorHost)grain).InstallAdaptor(logviewprovider, state, data.GrainTypeName, svc);
-            }
+                }
             }
 
 
@@ -819,7 +819,7 @@ namespace Orleans.Runtime
                     await scheduler.RunOrQueueTask(() =>
                         result.StorageProvider.ReadStateAsync(grainType, grainRef, state),
                         new SchedulingContext(result));
-
+                    
                     sw.Stop();
                     StorageStatisticsGroup.OnStorageActivate(result.StorageProvider, grainType, result.GrainReference, sw.Elapsed);
                 }
@@ -1242,11 +1242,11 @@ namespace Orleans.Runtime
 
             if (singleActivationMode)
             {
-                Tuple<ActivationAddress,int> returnedAddress = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
-                if (address.Equals(returnedAddress.Item1)) return;
-
+                var result = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
+                if (address.Equals(result.Address)) return;
+               
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
-                throw new DuplicateActivationException(returnedAddress.Item1, primaryDirectoryForGrain);
+                throw new DuplicateActivationException(result.Address, primaryDirectoryForGrain);
             }
             else
             {
@@ -1262,8 +1262,8 @@ namespace Orleans.Runtime
                     throw new DuplicateActivationException(id);
                 }
             }
-            // We currently don't have any other case for multiple activations except for StatelessWorker.
-            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext);
+            // We currently don't have any other case for multiple activations except for StatelessWorker. 
+            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext); 
         }
 
         #endregion

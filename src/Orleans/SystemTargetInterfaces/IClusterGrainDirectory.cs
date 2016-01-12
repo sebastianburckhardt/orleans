@@ -22,10 +22,9 @@ namespace Orleans.SystemTargetInterfaces
     internal class RemoteClusterActivationResponse
     {
         public ActivationResponseStatus ResponseStatus { get; set; }
-        public ActivationAddress ExistingActivationAddress { get; set; }
+        public AddressAndTag ExistingActivationAddress { get; set; }
         public string ClusterId { get; set; }
         public bool Owned { get; set; }
-        public int eTag { get; set; }
         public Exception ResponseException { get; set; }
 
         public override string ToString()
@@ -33,9 +32,9 @@ namespace Orleans.SystemTargetInterfaces
             var sb = new StringBuilder();
             sb.Append("[");
             sb.Append(ResponseStatus.ToString());
-            if (ExistingActivationAddress != null) {
+            if (ExistingActivationAddress.Address != null) {
                 sb.Append(" ");
-                sb.Append(ExistingActivationAddress);
+                sb.Append(ExistingActivationAddress.Address);
                 sb.Append(" ");
                 sb.Append(ClusterId);
             }

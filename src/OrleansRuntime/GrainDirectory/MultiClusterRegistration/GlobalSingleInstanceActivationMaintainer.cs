@@ -208,8 +208,8 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 logger.Verbose("GSIP:M batchresponse PASS:{0} FAILED:{1} FAILED(a){2}: FAILED(o){3}: FAULTED:{4}",
                     br.Count((r) => r.ResponseStatus == ActivationResponseStatus.PASS),
-                    br.Count((r) => r.ResponseStatus == ActivationResponseStatus.FAILED && !r.Owned && r.ExistingActivationAddress == null),
-                    br.Count((r) => r.ResponseStatus == ActivationResponseStatus.FAILED && !r.Owned && r.ExistingActivationAddress != null),
+                    br.Count((r) => r.ResponseStatus == ActivationResponseStatus.FAILED && !r.Owned && r.ExistingActivationAddress.Address == null),
+                    br.Count((r) => r.ResponseStatus == ActivationResponseStatus.FAILED && !r.Owned && r.ExistingActivationAddress.Address != null),
                     br.Count((r) => r.ResponseStatus == ActivationResponseStatus.FAILED && r.Owned),
                     br.Count((r) => r.ResponseStatus == ActivationResponseStatus.FAULTED)
                 );
@@ -255,7 +255,7 @@ namespace Orleans.Runtime.GrainDirectory
                                 loser_activations_per_silo[address.Silo] = losers = new List<ActivationAddress>();
                             losers.Add(address);
 
-                            router.DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, tracker.RemoteOwner);
+                            router.DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, tracker.RemoteOwner.Address);
                             continue;
                         }
                     case GlobalSingleInstanceResponseTracker.Outcome.SUCCEED:

@@ -18,7 +18,7 @@ namespace Orleans.GrainDirectory
         /// <param name="address">The address of the activation to register.</param>
         /// <param name="singleActivation">If true, use single-activation registration</param>
         /// <returns>The address registered for the grain's single activation.</returns>
-        Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation);
+        Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation);
 
         /// <summary>
         /// Removes the given activation for the grain.

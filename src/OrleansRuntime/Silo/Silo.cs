@@ -773,7 +773,7 @@ namespace Orleans.Runtime
                 // Streams and Bootstrap - the order is less clear. Seems like Bootstrap may indirecly depend on Streams, but not the other way around.
                 // 8:
                 SafeExecute(() =>
-                {
+                {                
                     scheduler.QueueTask(() => statisticsProviderManager.CloseProviders(), providerManagerSystemTarget.SchedulingContext)
                             .WaitWithThrow(initTimeout);
                 });
@@ -881,7 +881,7 @@ namespace Orleans.Runtime
         {
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
-            
+
             internal IConsistentRingProvider ConsistentRingProvider
             {
                 get { return CheckReturnBoundaryReference("ring provider", silo.RingProvider); }
@@ -913,6 +913,7 @@ namespace Orleans.Runtime
             }
 
             internal Action<GrainId> Debug_OnDecideToCollectActivation { get; set; }
+
 
             internal TestHooks(Silo s)
             {
@@ -961,7 +962,7 @@ namespace Orleans.Runtime
             {
                 return silo.localGrainDirectory.DirectoryPartition.GetItems();
             }
-
+          
             internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypenamesContaining(string expr)
             {
                 var x = new Dictionary<GrainId, IGrainInfo>();
@@ -975,11 +976,6 @@ namespace Orleans.Runtime
                 return x;
             }
 
-            internal void InjectMultiClusterConfiguration(MultiClusterConfiguration config)
-            {
-                silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
-            }
-          
             // store silos for which we simulate faulty communication
             // number indicates how many percent of requests are lost
             internal ConcurrentDictionary<IPEndPoint, double> SimulatedMessageLoss; 
@@ -1011,7 +1007,7 @@ namespace Orleans.Runtime
                     return false;
             }
 
-             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
+            // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 
             internal void SendMessageInternal(Message message)
             {

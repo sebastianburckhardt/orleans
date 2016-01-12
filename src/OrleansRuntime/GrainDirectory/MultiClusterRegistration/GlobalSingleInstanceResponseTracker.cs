@@ -1,10 +1,11 @@
-﻿using Orleans.SystemTargetInterfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Orleans.GrainDirectory;
+using Orleans.SystemTargetInterfaces;
 
 namespace Orleans.Runtime.GrainDirectory 
 {
@@ -25,8 +26,7 @@ namespace Orleans.Runtime.GrainDirectory
         private RemoteClusterActivationResponse[] responses;
         private GrainId grain;
 
-        public ActivationAddress RemoteOwner;
-        public int RemoteOwnerETag;
+        public AddressAndTag RemoteOwner;
         public string RemoteOwnerCluster;
 
         public GlobalSingleInstanceResponseTracker(RemoteClusterActivationResponse[] responses, GrainId grain)
@@ -64,7 +64,6 @@ namespace Orleans.Runtime.GrainDirectory
                     //     logger.Warn((int) ErrorCode.GlobalSingleInstance_MultipleOwners, "Unexpected error occured. Multiple Owner Replies.");
                     
                     RemoteOwner = ownerresponses[0].ExistingActivationAddress;
-                    RemoteOwnerETag = ownerresponses[0].eTag;
                     RemoteOwnerCluster = ownerresponses[0].ClusterId;
                     TrySetResult(Outcome.REMOTE_OWNER);
                 }
@@ -74,22 +73,21 @@ namespace Orleans.Runtime.GrainDirectory
                 {
                     // determine best candidate
                     var candidates = responses
-                        .Where(res => (res.ResponseStatus == ActivationResponseStatus.FAILED && res.ExistingActivationAddress != null))
+                        .Where(res => (res.ResponseStatus == ActivationResponseStatus.FAILED && res.ExistingActivationAddress.Address != null))
                         .ToList();
 
                     foreach (var res in candidates)
                     {
-                        if (RemoteOwner == null ||
+                        if (RemoteOwner.Address == null ||
                             MultiClusterUtils.ActivationPrecedenceFunc(grain,
                                 res.ClusterId, RemoteOwnerCluster))
                         {
                             RemoteOwner = res.ExistingActivationAddress;
-                            RemoteOwnerETag = res.eTag;
                             RemoteOwnerCluster = res.ClusterId;
                         }
                     }
 
-                    if (RemoteOwner != null)
+                    if (RemoteOwner.Address != null)
                         TrySetResult(Outcome.REMOTE_OWNER_LIKELY);
                     else
                         TrySetResult(Outcome.INCONCLUSIVE);

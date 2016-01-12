@@ -531,16 +531,16 @@ namespace Orleans.Runtime.GrainDirectory
         }
 
 
-        public async Task<Tuple<ActivationAddress, int>> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
+        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
         {
             (singleActivation ? (hopcount > 0 ? RegistrationsSingleActRemoteReceived : registrationsSingleActIssued)
                             : (hopcount > 0 ? RegistrationsRemoteReceived : registrationsIssued)).Increment();
-          
+
             SiloAddress owner = CalculateTargetSilo(address.Grain);
 
             // see if the owner is somewhere else (returns null if we are owner)
             var forwardaddress = CheckIfIShouldForward(address.Grain, hopcount, "RegisterAsync");
- 
+
             // on all silos other than first, we insert a retry delay and recheck owner before forwarding
             if (hopcount > 0 && forwardaddress != null)
             {
@@ -559,53 +559,53 @@ namespace Orleans.Runtime.GrainDirectory
             }
             else
             {
-                (singleActivation ? RegistrationsSingleActRemoteSent  : RegistrationsRemoteSent).Increment();
+                (singleActivation ? RegistrationsSingleActRemoteSent : RegistrationsRemoteSent).Increment();
 
                 // otherwise, notify the owner
-                Tuple<ActivationAddress, int> returnedAddress = await GetDirectoryReference(forwardaddress).RegisterAsync(address, singleActivation, hopcount + 1);
+                AddressAndTag result = await GetDirectoryReference(forwardaddress).RegisterAsync(address, singleActivation, hopcount + 1);
 
                 if (singleActivation)
                 {
-                // Caching optimization: 
-                // cache the result of a successfull RegisterSingleActivation call, only if it is not a duplicate activation.
-                // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
-                if (returnedAddress == null || returnedAddress.Item1 == null) return null;
-
-                   if (!address.Equals(returnedAddress.Item1) || !IsValidSilo(address.Silo)) return returnedAddress;
-
-                var cached = new List<Tuple<SiloAddress, ActivationId>>(1) { Tuple.Create(address.Silo, address.Activation) };
-                // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
-                DirectoryCache.AddOrUpdate(address.Grain, cached, returnedAddress.Item2);
-            }
-            else
-            {
-                if (IsValidSilo(address.Silo))
-                {
-                    // Caching optimization:
-                    // cache the result of a successfull RegisterActivation call, only if it is not a duplicate activation.
+                    // Caching optimization: 
+                    // cache the result of a successfull RegisterSingleActivation call, only if it is not a duplicate activation.
                     // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
-                    IReadOnlyList<Tuple<SiloAddress, ActivationId>> cached;
-                    if (!DirectoryCache.LookUp(address.Grain, out cached))
+                    if (result.Address == null) return result;
+
+                    if (!address.Equals(result.Address) || !IsValidSilo(address.Silo)) return result;
+
+                    var cached = new List<Tuple<SiloAddress, ActivationId>>(1) { Tuple.Create(address.Silo, address.Activation) };
+                    // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
+                    DirectoryCache.AddOrUpdate(address.Grain, cached, result.VersionTag);
+                }
+                else
+                {
+                    if (IsValidSilo(address.Silo))
                     {
-                        cached = new List<Tuple<SiloAddress, ActivationId>>(1)
+                        // Caching optimization:
+                        // cache the result of a successfull RegisterActivation call, only if it is not a duplicate activation.
+                        // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
+                        IReadOnlyList<Tuple<SiloAddress, ActivationId>> cached;
+                        if (!DirectoryCache.LookUp(address.Grain, out cached))
+                        {
+                            cached = new List<Tuple<SiloAddress, ActivationId>>(1)
                         {
                             Tuple.Create(address.Silo, address.Activation)
                         };
+                        }
+                        else
+                        {
+                            var newcached = new List<Tuple<SiloAddress, ActivationId>>(cached.Count + 1);
+                            newcached.AddRange(cached);
+                            newcached.Add(Tuple.Create(address.Silo, address.Activation));
+                            cached = newcached;
+                        }
+                        // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
+                        DirectoryCache.AddOrUpdate(address.Grain, cached, result.VersionTag);
                     }
-                    else
-                    {
-                        var newcached = new List<Tuple<SiloAddress, ActivationId>>(cached.Count + 1);
-                        newcached.AddRange(cached);
-                        newcached.Add(Tuple.Create(address.Silo, address.Activation));
-                        cached = newcached;
-                    }
-                    // update the cache so next local lookup will find this ActivationAddress in the cache and we will save full lookup.
-                    DirectoryCache.AddOrUpdate(address.Grain, cached, returnedAddress.Item2);
                 }
-            }
 
-                return returnedAddress;
-        }
+                return result;
+            }
         }
 
 
