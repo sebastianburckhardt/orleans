@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using Orleans;
-using TestInternalGrainInterfaces;
+using UnitTests.GrainInterfaces;
 
 namespace TestInternalGrains
 {
