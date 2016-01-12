@@ -40,6 +40,14 @@ namespace Orleans.Runtime.LogViews
             return GlobalStateCache.StateAndMetaData.State;
         }
 
+        public override long ConfirmedVersion
+        {
+            get
+            {
+                return GlobalStateCache.StateAndMetaData.GlobalVersion;
+            }
+        }
+
         protected override void InitializeConfirmedView(T initialstate)
         {
             GlobalStateCache = new GrainStateWithMetaDataAndETag<T>(initialstate);
@@ -135,7 +143,7 @@ namespace Orleans.Runtime.LogViews
 
                 var nextglobalstate = new GrainStateWithMetaDataAndETag<T>(state);
                 nextglobalstate.StateAndMetaData.WriteVector = GlobalStateCache.StateAndMetaData.WriteVector;
-                nextglobalstate.StateAndMetaData.GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion + 1;
+                nextglobalstate.StateAndMetaData.GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion + updates.Count;
                 nextglobalstate.ETag = GlobalStateCache.ETag;
 
                 var writebit = nextglobalstate.StateAndMetaData.ToggleBit(Services.MyClusterId);
@@ -238,7 +246,6 @@ namespace Orleans.Runtime.LogViews
             {
                 return string.Format("v{0} ({1} updates by {2}) etag={2}", GlobalVersion, Updates.Count, Origin, ETag);
             }
-
          }
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
@@ -246,7 +253,7 @@ namespace Orleans.Runtime.LogViews
         protected override void OnNotificationReceived(NotificationMessage payload)
         {
            var um = (UpdateNotificationMessage) payload;
-           notifications.Add(um.GlobalVersion, um);
+           notifications.Add(um.GlobalVersion - um.Updates.Count, um);
         }
 
         protected override void ProcessNotifications()
@@ -254,14 +261,14 @@ namespace Orleans.Runtime.LogViews
             enter_operation("ProcessNotifications");
 
             // discard notifications that are behind our already confirmed state
-            while (notifications.Count > 0 && notifications.ElementAt(0).Key <= GlobalStateCache.StateAndMetaData.GlobalVersion)
+            while (notifications.Count > 0 && notifications.ElementAt(0).Key < GlobalStateCache.StateAndMetaData.GlobalVersion)
             {
-                Provider.Log.Verbose("{0} discarding notification {1}", Services.GrainReference, notifications.ElementAt(0).Value.Updates.Count);
+                Provider.Log.Verbose("{0} discarding notification {1}", Services.GrainReference, notifications.ElementAt(0).Value);
                 notifications.RemoveAt(0);
             }
 
             // process notifications that reflect next global version
-            while (notifications.Count > 0 && notifications.ElementAt(0).Key == GlobalStateCache.StateAndMetaData.GlobalVersion + 1)
+            while (notifications.Count > 0 && notifications.ElementAt(0).Key == GlobalStateCache.StateAndMetaData.GlobalVersion)
             {
                 var updatenotification = notifications.ElementAt(0).Value;
                 notifications.RemoveAt(0);

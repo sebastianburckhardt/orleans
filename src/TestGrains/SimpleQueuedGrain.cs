@@ -180,6 +180,12 @@ namespace UnitTests.Grains
             return SynchronizeNowAsync();
         }
 
+        public Task<long> GetConfirmedVersion()
+        {
+            return Task.FromResult<long>(this.ConfirmedVersion);
+        }
+
+
         public Task Deactivate()
         {
             DeactivateOnIdle();

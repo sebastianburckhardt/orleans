@@ -59,14 +59,17 @@ namespace Orleans.Providers.LogViews
     {
         // the latest log view is simply stored here, in memory
         TView GlobalSnapshot;
+        long GlobalVersion;
 
         public MemoryLogViewAdaptor(ILogViewHost<TView, TEntry> host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
             : base(host, provider, initialstate, services)
         {
             GlobalSnapshot = initialstate;
+            GlobalVersion = 0;
         }
 
         TView LocalSnapshot;
+        long LocalVersion;
 
         // no tagging is required, thus the following two are identity functions
         protected override TEntry TagEntry(TEntry entry)
@@ -82,9 +85,14 @@ namespace Orleans.Providers.LogViews
         {
             return LocalSnapshot;
         }
+        public override long ConfirmedVersion
+        {
+            get { return LocalVersion; }
+        }
         protected override void InitializeConfirmedView(TView initialstate)
         {
             LocalSnapshot = initialstate;
+            LocalVersion = 0;
         }
        
         protected override async Task ReadAsync()
@@ -93,6 +101,7 @@ namespace Orleans.Providers.LogViews
             //await Task.Delay(5000);
             await Task.Delay(1);
             LocalSnapshot = GlobalSnapshot;
+            LocalVersion = GlobalVersion;
         }
 
         /// <summary>
@@ -107,17 +116,24 @@ namespace Orleans.Providers.LogViews
             var updates = CopyListOfUpdates();
 
             foreach (var u in updates)
+            {
                 try
                 {
                     Host.TransitionView(GlobalSnapshot, u);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     LogTransitionException(e);
                 }
 
+                GlobalVersion++;
+            }
+
            // await Task.Delay(5000);
             await Task.Delay(1);
+
+            LocalSnapshot = GlobalSnapshot;
+            LocalVersion = GlobalVersion;
 
             return new WriteResult()
             {
