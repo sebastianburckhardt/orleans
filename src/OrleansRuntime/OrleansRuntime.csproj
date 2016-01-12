@@ -56,6 +56,8 @@
   <ItemGroup>
     <Compile Include="Catalog\ActivationState.cs" />
     <Compile Include="Counters\PerfCounterConfigData.cs" />
+    <Compile Include="LogViews\EventStoreBasedLogViewAdaptor.cs" />
+    <Compile Include="LogViews\TaggedEvent.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterData.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterOracle.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterOracleData.cs" />

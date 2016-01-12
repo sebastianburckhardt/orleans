@@ -19,7 +19,7 @@ namespace Orleans.Runtime.LogViews
     /// metadata (the log position, and write flags) are stored. 
     /// </para>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of the log view, or grain state</typeparam>
     public class StorageBasedLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,E> where T : LogViewType<E>, new() where E: class
     {
         public StorageBasedLogViewAdaptor(ILogViewAdaptorHost host, T initialstate, ILogViewProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IProtocolServices services)

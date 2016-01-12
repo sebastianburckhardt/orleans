@@ -10,7 +10,7 @@ namespace UnitTests.EventSourcingTests
     [TestClass]
     public class JournaledGrainTests : UnitTestSiloHost
     {
-        [TestMethod, TestCategory("Functional")]
+        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
         public async Task JournaledGrainTests_Activate()
         {
             var grainWithState = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.Empty);
@@ -18,7 +18,7 @@ namespace UnitTests.EventSourcingTests
             Assert.IsNotNull(await grainWithState.GetPersonalAttributes());
         }
 
-        [TestMethod, TestCategory("Functional")]
+        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
         public async Task JournaledGrainTests_Persist()
         {
             var grainWithState = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.Empty);
@@ -31,7 +31,7 @@ namespace UnitTests.EventSourcingTests
             Assert.AreEqual("Luke", attributes.FirstName);
         }
 
-        [TestMethod, TestCategory("Functional")]
+        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
         public async Task JournaledGrainTests_AppendMoreEvents()
         {
             var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
@@ -48,7 +48,7 @@ namespace UnitTests.EventSourcingTests
             Assert.AreEqual("Solo", attributes.LastName);
         }
 
-        [TestMethod, TestCategory("Functional")]
+        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
         public async Task JournaledGrainTests_TentativeConfirmedState()
         {
             var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());

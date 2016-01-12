@@ -90,6 +90,7 @@ namespace Orleans.Runtime.LogViews
         /// <returns></returns>
         protected virtual Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
         {
+            // we have no interest in messages. return null.
             return Task.FromResult<IProtocolMessage>(null);
         }
         
