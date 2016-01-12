@@ -54,6 +54,9 @@ namespace Tester.GeoClusterTests
         private static ClientWrapper Client0;
         private static ClientWrapper Client1;
 
+        // change this as needed for debugging failing tests
+        private const Severity LogViewProviderTraceLevel = Severity.Verbose2;
+
         [ClassInitialize]
         public static void SetupMultiCluster(TestContext c)
         {
@@ -63,8 +66,12 @@ namespace Tester.GeoClusterTests
             var globalserviceid = "testservice" + new Random().Next();
 
             // configure replication providers
-            Action<ClusterConfiguration> configurationcustomizer = ReplicationProviderConfiguration.Adjust;
-
+            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration cc) =>
+                {
+                    ReplicationProviderConfiguration.Adjust(cc);
+                    foreach (var o in cc.Overrides)
+                      o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));
+                };
 
             host = new TestingClusterHost();
 
@@ -242,7 +249,7 @@ namespace Tester.GeoClusterTests
                 Client1.IncrementAGlobal(grainClass, x);
                 // expect on replica 0
                 int r = Client0.GetAGlobal(grainClass, x);
-                Assert.AreEqual(1, r);
+                Assert.AreEqual(1, r, "grainref={0}", Client0.GetGrainRef(grainClass, x));
             });
 
             Func<Task> checker2b = () => Task.Run(() =>

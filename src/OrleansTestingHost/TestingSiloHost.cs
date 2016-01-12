@@ -41,6 +41,8 @@ namespace Orleans.TestingHost
 
         protected TestingSiloOptions siloInitOptions { get; private set; }
         protected TestingClientOptions clientInitOptions { get; private set; }
+        protected ClientConfiguration ClientConfig { get; private set; }
+        protected GlobalConfiguration Globals { get; private set; }
 
         private static TimeSpan _livenessStabilizationTime;
         private static TimeSpan _gossipStabilizationTime;
@@ -269,6 +271,26 @@ namespace Orleans.TestingHost
         }
 
         /// <summary>
+        /// Restart all additional silos, not including the default Primary and Secondary silos.
+        /// </summary>
+        public void RestartAllAdditionalSilos()
+        {
+            if (additionalSilos.Count == 0) return;
+
+            var restartedAdditionalSilos = new List<SiloHandle>();
+            foreach (SiloHandle instance in additionalSilos.ToArray())
+            {
+                if (instance.Silo != null)
+                {
+                    var restartedSilo = RestartSilo(instance);
+                    restartedAdditionalSilos.Add(restartedSilo);
+                }
+            }
+            additionalSilos.Clear();
+            additionalSilos.AddRange(restartedAdditionalSilos);
+        }
+
+        /// <summary>
         /// Stop the default Primary and Secondary silos.
         /// </summary>
         public static void StopDefaultSilos()
@@ -299,23 +321,29 @@ namespace Orleans.TestingHost
         /// <summary>
         /// Restart the default Primary and Secondary silos.
         /// </summary>
-        public void RestartDefaultSilos()
+        public void RestartDefaultSilos(bool pickNewDeploymentId=false)
         {
-            TestingSiloOptions primarySiloOptions = Primary.Options;
-            TestingSiloOptions secondarySiloOptions = Secondary.Options;
+            TestingSiloOptions primarySiloOptions = Primary != null ? Primary.Options : null;
+            TestingSiloOptions secondarySiloOptions = Secondary != null ? Secondary.Options : null;
             // Restart as the same deployment
             string deploymentId = DeploymentId;
 
             StopDefaultSilos();
 
-            DeploymentId = deploymentId;
-            primarySiloOptions.PickNewDeploymentId = false;
-            secondarySiloOptions.PickNewDeploymentId = false;
-
+            DeploymentId = pickNewDeploymentId ? null : deploymentId;
+            if (primarySiloOptions != null)
+            {
+                primarySiloOptions.PickNewDeploymentId = pickNewDeploymentId;
             Primary = StartOrleansSilo(Silo.SiloType.Primary, primarySiloOptions, InstanceCounter++);
+            }
+            if (secondarySiloOptions != null)
+            {
+                secondarySiloOptions.PickNewDeploymentId = pickNewDeploymentId;
             Secondary = StartOrleansSilo(Silo.SiloType.Secondary, secondarySiloOptions, InstanceCounter++);
+            }
+            
             WaitForLivenessToStabilizeAsync().Wait();
-            GrainClient.Initialize();
+            GrainClient.Initialize(this.ClientConfig);
         }
 
         /// <summary>
@@ -364,8 +392,22 @@ namespace Orleans.TestingHost
                 var options = instance.Options;
                 var type = instance.Silo.Type;
                 StopOrleansSilo(instance, true);
-                instance = StartOrleansSilo(type, options, InstanceCounter++);
-                return instance;
+                var newInstance = StartOrleansSilo(type, options, InstanceCounter++);
+
+                if (type == Silo.SiloType.Primary)
+                {
+                    Primary = newInstance;
+                }
+                else if (type == Silo.SiloType.Secondary)
+                {
+                    Secondary = newInstance;
+                }
+                else
+                {
+                    additionalSilos.Add(newInstance);
+                }
+
+                return newInstance;
             }
             return null;
         }
@@ -396,11 +438,14 @@ namespace Orleans.TestingHost
         /// <param name="siloHandle">The silo.</param>
         private static void ImportGeneratedAssemblies(SiloHandle siloHandle)
         {
-            var silo = siloHandle.Silo;
-            if (silo != null && silo.TestHookup != null)
+            try
             {
-                var generatedAssemblies = new Silo.TestHookups.GeneratedAssemblies();
-                silo.TestHookup.UpdateGeneratedAssemblies(generatedAssemblies);
+            var silo = siloHandle.Silo;
+                if (silo != null && silo.TestHook != null)
+            {
+                    var generatedAssemblies = new Silo.TestHooks.GeneratedAssemblies();
+                    silo.TestHook.UpdateGeneratedAssemblies(generatedAssemblies);
+                    
                 foreach (var assembly in generatedAssemblies.Assemblies)
                 {
                     // If we have never seen generated code for this assembly before, or generated code might be
@@ -411,6 +456,12 @@ namespace Orleans.TestingHost
                         additionalAssemblies[assembly.Key] = assembly.Value;
                     }
                 }
+                }
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine("UpdateGeneratedAssemblies threw an exception. Ignoring it. Exception: {0}", exc);
+                return;
             }
         }
 
@@ -530,6 +581,7 @@ namespace Orleans.TestingHost
                     clientConfig.LargeMessageWarningThreshold = options.LargeMessageWarningThreshold;
                 }
                 AdjustForTest(clientConfig, clientOptions);
+                this.ClientConfig = clientConfig;
 
                 GrainClient.Initialize(clientConfig);
                 GrainFactory = GrainClient.GrainFactory;
@@ -555,8 +607,8 @@ namespace Orleans.TestingHost
                 config.LoadFromFile(options.SiloConfigFile.FullName);
             }
 
-
             int basePort = options.BasePort < 0 ? BasePort : options.BasePort;
+
 
             if (config.Globals.SeedNodes.Count > 0 && options.BasePort < 0)
             {
@@ -588,7 +640,12 @@ namespace Orleans.TestingHost
 
             _livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
             _gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
-           
+            
+            if (host != null)
+            {
+                host.Globals = config.Globals;
+            }
+
             string siloName;
             switch (type)
             {
@@ -684,16 +741,16 @@ namespace Orleans.TestingHost
             appDomain = AppDomain.CreateDomain(siloName, null, setup);
 
             // Load each of the additional assemblies.
-            Silo.TestHookups.CodeGeneratorOptimizer optimizer = null;
+            Silo.TestHooks.CodeGeneratorOptimizer optimizer = null;
             foreach (var assembly in additionalAssemblies)
             {
                 if (optimizer == null)
                 {
                     optimizer =
-                        (Silo.TestHookups.CodeGeneratorOptimizer)
+                        (Silo.TestHooks.CodeGeneratorOptimizer)
                         appDomain.CreateInstanceFromAndUnwrap(
                             "OrleansRuntime.dll",
-                            typeof(Silo.TestHookups.CodeGeneratorOptimizer).FullName,
+                            typeof(Silo.TestHooks.CodeGeneratorOptimizer).FullName,
                             false,
                             BindingFlags.Default,
                             null,

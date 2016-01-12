@@ -34,7 +34,7 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
-    public class MyGrainState : QueuedGrainState<MyGrainState>
+    public class MyGrainState 
     {
         public int A { get; set; }
         public int B { get; set; }

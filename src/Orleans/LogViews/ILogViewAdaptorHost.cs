@@ -17,9 +17,5 @@ namespace Orleans.LogViews
        void InstallAdaptor(ILogViewProvider provider, 
             object state, string graintypename, IProtocolServices services);
 
-
-        // identity of the host, for logging purposes only
-        string IdentityString { get; }
-
     }
 }

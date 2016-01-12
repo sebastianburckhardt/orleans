@@ -12,8 +12,10 @@ namespace Orleans.QueuedGrains
     /// <summary>
     /// Queued grain base class. 
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : LogViewGrain<TGrainState>, IProtocolParticipant, ILogViewAdaptorHost
-                                                          where TGrainState : QueuedGrainState<TGrainState>, new()
+    public abstract class QueuedGrain<TGrainState> : 
+        LogViewGrain<TGrainState>, IProtocolParticipant,
+        ILogViewAdaptorHost, ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>
+        where TGrainState : class,new()
     {
         protected QueuedGrain()
         { }
@@ -31,6 +33,15 @@ namespace Orleans.QueuedGrains
         }
 
 
+        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.TransitionView(TGrainState view, IUpdateOperation<TGrainState> entry)
+        {
+                entry.Update(view);
+        }
+
+        string ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.IdentityString
+        {
+            get { return Identity.IdentityString; }
+        }
 
         /// <summary>
         /// Notify log view adaptor of activation
@@ -160,6 +171,7 @@ namespace Orleans.QueuedGrains
 
 
 
+       
     }
      
 }

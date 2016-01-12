@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Orleans.LogViews
 {
-    public interface ILogView<TView, TLogEntry> where TView: LogViewType<TLogEntry>
+    public interface ILogView<TView, TLogEntry> 
     {
         /// <summary>
         /// Local, tentative view of the log (reflecting both confirmed and unconfirmed entries)

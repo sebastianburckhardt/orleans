@@ -66,8 +66,8 @@ namespace Orleans.Providers.LogViews
             return TaskDone.Done;
         }
 
-        public ILogViewAdaptor<TView,TEntry> MakeLogViewAdaptor<TView,TEntry>(ILogViewAdaptorHost hostgrain, TView initialstate, string graintypename, IProtocolServices services) 
-            where TView : LogViewType<TEntry>, new()
+        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView, TEntry> hostgrain, TView initialstate, string graintypename, IProtocolServices services) 
+            where TView : class, new()
             where TEntry : class
         {
             return new StorageBasedLogViewAdaptor<TView,TEntry>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);

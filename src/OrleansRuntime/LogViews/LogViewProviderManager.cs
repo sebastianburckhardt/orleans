@@ -135,7 +135,8 @@ namespace Orleans.Runtime.LogViews
         {
             internal IStorageProvider globalstorageprovider;
 
-            public ILogViewAdaptor<T,E> MakeLogViewAdaptor<T,E>(ILogViewAdaptorHost hostgrain, T initialstate, string graintypename, IProtocolServices services) where T : LogViewType<E>, new() where E: class
+            public ILogViewAdaptor<T, E> MakeLogViewAdaptor<T, E>(ILogViewHost<T, E> hostgrain, T initialstate, string graintypename, IProtocolServices services) 
+                where T : class,new() where E: class
             {
                 return new StorageBasedLogViewAdaptor<T,E>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
             }

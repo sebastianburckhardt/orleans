@@ -7,6 +7,7 @@ using Orleans.LogViews;
 
 namespace Orleans.QueuedGrains
 {
+    /*
     [Serializable]
     public class QueuedGrainState<TGrainState> : LogViewType<IUpdateOperation<TGrainState>>
     {
@@ -18,5 +19,5 @@ namespace Orleans.QueuedGrains
             logentry.Update(tthis);
         }
     }
-
+    */
 }

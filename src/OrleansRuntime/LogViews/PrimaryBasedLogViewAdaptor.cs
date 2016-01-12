@@ -29,12 +29,13 @@ namespace Orleans.Runtime.LogViews
     /// <typeparam name="TLogEntry">The type of the log entries</typeparam>
     /// 
     public abstract class PrimaryBasedLogViewAdaptor<TLogView,TLogEntry,TTaggedEntry> : ILogViewAdaptor<TLogView,TLogEntry> 
-        where TLogView : LogViewType<TLogEntry>, new() 
+        where TLogView : class,new() 
         where TLogEntry:class
     {
+
         #region interface to subclasses that implement specific providers
 
- 
+
         /// <summary>
         /// Set confirmed view the initial value (a view of the empty log)
         /// </summary>
@@ -131,7 +132,7 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// The grain that is using this adaptor
         /// </summary>
-        protected ILogViewAdaptorHost Host { get; private set; }
+        protected ILogViewHost<TLogView, TLogEntry> Host { get; private set; }
 
         protected IProtocolServices Services { get; private set; }
 
@@ -144,7 +145,7 @@ namespace Orleans.Runtime.LogViews
 
         protected Dictionary<string, NotificationStatus> notificationtracker;
 
-        protected PrimaryBasedLogViewAdaptor(ILogViewAdaptorHost host, ILogViewProvider provider,
+        protected PrimaryBasedLogViewAdaptor(ILogViewHost<TLogView,TLogEntry> host, ILogViewProvider provider,
             TLogView initialstate, IProtocolServices services)
         {
             Debug.Assert(host != null && services != null && initialstate != null);
@@ -153,7 +154,7 @@ namespace Orleans.Runtime.LogViews
             this.Provider = provider;
             InitializeConfirmedView(initialstate);
             worker = new BackgroundWorker(() => Work());
-            Provider.Log.Verbose2("{0} Constructed {1}", Services.GrainReference, host.IdentityString);
+            Provider.Log.Verbose2("{0} Constructed {1}", Services.GrainReference, Host.IdentityString);
         }
 
         public virtual async Task Activate()
@@ -201,7 +202,10 @@ namespace Orleans.Runtime.LogViews
             Provider.Log.Verbose2("{0} Deactivation Complete", Services.GrainReference);
         }
 
-
+        protected void LogTransitionException(Exception e)
+        {
+            Provider.Log.Warn((int)ErrorCode.LogView_TransitionException, "{0} Exception in View Transition: {1}", Services.GrainReference, e);
+        }
 
         #endregion
 
@@ -282,9 +286,7 @@ namespace Orleans.Runtime.LogViews
         }
 
 
-         
-
-
+    
         #region Interface
 
     
@@ -306,11 +308,11 @@ namespace Orleans.Runtime.LogViews
             {
                 try
                 {
-                    this.TentativeStateInternal.TransitionView(UntagEntry(taggedupdate));
+                    Host.TransitionView(this.TentativeStateInternal,UntagEntry(taggedupdate));
                 }
-                catch
+                catch(Exception e)
                 {
-                    //TODO trace
+                    LogTransitionException(e);
                 }
             }
 
@@ -397,7 +399,7 @@ namespace Orleans.Runtime.LogViews
 
             if (MultiClusterConfiguration.OlderThan(oldconf, next))
             {
-                Provider.Log.Verbose("{0} Processing Configuration {1}", Services.GrainReference, next);
+                Provider.Log.Verbose("{0} ({1}) Processing Configuration {2}", Services.GrainReference, Services.MyClusterId, next);
 
                 await this.OnConfigurationChange(next); // updates Configuration and does any work required
 
@@ -476,17 +478,17 @@ namespace Orleans.Runtime.LogViews
         private void CalculateTentativeState()
         {
             // copy the master
-            this.TentativeStateInternal = (TLogView)LastConfirmedView().DeepCopy();
+            this.TentativeStateInternal = (TLogView) SerializationManager.DeepCopy(LastConfirmedView());
 
             // Now apply all operations in pending 
             foreach (var u in this.pending)
                 try
                 {
-                     this.TentativeStateInternal.TransitionView(UntagEntry(u.taggedEntry));
+                     Host.TransitionView(this.TentativeStateInternal,UntagEntry(u.taggedEntry));
                 }
-                catch
+                catch(Exception e)
                 {
-                    //TODO trace
+                    Provider.Log.Warn((int)ErrorCode.LogView_TentativeTransitionException, "{0} Exception in View Transition on Tentative State: {1}", Services.GrainReference, e);
                 }
         }
 

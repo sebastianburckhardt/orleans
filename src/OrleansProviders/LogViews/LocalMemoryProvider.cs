@@ -45,8 +45,8 @@ namespace Orleans.Providers.LogViews
             return TaskDone.Done;
         }
 
-        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewAdaptorHost hostgrain, TView initialstate, string graintypename, IProtocolServices services)
-            where TView : LogViewType<TEntry>, new()
+        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView,TEntry> hostgrain, TView initialstate, string graintypename, IProtocolServices services)
+            where TView : class, new()
             where TEntry : class
         {
             return new MemoryLogViewAdaptor<TView, TEntry>(hostgrain, this, initialstate, services);
@@ -54,13 +54,13 @@ namespace Orleans.Providers.LogViews
     }
 
     public class MemoryLogViewAdaptor<TView, TEntry> : PrimaryBasedLogViewAdaptor<TView, TEntry, TEntry>
-        where TView : LogViewType<TEntry>, new()
+        where TView : class, new()
         where TEntry : class
     {
         // the latest log view is simply stored here, in memory
         TView GlobalSnapshot;
 
-        public MemoryLogViewAdaptor(ILogViewAdaptorHost host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
+        public MemoryLogViewAdaptor(ILogViewHost<TView, TEntry> host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
             : base(host, provider, initialstate, services)
         {
             GlobalSnapshot = initialstate;
@@ -109,12 +109,13 @@ namespace Orleans.Providers.LogViews
             foreach (var u in updates)
                 try
                 {
-                    GlobalSnapshot.TransitionView(u);
+                    Host.TransitionView(GlobalSnapshot, u);
                 }
-                catch
+                catch(Exception e)
                 {
-                    //TODO trace
+                    LogTransitionException(e);
                 }
+
            // await Task.Delay(5000);
             await Task.Delay(1);
 
