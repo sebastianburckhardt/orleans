@@ -49,7 +49,7 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Read version of cached global state.
         /// </summary>
-        //protected abstract int LastConfirmedVersion();  //TODO
+        public abstract long ConfirmedVersion { get;  }
 
         /// <summary>
         /// Read the latest primary state. Must block/retry until successful.
@@ -361,7 +361,6 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
-
         /// <summary>
         /// Called from network
         /// </summary>
@@ -635,17 +634,7 @@ namespace Orleans.Runtime.LogViews
         {
             get 
             {
-                return null;
-                //TODO 
-                //extract original update objects from the pending queue
-                ///return pending.Select(uh => {
-                //    var o = uh.taggedEntry;
-                //    var t = o as ITaggedUpdate<TLogView>;
-                //    if (t != null)
-                //        return t.OriginalUpdate;
-               //     else
-               //         return o;
-                //});
+                 return pending.Select(te => UntagEntry(te.taggedEntry));
             }
         }
 
@@ -766,6 +755,7 @@ namespace Orleans.Runtime.LogViews
         // contains no info
         
         // log view providers can subclass this to add more information
+        // for example, the log entries that were appended
     }
     
 }

@@ -110,6 +110,7 @@ namespace Tester.GeoClusterTests
                 await grain.SetAGlobal(x);
                 int a = await grain.GetAGlobal();
                 Assert.AreEqual(x, a); // value of A survive grain call
+                Assert.AreEqual(1, await grain.GetConfirmedVersion());
             };
 
             // Local
@@ -117,6 +118,7 @@ namespace Tester.GeoClusterTests
             {
                 int x = GetRandom();
                 var grain = GrainFactory.GetGrain<ISimpleQueuedGrain>(x, grainClass);
+                Assert.AreEqual(0, await grain.GetConfirmedVersion());
                 await grain.SetALocal(x);
                 int a = await grain.GetALocal();
                 Assert.AreEqual(x, a); // value of A survive grain call
@@ -131,6 +133,7 @@ namespace Tester.GeoClusterTests
                 await grain.SetALocal(x);
                 int a = await grain.GetAGlobal();
                 Assert.AreEqual(x, a);
+                Assert.AreEqual(1, await grain.GetConfirmedVersion());
             };
 
             // test them in sequence

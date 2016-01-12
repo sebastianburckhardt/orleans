@@ -136,6 +136,14 @@ namespace Orleans.QueuedGrains
             get { return Adaptor.ConfirmedView; }
         }
 
+        /// <summary>
+        /// The version of the last confirmed snapshot of the global state.
+        /// </summary>
+        public long ConfirmedVersion
+        {
+            get { return Adaptor.ConfirmedVersion; }
+        }
+
         public bool SubscribeConfirmedStateListener(IViewListener listener)
         {
             return Adaptor.SubscribeViewListener(listener);

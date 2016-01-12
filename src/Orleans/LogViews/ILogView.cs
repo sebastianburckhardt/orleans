@@ -21,7 +21,7 @@ namespace Orleans.LogViews
         /// <summary>
         /// The length of the confirmed prefix of the log
         /// </summary>
-        //int ConfirmedVersion { get; }  // TODO
+        long ConfirmedVersion { get; } 
 
         /// <summary>
         /// Subscribe to notifications on changes to the confirmed view.

@@ -49,6 +49,10 @@ namespace UnitTests.GrainInterfaces
 
         Task<int[]> GetReservationsGlobal();
 
+        // version
+
+        Task<long> GetConfirmedVersion();
+
         #endregion
 
 
