@@ -1,3 +1,4 @@
+﻿using System;
 using System.Threading.Tasks;
 
 namespace TestGrains
@@ -10,6 +11,11 @@ namespace TestGrains
     using UnitTests.GrainInterfaces;
     public class SerializationGenerationGrain : Grain<SerializationGenerationGrain.MyState>, ISerializationGenerationGrain
     {
+        public Task<object> RoundTripObject(object input)
+        {
+            return Task.FromResult(input);
+        }
+
         public Task<SomeStruct> RoundTripStruct(SomeStruct input)
         {
             return Task.FromResult(input);
@@ -42,7 +48,8 @@ namespace TestGrains
             return Task.FromResult(this.State.Classes.FirstOrDefault());
         }
 
-        public class MyState : GrainState
+        [Serializable]
+        public class MyState
         {
             public IList<SomeAbstractClass> Classes { get; set; }
         }

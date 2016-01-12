@@ -15,8 +15,10 @@ namespace Orleans.LogViews
     /// </summary>
     /// <typeparam name="TView"></typeparam>
     public interface ILogViewAdaptor<TLogView, TLogEntry> 
-        : ILogView<TLogView, TLogEntry> , ILogSubmission<TLogEntry>
-        where TLogView: LogViewType<TLogEntry>
+        : ILogView<TLogView, TLogEntry> 
+        , ILogSubmission<TLogEntry>
+
+        where TLogView: new()
     {
 
         #region Diagnostics

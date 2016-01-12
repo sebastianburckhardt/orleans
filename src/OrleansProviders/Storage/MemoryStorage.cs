@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,7 +38,6 @@ namespace Orleans.Storage
         private static int counter;
         private readonly int id;
         private const string STATE_STORE_NAME = "MemoryStorage";
-        private string etag;
         private Lazy<IMemoryStorageGrain>[] storageGrains;
 
         /// <summary> Name of this storage provider instance. </summary>
@@ -102,7 +100,7 @@ namespace Orleans.Storage
 
         /// <summary> Read state data function for this storage provider. </summary>
         /// <see cref="IStorageProvider#ReadStateAsync"/>
-        public virtual async Task ReadStateAsync(string grainType, GrainReference grainReference, GrainState grainState)
+        public virtual async Task ReadStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             var keys = MakeKeys(grainType, grainReference);
 
@@ -110,50 +108,34 @@ namespace Orleans.Storage
             
             string id = HierarchicalKeyStore.MakeStoreKey(keys);
             IMemoryStorageGrain storageGrain = GetStorageGrain(id);
-            IDictionary<string, object> state = await storageGrain.ReadStateAsync(STATE_STORE_NAME, id);
-            if (state != null)
+            var state = await storageGrain.ReadStateAsync(STATE_STORE_NAME, id);
+            if (state != null && state.State != null)
             {
-                grainState.SetAll(state);
+                grainState.ETag = state.ETag;
+                grainState.State = state.State;
             }
         }
 
         /// <summary> Write state data function for this storage provider. </summary>
         /// <see cref="IStorageProvider#WriteStateAsync"/>
-        public virtual async Task WriteStateAsync(string grainType, GrainReference grainReference, GrainState grainState)
+        public virtual async Task WriteStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             var keys = MakeKeys(grainType, grainReference);
-            var data = grainState.AsDictionary();
-            string receivedEtag = grainState.Etag;
-
-            if (Log.IsVerbose2) Log.Verbose2("Write {0} ", StorageProviderUtils.PrintOneWrite(keys, data, receivedEtag));
-
-            if (receivedEtag != null && receivedEtag != etag)
-                throw new InconsistentStateException(string.Format("Etag mismatch durign Write: Expected = {0} Received = {1}", etag, receivedEtag));
-            
             string key = HierarchicalKeyStore.MakeStoreKey(keys);
+            if (Log.IsVerbose2) Log.Verbose2("Write {0} ", StorageProviderUtils.PrintOneWrite(keys, grainState.State, grainState.ETag));
             IMemoryStorageGrain storageGrain = GetStorageGrain(key);
-            await storageGrain.WriteStateAsync(STATE_STORE_NAME, key, data);
-
-            etag = NewEtag();
+            grainState.ETag = await storageGrain.WriteStateAsync(STATE_STORE_NAME, key, grainState);
         }
 
         /// <summary> Delete / Clear state data function for this storage provider. </summary>
         /// <see cref="IStorageProvider#ClearStateAsync"/>
-        public virtual async Task ClearStateAsync(string grainType, GrainReference grainReference, GrainState grainState)
+        public virtual async Task ClearStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             var keys = MakeKeys(grainType, grainReference);
-            string eTag = grainState.Etag; // TOD: Should this be 'null' for always Delete?
-
-            if (Log.IsVerbose2) Log.Verbose2("Delete Keys={0} Etag={1}", StorageProviderUtils.PrintKeys(keys), eTag);
-
-            if (eTag != null && eTag != etag)
-                throw new InconsistentStateException(string.Format("Etag mismatch durign Delete: Expected = {0} Received = {1}", this.etag, eTag));
-            
+            if (Log.IsVerbose2) Log.Verbose2("Delete Keys={0} Etag={1}", StorageProviderUtils.PrintKeys(keys), grainState.ETag);
             string key = HierarchicalKeyStore.MakeStoreKey(keys);
             IMemoryStorageGrain storageGrain = GetStorageGrain(key);
-            await storageGrain.DeleteStateAsync(STATE_STORE_NAME, key);
-
-            etag = NewEtag();
+            await storageGrain.DeleteStateAsync(STATE_STORE_NAME, key, grainState.ETag);
         }
 
         #endregion
@@ -229,11 +211,6 @@ namespace Orleans.Storage
                 };
             }
             return compareClause;
-        }
-
-        private static string NewEtag()
-        {
-            return DateTime.UtcNow.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

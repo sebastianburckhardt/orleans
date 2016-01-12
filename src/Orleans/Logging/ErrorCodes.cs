@@ -649,6 +649,7 @@ namespace Orleans
         ProxyClient_ClientInvokeCallback_Error      = ProxyClientBase + 28,
         ProxyClient_StartDone                       = ProxyClientBase + 29,
         ProxyClient_OGC_TargetNotFound_2            = ProxyClientBase + 30,
+        ProxyClient_AppDomain_Unload                = ProxyClientBase + 31,
 
         MessagingBase                           = Runtime + 1000,
         Messaging_IMA_DroppingConnection        = MessagingBase + 1,
@@ -981,6 +982,7 @@ namespace Orleans
         AzureQueue_12 = AzureQueueBase + 12,
         AzureQueue_13 = AzureQueueBase + 13,
         AzureQueue_14 = AzureQueueBase + 14,
+        AzureQueue_15 = AzureQueueBase + 15,
 
         PersistentStreamPullingAgentBase = Runtime + 3300,
         PersistentStreamPullingAgent_01 = PersistentStreamPullingAgentBase + 1,
@@ -1009,6 +1011,7 @@ namespace Orleans
         PersistentStreamPullingAgent_24 = PersistentStreamPullingAgentBase + 24,
         PersistentStreamPullingAgent_25 = PersistentStreamPullingAgentBase + 25,
         PersistentStreamPullingAgent_26 = PersistentStreamPullingAgentBase + 26,
+        PersistentStreamPullingAgent_27 = PersistentStreamPullingAgentBase + 27,
 
         StreamProviderManagerBase = Runtime +3400,
         StreamProvider_FailedToDispose              = StreamProviderManagerBase + 1,
@@ -1069,6 +1072,12 @@ namespace Orleans
         GlobalSingleInstanceBase = Runtime + 4000,
         GlobalSingleInstance_ProtocolError = GlobalSingleInstanceBase + 1,
        
+
+        LogViewBase = Runtime + 4100,
+        LogView_TransitionException = LogViewBase + 1,
+        LogView_TentativeTransitionException = LogViewBase + 2,
+        LogView_NotificationTransitionException = LogViewBase + 3,
+
     }
 }
 // ReSharper restore InconsistentNaming
