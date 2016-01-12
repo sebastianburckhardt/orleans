@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
-using Orleans.Replication;
 using Orleans.Concurrency;
 
 namespace QueuedGrainSample.Interfaces

@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using QueuedGrainSample.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.QueuedGrains;
 using Orleans.Concurrency;
 
 
 namespace QueuedGrainSample.Grains
 {
     [Serializable]
-    public class SampleGrainState: GrainState
+    public class SampleGrainState
     {
         public List<string> Messages { get; set; }
 
