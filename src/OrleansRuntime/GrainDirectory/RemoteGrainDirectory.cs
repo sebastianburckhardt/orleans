@@ -22,11 +22,11 @@ namespace Orleans.Runtime.GrainDirectory
             logger = TraceLogger.GetLogger("Orleans.GrainDirectory.CacheValidator", TraceLogger.LoggerType.Runtime);
         }
 
-        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
+        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopCount)
         {
             (singleActivation ? router.RegistrationsSingleActRemoteReceived : router.RegistrationsRemoteReceived).Increment();
             
-            return await router.RegisterAsync(address, singleActivation, hopcount);
+            return await router.RegisterAsync(address, singleActivation, hopCount);
         }
 
         public Task RegisterMany(List<ActivationAddress> addresses, bool singleActivation)
@@ -42,24 +42,24 @@ namespace Orleans.Runtime.GrainDirectory
             return Task.WhenAll(addresses.Select(addr => router.RegisterAsync(addr, singleActivation, 1)));
         }
 
-        public Task UnregisterAsync(ActivationAddress address, bool force, int hopcount)
+        public Task UnregisterAsync(ActivationAddress address, bool force, int hopCount)
         {
-            return router.UnregisterAsync(address, force, hopcount);
+            return router.UnregisterAsync(address, force, hopCount);
         }
 
-        public Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopcount)
+        public Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopCount)
         {
-            return router.UnregisterManyAsync(addresses, hopcount);
+            return router.UnregisterManyAsync(addresses, hopCount);
         }
 
-        public  Task DeleteGrainAsync(GrainId grain, int hopcount)
+        public  Task DeleteGrainAsync(GrainId grainId, int hopCount)
         {
-            return router.DeleteGrainAsync(grain, hopcount);
+            return router.DeleteGrainAsync(grainId, hopCount);
         }
 
-        public async Task<AddressesAndTag> LookupAsync(GrainId gid, int hopcount)
+        public async Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount)
         {
-            return await router.LookupAsync(gid, hopcount);
+            return await router.LookupAsync(grainId, hopCount);
         }
 
         public async Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList)

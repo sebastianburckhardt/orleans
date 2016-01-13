@@ -8,9 +8,9 @@ namespace Orleans.Runtime.Messaging
 {
     internal class SiloMessageSender : OutgoingMessageSender
     {
-        protected readonly MessageCenter messageCenter;
+        private readonly MessageCenter messageCenter;
         private const int DEFAULT_MAX_RETRIES = 0;
-        protected readonly Dictionary<SiloAddress, DateTime> lastConnectionFailure;
+        private readonly Dictionary<SiloAddress, DateTime> lastConnectionFailure;
 
         internal const string RETRY_COUNT_TAG = "RetryCount";
         internal static readonly TimeSpan CONNECTION_RETRY_DELAY = TimeSpan.FromMilliseconds(1000);

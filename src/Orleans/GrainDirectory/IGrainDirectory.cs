@@ -8,7 +8,7 @@ namespace Orleans.GrainDirectory
 
     /// <summary>
     /// Recursive distributed operations on grain directories.
-    /// Each operation may forward the request to a remote owner, increasing the hopcount.
+    /// Each operation may forward the request to a remote owner, increasing the hopCount.
     /// 
     /// The methods here can be called remotely (where extended by IRemoteGrainDirectory) or
     /// locally (where extended by ILocalGrainDirectory)
@@ -21,10 +21,9 @@ namespace Orleans.GrainDirectory
         /// </summary>
         /// <param name="address">The address of the new activation.</param>
         /// <param name="singleActivation">If true, use single-activation registration</param>
-        /// <param name="withRetry">Indicates whether or not to retry the operation.</param>
-        /// <param name="hopcount">Counts recursion depth across silos</param>
+        /// <param name="hopCount">Counts recursion depth across silos</param>
         /// <returns>The registered address and the version associated with this directory mapping.</returns>
-        Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount = 0);
+        Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopCount = 0);
 
         /// <summary>
         /// Removes the record for an existing activation from the directory service.
@@ -32,28 +31,28 @@ namespace Orleans.GrainDirectory
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
         /// <param name="address">The address of the activation to remove.</param>
-        /// <param name="hopcount">Counts recursion depth across silos</param>
+        /// <param name="hopCount">Counts recursion depth across silos</param>
         /// <returns>An acknowledgement that the unregistration has completed.</returns>
-        Task UnregisterAsync(ActivationAddress address, bool force = true, int hopcount = 0);
+        Task UnregisterAsync(ActivationAddress address, bool force = true, int hopCount = 0);
 
         /// <summary>
         /// Unregister a batch of addresses at once
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
         /// <param name="addresses"></param>
-        /// <param name="hopcount">Counts recursion depth across silos</param>
+        /// <param name="hopCount">Counts recursion depth across silos</param>
         /// <returns>An acknowledgement that the unregistration has completed.</returns>
-        Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopcount = 0);
+        Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopCount = 0);
 
         /// <summary>
         /// Removes all directory information about a grain.
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
-        /// <param name="grain">The ID of the grain.</param>
-        /// <param name="hopcount">Counts recursion depth across silos</param>
+        /// <param name="grainId">The ID of the grain.</param>
+        /// <param name="hopCount">Counts recursion depth across silos</param>
         /// <returns>An acknowledgement that the deletion has completed.
         /// It is safe to ignore this result.</returns>
-        Task DeleteGrainAsync(GrainId grain, int hopcount = 0);
+        Task DeleteGrainAsync(GrainId grainId, int hopCount = 0);
 
         /// <summary>
         /// Fetches complete directory information for a grain.
@@ -61,9 +60,9 @@ namespace Orleans.GrainDirectory
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
         /// <param name="grain">The ID of the grain to look up.</param>
-        /// <param name="hopcount">Counts recursion depth across silos</param>
+        /// <param name="hopCount">Counts recursion depth across silos</param>
         /// <returns>A list of all known activations of the grain, and the e-tag.</returns>
-        Task<AddressesAndTag> LookupAsync(GrainId gid, int hopcount = 0);
+        Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount = 0);
     }
 
 

@@ -24,7 +24,7 @@ namespace Orleans.Runtime
         bool RemoveActivation(ActivationId act, bool force);
         bool Merge(GrainId grain, IGrainInfo other);
         void CacheOrUpdateRemoteClusterRegistration(GrainId grain, ActivationId oldActivation, ActivationId activation, SiloAddress silo);
-        bool UpdateClusterRegistrationStatus(ActivationId activationId, MultiClusterStatus registrationStatus, MultiClusterStatus? comparewith = null);
+        bool UpdateClusterRegistrationStatus(ActivationId activationId, MultiClusterStatus registrationStatus, MultiClusterStatus? compareWith = null);
     }
 
     /// <summary>
