@@ -43,10 +43,41 @@ namespace Orleans.LogViews
 
         /// <summary>
         /// List of all clusters that currently appear to have at least one active
-        /// gateway reporting to the multi-cluster network.
+        /// gateway reporting to the multi-cluster network. 
+        /// There are no guarantees that this membership view is complete or consistent.
         /// </summary>
         /// <returns></returns>
         IEnumerable<string>  ActiveClusters { get; }
+
+
+        #region Logging Functionality
+
+        /// <summary>
+        /// Log an error that occurred in a log view protocol.
+        /// </summary>
+        void ProtocolError(string msg, bool throwexception);
+
+        /// <summary>
+        /// Log an exception that was caught in the log view protocol.
+        /// </summary> 
+        void CaughtException(string where, Exception e);
+
+        /// <summary>
+        /// Log a transition exception that occurred.
+        /// </summary>
+        /// <param name="e"></param>
+        void CaughtTransitionException(string where, Exception e);
+
+        /// <summary> Output the specified message at <c>Info</c> log level. </summary>
+        void Info(string format, params object[] args);        
+        /// <summary> Output the specified message at <c>Verbose</c> log level. </summary>
+        void Verbose(string format, params object[] args);
+        /// <summary> Output the specified message at <c>Verbose2</c> log level. </summary>
+        void Verbose2(string format, params object[] args);
+        /// <summary> Output the specified message at <c>Verbose3</c> log level. </summary>
+        void Verbose3(string format, params object[] args);
+
+        #endregion
     }
 
 

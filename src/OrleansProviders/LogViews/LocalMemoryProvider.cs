@@ -85,9 +85,9 @@ namespace Orleans.Providers.LogViews
         {
             return LocalSnapshot;
         }
-        public override long ConfirmedVersion
+        protected override long GetConfirmedVersion()
         {
-            get { return LocalVersion; }
+            return LocalVersion; 
         }
         protected override void InitializeConfirmedView(TView initialstate)
         {
@@ -123,7 +123,7 @@ namespace Orleans.Providers.LogViews
                 }
                 catch (Exception e)
                 {
-                    LogTransitionException(e);
+                    Services.CaughtTransitionException("MemoryLogViewAdaptor.WriteAsync", e);
                 }
 
                 GlobalVersion++;

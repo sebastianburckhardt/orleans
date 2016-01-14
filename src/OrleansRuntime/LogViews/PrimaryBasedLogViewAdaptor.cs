@@ -49,7 +49,7 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Read version of cached global state.
         /// </summary>
-        public abstract long ConfirmedVersion { get;  }
+        protected abstract long GetConfirmedVersion();
 
         /// <summary>
         /// Read the latest primary state. Must block/retry until successful.
@@ -154,12 +154,12 @@ namespace Orleans.Runtime.LogViews
             this.Provider = provider;
             InitializeConfirmedView(initialstate);
             worker = new BackgroundWorker(() => Work());
-            Provider.Log.Verbose2("{0} Constructed {1}", Services.GrainReference, Host.IdentityString);
+            Services.Verbose2("Constructed {0}", Host.IdentityString);
         }
 
         public virtual async Task Activate()
         {
-            Provider.Log.Verbose2("{0} Activation Started", Services.GrainReference);
+            Services.Verbose2("Activation Started");
 
             if (Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
             {
@@ -174,7 +174,7 @@ namespace Orleans.Runtime.LogViews
             if (latestconf != null)
                 await OnMultiClusterConfigurationChange(latestconf);
 
-            Provider.Log.Verbose2("{0} Activation Complete", Services.GrainReference);
+            Services.Verbose2("Activation Complete");
         }
 
         private async Task KickOffInitialRead()
@@ -183,13 +183,13 @@ namespace Orleans.Runtime.LogViews
             // kick off notification for initial read cycle with a bit of delay
             // so that we don't do this several times if user does strong sync
             await Task.Delay(10);
-            Provider.Log.Verbose2("{0} Notify (initial read)", Services.GrainReference);
+            Services.Verbose2("Notify (initial read)");
             worker.Notify();
         }
 
         public virtual async Task Deactivate()
         {
-            Provider.Log.Verbose2("{0} Deactivation Started", Services.GrainReference);
+            Services.Verbose2("Deactivation Started");
 
             listeners.Clear();
             await worker.WaitForQuiescence();
@@ -199,13 +199,10 @@ namespace Orleans.Runtime.LogViews
                 Silo.CurrentSilo.LocalMultiClusterOracle.UnSubscribeFromMultiClusterConfigurationEvents(Services.GrainReference);
             }
 
-            Provider.Log.Verbose2("{0} Deactivation Complete", Services.GrainReference);
+            Services.Verbose2("Deactivation Complete");
         }
 
-        protected void LogTransitionException(Exception e)
-        {
-            Provider.Log.Warn((int)ErrorCode.LogView_TransitionException, "{0} Exception in View Transition: {1}", Services.GrainReference, e);
-        }
+       
 
         #endregion
 
@@ -270,7 +267,7 @@ namespace Orleans.Runtime.LogViews
             //TODO use notification instead of polling
             while (!IsMyClusterJoined())
             {
-                Provider.Log.Verbose("{0} Waiting for join", Services.GrainReference);
+                Services.Verbose("Waiting for join");
                 await Task.Delay(5000);
             }
         }
@@ -279,7 +276,7 @@ namespace Orleans.Runtime.LogViews
             //TODO use notification instead of polling
             while (Configuration == null || Configuration.AdminTimestamp < adminTimestamp)
             {
-                Provider.Log.Verbose("{0} Waiting for config {1}", Services.GrainReference, adminTimestamp);
+                Services.Verbose("Waiting for config {0}", adminTimestamp);
 
                 await Task.Delay(5000);
             }
@@ -312,13 +309,13 @@ namespace Orleans.Runtime.LogViews
                 }
                 catch(Exception e)
                 {
-                    LogTransitionException(e);
+                    Services.CaughtTransitionException("PrimaryBasedLogViewAdaptor.Submit", e);
                 }
             }
 
             if (stats != null) stats.eventCounters["SubmitCalled"]++;
 
-            Provider.Log.Verbose2("{0} Submit", Services.GrainReference);
+            Services.Verbose2("Submit");
 
             worker.Notify();
         }
@@ -361,6 +358,17 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
+        public long ConfirmedVersion
+        {
+            get
+            {
+                if (stats != null)
+                    stats.eventCounters["ConfirmedVersionCalled"]++;
+
+                return GetConfirmedVersion();
+            }
+        }
+
         /// <summary>
         /// Called from network
         /// </summary>
@@ -371,8 +379,8 @@ namespace Orleans.Runtime.LogViews
             var notificationmessage = payload as NotificationMessage;
 
             if (notificationmessage != null)
-            {             
-                Provider.Log.Verbose("{0} NotificationReceived {1}", Services.GrainReference, notificationmessage);
+            {
+                Services.Verbose("NotificationReceived {0}", notificationmessage);
 
                 OnNotificationReceived(notificationmessage);
 
@@ -398,7 +406,7 @@ namespace Orleans.Runtime.LogViews
 
             if (MultiClusterConfiguration.OlderThan(oldconf, next))
             {
-                Provider.Log.Verbose("{0} ({1}) Processing Configuration {2}", Services.GrainReference, Services.MyClusterId, next);
+                Services.Verbose("Processing Configuration {0}", next);
 
                 await this.OnConfigurationChange(next); // updates Configuration and does any work required
 
@@ -408,7 +416,7 @@ namespace Orleans.Runtime.LogViews
                     var removed = notificationtracker.Keys.Except(next.Clusters);
                     foreach (var x in removed)
                     {
-                        Provider.Log.Verbose("{0} No longer sending notifications to {1}", Services.GrainReference, x);
+                        Services.Verbose("No longer sending notifications to {0}", x);
                         notificationtracker.Remove(x);
                     }
                 }
@@ -420,7 +428,7 @@ namespace Orleans.Runtime.LogViews
                     foreach (var x in added)
                         if (x != Services.MyClusterId)
                         {
-                            Provider.Log.Verbose("{0} Now sending notifications to {1}", Services.GrainReference, x);
+                            Services.Verbose("Now sending notifications to {0}", x);
                             notificationtracker.Add(x, new NotificationStatus());
                         }
 
@@ -429,7 +437,7 @@ namespace Orleans.Runtime.LogViews
                 if (!need_initial_read && added.Contains(Services.MyClusterId))
                 {
                     need_refresh = true;
-                    Provider.Log.Verbose("{0} Refresh Because of Join", Services.GrainReference);
+                    Services.Verbose("Refresh Because of Join");
                     worker.Notify();
                 }
             }
@@ -452,6 +460,7 @@ namespace Orleans.Runtime.LogViews
  
             stats.eventCounters.Add("TentativeViewCalled", 0);
             stats.eventCounters.Add("ConfirmedViewCalled", 0);
+            stats.eventCounters.Add("ConfirmedVersionCalled", 0);
             stats.eventCounters.Add("SubmitCalled", 0);            
             stats.eventCounters.Add("ConfirmSubmittedEntriesCalled", 0);
             stats.eventCounters.Add("SynchronizeNowCalled", 0);
@@ -487,7 +496,7 @@ namespace Orleans.Runtime.LogViews
                 }
                 catch(Exception e)
                 {
-                    Provider.Log.Warn((int)ErrorCode.LogView_TentativeTransitionException, "{0} Exception in View Transition on Tentative State: {1}", Services.GrainReference, e);
+                    Services.CaughtTransitionException("PrimaryBasedLogViewAdaptor.CalculateTentativeState", e);
                 }
         }
 
@@ -502,7 +511,7 @@ namespace Orleans.Runtime.LogViews
 
             bool have_to_read = need_initial_read || (need_refresh && !have_to_write);
 
-            Provider.Log.Verbose("{2} WorkerCycle Start htr={0} htw={1}", have_to_read, have_to_write, Services.GrainReference);
+            Services.Verbose("WorkerCycle Start htr={0} htw={1}", have_to_read, have_to_write);
 
             if (have_to_read)
             {
@@ -542,7 +551,7 @@ namespace Orleans.Runtime.LogViews
                     l.OnViewChanged();
             }
 
-            Provider.Log.Verbose("{0} WorkerCycle Done", Services.GrainReference);
+            Services.Verbose("WorkerCycle Done");
         }
 
 
@@ -622,12 +631,12 @@ namespace Orleans.Runtime.LogViews
             if (stats != null)
                 stats.eventCounters["SynchronizeNowCalled"]++;
 
-            Provider.Log.Verbose("{0} SynchronizeNowStart", Services.GrainReference);
+            Services.Verbose("SynchronizeNowStart");
 
             need_refresh = true;
             await worker.NotifyAndWait();
 
-            Provider.Log.Verbose("{0} SynchronizeNowComplete", Services.GrainReference);
+            Services.Verbose("SynchronizeNowComplete");
         }
 
         public IEnumerable<TLogEntry> UnconfirmedSuffix
@@ -643,12 +652,12 @@ namespace Orleans.Runtime.LogViews
             if (stats != null)
                 stats.eventCounters["ConfirmSubmittedEntriesCalled"]++;
 
-            Provider.Log.Verbose("{0} ConfirmSubmittedEntriesStart", Services.GrainReference);
+            Services.Verbose("ConfirmSubmittedEntriesStart");
 
             if (pending.Count != 0)
                 await worker.WaitForCurrentWorkToBeServiced();
 
-            Provider.Log.Verbose("{0} ConfirmSubmittedEntriesEnd", Services.GrainReference);
+            Services.Verbose("ConfirmSubmittedEntriesEnd");
         }
     
 
@@ -700,7 +709,7 @@ namespace Orleans.Runtime.LogViews
                 await Services.SendMessage(message, destinationcluster);
                 ns.LastException = null;
                 ns.NumFailures = 0;
-                Provider.Log.Verbose("{0} Sent notification to cluster {1}: {2}", Services.GrainReference, destinationcluster, message);
+                Services.Verbose("Sent notification to cluster {0}: {1}", destinationcluster, message);
             }
             catch (Exception e)
             {
@@ -708,7 +717,7 @@ namespace Orleans.Runtime.LogViews
                 ns.LastException = e;
                 ns.LastFailure = DateTime.UtcNow;
                 ns.NumFailures++;
-                Provider.Log.Info("{0} Could not send notification to cluster {1}: {2}", Services.GrainReference, destinationcluster, e);
+                Services.Info("Could not send notification to cluster {0}: {1}", destinationcluster, e);
             }
 
             if (ns.FailedMessage != null)
@@ -736,7 +745,7 @@ namespace Orleans.Runtime.LogViews
                foreach (var x in Configuration.Clusters)
                         if (x != Services.MyClusterId)
                         {
-                            Provider.Log.Verbose("{0} Now sending notifications to {1}", Services.GrainReference, x);
+                            Services.Verbose("Now sending notifications to {0}", x);
                             notificationtracker.Add(x, new NotificationStatus());
                         }
         }
