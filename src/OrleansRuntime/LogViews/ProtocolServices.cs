@@ -24,7 +24,7 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
-        
+
         private Grain grain;   // links to the grain that owns this service object
 
         // cached 
@@ -35,12 +35,12 @@ namespace Orleans.Runtime.LogViews
             this.grain = gr;
             this.Provider = provider;
 
-            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+            if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
                 PseudoMultiClusterConfiguration = new MultiClusterConfiguration(DateTime.UtcNow, new string[] { PseudoReplicaId }.ToList());
         }
 
 
-        public async Task<IProtocolMessage> SendMessage(IProtocolMessage payload, string clusterId) 
+        public async Task<IProtocolMessage> SendMessage(IProtocolMessage payload, string clusterId)
         {
             var silo = Silo.CurrentSilo;
             var mycluster = silo.ClusterId;
@@ -49,13 +49,13 @@ namespace Orleans.Runtime.LogViews
 
             if (mycluster == clusterId)
             {
-                var g = (IProtocolParticipant) grain;
+                var g = (IProtocolParticipant)grain;
                 // we are on the same scheduler, so we can call the method directly
                 return await g.OnProtocolMessageReceived(payload);
             }
 
             if (PseudoMultiClusterConfiguration != null)
-               throw new ProtocolTransportException("no such cluster");
+                throw new ProtocolTransportException("no such cluster");
 
             if (Provider.Log.IsVerbose3)
             {
@@ -64,7 +64,7 @@ namespace Orleans.Runtime.LogViews
             }
 
             var clusterGateway = Silo.CurrentSilo.LocalMultiClusterOracle.GetRandomClusterGateway(clusterId);
-            
+
             if (clusterGateway == null)
                 throw new ProtocolTransportException("no active gateways found for cluster");
 
@@ -89,7 +89,8 @@ namespace Orleans.Runtime.LogViews
 
         public string MyClusterId
         {
-            get {
+            get
+            {
                 if (PseudoMultiClusterConfiguration != null)
                     return PseudoReplicaId;
                 else
@@ -114,8 +115,88 @@ namespace Orleans.Runtime.LogViews
             {
                 if (PseudoMultiClusterConfiguration != null)
                     return PseudoMultiClusterConfiguration.Clusters;
-                else 
+                else
                     return Silo.CurrentSilo.LocalMultiClusterOracle.GetActiveClusters();
+            }
+        }
+
+        public void ProtocolError(string msg, bool throwexception)
+        {
+
+            Provider.Log.Error((int)(throwexception ? ErrorCode.LogView_ProtocolFatalError : ErrorCode.LogView_ProtocolError),
+                string.Format("{0}{1} Protocol Error: {2}",
+                    grain.GrainReference,
+                    PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
+                    msg));
+
+            if (!throwexception)
+                return;
+
+            if (PseudoMultiClusterConfiguration != null)
+                throw new OrleansException(string.Format("{0} (grain={1})", msg, grain.GrainReference));
+            else
+                throw new OrleansException(string.Format("{0} (grain={1}, cluster={2})", msg, grain.GrainReference, Silo.CurrentSilo.ClusterId));
+        }
+
+        public void CaughtException(string where, Exception e)
+        {
+            Provider.Log.Error((int)ErrorCode.LogView_CaughtException,
+               string.Format("{0}{1} Exception Caught at {2}",
+                   grain.GrainReference,
+                   PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
+                   where),e);
+        }
+     
+
+        public void CaughtTransitionException(string where, Exception e)
+        {
+            Provider.Log.Warn((int)ErrorCode.LogView_TransitionException,  
+         string.Format("{0}{1} Exception Caught at {2}",
+                   grain.GrainReference,
+                   PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
+                   where), e);
+        }
+
+        public void Info(string format, params object[] args)
+        {
+            Provider.Log.Info("{0}{1} {2}",
+                    grain.GrainReference,
+                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    string.Format(format, args));
+        }
+
+        public void Verbose(string format, params object[] args)
+        {
+            if (Provider.Log.IsVerbose)
+            {
+                Provider.Log.Verbose("{0}{1} {2}",
+                    grain.GrainReference,
+                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    string.Format(format, args));
+            }
+        }
+
+        /// <summary> Output the specified message at <c>Verbose2</c> log level. </summary>
+        public void Verbose2(string format, params object[] args)
+        {
+            if (Provider.Log.IsVerbose2)
+            {
+                Provider.Log.Verbose2("{0}{1} {2}",
+                    grain.GrainReference,
+                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    string.Format(format, args));
+            }
+        }
+
+        /// <summary> Output the specified message at <c>Verbose3</c> log level. </summary>
+        public void Verbose3(string format, params object[] args)
+        {
+            if (Provider.Log.IsVerbose3)
+            {
+                Provider.Log.Verbose3("{0}{1} {2}",
+                    grain.GrainReference,
+                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    string.Format(format, args));
             }
         }
     }

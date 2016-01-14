@@ -40,12 +40,9 @@ namespace Orleans.Runtime.LogViews
             return GlobalStateCache.StateAndMetaData.State;
         }
 
-        public override long ConfirmedVersion
+        protected override long GetConfirmedVersion()
         {
-            get
-            {
-                return GlobalStateCache.StateAndMetaData.GlobalVersion;
-            }
+           return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
 
         protected override void InitializeConfirmedView(T initialstate)
@@ -84,7 +81,7 @@ namespace Orleans.Runtime.LogViews
 
                     ConfirmedStateChanged(); // confirmed state has changed
 
-                    Provider.Log.Verbose("{0} read success {1}", Services.GrainReference, GlobalStateCache);
+                    Services.Verbose("read success {0}", GlobalStateCache);
 
                     break; // successful
                 }
@@ -93,7 +90,7 @@ namespace Orleans.Runtime.LogViews
                     LastExceptionInternal = e;
                 }
 
-                Provider.Log.Verbose("{0} read failed", Services.GrainReference);
+                Services.Verbose("read failed");
 
                 increasebackoff(ref backoff_msec);
             }
@@ -159,7 +156,7 @@ namespace Orleans.Runtime.LogViews
 
                     ConfirmedStateChanged(); // confirmed state has changed
 
-                    Provider.Log.Verbose("{0} write ({1} updates) success {2}", Services.GrainReference, updates.Count, GlobalStateCache);
+                    Services.Verbose("write ({0} updates) success {1}", updates.Count, GlobalStateCache);
 
                     break; // successful
                 }
@@ -170,13 +167,13 @@ namespace Orleans.Runtime.LogViews
 
                 increasebackoff(ref backoff_msec);
 
-                Provider.Log.Verbose("{0} write apparently failed {1}", Services.GrainReference, nextglobalstate);
+                Services.Verbose("write apparently failed {0}", nextglobalstate);
 
                 while(true)
                 {
                     if (backoff_msec > 0)
                     {
-                        Provider.Log.Verbose("{0} backoff {1}", Services.GrainReference, backoff_msec);
+                        Services.Verbose("backoff {0}", backoff_msec);
 
                         await Task.Delay(backoff_msec);
                     }
@@ -187,7 +184,7 @@ namespace Orleans.Runtime.LogViews
 
                         ConfirmedStateChanged(); // confirmed state has changed
 
-                        Provider.Log.Verbose("{0} read success {1}", Services.GrainReference, GlobalStateCache);
+                        Services.Verbose("read success {0}", GlobalStateCache);
                         
                         break; // successful
                     }
@@ -196,7 +193,7 @@ namespace Orleans.Runtime.LogViews
                         LastExceptionInternal = e;
                     }
 
-                    Provider.Log.Verbose("{0} read failed", Services.GrainReference);
+                    Services.Verbose("read failed");
 
                     increasebackoff(ref backoff_msec);
                 }            
@@ -209,7 +206,7 @@ namespace Orleans.Runtime.LogViews
 
                     ConfirmedStateChanged(); // confirmed state has changed
 
-                    Provider.Log.Verbose("{0} last write ({1} updates) was actually a success {2}", Services.GrainReference, updates.Count, GlobalStateCache);
+                    Services.Verbose("last write ({0} updates) was actually a success {1}", updates.Count, GlobalStateCache);
 
                     break;
                 }
@@ -263,7 +260,7 @@ namespace Orleans.Runtime.LogViews
             // discard notifications that are behind our already confirmed state
             while (notifications.Count > 0 && notifications.ElementAt(0).Key < GlobalStateCache.StateAndMetaData.GlobalVersion)
             {
-                Provider.Log.Verbose("{0} discarding notification {1}", Services.GrainReference, notifications.ElementAt(0).Value);
+                Services.Verbose("discarding notification {0}", notifications.ElementAt(0).Value);
                 notifications.RemoveAt(0);
             }
 
@@ -281,7 +278,7 @@ namespace Orleans.Runtime.LogViews
                     }
                     catch (Exception e)
                     {
-                        Provider.Log.Warn((int)ErrorCode.LogView_NotificationTransitionException, "{0} Exception in View Transition on Notification: {1}", Services.GrainReference, e);                  
+                        Services.CaughtTransitionException("ProcessNotifications", e);
                     }
 
                 GlobalStateCache.StateAndMetaData.GlobalVersion++;
@@ -292,10 +289,10 @@ namespace Orleans.Runtime.LogViews
 
                 ConfirmedStateChanged(); // confirmed state has changed
 
-                Provider.Log.Verbose("{0} notification success ({0} updates) {1}", Services.GrainReference, updatenotification.Updates.Count, GlobalStateCache);
+                Services.Verbose("notification success ({0} updates) {1}", updatenotification.Updates.Count, GlobalStateCache);
             }
 
-            Provider.Log.Verbose2("{0} unprocessed notifications in queue: {1}", Services.GrainReference, notifications.Count);
+            Services.Verbose2("unprocessed notifications in queue: {0}", notifications.Count);
          
             exit_operation("ProcessNotifications");
         }
@@ -311,7 +308,7 @@ namespace Orleans.Runtime.LogViews
         private void enter_operation(string name)
         {
 #if DEBUG
-            Provider.Log.Verbose2("{0} /-- enter {1}", Services.GrainReference, name);
+            Services.Verbose2("/-- enter {0}", name);
             Debug.Assert(!operation_in_progress);
             operation_in_progress = true;
 #endif
@@ -321,7 +318,7 @@ namespace Orleans.Runtime.LogViews
         private void exit_operation(string name)
         {
 #if DEBUG
-            Provider.Log.Verbose2("{0} \\-- exit {1}", Services.GrainReference, name);
+            Services.Verbose2("\\-- exit {0}", name);
             Debug.Assert(operation_in_progress);
             operation_in_progress = false;
 #endif

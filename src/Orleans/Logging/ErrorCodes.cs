@@ -1071,8 +1071,9 @@ namespace Orleans
 
         LogViewBase = Runtime + 4000,
         LogView_TransitionException = LogViewBase + 1,
-        LogView_TentativeTransitionException = LogViewBase + 2,
-        LogView_NotificationTransitionException = LogViewBase + 3,
+        LogView_CaughtException = LogViewBase + 2,
+        LogView_ProtocolError = LogViewBase + 3,
+        LogView_ProtocolFatalError = LogViewBase + 4,
 
     }
 }
