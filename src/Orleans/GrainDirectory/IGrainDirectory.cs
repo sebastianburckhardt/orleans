@@ -20,7 +20,10 @@ namespace Orleans.GrainDirectory
         /// <para>This method must be called from a scheduler thread.</para>
         /// </summary>
         /// <param name="address">The address of the new activation.</param>
-        /// <param name="singleActivation">If true, use single-activation registration</param>
+        /// <param name="singleActivation">If true, use single-activation mode: 
+        /// If there is already an activation registered for this grain, then the new activation will
+        /// not be registered and the address of the existing activation will be returned.
+        /// Otherwise, the passed-in address will be returned.</param>
         /// <param name="hopCount">Counts recursion depth across silos</param>
         /// <returns>The registered address and the version associated with this directory mapping.</returns>
         Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopCount = 0);
