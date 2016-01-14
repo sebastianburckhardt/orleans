@@ -531,8 +531,6 @@ namespace Orleans.Runtime.GrainDirectory
 
             counterStatistic.Increment();
 
-            SiloAddress owner = CalculateTargetSilo(address.Grain);
-
             // see if the owner is somewhere else (returns null if we are owner)
             var forwardAddress = this.CheckIfShouldForward(address.Grain, hopCount, "RegisterAsync");
 
