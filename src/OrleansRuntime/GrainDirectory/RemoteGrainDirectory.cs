@@ -12,8 +12,6 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly GrainDirectoryPartition partition;
         private readonly TraceLogger logger;
 
-        private static readonly TimeSpan RETRY_DELAY = TimeSpan.FromSeconds(5); // Pause 5 seconds between forwards to let the membership directory settle down
-
         internal RemoteGrainDirectory(LocalGrainDirectory r, GrainId id)
             : base(id, r.MyAddress)
         {
