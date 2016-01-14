@@ -60,7 +60,7 @@ namespace Orleans.Runtime.GrainDirectory
             return await router.LookupAsync(grainId, hopCount);
         }
 
-        public async Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList)
+        public Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList)
         {
             router.CacheValidationsReceived.Increment();
             if (logger.IsVerbose2) logger.Verbose2("LookUpMany for {0} entries", grainAndETagList.Count);
@@ -90,7 +90,7 @@ namespace Orleans.Runtime.GrainDirectory
                     }
                 }
             }
-            return result;
+            return Task.FromResult(result);
         }
 
         public Task AcceptHandoffPartition(SiloAddress source, Dictionary<GrainId, IGrainInfo> partition, bool isFullCopy)
