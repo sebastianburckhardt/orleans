@@ -80,7 +80,7 @@ namespace Orleans.Runtime.GrainDirectory
                 else
                 {
                     // the grain entry has been updated -- fetch and return its current version
-                    var lookupResult = await router.LookupAsync(tuple.Item1, 1);
+                    var lookupResult = partition.LookUpGrain(tuple.Item1);
                     // validate that the entry is still in the directory (i.e., it was not removed concurrently)
                     if (lookupResult.Addresses != null)
                     {
