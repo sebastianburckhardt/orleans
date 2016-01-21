@@ -267,7 +267,7 @@ namespace UnitTests.General
             IReminderTable tableGrain = GrainClient.GrainFactory.GetGrain<IReminderTableGrain>(Constants.ReminderTableGrainId);
             SiloAddress reminderTableGrainPrimaryDirectoryAddress = this.HostedCluster.Primary.Silo.LocalGrainDirectory.GetPrimaryForGrain(((GrainReference) tableGrain).GrainId);
             SiloHandle reminderTableGrainPrimaryDirectory = this.HostedCluster.GetActiveSilos().Where(sh => sh.Silo.SiloAddress.Equals(reminderTableGrainPrimaryDirectoryAddress)).FirstOrDefault();
-            AddressesAndTag addresses = null;
+            AddressesAndTag addresses;
             bool res = reminderTableGrainPrimaryDirectory.Silo.LocalGrainDirectory.LocalLookup(((GrainReference)tableGrain).GrainId, out addresses);
             ActivationAddress reminderGrainActivation = addresses.Addresses.FirstOrDefault();
 

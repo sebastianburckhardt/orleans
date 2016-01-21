@@ -12,8 +12,6 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly GrainDirectoryPartition partition;
         private readonly TraceLogger logger;
 
-        private static readonly TimeSpan RETRY_DELAY = TimeSpan.FromSeconds(5); // Pause 5 seconds between forwards to let the membership directory settle down
-
         internal RemoteGrainDirectory(LocalGrainDirectory r, GrainId id)
             : base(id, r.MyAddress)
         {
@@ -22,11 +20,11 @@ namespace Orleans.Runtime.GrainDirectory
             logger = TraceLogger.GetLogger("Orleans.GrainDirectory.CacheValidator", TraceLogger.LoggerType.Runtime);
         }
 
-        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopcount)
+        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation, int hopCount)
         {
             (singleActivation ? router.RegistrationsSingleActRemoteReceived : router.RegistrationsRemoteReceived).Increment();
             
-            return await router.RegisterAsync(address, singleActivation, hopcount);
+            return await router.RegisterAsync(address, singleActivation, hopCount);
         }
 
         public Task RegisterMany(List<ActivationAddress> addresses, bool singleActivation)
@@ -42,27 +40,27 @@ namespace Orleans.Runtime.GrainDirectory
             return Task.WhenAll(addresses.Select(addr => router.RegisterAsync(addr, singleActivation, 1)));
         }
 
-        public Task UnregisterAsync(ActivationAddress address, bool force, int hopcount)
+        public Task UnregisterAsync(ActivationAddress address, bool force, int hopCount)
         {
-            return router.UnregisterAsync(address, force, hopcount);
+            return router.UnregisterAsync(address, force, hopCount);
         }
 
-        public Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopcount)
+        public Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopCount)
         {
-            return router.UnregisterManyAsync(addresses, hopcount);
+            return router.UnregisterManyAsync(addresses, hopCount);
         }
 
-        public  Task DeleteGrainAsync(GrainId grain, int hopcount)
+        public  Task DeleteGrainAsync(GrainId grainId, int hopCount)
         {
-            return router.DeleteGrainAsync(grain, hopcount);
+            return router.DeleteGrainAsync(grainId, hopCount);
         }
 
-        public async Task<AddressesAndTag> LookupAsync(GrainId gid, int hopcount)
+        public async Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount)
         {
-            return await router.LookupAsync(gid, hopcount);
+            return await router.LookupAsync(grainId, hopCount);
         }
 
-        public async Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList)
+        public Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList)
         {
             router.CacheValidationsReceived.Increment();
             if (logger.IsVerbose2) logger.Verbose2("LookUpMany for {0} entries", grainAndETagList.Count);
@@ -80,7 +78,7 @@ namespace Orleans.Runtime.GrainDirectory
                 else
                 {
                     // the grain entry has been updated -- fetch and return its current version
-                    var lookupResult = await router.LookupAsync(tuple.Item1, 1);
+                    var lookupResult = partition.LookUpGrain(tuple.Item1);
                     // validate that the entry is still in the directory (i.e., it was not removed concurrently)
                     if (lookupResult.Addresses != null)
                     {
@@ -92,7 +90,7 @@ namespace Orleans.Runtime.GrainDirectory
                     }
                 }
             }
-            return result;
+            return Task.FromResult(result);
         }
 
         public Task AcceptHandoffPartition(SiloAddress source, Dictionary<GrainId, IGrainInfo> partition, bool isFullCopy)

@@ -31,17 +31,17 @@ namespace Orleans.Runtime.GrainDirectory
             this.registrars.Add(typeof(TStrategy), directory);
         }
 
-        public IGrainRegistrar GetRegistrarForGrain(GrainId gid)
+        public IGrainRegistrar GetRegistrarForGrain(GrainId grainId)
         {
             MultiClusterRegistrationStrategy strategy;
 
-            var typeCode = gid.GetTypeCode();
+            var typeCode = grainId.GetTypeCode();
 
             if (typeCode != 0)
             {
                 string unusedGrainClass;
                 PlacementStrategy unusedPlacement;
-                GrainTypeManager.Instance.GetTypeInfo(gid.GetTypeCode(), out unusedGrainClass, out unusedPlacement, out strategy);
+                GrainTypeManager.Instance.GetTypeInfo(grainId.GetTypeCode(), out unusedGrainClass, out unusedPlacement, out strategy);
             }
             else
             {
