@@ -59,7 +59,7 @@ namespace Orleans.Providers.LogViews
     {
         // the latest log view is simply stored here, in memory
         TView GlobalSnapshot;
-        long GlobalVersion;
+        int GlobalVersion;
 
         public MemoryLogViewAdaptor(ILogViewHost<TView, TEntry> host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
             : base(host, provider, initialstate, services)
@@ -69,7 +69,7 @@ namespace Orleans.Providers.LogViews
         }
 
         TView LocalSnapshot;
-        long LocalVersion;
+        int LocalVersion;
 
         // no tagging is required, thus the following two are identity functions
         protected override TEntry TagEntry(TEntry entry)
@@ -85,7 +85,7 @@ namespace Orleans.Providers.LogViews
         {
             return LocalSnapshot;
         }
-        protected override long GetConfirmedVersion()
+        protected override int GetConfirmedVersion()
         {
             return LocalVersion; 
         }
@@ -138,7 +138,7 @@ namespace Orleans.Providers.LogViews
             return new WriteResult()
             {
                 NumUpdatesWritten = updates.Count,
-                NotificationMessage = new NotificationMessage()
+                NotificationMessage = null
             };
         }
 

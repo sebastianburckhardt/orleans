@@ -54,8 +54,6 @@ namespace Tester.GeoClusterTests
         private static ClientWrapper Client0;
         private static ClientWrapper Client1;
 
-        // change this as needed for debugging failing tests
-        private const Severity LogViewProviderTraceLevel = Severity.Verbose2;
 
         [ClassInitialize]
         public static void SetupMultiCluster(TestContext c)
@@ -65,19 +63,11 @@ namespace Tester.GeoClusterTests
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
 
-            // configure replication providers
-            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration cc) =>
-                {
-                    ReplicationProviderConfiguration.Adjust(cc);
-                    foreach (var o in cc.Overrides)
-                      o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));
-                };
-
             host = new TestingClusterHost();
 
             // Create two clusters, each with 2 silos. 
-            host.NewGeoCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
-            host.NewGeoCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
+            host.NewGeoCluster(globalserviceid, Cluster0, 2, ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting);
+            host.NewGeoCluster(globalserviceid, Cluster1, 2, ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting);
 
             TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 

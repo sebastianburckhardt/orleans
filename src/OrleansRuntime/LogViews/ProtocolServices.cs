@@ -161,7 +161,7 @@ namespace Orleans.Runtime.LogViews
         {
             Provider.Log.Info("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
         }
 
@@ -171,7 +171,7 @@ namespace Orleans.Runtime.LogViews
             {
                 Provider.Log.Verbose("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
             }
         }
@@ -183,7 +183,7 @@ namespace Orleans.Runtime.LogViews
             {
                 Provider.Log.Verbose2("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
             }
         }
@@ -195,7 +195,7 @@ namespace Orleans.Runtime.LogViews
             {
                 Provider.Log.Verbose3("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
             }
         }

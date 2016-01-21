@@ -28,12 +28,17 @@ using System.Text;
 using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using Orleans.Runtime;
 
 namespace Orleans.TestingHost
 {
     public static class ReplicationProviderConfiguration
     {
-        public static void Adjust(ClusterConfiguration config)
+        // change this as needed for debugging failing tests
+        private const Severity LogViewProviderTraceLevel = Severity.Verbose2;
+
+
+        public static void ConfigureAllReplicationProvidersForTesting(ClusterConfiguration config)
         {
             var props = new Dictionary<string, string>();
             props.Add("DataConnectionString", StorageTestConstants.DataConnectionString);
@@ -44,6 +49,10 @@ namespace Orleans.TestingHost
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.StoredViewProvider", "SharedStorage", props);
 
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.LocalMemoryProvider", "LocalMemory");
+
+            // logging  
+            foreach (var o in config.Overrides)
+                o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));
 
         }
     }

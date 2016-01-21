@@ -49,7 +49,7 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Read version of cached global state.
         /// </summary>
-        protected abstract long GetConfirmedVersion();
+        protected abstract int GetConfirmedVersion();
 
         /// <summary>
         /// Read the latest primary state. Must block/retry until successful.
@@ -102,8 +102,10 @@ namespace Orleans.Runtime.LogViews
         /// <returns></returns>
         protected virtual void OnNotificationReceived(NotificationMessage payload)
         {
-            // default mechanism is to simply refresh everything
-            need_refresh = true;
+            // by default, do a refresh if version is larger than current
+            CreateNotificationTrackerIfNeeded();
+            if (notificationtracker.lastversionreceived < payload.Version)
+                 notificationtracker.lastversionreceived = payload.Version;
         }
 
         /// <summary>
@@ -143,7 +145,13 @@ namespace Orleans.Runtime.LogViews
 
         protected ILogViewProvider Provider;
 
-        protected Dictionary<string, NotificationStatus> notificationtracker;
+        protected NotificationTracker notificationtracker;
+
+        protected class NotificationTracker
+        {
+            public int lastversionreceived;
+            public Dictionary<string, NotificationStatus> sendstatus;
+        }
 
         protected PrimaryBasedLogViewAdaptor(ILogViewHost<TLogView,TLogEntry> host, ILogViewProvider provider,
             TLogView initialstate, IProtocolServices services)
@@ -225,8 +233,11 @@ namespace Orleans.Runtime.LogViews
         {
             return pending.Select(uh => uh.taggedEntry).ToList(); // must use a copy
         }
-      
-     
+
+        protected int GetNumberPendingUpdates()
+        {
+            return pending.Count;
+        }
 
         /// <summary>
         ///  Tentative State. Represents Stable State + effects of pending updates.
@@ -358,7 +369,7 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
-        public long ConfirmedVersion
+        public int ConfirmedVersion
         {
             get
             {
@@ -380,7 +391,7 @@ namespace Orleans.Runtime.LogViews
 
             if (notificationmessage != null)
             {
-                Services.Verbose("NotificationReceived {0}", notificationmessage);
+                Services.Verbose("NotificationReceived v{0}", notificationmessage.Version);
 
                 OnNotificationReceived(notificationmessage);
 
@@ -413,11 +424,11 @@ namespace Orleans.Runtime.LogViews
                 // remove from notification tracker
                 if (notificationtracker != null)
                 {
-                    var removed = notificationtracker.Keys.Except(next.Clusters);
+                    var removed = notificationtracker.sendstatus.Keys.Except(next.Clusters);
                     foreach (var x in removed)
                     {
                         Services.Verbose("No longer sending notifications to {0}", x);
-                        notificationtracker.Remove(x);
+                        notificationtracker.sendstatus.Remove(x);
                     }
                 }
 
@@ -429,7 +440,7 @@ namespace Orleans.Runtime.LogViews
                         if (x != Services.MyClusterId)
                         {
                             Services.Verbose("Now sending notifications to {0}", x);
-                            notificationtracker.Add(x, new NotificationStatus());
+                            notificationtracker.sendstatus.Add(x, new NotificationStatus());
                         }
 
                 // if the multi-cluster is operated correctly, this grain should not be active before we are joined to the multicluster
@@ -509,7 +520,10 @@ namespace Orleans.Runtime.LogViews
 
             bool have_to_write = (pending.Count != 0);
 
-            bool have_to_read = need_initial_read || (need_refresh && !have_to_write);
+            bool have_to_read =
+                need_initial_read
+                || (need_refresh && !have_to_write)
+                || (notificationtracker != null && notificationtracker.lastversionreceived > GetConfirmedVersion());
 
             Services.Verbose("WorkerCycle Start htr={0} htw={1}", have_to_read, have_to_write);
 
@@ -548,7 +562,7 @@ namespace Orleans.Runtime.LogViews
             {
                 ConfirmedStateHasChanged = false;
                 foreach (var l in listeners)
-                    l.OnViewChanged();
+                    l.OnViewChanged(GetConfirmedVersion());
             }
 
             Services.Verbose("WorkerCycle Done");
@@ -580,13 +594,13 @@ namespace Orleans.Runtime.LogViews
                         }
                     }
 
-                   
+                    // if a notification message was returned, broadcast it
+                    // implementations that do their own notification mechanism return null here
                     if (writeresult.NotificationMessage != null)
                     {
-                        if (notificationtracker == null)
-                            CreateNotificationTracker();
+                        CreateNotificationTrackerIfNeeded();
 
-                        foreach (var kvp in notificationtracker)
+                        foreach (var kvp in notificationtracker.sendstatus)
                             SendNotificationMessage(kvp.Key, kvp.Value, writeresult.NotificationMessage).Ignore();  // exceptions are recorded in NotificationStatus
                     }
 
@@ -612,7 +626,7 @@ namespace Orleans.Runtime.LogViews
                 if (LastExceptionInternal != null)
                     return LastExceptionInternal;
                 if (notificationtracker != null)
-                    notificationtracker.Values.OrderBy(ns => ns.LastFailure).Select(ns => ns.LastException).LastOrDefault();
+                    notificationtracker.sendstatus.Values.OrderBy(ns => ns.LastFailure).Select(ns => ns.LastException).LastOrDefault();
                 return null;
             }
         }
@@ -730,7 +744,7 @@ namespace Orleans.Runtime.LogViews
 
         private void RetryFailedMessages()
         {
-            foreach (var kvp in notificationtracker)
+            foreach (var kvp in notificationtracker.sendstatus)
             {
                 if (kvp.Value.FailedMessage != null
                     && (DateTime.UtcNow - kvp.Value.LastFailure) > kvp.Value.RetryDelay())
@@ -739,15 +753,22 @@ namespace Orleans.Runtime.LogViews
         }
 
 
-        private void CreateNotificationTracker()
+        protected void CreateNotificationTrackerIfNeeded()
         {
-            notificationtracker = new Dictionary<string,NotificationStatus>();
-               foreach (var x in Configuration.Clusters)
-                        if (x != Services.MyClusterId)
-                        {
-                            Services.Verbose("Now sending notifications to {0}", x);
-                            notificationtracker.Add(x, new NotificationStatus());
-                        }
+            if (notificationtracker == null)
+            {
+                notificationtracker = new NotificationTracker();
+
+
+                notificationtracker.sendstatus = new Dictionary<string, NotificationStatus>();
+
+                foreach (var x in Configuration.Clusters)
+                    if (x != Services.MyClusterId)
+                    {
+                        Services.Verbose("Now sending notifications to {0}", x);
+                        notificationtracker.sendstatus.Add(x, new NotificationStatus());
+                    }
+            }
         }
      
 
@@ -761,8 +782,9 @@ namespace Orleans.Runtime.LogViews
     [Serializable]
     public class NotificationMessage: IProtocolMessage
     {
-        // contains no info
-        
+        // contains last global version
+        public int Version {get; set;}
+
         // log view providers can subclass this to add more information
         // for example, the log entries that were appended
     }
