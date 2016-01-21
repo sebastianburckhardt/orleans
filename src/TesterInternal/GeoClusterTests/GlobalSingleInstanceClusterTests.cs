@@ -159,7 +159,7 @@ namespace Tests.GeoClusterTests
         // This function is used to test the activation creation algorithm when two clusters create non-conflicting activations.
         // Takes around 1:45 min
         [TestMethod, TestCategory("GeoCluster")]
-        [Timeout(120000)]
+        [Timeout(180000)]
         public async Task TestClusterCreation_5_5()
         {
             // use a random global service id for testing purposes
