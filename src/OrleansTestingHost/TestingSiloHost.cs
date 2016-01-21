@@ -45,7 +45,6 @@ namespace Orleans.TestingHost
         public GlobalConfiguration Globals { get; private set; }
 
         private TimeSpan livenessStabilizationTime;
-        private static TimeSpan gossipStabilizationTime;
 
         public string DeploymentId = null;
         public string DeploymentIdPrefix = null;
@@ -187,9 +186,9 @@ namespace Orleans.TestingHost
         /// Wait for the silo liveness sub-system to detect and act on any recent cluster membership changes.
         /// </summary>
         /// <param name="didKill">Whether recent membership changes we done by graceful Stop.</param>
-        public static async Task WaitForLivenessToStabilizeAsync(bool didKill = false)
+        public async Task WaitForLivenessToStabilizeAsync(bool didKill = false)
         {
-            TimeSpan stabilizationTime = this.livenessStabilizationTime;
+            TimeSpan stabilizationTime = livenessStabilizationTime;
             WriteLog(Environment.NewLine + Environment.NewLine + "WaitForLivenessToStabilize is about to sleep for {0}", stabilizationTime);
             await Task.Delay(stabilizationTime);
             WriteLog("WaitForLivenessToStabilize is done sleeping");
@@ -211,30 +210,6 @@ namespace Orleans.TestingHost
             {
                 stabilizationTime += TestingUtils.Multiply(global.TableRefreshTimeout, 2);
             }
-            return stabilizationTime;
-        }
-
-
-        /// <summary>
-        /// Wait for the multicluster-gossip sub-system to stabilize.
-        /// </summary>
-        public static async Task WaitForMultiClusterGossipToStabilizeAsync(bool account_for_lost_messages)
-        {
-            TimeSpan stabilizationTime = _gossipStabilizationTime;
-            WriteLog(Environment.NewLine + Environment.NewLine + "WaitForMultiClusterGossipToStabilizeAsync is about to sleep for {0}", stabilizationTime);
-            if (!account_for_lost_messages)
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            else
-                await Task.Delay(stabilizationTime);
-            WriteLog("WaitForMultiClusterGossipToStabilizeAsync is done sleeping");
-        }
-
-        private static TimeSpan GetGossipStabilizationTime(GlobalConfiguration global)
-        {
-            TimeSpan stabilizationTime = TimeSpan.Zero;
-
-            stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
-
             return stabilizationTime;
         }
 
@@ -699,9 +674,8 @@ namespace Orleans.TestingHost
             }
 
             host.livenessStabilizationTime = GetLivenessStabilizationTime(config.Globals);
-            host.gossipStabilizationTime = GetGossipStabilizationTime(config.Globals);
 
-                host.Globals = config.Globals;
+            host.Globals = config.Globals;
 
             string siloName;
             switch (type)
