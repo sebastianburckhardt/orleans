@@ -40,7 +40,7 @@ namespace Orleans.Runtime.LogViews
             return GlobalStateCache.StateAndMetaData.State;
         }
 
-        protected override long GetConfirmedVersion()
+        protected override int GetConfirmedVersion()
         {
            return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
