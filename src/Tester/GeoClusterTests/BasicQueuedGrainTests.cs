@@ -38,33 +38,21 @@ namespace Tester.GeoClusterTests
     [DeploymentItem("TestGrains.dll")]
     [DeploymentItem("OrleansProviders.dll")]
     [DeploymentItem("OrleansConfigurationForTesting.xml")]
-    public class BasicQueuedGrainTests : UnitTestSiloHost
+    public class BasicQueuedGrainTests : HostedTestClusterPerFixture
     {
-        private static readonly TestingSiloOptions siloOptions = new TestingSiloOptions
+        public static TestingSiloHost CreateSiloHost()
         {
-            StartFreshOrleans = true,
-            StartPrimary = true,
-            StartSecondary = false,
-            SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
-            DataConnectionString = StorageTestConstants.DataConnectionString,
-            AdjustConfig = ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting
-        };
-
-        public BasicQueuedGrainTests()
-            : base(siloOptions)
-        {
-        }
-
-        [ClassInitialize]
-        public static void ClassInitialize(TestContext testContext)
-        {
-            CheckForAzureStorage();
-        }
-
-        [ClassCleanup]
-        public static void MyClassCleanup()
-        {
-            StopAllSilos();
+            return new TestingSiloHost(
+                new TestingSiloOptions
+                {
+                    StartFreshOrleans = true,
+                    StartPrimary = true,
+                    StartSecondary = false,
+                    SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
+                    DataConnectionString = StorageTestConstants.DataConnectionString,
+                    AdjustConfig = ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting
+                }
+            );
         }
 
         [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
