@@ -49,7 +49,7 @@ namespace Orleans.Runtime.GrainDirectory
                 return response;
             }
 
-            var forwardaddress = router.CheckIfIShouldForward(grain, 0, "ProcessActivationRequest");
+            var forwardaddress = router.CheckIfShouldForward(grain, 0, "ProcessActivationRequest");
 
             if (forwardaddress == null)
             {

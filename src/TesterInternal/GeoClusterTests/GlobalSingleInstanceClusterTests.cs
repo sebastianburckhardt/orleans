@@ -52,21 +52,6 @@ namespace Tests.GeoClusterTests
     public class GlobalSingleInstanceClusterTests : TestingClusterHost
     {
 
-        [ClassInitialize]
-        public static void ClassInitialize(TestContext testContext)
-        {
-            try
-            {
-                TestingSiloHost.StopAllSilos();
-            }
-            catch (Exception e)
-            {
-                WriteLog("Exception caught in class initialize: {0}", e);
-            }
-        }
-
-   
-
         #region client wrappers
 
         public class ClientWrapper : ClientWrapperBase
@@ -111,7 +96,7 @@ namespace Tests.GeoClusterTests
             NewGeoCluster(globalserviceid, cluster0, 1);
             NewGeoCluster(globalserviceid, cluster1, 1);
 
-            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
+            await WaitForLivenessToStabilizeAsync();
 
             // Create one client per cluster
             var client0 = NewClient<ClientWrapper>(cluster0, 0);
@@ -119,7 +104,7 @@ namespace Tests.GeoClusterTests
 
             // Configure multicluster
             client0.InjectMultiClusterConf(cluster0, cluster1);
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
+            await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             int baseCount0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
             int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
@@ -186,7 +171,7 @@ namespace Tests.GeoClusterTests
             NewGeoCluster(globalserviceid, cluster0, 5);
             NewGeoCluster(globalserviceid, cluster1, 5);
 
-            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
+            await WaitForLivenessToStabilizeAsync();
 
             // Clients 0 and 1 connected to Cluster 0
             var client0 = NewClient<ClientWrapper>(cluster0, 0);
@@ -197,7 +182,7 @@ namespace Tests.GeoClusterTests
 
             //Configure multicluster
             client3.InjectMultiClusterConf(cluster0, cluster1);
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
+            await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
             int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
@@ -298,12 +283,12 @@ namespace Tests.GeoClusterTests
             NewGeoCluster(globalserviceid, cluster0, 1);
             NewGeoCluster(globalserviceid, cluster1, 1);
 
-            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
+            await WaitForLivenessToStabilizeAsync();
 
             //Configure multicluster
             var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
             cfgclient.InjectMultiClusterConf(cluster0, cluster1);
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
+            await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             // Create two clients, connect each client to the appropriate cluster.
             var clients = new List<ClientIdentity>
@@ -342,12 +327,12 @@ namespace Tests.GeoClusterTests
             NewGeoCluster(globalserviceid, cluster0, 5);
             NewGeoCluster(globalserviceid, cluster1, 5);
 
-            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
+            await WaitForLivenessToStabilizeAsync();
 
             //Configure multicluster
             var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
             cfgclient.InjectMultiClusterConf(cluster0, cluster1);
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
+            await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             const int numGrains = 2000;
 
@@ -454,14 +439,14 @@ namespace Tests.GeoClusterTests
             NewGeoCluster(globalserviceid, cluster0, 1, configurationcustomizer);
             NewGeoCluster(globalserviceid, cluster1, 1, configurationcustomizer);
 
-            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
+            await WaitForLivenessToStabilizeAsync();
 
             var client0 = NewClient<ClientWrapper>(cluster0, 0);
             var client1 = NewClient<ClientWrapper>(cluster1, 0);
 
             //Configure multicluster
             client0.InjectMultiClusterConf(cluster0, cluster1);
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
+            await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             // Count the total number of already OWNED grain activations
             // in cluster0 (created during silo creation - like the Membership Grain).
@@ -543,7 +528,7 @@ namespace Tests.GeoClusterTests
             NewGeoCluster(globalserviceid, cluster0, 3, configurationcustomizer);
             NewGeoCluster(globalserviceid, cluster1, 3, configurationcustomizer);
 
-            await TestingSiloHost.WaitForLivenessToStabilizeAsync();
+            await WaitForLivenessToStabilizeAsync();
 
             var client0 = NewClient<ClientWrapper>(cluster0, 0);
             var client1 = NewClient<ClientWrapper>(cluster1, 0);
@@ -552,7 +537,7 @@ namespace Tests.GeoClusterTests
 
             //Configure multicluster
             client2.InjectMultiClusterConf(cluster0, cluster1);
-            await TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false);
+            await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             ClientWrapper[] clients = { client0, client1, client2, client3 };
 
