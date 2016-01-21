@@ -33,29 +33,17 @@ namespace Tester.GeoClusterTests
     [DeploymentItem("TestGrainInterfaces.dll")]
     [DeploymentItem("TestGrains.dll")]
     [DeploymentItem("OrleansAzureUtils.dll")]
-    public class SimpleGlobalSingleInstanceGrainTests : UnitTestSiloHost
+    public class SimpleGlobalSingleInstanceGrainTests : HostedTestClusterEnsureDefaultStarted
     {
         private const string SimpleGrainNamePrefix = "UnitTests.Grains.SimpleG";
-
-        public SimpleGlobalSingleInstanceGrainTests()
-            : base(new TestingSiloOptions { StartPrimary = true, StartSecondary = true })
-        {
-            StartAdditionalSilos(3);
-        }
 
         public ISimpleGlobalSingleInstanceGrain GetGlobalSingleInstanceGrain()
         {
             return GrainFactory.GetGrain<ISimpleGlobalSingleInstanceGrain>(GetRandomGrainId(), SimpleGrainNamePrefix);
         }
 
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            StopAllSilos();
-        }
-
         [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure")]
-        public async Task GlobalSingleInstanceGrainTest()
+        public async Task SimpleGlobalSingleInstanceGrainTest()
         {
             int i = 0;
             while (i++ < 100)

@@ -82,7 +82,6 @@ namespace Orleans.Runtime
             {ProtocolGatewayId,"ProtocolGateway"},
             {ProviderManagerSystemTargetId, "ProviderManagerSystemTarget"},
             {DeploymentLoadPublisherSystemTargetId, "DeploymentLoadPublisherSystemTarget"},
-            {ClusterDirectoryServiceId, "ClusterDirectoryService"}
         };
 
         private static readonly Dictionary<int, string> nonSingletonSystemTargetNames = new Dictionary<int, string>

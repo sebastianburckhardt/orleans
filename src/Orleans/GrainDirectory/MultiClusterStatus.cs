@@ -3,7 +3,7 @@
     /// <summary>
     /// Status of a directory entry with respect to multi-cluster registration
     /// </summary>
-    internal enum MultiClusterStatus
+    internal enum MultiClusterStatus : byte
     {
         /// <summary>
         /// Registration is owned by this cluster.

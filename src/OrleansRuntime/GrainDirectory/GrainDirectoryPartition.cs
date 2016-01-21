@@ -174,14 +174,14 @@ namespace Orleans.Runtime.GrainDirectory
             Instances.Add(activation, new ActivationInfo(silo, MultiClusterStatus.Cached));
         }
 
-        public bool UpdateClusterRegistrationStatus(ActivationId act, MultiClusterStatus status, MultiClusterStatus? comparewith = null)
+        public bool UpdateClusterRegistrationStatus(ActivationId activationId, MultiClusterStatus status, MultiClusterStatus? compareWith = null)
         {
-            IActivationInfo activationinfo;
-            if (!Instances.TryGetValue(act, out activationinfo))
+            IActivationInfo activationInfo;
+            if (!Instances.TryGetValue(activationId, out activationInfo))
                 return false;
-            if (comparewith.HasValue && comparewith.Value != activationinfo.RegistrationStatus)
+            if (compareWith.HasValue && compareWith.Value != activationInfo.RegistrationStatus)
                 return false;
-            activationinfo.RegistrationStatus = status;
+            activationInfo.RegistrationStatus = status;
             return true;
         }
     }
@@ -286,9 +286,9 @@ namespace Orleans.Runtime.GrainDirectory
                 {
                     partitionData[grain] = new GrainInfo();
                 }
-                var graininfo = partitionData[grain];
-                result.Address = graininfo.AddSingleActivation(grain, activation, silo, registrationStatus);
-                result.VersionTag = graininfo.VersionTag;
+                var grainInfo = partitionData[grain];
+                result.Address = grainInfo.AddSingleActivation(grain, activation, silo, registrationStatus);
+                result.VersionTag = grainInfo.VersionTag;
             }
             return result;
         }
@@ -529,13 +529,13 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public bool UpdateClusterRegistrationStatus(GrainId grain, ActivationId activationId, MultiClusterStatus registrationStatus, MultiClusterStatus? comparewith=null)
+        public bool UpdateClusterRegistrationStatus(GrainId grain, ActivationId activationId, MultiClusterStatus registrationStatus, MultiClusterStatus? compareWith = null)
         {
             lock (lockable)
             {
                 if (partitionData.ContainsKey(grain))
                 {
-                    return partitionData[grain].UpdateClusterRegistrationStatus(activationId, registrationStatus, comparewith);
+                    return partitionData[grain].UpdateClusterRegistrationStatus(activationId, registrationStatus, compareWith);
                 }
                 return false;
             }
