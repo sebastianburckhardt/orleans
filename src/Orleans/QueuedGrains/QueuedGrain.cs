@@ -101,6 +101,18 @@ namespace Orleans.QueuedGrains
 
 
         /// <summary>
+        /// Perform an update directly on the global state,
+        /// but only if the state has not been modified in the meantime already.
+        /// <param name="update">An object representing the update</param>
+        /// <returns>true if the update was successful, and false if the update failed due to conflicts.</returns>
+        /// </summary>
+        public Task<bool> TryConditionalUpdateAsync(IUpdateOperation<TGrainState> update)
+        {
+           return Adaptor.TryAppend(update);
+        }
+
+
+        /// <summary>
         /// Returns the current queue of unconfirmed updates.
         /// </summary>
         public IEnumerable<IUpdateOperation<TGrainState>> UnconfirmedUpdates
@@ -139,7 +151,7 @@ namespace Orleans.QueuedGrains
         /// <summary>
         /// The version of the last confirmed snapshot of the global state.
         /// </summary>
-        public long ConfirmedVersion
+        public int ConfirmedVersion
         {
             get { return Adaptor.ConfirmedVersion; }
         }

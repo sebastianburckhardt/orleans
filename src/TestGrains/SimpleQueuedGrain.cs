@@ -104,6 +104,13 @@ namespace UnitTests.Grains
             await CurrentQueueHasDrained();
         }
 
+        public async Task<Tuple<int, bool>> SetAConditional(int x)
+        {
+            int version = this.ConfirmedVersion;
+            bool success = await TryConditionalUpdateAsync(new UpdateA() { Val = x });
+            return new Tuple<int, bool>(version, success);
+        }
+
         public Task SetALocal(int x)
         {
             EnqueueUpdate(new UpdateA() { Val = x });
@@ -180,9 +187,9 @@ namespace UnitTests.Grains
             return SynchronizeNowAsync();
         }
 
-        public Task<long> GetConfirmedVersion()
+        public Task<int> GetConfirmedVersion()
         {
-            return Task.FromResult<long>(this.ConfirmedVersion);
+            return Task.FromResult(this.ConfirmedVersion);
         }
 
 
