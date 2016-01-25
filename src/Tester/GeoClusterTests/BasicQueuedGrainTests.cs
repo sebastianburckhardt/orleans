@@ -47,7 +47,7 @@ namespace Tester.GeoClusterTests
             StartSecondary = false,
             SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
             DataConnectionString = StorageTestConstants.DataConnectionString,
-            AdjustConfig = ReplicationProviderConfiguration.Adjust
+            AdjustConfig = ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting
         };
 
         public BasicQueuedGrainTests()

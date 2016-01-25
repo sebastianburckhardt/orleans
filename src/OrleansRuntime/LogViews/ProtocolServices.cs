@@ -44,6 +44,7 @@ namespace Orleans.Runtime.LogViews
         {
             var silo = Silo.CurrentSilo;
             var mycluster = silo.ClusterId;
+            var oracle = silo.LocalMultiClusterOracle;
 
             Provider.Log.Verbose3("SendMessage {0}->{1}: {2}", mycluster, clusterId, payload);
 
@@ -59,16 +60,19 @@ namespace Orleans.Runtime.LogViews
 
             if (Provider.Log.IsVerbose3)
             {
-                var gws = Silo.CurrentSilo.LocalMultiClusterOracle.GetGateways();
+                var gws = oracle.GetGateways();
                 Provider.Log.Verbose3("Available Gateways:\n{0}", string.Join("\n", gws.Select((gw) => gw.ToString())));
             }
 
-            var clusterGateway = Silo.CurrentSilo.LocalMultiClusterOracle.GetRandomClusterGateway(clusterId);
+            var clusterGateway = oracle.GetRandomClusterGateway(clusterId);
 
             if (clusterGateway == null)
                 throw new ProtocolTransportException("no active gateways found for cluster");
 
             var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
+
+            if (silo.TestHook.DropNotificationMessages && payload is NotificationMessage)
+               return null;
 
             try
             {
@@ -161,7 +165,7 @@ namespace Orleans.Runtime.LogViews
         {
             Provider.Log.Info("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
         }
 
@@ -171,7 +175,7 @@ namespace Orleans.Runtime.LogViews
             {
                 Provider.Log.Verbose("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
             }
         }
@@ -183,7 +187,7 @@ namespace Orleans.Runtime.LogViews
             {
                 Provider.Log.Verbose2("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
             }
         }
@@ -195,7 +199,7 @@ namespace Orleans.Runtime.LogViews
             {
                 Provider.Log.Verbose3("{0}{1} {2}",
                     grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : Silo.CurrentSilo.ClusterId,
+                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                     string.Format(format, args));
             }
         }

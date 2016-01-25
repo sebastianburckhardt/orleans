@@ -46,14 +46,14 @@ namespace Orleans.Runtime.LogViews
     public class GrainStateWithMetaData<TView> where TView : class, new()
     {
         /// <summary>
-        /// The user-defined grain state
+        /// The stored view of the log
         /// </summary>
         public TView State { get; set; }
 
         /// <summary>
-        /// The length of the log.
+        /// The length of the log
         /// </summary>
-        public long GlobalVersion { get; set; }
+        public int GlobalVersion { get; set; }
 
 
         /// <summary>

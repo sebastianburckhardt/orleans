@@ -20,7 +20,7 @@ namespace Orleans.Runtime.LogViews
     /// </para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class StorageBasedLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,E> where T : class,new() where E: class
+    public class StorageBasedLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,SubmissionEntry<E>> where T : class,new() where E: class
     {
         public StorageBasedLogViewAdaptor(ILogViewHost<T,E> host, T initialstate, ILogViewProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IProtocolServices services)
             : base(host, repprovider, initialstate, services)
@@ -40,7 +40,7 @@ namespace Orleans.Runtime.LogViews
             return GlobalStateCache.StateAndMetaData.State;
         }
 
-        protected override long GetConfirmedVersion()
+        protected override int GetConfirmedVersion()
         {
            return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
@@ -50,15 +50,12 @@ namespace Orleans.Runtime.LogViews
             GlobalStateCache = new GrainStateWithMetaDataAndETag<T>(initialstate);
         }
 
-        // no tagging is required, thus the following two are identity functions
-        protected override E TagEntry(E entry)
+        // no special tagging is required, thus we create a plain submission entry
+        protected override SubmissionEntry<E> MakeSubmissionEntry(E entry)
         {
-            return entry;
+            return new SubmissionEntry<E>() { Entry = entry } ;
         }
-        protected override E UntagEntry(E taggedupdate)
-        {
-            return taggedupdate;
-        }
+      
 
         protected override async Task ReadAsync()
         {
@@ -79,6 +76,8 @@ namespace Orleans.Runtime.LogViews
 
                     await globalstorageprovider.ReadStateAsync(graintypename, Services.GrainReference, GlobalStateCache);
 
+                    LastExceptionInternal = null;
+                    
                     ConfirmedStateChanged(); // confirmed state has changed
 
                     Services.Verbose("read success {0}", GlobalStateCache);
@@ -123,54 +122,54 @@ namespace Orleans.Runtime.LogViews
                    backoff = slowpollinterval + random.Next(1, 200);
         }
 
-
-        protected override async Task<WriteResult> WriteAsync()
+        protected override async Task<int> WriteAsync()
         {
             enter_operation("WriteAsync");
 
             int backoff_msec = -1;
 
-            T state;
-            List<E> updates;
+            var state = CopyTentativeState();
+            var updates = GetCurrentBatchOfUpdates();
+            bool batchsuccessfullywritten = false;
 
-            while (true)
+            var nextglobalstate = new GrainStateWithMetaDataAndETag<T>(state);
+            nextglobalstate.StateAndMetaData.WriteVector = GlobalStateCache.StateAndMetaData.WriteVector;
+            nextglobalstate.StateAndMetaData.GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion + updates.Length;
+            nextglobalstate.ETag = GlobalStateCache.ETag;
+
+            var writebit = nextglobalstate.StateAndMetaData.ToggleBit(Services.MyClusterId);
+
+            try
             {
-                state = CopyTentativeState();
-                updates = CopyListOfUpdates();
+                // for manual testing
+                //await Task.Delay(5000);
 
-                var nextglobalstate = new GrainStateWithMetaDataAndETag<T>(state);
-                nextglobalstate.StateAndMetaData.WriteVector = GlobalStateCache.StateAndMetaData.WriteVector;
-                nextglobalstate.StateAndMetaData.GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion + updates.Count;
-                nextglobalstate.ETag = GlobalStateCache.ETag;
+                await globalstorageprovider.WriteStateAsync(graintypename, Services.GrainReference, nextglobalstate);
 
-                var writebit = nextglobalstate.StateAndMetaData.ToggleBit(Services.MyClusterId);
+                LastExceptionInternal = null; // successful
 
-                try
-                {
-                    // for manual testing
-                    //await Task.Delay(5000);
+                batchsuccessfullywritten = true;
 
-                    await globalstorageprovider.WriteStateAsync(graintypename, Services.GrainReference, nextglobalstate);
-                    
-                    GlobalStateCache = nextglobalstate;
+                Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
 
-                    ConfirmedStateChanged(); // confirmed state has changed
+                GlobalStateCache = nextglobalstate;
 
-                    Services.Verbose("write ({0} updates) success {1}", updates.Count, GlobalStateCache);
+                ConfirmedStateChanged(); // confirmed state has changed
+            }
+            catch (Exception e)
+            {
+                LastExceptionInternal = e;
+            }
 
-                    break; // successful
-                }
-                catch (Exception e) 
-                {
-                    LastExceptionInternal = e;
-                }
-
+            if (!batchsuccessfullywritten)
+            {
                 increasebackoff(ref backoff_msec);
 
                 Services.Verbose("write apparently failed {0}", nextglobalstate);
 
-                while(true)
+                while (true) // be stubborn until we can read what is there
                 {
+
                     if (backoff_msec > 0)
                     {
                         Services.Verbose("backoff {0}", backoff_msec);
@@ -182,13 +181,15 @@ namespace Orleans.Runtime.LogViews
                     {
                         await globalstorageprovider.ReadStateAsync(graintypename, Services.GrainReference, GlobalStateCache);
 
-                        ConfirmedStateChanged(); // confirmed state has changed
+                        LastExceptionInternal = null; // successful
 
                         Services.Verbose("read success {0}", GlobalStateCache);
-                        
-                        break; // successful
+
+                        ConfirmedStateChanged(); // confirmed state has changed
+
+                        break;
                     }
-                    catch (Exception e) 
+                    catch (Exception e)
                     {
                         LastExceptionInternal = e;
                     }
@@ -196,7 +197,7 @@ namespace Orleans.Runtime.LogViews
                     Services.Verbose("read failed");
 
                     increasebackoff(ref backoff_msec);
-                }            
+                }
 
                 // check if last apparently failed write was in fact successful
 
@@ -206,27 +207,32 @@ namespace Orleans.Runtime.LogViews
 
                     ConfirmedStateChanged(); // confirmed state has changed
 
-                    Services.Verbose("last write ({0} updates) was actually a success {1}", updates.Count, GlobalStateCache);
+                    Services.Verbose("last write ({0} updates) was actually a success {1}", updates.Length, GlobalStateCache);
 
-                    break;
+                    batchsuccessfullywritten = true;
                 }
             }
 
+
+            // broadcast notifications to all other clusters
+            if (batchsuccessfullywritten)
+                BroadcastNotification(new UpdateNotificationMessage()
+                   {
+                       GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion,
+                       Updates = updates.Select(se => se.Entry).ToList(),
+                       Origin = Services.MyClusterId,
+                       ETag = GlobalStateCache.ETag
+                   });
+
             exit_operation("WriteAsync");
 
-            return new WriteResult()
-            {
-                NumUpdatesWritten = updates.Count,
-                NotificationMessage = new UpdateNotificationMessage()
-                {
-                    GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion,
-                    Updates = updates,
-                    Origin = Services.MyClusterId,
-                    ETag = GlobalStateCache.ETag
-                }
-            };
+            if (!batchsuccessfullywritten)
+                return 0;
 
+            NotifyPromises(updates.Length, true);
+            return updates.Length;
         }
+    
         
         [Serializable]
         protected class UpdateNotificationMessage : NotificationMessage 
