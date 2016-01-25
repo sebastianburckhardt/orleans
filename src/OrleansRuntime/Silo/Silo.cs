@@ -1005,6 +1005,10 @@ namespace Orleans.Runtime
                     return false;
             }
 
+            // switch for dropping notification messages in log view protocols
+            internal bool DropNotificationMessages { get; set; }
+
+
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 
             internal void SendMessageInternal(Message message)

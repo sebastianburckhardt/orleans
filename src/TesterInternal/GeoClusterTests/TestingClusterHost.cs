@@ -264,6 +264,20 @@ namespace Tests.GeoClusterTests
                     silo.Silo.TestHook.UnblockSiloCommunication();
         }
 
+        public void BlockNotificationMessages(string origincluster)
+        {
+            var silos = Clusters[origincluster].Silos;
+            foreach (var silo in silos)
+                silo.Silo.TestHook.DropNotificationMessages = true;
+
+        }
+        public void UnblockNotificationMessages(string origincluster)
+        {
+            var silos = Clusters[origincluster].Silos;
+            foreach (var silo in silos)
+                silo.Silo.TestHook.DropNotificationMessages = false;
+
+        }
   
         private SiloHandle GetActiveSiloInClusterByName(string clusterId, string siloName)
         {
