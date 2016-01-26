@@ -79,6 +79,7 @@
     <Compile Include="Async\TaskUtility.cs" />
     <Compile Include="Async\UnobservedExceptionsHandlerClass.cs" />
     <Compile Include="Async\TaskExtensions.cs" />
+    <Compile Include="EventSourcing\ICustomStreamName.cs" />
     <Compile Include="EventSourcing\JournaledGrain.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />

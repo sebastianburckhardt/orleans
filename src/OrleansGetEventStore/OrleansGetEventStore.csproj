@@ -54,11 +54,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EventStore.cs" />
-    <Compile Include="EventStoreProvider.cs" />
+    <Compile Include="GetEventStoreProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\OrleansProviders\OrleansProviders.csproj">
+      <Project>{0054db14-2a92-4cc0-959e-a2c51f5e65d4}</Project>
+      <Name>OrleansProviders</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Orleans\Orleans.csproj">
       <Project>{bc1bd60c-e7d8-4452-a21c-290aec8e2e74}</Project>
       <Name>Orleans</Name>

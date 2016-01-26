@@ -30,6 +30,11 @@ namespace Orleans.LogViews
         GrainReference GrainReference { get;  }
 
         /// <summary>
+        /// A user-specified stream name to use for event sourcing, or null if none is specified.
+        /// </summary>
+        string StreamName { get;  }
+
+        /// <summary>
         /// The id of this cluster.
         /// </summary>
         /// <returns></returns>

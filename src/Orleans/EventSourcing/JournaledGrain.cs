@@ -90,10 +90,10 @@ namespace Orleans.EventSourcing
         }
 
         /// <summary>
-        /// The version of the tentative state.
+        /// The version of the state.
         /// Always equal to the confirmed version plus the number of unconfirmed events.
         /// </summary>
-        protected int TentativeVersion 
+        protected int Version 
         {
             get { return this.LogView.ConfirmedVersion + this.LogView.UnconfirmedSuffix.Count(); }
         }
@@ -119,7 +119,7 @@ namespace Orleans.EventSourcing
         /// Waits until all previously raised events have been written. 
         /// </summary>
         /// <returns></returns>
-        protected Task WaitForConfirmationOfEvents()
+        protected Task WaitForConfirmation()
         {
            return LogView.ConfirmSubmittedEntriesAsync();
              

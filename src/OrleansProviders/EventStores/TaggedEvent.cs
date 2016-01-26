@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Orleans.Providers.EventStores
 {
     /// <summary>
-    /// Use this class to attach tags to events when storing in event stores.
+    /// We use this class to attach tags to events when storing in event stores.
     /// The tags are used for duplicate filtering when append operations encounter inconclusive exceptions.
     /// </summary>
     [Serializable]

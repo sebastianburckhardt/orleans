@@ -14,8 +14,8 @@ namespace Orleans.Runtime.LogViews
 {
     /// <summary>
     /// Functionality for use by log view adaptors that run distributed protocols. 
-    /// This class allows access to these services to providers that cannot see runtime-internals.
-    /// It also stores grain-specific information like the grain reference, and caches 
+    /// It also stores grain-specific information like the grain reference. 
+    /// This class allows access to these runtime-internal services to log view providers.
     /// </summary>
     internal class ProtocolServices : IProtocolServices
     {
@@ -24,11 +24,7 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
-
-        private Grain grain;   // links to the grain that owns this service object
-
-        // cached 
-
+        private Grain grain;   // the grain that owns this service object
 
         internal ProtocolServices(Grain gr, ILogViewProvider provider)
         {
@@ -101,6 +97,16 @@ namespace Orleans.Runtime.LogViews
                     return Silo.CurrentSilo.ClusterId;
             }
         }
+
+        public string StreamName
+        {
+            get
+            {
+                var x = grain as Orleans.EventSourcing.ICustomStreamName;
+                return (x != null) ? x.GetStreamName() : null;
+            }
+        }
+
 
         public MultiClusterConfiguration MultiClusterConfiguration
         {

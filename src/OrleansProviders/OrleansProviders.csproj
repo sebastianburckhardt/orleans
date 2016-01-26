@@ -42,9 +42,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventStores\EventStoreProviderBase.cs" />
+    <Compile Include="EventStores\EventStream.cs" />
     <Compile Include="EventStores\IEventStore.cs" />
+    <Compile Include="EventStores\MemoryEventStore.cs" />
     <Compile Include="EventStores\OptimisticConcurrencyException.cs" />
-    <Compile Include="EventStores\EventStoreBasedLogViewAdaptor.cs" />
+    <Compile Include="EventStores\EventStoreLogViewAdaptor.cs" />
     <Compile Include="LogViews\LocalMemoryProvider.cs" />
     <Compile Include="LogViews\SharedStorageProvider.cs" />
     <Compile Include="EventStores\TaggedEvent.cs" />

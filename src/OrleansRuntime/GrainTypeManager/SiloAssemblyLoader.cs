@@ -83,17 +83,14 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>) || definition == typeof(JournaledGrain<>) || definition == typeof(LogViewGrain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(LogViewGrain<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.IsClass)
                             {
                                 grainStateType = stateArg;
-                                storageInterface = (definition == typeof(Grain<>)) 
-                                    ? StorageInterface.StorageBridge 
-                                    : (definition == typeof(JournaledGrain<>))
-                                        ? StorageInterface.JournaledStorageBridge
-                                        : StorageInterface.LogViewAdaptor;
+                                storageInterface = (definition == typeof(Grain<>)) ?
+                                    StorageInterface.StorageBridge : StorageInterface.LogViewAdaptor;
                                 break;
                             }
                         }

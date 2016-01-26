@@ -14,20 +14,24 @@ namespace Orleans.Providers.EventStores
     /// </summary>
     /// <typeparam name="T">The type of the log view, or grain state.</typeparam>
     /// <typeparam name="E">The type of the events (usually just object)</typeparam>
-    class EventStoreBasedLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,SubmissionEntry<E>> 
+    class EventStoreLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,SubmissionEntry<E>> 
         where T: class,new() where E: class
     {
 
-        public EventStoreBasedLogViewAdaptor(ILogViewHost<T,E> host, ILogViewProvider provider,
-            T initialstate, IProtocolServices services, IEventStore eventstore, string streamname)
+        public EventStoreLogViewAdaptor(ILogViewHost<T,E> host, ILogViewProvider provider,
+            T initialstate, IProtocolServices services, string streamname)
             : base(host,provider,initialstate,services)
         {
-            this.eventstore = eventstore;
+            if (!(provider is IEventStore))
+                throw new ArgumentException("host");
+            if (string.IsNullOrEmpty(streamname))
+                throw new ArgumentException("streamname");
+
             this.streamname = streamname;
         }
 
 
-        private IEventStore eventstore;
+        private IEventStore EventStore { get { return (IEventStore) Provider; } }
         private string streamname;
 
         private T ConfirmedStateInternal;
@@ -70,7 +74,7 @@ namespace Orleans.Providers.EventStores
             {
                 try
                 {
-                    var eventstream = await eventstore.LoadStreamFromVersion(streamname, ConfirmedVersionInternal);
+                    var eventstream = await EventStore.LoadStreamFromVersion(streamname, ConfirmedVersionInternal);
 
                     LastExceptionInternal = null;
 
@@ -140,7 +144,7 @@ namespace Orleans.Providers.EventStores
 
             try
             {
-                await eventstore.AppendToStream(
+                await EventStore.AppendToStream(
                        streamname,
                        isConditional ? (int?)ConfirmedVersionInternal : null,
                        TagLast(updates, guid)

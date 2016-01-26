@@ -4,13 +4,14 @@ using Orleans;
 using Orleans.EventSourcing;
 using Orleans.Providers;
 using TestGrainInterfaces;
+using System.Collections.Generic;
 
 namespace TestGrains
 {
-    //[JournaledStorageProvider(ProviderName = "GetEventStore")]
-    [JournaledStorageProvider(ProviderName = "MemoryStore")]
+    [LogViewProvider(ProviderName = "TestEventStore")]
     public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain, ICustomStreamName
     {
+
         public Task RegisterBirth(PersonAttributes props)
         {
             if (this.State.FirstName == null)
@@ -30,12 +31,16 @@ namespace TestGrains
 
             var spouseData = await spouse.GetPersonalAttributes();
 
-            RaiseEvent(new PersonMarried(spouse.GetPrimaryKey(), spouseData.FirstName, spouseData.LastName));
+            var events = new List<object>();
+
+            events.Add(new PersonMarried(spouse.GetPrimaryKey(), spouseData.FirstName, spouseData.LastName));
 
             if (State.LastName != spouseData.LastName)
             {
-                RaiseEvent(new PersonLastNameChanged(spouseData.LastName));
+                events.Add(new PersonLastNameChanged(spouseData.LastName));
             }
+
+            RaiseEvents(events);
 
             await WaitForConfirmation();
         }
@@ -74,12 +79,12 @@ namespace TestGrains
 
         public Task<int> GetConfirmedVersion()
         {
-            return Task.FromResult(ConfirmedState.Version);
+            return Task.FromResult(ConfirmedVersion);
         }
 
         public Task<int> GetVersion()
         {
-            return Task.FromResult(State.Version);
+            return Task.FromResult(Version);
         }
 
         public string GetStreamName()

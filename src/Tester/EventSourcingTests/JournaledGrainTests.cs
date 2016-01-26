@@ -4,12 +4,27 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using TestGrainInterfaces;
 using UnitTests.Tester;
+using Orleans.Runtime.Configuration;
+using Orleans.Providers.EventStores;
+using Orleans.TestingHost;
 
 namespace UnitTests.EventSourcingTests
 {
     [TestClass]
     public class JournaledGrainTests : UnitTestSiloHost
     {
+
+        public JournaledGrainTests() : base(new TestingSiloOptions()
+        {
+           AdjustConfig = (ClusterConfiguration config) => 
+               {
+                   config.Globals.RegisterLogViewProvider<MemoryEventStore>("TestEventStore");
+               }
+        })
+        {
+        }
+
+      
         [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
         public async Task JournaledGrainTests_Activate()
         {

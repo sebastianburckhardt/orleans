@@ -6,6 +6,7 @@ using TestGrainInterfaces;
 
 namespace TestGrains
 {
+    [Serializable]
     public class PersonRegistered
     {
         public string FirstName { get; private set; }
@@ -20,6 +21,7 @@ namespace TestGrains
         }
     }
 
+    [Serializable]
     public class PersonMarried
     {
         public Guid SpouseId { get; private set; }
@@ -34,6 +36,7 @@ namespace TestGrains
         }
     }
 
+    [Serializable]
     public class PersonLastNameChanged
     {
         public string LastName { get; private set; }

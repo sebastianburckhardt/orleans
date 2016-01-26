@@ -5,7 +5,8 @@ using TestGrainInterfaces;
 
 namespace TestGrains
 {
-    public class PersonState : JournaledGrainState
+    [Serializable]
+    public class PersonState 
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
