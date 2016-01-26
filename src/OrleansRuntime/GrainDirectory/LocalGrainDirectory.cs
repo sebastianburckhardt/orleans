@@ -478,23 +478,6 @@ namespace Orleans.Runtime.GrainDirectory
 
         #region Implementation of ILocalGrainDirectory
 
-        /// <summary>
-        /// Registers a new activation, in single activation mode, with the directory service.
-        /// If there is already an activation registered for this grain, then the new activation will
-        /// not be registered and the address of the existing activation will be returned.
-        /// Otherwise, the passed-in address will be returned.
-        /// <para>This method must be called from a scheduler thread.</para>
-        /// </summary>
-        /// <param name="address">The address of the potential new activation.</param>
-        /// <returns>The address registered for the grain's single activation.</returns>
-        //public async Task<ActivationAddress> RegisterSingleActivationAsync(ActivationAddress address)
-        //{
-        //    registrationsIssued.Increment();
-        //    var directory = GrainDirectoryManager.Instance.ResolveDirectory(StatelessWorkerActivationStrategy.Singleton);
-        //    var returnedAddress = await directory.RegisterAsync(address);
-        //    //returnedAddress
-        //}
-
         public SiloAddress CheckIfShouldForward(GrainId grainId, int hopCount, string operationDescription)
         {
             SiloAddress owner = CalculateTargetSilo(grainId);
@@ -774,11 +757,6 @@ namespace Orleans.Runtime.GrainDirectory
                 cached.Select(elem => ActivationAddress.GetAddress(elem.Item1, grain, elem.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList() : 
                 null;
         }
-
-        /*public Task<Tuple<List<ActivationAddress>, int>> FullLookUp(GrainId gid, bool withRetry = true)
-        {
-            throw new NotImplementedException();
-        }*/
 
         public async Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount = 0)
         {
