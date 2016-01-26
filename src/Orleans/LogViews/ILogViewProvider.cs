@@ -22,12 +22,12 @@ namespace Orleans.LogViews
         /// Construct a log view adaptor to be installed in the given host grain.
         /// </summary>
         ILogViewAdaptor<TLogView, TLogEntry> MakeLogViewAdaptor<TLogView, TLogEntry>(
-            ILogViewAdaptorHost hostgrain,
+            ILogViewHost<TLogView, TLogEntry> hostgrain,
             TLogView initialstate,
             string graintypename,
             IProtocolServices services)
 
-            where TLogView : LogViewType<TLogEntry>, new()
+            where TLogView : class,new()
             where TLogEntry : class;
 
     }

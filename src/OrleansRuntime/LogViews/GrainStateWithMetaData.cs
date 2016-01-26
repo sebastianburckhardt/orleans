@@ -6,40 +6,78 @@ using System.Threading.Tasks;
 
 namespace Orleans.Runtime.LogViews
 {
+
     [Serializable]
-    public class GrainStateWithMetaData<TGrainState> : GrainState where TGrainState: GrainState,new()
+    public class GrainStateWithMetaDataAndETag<TView> : IGrainState where TView: class, new()
+    {
+        public GrainStateWithMetaData<TView> StateAndMetaData { get; set; }
+       
+        public string ETag { get; set; }
+
+        object IGrainState.State
+        {
+            get
+            {
+                return StateAndMetaData;
+            }
+            set
+            {
+                StateAndMetaData = (GrainStateWithMetaData<TView>) value;
+            }
+        }
+
+        public GrainStateWithMetaDataAndETag(TView initialview)
+        {
+            StateAndMetaData = new GrainStateWithMetaData<TView>(initialview);
+        }
+        public GrainStateWithMetaDataAndETag()
+        {
+            StateAndMetaData = new GrainStateWithMetaData<TView>();
+        }
+
+        public override string ToString()
+        {
+            return string.Format("v{0} Flags={1} ETag={2} Data={3}", StateAndMetaData.GlobalVersion, StateAndMetaData.WriteVector, ETag, StateAndMetaData.State);
+        }
+    }
+
+
+    [Serializable]
+    public class GrainStateWithMetaData<TView> where TView : class, new()
     {
         /// <summary>
-        /// The user-defined grain state
+        /// The stored view of the log
         /// </summary>
-        public TGrainState GrainState { get; set; }
+        public TView State { get; set; }
 
         /// <summary>
-        /// The length of the log.
+        /// The length of the log
         /// </summary>
-        public long GlobalVersion { get; set; }
+        public int GlobalVersion { get; set; }
+
 
         /// <summary>
-        /// Used to avoid duplicate commits.
+        /// Used to avoid duplicate appends.
         /// A string representing a bit vector, with one bit per replica. 
-        /// Bits are toggled when writing, so that the retry logic can avoid duplicating updates when retrying a failed update. 
+        /// Bits are toggled when writing, so that the retry logic can avoid appending an entry twice
+        /// when retrying a failed append. 
         /// </summary>
         public string WriteVector { get; set; }
 
         public GrainStateWithMetaData()
         {
-           GrainState = new TGrainState();
-           GlobalVersion = 0;
-           WriteVector = "";
-        }
-
-        public GrainStateWithMetaData(TGrainState initialstate)
-        {
-            this.GrainState = initialstate;
+            State = new TView();
             GlobalVersion = 0;
             WriteVector = "";
         }
-        
+
+        public GrainStateWithMetaData(TView initialstate)
+        {
+            this.State = initialstate;
+            GlobalVersion = 0;
+            WriteVector = "";
+        }
+
         // BitVector of replicas is implemented as a set of replica strings encoded within a string
         // The bitvector is represented as the set of replica ids whose bit is 1
         // This set is written as a string that contains the replica ids preceded by a comma each
@@ -53,7 +91,7 @@ namespace Orleans.Runtime.LogViews
         public bool ContainsBit(string Replica)
         {
             var pos = WriteVector.IndexOf(Replica);
-            return pos != -1 && WriteVector[pos-1] == ',';
+            return pos != -1 && WriteVector[pos - 1] == ',';
         }
 
         /// <summary>
@@ -79,46 +117,5 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
-
-        public override IDictionary<string, object> AsDictionary()
-        {
-            var dictionary = GrainState.AsDictionary();
-            dictionary.Add("GlobalVersion", GlobalVersion.ToString());
-            dictionary.Add("WriteVector", WriteVector);
-            return dictionary;
-        }
-
-        public override void SetAll(IDictionary<string, object> values)
-        {
-            if (values == null)
-            {
-                GlobalVersion = 0;
-                WriteVector = "";
-                GrainState.SetAll(null);
-            }
-            else
-            {
-                object versionstring;
-                if (values.TryGetValue("GlobalVersion", out  versionstring))
-                {
-                    GlobalVersion = long.Parse((string)versionstring);
-                    values.Remove("GlobalVersion");
-                }
-
-                object writevector;
-                if (values.TryGetValue("WriteVector", out  writevector))
-                {
-                    WriteVector = (string)writevector;
-                    values.Remove("WriteVector");
-                }
-
-                GrainState.SetAll(values);
-            }
-        }
-
-        public override string ToString()
-        {
-            return string.Format("v{0} Flags={1} Data={2}", GlobalVersion, WriteVector, GrainState);
-        }
     }
 }

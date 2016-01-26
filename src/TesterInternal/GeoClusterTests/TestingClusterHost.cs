@@ -81,7 +81,7 @@ namespace Tests.GeoClusterTests
                               ChannelType = Orleans.Runtime.Configuration.GlobalConfiguration.GossipChannelType.AzureTable,
                               ConnectionString = StorageTestConstants.DataConnectionString
                           }};
-
+                    
                     if (customizer != null)
                         customizer(config);
                 };
@@ -255,15 +255,29 @@ namespace Tests.GeoClusterTests
         {
             foreach (var silo in Clusters[from].Silos)
                 foreach (var dest in Clusters[to].Silos)
-                    silo.Silo.TestHookup.BlockSiloCommunication(dest.Endpoint, 100);
+                    silo.Silo.TestHook.BlockSiloCommunication(dest.Endpoint, 100);
         }
 
         public void UnblockAllClusterCommunication(string from)
         {
             foreach (var silo in Clusters[from].Silos)
-                    silo.Silo.TestHookup.UnblockSiloCommunication();
+                    silo.Silo.TestHook.UnblockSiloCommunication();
         }
 
+        public void BlockNotificationMessages(string origincluster)
+        {
+            var silos = Clusters[origincluster].Silos;
+            foreach (var silo in silos)
+                silo.Silo.TestHook.DropNotificationMessages = true;
+
+        }
+        public void UnblockNotificationMessages(string origincluster)
+        {
+            var silos = Clusters[origincluster].Silos;
+            foreach (var silo in silos)
+                silo.Silo.TestHook.DropNotificationMessages = false;
+
+        }
   
         private SiloHandle GetActiveSiloInClusterByName(string clusterId, string siloName)
         {

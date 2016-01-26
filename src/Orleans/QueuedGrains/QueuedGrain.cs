@@ -12,8 +12,10 @@ namespace Orleans.QueuedGrains
     /// <summary>
     /// Queued grain base class. 
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : LogViewGrain<TGrainState>, IProtocolParticipant, ILogViewAdaptorHost
-                                                          where TGrainState : QueuedGrainState<TGrainState>, new()
+    public abstract class QueuedGrain<TGrainState> : 
+        LogViewGrain<TGrainState>, IProtocolParticipant,
+        ILogViewAdaptorHost, ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>
+        where TGrainState : class,new()
     {
         protected QueuedGrain()
         { }
@@ -31,6 +33,15 @@ namespace Orleans.QueuedGrains
         }
 
 
+        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.TransitionView(TGrainState view, IUpdateOperation<TGrainState> entry)
+        {
+                entry.Update(view);
+        }
+
+        string ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.IdentityString
+        {
+            get { return Identity.IdentityString; }
+        }
 
         /// <summary>
         /// Notify log view adaptor of activation
@@ -90,6 +101,18 @@ namespace Orleans.QueuedGrains
 
 
         /// <summary>
+        /// Perform an update directly on the global state,
+        /// but only if the state has not been modified in the meantime already.
+        /// <param name="update">An object representing the update</param>
+        /// <returns>true if the update was successful, and false if the update failed due to conflicts.</returns>
+        /// </summary>
+        public Task<bool> TryConditionalUpdateAsync(IUpdateOperation<TGrainState> update)
+        {
+           return Adaptor.TryAppend(update);
+        }
+
+
+        /// <summary>
         /// Returns the current queue of unconfirmed updates.
         /// </summary>
         public IEnumerable<IUpdateOperation<TGrainState>> UnconfirmedUpdates
@@ -123,6 +146,14 @@ namespace Orleans.QueuedGrains
         public TGrainState ConfirmedState
         {
             get { return Adaptor.ConfirmedView; }
+        }
+
+        /// <summary>
+        /// The version of the last confirmed snapshot of the global state.
+        /// </summary>
+        public int ConfirmedVersion
+        {
+            get { return Adaptor.ConfirmedVersion; }
         }
 
         public bool SubscribeConfirmedStateListener(IViewListener listener)
@@ -160,6 +191,7 @@ namespace Orleans.QueuedGrains
 
 
 
+       
     }
      
 }

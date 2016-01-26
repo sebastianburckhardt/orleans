@@ -17,7 +17,7 @@ namespace TestGrains
             {
                 RaiseEvent(new PersonRegistered(props.FirstName, props.LastName, props.Gender));
 
-                return Commit();
+                return WaitForConfirmation();
             }
 
             return TaskDone.Done;
@@ -37,7 +37,7 @@ namespace TestGrains
                 RaiseEvent(new PersonLastNameChanged(spouseData.LastName));
             }
 
-            await Commit();
+            await WaitForConfirmation();
         }
 
         public Task ChangeLastName(string lastName)
@@ -49,7 +49,7 @@ namespace TestGrains
 
         public Task SaveChanges()
         {
-            return Commit();
+            return WaitForConfirmation();
         }
 
         public Task<PersonAttributes> GetPersonalAttributes()

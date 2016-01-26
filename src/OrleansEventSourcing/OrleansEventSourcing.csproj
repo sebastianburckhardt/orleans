@@ -47,6 +47,14 @@
     <Compile Include="..\Build\GlobalAssemblyInfo.cs">
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="EventStream.cs" />
+    <Compile Include="GrainJournaledStateStorageBridge.cs" />
+    <Compile Include="ICustomStreamName.cs" />
+    <Compile Include="IJournaledStorageProvider.cs" />
+    <Compile Include="JournaledGrain.cs" />
+    <Compile Include="JournaledStorageProvider.cs" />
+    <Compile Include="MemoryEventStore.cs" />
+    <Compile Include="OptimisticConcurrencyException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

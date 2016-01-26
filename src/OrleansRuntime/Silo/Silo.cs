@@ -73,7 +73,6 @@ namespace Orleans.Runtime
         private readonly MembershipFactory membershipFactory;
         private readonly MultiClusterOracleFactory multiClusterFactory;
         private StorageProviderManager storageProviderManager;
-        private JournaledStorageProviderManager journaledStorageProviderManager;
         private LogViewProviderManager logViewProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private BootstrapProviderManager bootstrapProviderManager;
@@ -109,7 +108,6 @@ namespace Orleans.Runtime
         internal IConsistentRingProvider RingProvider { get; private set; }
         internal ILogViewProviderManager LogViewProviderManager { get { return logViewProviderManager; } }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
-        internal IJournaledStorageProviderManager JournaledStorageProviderManager { get { return journaledStorageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
         internal ISiloPerformanceMetrics Metrics { get { return siloStatistics.MetricsTable; } }
@@ -136,9 +134,9 @@ namespace Orleans.Runtime
         public WaitHandle SiloTerminatedEvent { get { return siloTerminatedEvent; } } // one event for all types of termination (shutdown, stop and fast kill).
 
         /// <summary>
-        /// Test hookup connection for white-box testing of silo.
+        /// Test hook connection for white-box testing of silo.
         /// </summary>
-        public TestHookups TestHookup;
+        public TestHooks TestHook;
         
         /// <summary>
         /// Creates and initializes the silo from the specified config data.
@@ -331,7 +329,7 @@ namespace Orleans.Runtime
             StringValueStatistic.FindOrCreate(StatisticNames.SILO_START_TIME,
                 () => TraceLogger.PrintDate(startTime)); // this will help troubleshoot production deployment when looking at MDS logs.
 
-            TestHookup = new TestHookups(this);
+            TestHook = new TestHooks(this);
 
             logger.Info(ErrorCode.SiloInitializingFinished, "-------------- Started silo {0}, ConsistentHashCode {1:X} --------------", SiloAddress.ToLongString(), SiloAddress.GetConsistentHashCode());
         }
@@ -493,16 +491,6 @@ namespace Orleans.Runtime
             catalog.SetStorageManager(storageProviderManager);
             allSiloProviders.AddRange(storageProviderManager.GetProviders());
             if (logger.IsVerbose) { logger.Verbose("Storage provider manager created successfully."); }
-
-            // Initialize storage providers once we have a basic silo runtime environment operating
-            journaledStorageProviderManager = new JournaledStorageProviderManager(grainFactory, Services);
-            scheduler.QueueTask(
-                () => journaledStorageProviderManager.LoadStorageProviders(GlobalConfig.ProviderConfigurations),
-                providerManagerSystemTarget.SchedulingContext)
-                    .WaitWithThrow(initTimeout);
-            catalog.SetStorageManager(journaledStorageProviderManager);
-            allSiloProviders.AddRange(journaledStorageProviderManager.GetProviders());
-            if (logger.IsVerbose) { logger.Verbose("Journaled storage provider manager created successfully."); }
 
             // Initialize log view providers once we have a basic silo runtime environment operating
             logViewProviderManager = new LogViewProviderManager(grainFactory, Services, storageProviderManager);
@@ -779,7 +767,7 @@ namespace Orleans.Runtime
                 // Streams and Bootstrap - the order is less clear. Seems like Bootstrap may indirecly depend on Streams, but not the other way around.
                 // 8:
                 SafeExecute(() =>
-                {                
+                {
                     scheduler.QueueTask(() => statisticsProviderManager.CloseProviders(), providerManagerSystemTarget.SchedulingContext)
                             .WaitWithThrow(initTimeout);
                 });
@@ -869,7 +857,7 @@ namespace Orleans.Runtime
                     SystemStatus.Current = SystemStatus.Stopping;
                 }
 
-                if (!TestHookup.ExecuteFastKillInProcessExit) return;
+                if (!TestHook.ExecuteFastKillInProcessExit) return;
 
                 logger.Info(ErrorCode.SiloStopping, "Silo.HandleProcessExit() - starting to FastKill()");
                 FastKill();
@@ -881,13 +869,13 @@ namespace Orleans.Runtime
         }
 
         /// <summary>
-        /// Test hookup functions for white box testing.
+        /// Test hook functions for white box testing.
         /// </summary>
-        public class TestHookups : MarshalByRefObject
+        public class TestHooks : MarshalByRefObject
         {
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
-
+            
             internal IConsistentRingProvider ConsistentRingProvider
             {
                 get { return CheckReturnBoundaryReference("ring provider", silo.RingProvider); }
@@ -919,8 +907,8 @@ namespace Orleans.Runtime
             }
 
             internal Action<GrainId> Debug_OnDecideToCollectActivation { get; set; }
-            
-            internal TestHookups(Silo s)
+
+            internal TestHooks(Silo s)
             {
                 silo = s;
                 ExecuteFastKillInProcessExit = true;
@@ -1010,12 +998,16 @@ namespace Orleans.Runtime
                 if (SimulatedMessageLoss != null)
                 {
                     double blockedpercentage = 0.0;
-                    Silo.CurrentSilo.TestHookup.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
+                    Silo.CurrentSilo.TestHook.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
                     return (random.NextDouble() * 100 < blockedpercentage);
                 }
                 else
                     return false;
             }
+
+            // switch for dropping notification messages in log view protocols
+            internal bool DropNotificationMessages { get; set; }
+
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 

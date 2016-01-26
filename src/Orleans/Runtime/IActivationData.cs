@@ -16,7 +16,6 @@ namespace Orleans.Runtime
         ActivationAddress Address { get; }
         void DelayDeactivation(TimeSpan timeSpan);
         IStorageProvider StorageProvider { get; }
-        IJournaledStorageProvider JournaledStorageProvider { get; }
         IDisposable RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period);
     }
 }

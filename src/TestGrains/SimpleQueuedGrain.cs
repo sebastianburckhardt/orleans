@@ -34,7 +34,7 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
-    public class MyGrainState : QueuedGrainState<MyGrainState>
+    public class MyGrainState 
     {
         public int A { get; set; }
         public int B { get; set; }
@@ -102,6 +102,13 @@ namespace UnitTests.Grains
         {
             EnqueueUpdate(new UpdateA() { Val = x });
             await CurrentQueueHasDrained();
+        }
+
+        public async Task<Tuple<int, bool>> SetAConditional(int x)
+        {
+            int version = this.ConfirmedVersion;
+            bool success = await TryConditionalUpdateAsync(new UpdateA() { Val = x });
+            return new Tuple<int, bool>(version, success);
         }
 
         public Task SetALocal(int x)
@@ -179,6 +186,12 @@ namespace UnitTests.Grains
         {
             return SynchronizeNowAsync();
         }
+
+        public Task<int> GetConfirmedVersion()
+        {
+            return Task.FromResult(this.ConfirmedVersion);
+        }
+
 
         public Task Deactivate()
         {

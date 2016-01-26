@@ -42,8 +42,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventStores\IEventStore.cs" />
+    <Compile Include="EventStores\OptimisticConcurrencyException.cs" />
+    <Compile Include="EventStores\EventStoreBasedLogViewAdaptor.cs" />
     <Compile Include="LogViews\LocalMemoryProvider.cs" />
     <Compile Include="LogViews\SharedStorageProvider.cs" />
+    <Compile Include="EventStores\TaggedEvent.cs" />
     <Compile Include="Streams\Common\SimpleQueueCache.cs" />
     <Compile Include="Streams\Common\SimpleQueueCacheCursor.cs" />
     <Compile Include="Streams\Common\SimpleQueueAdapterCache.cs" />

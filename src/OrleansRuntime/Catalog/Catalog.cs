@@ -124,7 +124,6 @@ namespace Orleans.Runtime
         private readonly OrleansTaskScheduler scheduler;
         private readonly ActivationDirectory activations;
         private IStorageProviderManager storageProviderManager;
-        private IJournaledStorageProviderManager journaledStorageProviderManager;
         private ILogViewProviderManager logViewProviderManager;
         private Dispatcher dispatcher;
         private readonly TraceLogger logger;
@@ -195,11 +194,7 @@ namespace Orleans.Runtime
             storageProviderManager = storageManager;
         }
 
-        internal void SetStorageManager(IJournaledStorageProviderManager storageManager)
-        {
-            journaledStorageProviderManager = storageManager;
-        }
-
+      
         internal void SetLogViewManager(ILogViewProviderManager logViewManager)
         {
             logViewProviderManager = logViewManager;
@@ -645,15 +640,10 @@ namespace Orleans.Runtime
             grain.Data = data;
 
             Type stateObjectType = grainTypeData.StateObjectType;
-            GrainState state;
+            object state = null;
             if (stateObjectType != null)
             {
-                state = (GrainState)Activator.CreateInstance(stateObjectType);
-                state.InitState(null);
-            }
-            else
-            {
-                state = null;
+                state = Activator.CreateInstance(stateObjectType);
             }
 
             lock (data)
@@ -666,21 +656,12 @@ namespace Orleans.Runtime
                 if (grainTypeData.StorageInterface == StorageInterface.StorageBridge)  // Grain<T>
                 {
                     SetupStorageProvider(data, attr);
-                    data.GrainInstance.GrainState = state;
-                    data.GrainInstance.Storage = new GrainStateStorageBridge(data.GrainTypeName, data.GrainInstance, data.StorageProvider);
+                    var statefulGrain = grain as IStatefulGrain;
+                    statefulGrain.GrainState.State = state;
+                    statefulGrain.SetStorage(new GrainStateStorageBridge(data.GrainTypeName, statefulGrain, data.StorageProvider));
                 }
 
-                else if (grainTypeData.StorageInterface == StorageInterface.JournaledStorageBridge)  // JournaledGrain<T>
-                {
-                    SetupJournaledStorageProvider(data, attr);
-                    data.GrainInstance.GrainState = state;
-
-                    var bridgeType = typeof(GrainJournaledStateStorageBridge<>).MakeGenericType(stateObjectType);
-
-                    data.GrainInstance.Storage = Activator.CreateInstance(bridgeType, data.GrainTypeName, data.GrainInstance, data.JournaledStorageProvider) as IStorage;
-                }
-
-                else if (grainTypeData.StorageInterface == StorageInterface.LogViewAdaptor)  // QueuedGrain<T> 
+                else if (grainTypeData.StorageInterface == StorageInterface.LogViewAdaptor)  // JournaledGrain<T>,QueuedGrain<T> 
                 {
                     var logviewprovider = SetupLogViewProvider(data, attr);
                     var svc = new ProtocolServices(grain, logviewprovider);
@@ -731,36 +712,12 @@ namespace Orleans.Runtime
 
             return provider;
         }
-
-        private IJournaledStorageProvider SetupJournaledStorageProvider(ActivationData data, ProviderAttribute attr)
-        {
-            var grainTypeName = data.GrainInstanceType.FullName;
-
-            if (!(attr is JournaledStorageProviderAttribute))
-            {
-                var errMsg = string.Format("Unsupported provider attribute for grain {0}", grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogUnsupportedProviderAttribute, errMsg);
-                throw new BadProviderConfigException(errMsg);
-            }
-
-            var provider = FindJournaledStorageProvider(attr.ProviderName, grainTypeName);
-            data.JournaledStorageProvider = provider;
-
-            if (logger.IsVerbose2)
-            {
-                string msg = string.Format("Assigned storage provider with Name={0} to grain type {1}",
-                    attr.ProviderName, grainTypeName);
-                logger.Verbose2(ErrorCode.Provider_CatalogStorageProviderAllocated, msg);
-            }
-
-            return provider;
-        }
-
+ 
 
         private ILogViewProvider SetupLogViewProvider(ActivationData data, ProviderAttribute attr)
         {
             if (attr is StorageProviderAttribute)
-            {
+        {
                 SetupStorageProvider(data, attr);
                 return logViewProviderManager.WrapStorageProvider(data.StorageProvider);
             }
@@ -813,55 +770,38 @@ namespace Orleans.Runtime
                 throw new BadProviderConfigException(errMsg);
             }
 
-            // Look for MemoryStore provider as special case name
-            bool caseInsensitive = Constants.MEMORY_STORAGE_PROVIDER_NAME.Equals(storageProviderName, StringComparison.OrdinalIgnoreCase);
-            storageProviderManager.TryGetProvider(storageProviderName, out provider, caseInsensitive);
-            if (provider == null)
-            {
-                var errMsg = string.Format(
-                    "Cannot find storage provider with Name={0} for grain type {1}", storageProviderName,
-                    grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_2, errMsg);
-                throw new BadProviderConfigException(errMsg);
-            }
+                // Look for MemoryStore provider as special case name
+                bool caseInsensitive = Constants.MEMORY_STORAGE_PROVIDER_NAME.Equals(storageProviderName, StringComparison.OrdinalIgnoreCase);
+                storageProviderManager.TryGetProvider(storageProviderName, out provider, caseInsensitive);
+                if (provider == null)
+                {
+                    var errMsg = string.Format(
+                        "Cannot find storage provider with Name={0} for grain type {1}", storageProviderName,
+                        grainTypeName);
+                    logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_2, errMsg);
+                    throw new BadProviderConfigException(errMsg);
+                }
 
             return provider;
         }
 
 
-        private IJournaledStorageProvider FindJournaledStorageProvider(string storageProviderName, string grainTypeName)
-        {
-            IJournaledStorageProvider provider;
-            if (journaledStorageProviderManager == null || journaledStorageProviderManager.GetNumLoadedProviders() == 0)
-            {
-                var errMsg = string.Format("No journaled storage providers found loading grain type {0}", grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_1, errMsg);
-                throw new BadProviderConfigException(errMsg);
-            }
-
-            // Look for MemoryStore provider as special case name
-            bool caseInsensitive = Constants.MEMORY_STORAGE_PROVIDER_NAME.Equals(storageProviderName, StringComparison.OrdinalIgnoreCase);
-            journaledStorageProviderManager.TryGetProvider(storageProviderName, out provider, caseInsensitive);
-            if (provider == null)
-            {
-                var errMsg = string.Format(
-                    "Cannot find journaled storage provider with Name={0} for grain type {1}", storageProviderName,
-                    grainTypeName);
-                logger.Error(ErrorCode.Provider_CatalogNoStorageProvider_2, errMsg);
-                throw new BadProviderConfigException(errMsg);
-            }
-    
-            return provider;
-        }
-
-
+   
         private async Task SetupActivationState(ActivationData result, string grainType)
         {
-            var state = result.GrainInstance.GrainState;
+            var statefulGrain = result.GrainInstance as IStatefulGrain;
+            if (statefulGrain == null)
+            {
+                return;
+            }
+
+            var state = statefulGrain.GrainState;
 
             if (result.StorageProvider != null && state != null)
             {
                 var sw = Stopwatch.StartNew();
+                var innerState = statefulGrain.GrainState.State;
+
                 // Populate state data
                 try
                 {
@@ -873,7 +813,6 @@ namespace Orleans.Runtime
 
                     sw.Stop();
                     StorageStatisticsGroup.OnStorageActivate(result.StorageProvider, grainType, result.GrainReference, sw.Elapsed);
-                    result.GrainInstance.GrainState = state;
                 }
                 catch (Exception ex)
                 {
@@ -882,31 +821,7 @@ namespace Orleans.Runtime
                     if (!(ex.GetBaseException() is KeyNotFoundException))
                         throw;
 
-                    result.GrainInstance.GrainState = state; // Just keep original empty state object
-                }
-            }
-
-            if (result.JournaledStorageProvider != null && state != null)
-            {
-                var sw = Stopwatch.StartNew();
-                // Populate state data
-                try
-                {
-                    result.GrainInstance.GrainState = state;
-
-                    await scheduler.RunOrQueueTask(() =>
-                        result.GrainInstance.Storage.ReadStateAsync(),
-                        new SchedulingContext(result));
-
-                    sw.Stop();
-                    StorageStatisticsGroup.OnStorageActivate(result.JournaledStorageProvider, grainType, result.GrainReference, sw.Elapsed);
-                }
-                catch (Exception ex)
-                {
-                    StorageStatisticsGroup.OnStorageActivateError(result.JournaledStorageProvider, grainType, result.GrainReference);
-                    sw.Stop();
-                    if (!(ex.GetBaseException() is KeyNotFoundException))
-                        throw;
+                    statefulGrain.GrainState.State = innerState; // Just keep original empty state object
                 }
             }
         }

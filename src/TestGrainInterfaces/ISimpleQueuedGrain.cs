@@ -49,6 +49,10 @@ namespace UnitTests.GrainInterfaces
 
         Task<int[]> GetReservationsGlobal();
 
+        // version
+
+        Task<int> GetConfirmedVersion();
+
         #endregion
 
 
@@ -57,6 +61,8 @@ namespace UnitTests.GrainInterfaces
         // set or increment A
 
         Task SetAGlobal(int a);
+
+        Task<Tuple<int, bool>> SetAConditional(int a);
 
         Task SetALocal(int a);
 

@@ -2,6 +2,7 @@ using Orleans.Concurrency;
 using Orleans.MultiCluster;
 using Orleans.LogViews;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,17 +11,12 @@ namespace Orleans.EventSourcing
     /// <summary>
     /// The base class for all grain classes that have event-sourced state.
     /// </summary>
-    public abstract class JournaledGrain<TGrainState> : Grain, ILogViewAdaptorHost, IProtocolParticipant
-        where TGrainState : JournaledGrainState, new()
+    public abstract class JournaledGrain<TGrainState> :
+        LogViewGrain<TGrainState>, IProtocolParticipant,
+        ILogViewAdaptorHost, ILogViewHost<TGrainState, object>
+        where TGrainState : class,new()
     {
         protected JournaledGrain()  { }
-
-        private readonly List<object> unsubmittedEvents = new List<object>();
-
-        internal IReadOnlyCollection<object> UncommitedEvents
-        {
-            get { return this.unsubmittedEvents; }
-        }
 
         /// <summary>
         /// Raise an event.
@@ -32,118 +28,167 @@ namespace Orleans.EventSourcing
         {
             if (@event == null) throw new ArgumentNullException("event");
 
-            if (Adaptor != null)
-                Adaptor.Submit(@event);
-            else
-            {
-                this.unsubmittedEvents.Add(@event);
-                this.tentativeState.TransitionState(@event);
-            }
-        }
-
-        internal void CommitEvents()
-        {
-            foreach (dynamic @event in this.unsubmittedEvents)
-                this.ConfirmedState.TransitionState(@event);
-
-            this.unsubmittedEvents.Clear();
+            LogView.Submit(@event);
         }
 
         /// <summary>
-        /// Adaptor for storage interface (queued grain).
-        /// The storage keeps the journal.
+        /// Raise multiple events, as an atomic sequence.
         /// </summary>
-        internal ILogViewAdaptor<TGrainState,object> Adaptor { get; private set; }
+        /// <param name="event">Events to raise</param>
+        /// <returns></returns>
+        protected virtual void RaiseEvents<TEvent>(IEnumerable<TEvent> events)
+            where TEvent : class
+        {
+            if (events == null) throw new ArgumentNullException("events");
+
+            LogView.SubmitRange(events);
+        }
+
 
         /// <summary>
-        /// Called right after grain is constructed, to install the adaptor.
+        /// Raise an event conditionally. 
+        /// Succeeds only if there are no conflicts, that is, no other events were raised in the meantime.
         /// </summary>
-        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialState, string graintypename, IProtocolServices services)
+        /// <param name="event">Event to raise</param>
+        /// <returns>true if successful, false if there was a conflict.</returns>
+        protected virtual Task<bool> RaiseConditionalEvent<TEvent>(TEvent @event)
+            where TEvent : class
         {
-            var grainState = (TGrainState)initialState;
-            this.GrainState = grainState;
+            if (@event == null) throw new ArgumentNullException("event");
 
-            // call the replication provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeLogViewAdaptor<TGrainState,object>(this, grainState, graintypename, services);
+            return LogView.TryAppend(@event);
         }
 
-        private TGrainState tentativeState = new TGrainState();
 
-        protected internal TGrainState State
+        /// <summary>
+        /// Raise multiple events, as an atomic sequence, conditionally. 
+        /// Succeeds only if there are no conflicts, that is, no other events were raised in the meantime.
+        /// </summary>
+        /// <param name="event">Events to raise</param>
+        /// <returns>true if successful, false if there was a conflict.</returns>
+        protected virtual Task<bool> RaiseConditionalEvents<TEvent>(IEnumerable<TEvent> events)
+            where TEvent : class
         {
-            get
-            {
-                if (Adaptor != null)
-                    return this.Adaptor.TentativeView;
-                else
-                    return this.tentativeState;
-            }
+            if (events == null) throw new ArgumentNullException("events");
+
+            return LogView.TryAppendRange(events);
         }
 
-        protected internal TGrainState ConfirmedState
+        /// <summary>
+        /// Adaptor for log view provider.
+        /// The storage keeps the log and/or the latest state.
+        /// </summary>
+        internal ILogViewAdaptor<TGrainState,object> LogView { get; private set; }
+
+
+        /// <summary>
+        /// The current state (includes both confirmed and unconfirmed events).
+        /// </summary>
+        protected TGrainState State
         {
-            get
-            {
-                if (Adaptor != null)
-                    return this.Adaptor.ConfirmedView;
-                else
-                    return base.GrainState as TGrainState;
-            }
+            get { return this.LogView.TentativeView; }
+        }
+
+        /// <summary>
+        /// The version of the tentative state.
+        /// Always equal to the confirmed version plus the number of unconfirmed events.
+        /// </summary>
+        protected int TentativeVersion 
+        {
+            get { return this.LogView.ConfirmedVersion + this.LogView.UnconfirmedSuffix.Count(); }
+        }
+
+        /// <summary>
+        /// The current confirmed state (includes only confirmed events).
+        /// </summary>
+        protected TGrainState ConfirmedState
+        {
+            get { return this.LogView.ConfirmedView; }
         }
         
         /// <summary>
+        /// The version of the confirmed state.
+        /// Always equal to the number of confirmed events.
+        /// </summary>
+        protected int ConfirmedVersion 
+        {
+            get { return this.LogView.ConfirmedVersion; }
+        }
+
+               /// <summary>
         /// Waits until all previously raised events have been written. 
         /// </summary>
         /// <returns></returns>
-        protected Task Commit()
+        protected Task WaitForConfirmationOfEvents()
         {
-            if (Adaptor != null)
-                return Adaptor.ConfirmSubmittedEntriesAsync();
-            else
-                return this.Storage.WriteStateAsync();
+           return LogView.ConfirmSubmittedEntriesAsync();
+             
         }
 
         /// <summary>
         /// Retrieves all events now. 
         /// </summary>
         /// <returns></returns>
-        //protected Task FetchAllEventsNow()
-        //{
-        //    return Adaptor.SynchronizeNowAsync();
-        //}
+        protected Task FetchAllEventsNow()
+        {
+            return LogView.SynchronizeNowAsync();
+        }
 
+
+        /// <summary>
+        /// Override this for custom ways of transitioning the state.
+        /// All exceptions thrown by this method are caught and logged by the log view provider.
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="event"></param>
+        protected virtual void TransitionState(TGrainState state, object @event)
+        {
+            dynamic x = state;
+            x.Apply(@event);
+        }
+
+
+    
 
         #region Adaptor Hookup
 
         /// <summary>
-        /// Notify replication adaptor of activation
+        /// Called right after grain is constructed, to install the adaptor.
         /// </summary>
-        Task IProtocolParticipant.ActivateProtocolParticipant()
+        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialState, string graintypename, IProtocolServices services)
         {
-            return Adaptor == null ? TaskDone.Done : Adaptor.Activate();
+            // call the replication provider to construct the adaptor, passing the type argument
+            LogView = provider.MakeLogViewAdaptor<TGrainState, object>(this, (TGrainState)initialState, graintypename, services);            
+        }
+        
+        void ILogViewHost<TGrainState, object>.TransitionView(TGrainState view, object entry)
+        {
+            TransitionState(view, entry);
         }
 
-        /// <summary>
-        /// Notify replication adaptor of deactivation
-        /// </summary>
+        async Task IProtocolParticipant.ActivateProtocolParticipant()
+        {
+            await LogView.Activate();
+
+            // we always wait for the initial load
+            await LogView.SynchronizeNowAsync();
+        }
+
         Task IProtocolParticipant.DeactivateProtocolParticipant()
         {
-            return Adaptor == null ? TaskDone.Done : Adaptor.Deactivate();
+            return LogView.Deactivate();
         }
-
-        /// <summary>
-        /// Receive a message from other replicas, pass on to replication adaptor.
-        /// </summary>
+ 
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
         {
-            return Adaptor == null ? Task.FromResult(payload) : Adaptor.OnProtocolMessageReceived(payload);
+            return LogView.OnProtocolMessageReceived(payload);
         }
-
+    
         [AlwaysInterleave]
         Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
         {
-            return Adaptor == null ? TaskDone.Done : Adaptor.OnMultiClusterConfigurationChange(next);
+            return LogView.OnMultiClusterConfigurationChange(next);
         }
 
         #endregion

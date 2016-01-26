@@ -45,46 +45,51 @@ namespace Orleans.Providers.LogViews
             return TaskDone.Done;
         }
 
-        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewAdaptorHost hostgrain, TView initialstate, string graintypename, IProtocolServices services)
-            where TView : LogViewType<TEntry>, new()
+        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView,TEntry> hostgrain, TView initialstate, string graintypename, IProtocolServices services)
+            where TView : class, new()
             where TEntry : class
         {
             return new MemoryLogViewAdaptor<TView, TEntry>(hostgrain, this, initialstate, services);
         }
     }
 
-    public class MemoryLogViewAdaptor<TView, TEntry> : PrimaryBasedLogViewAdaptor<TView, TEntry, TEntry>
-        where TView : LogViewType<TEntry>, new()
+    public class MemoryLogViewAdaptor<TView, TEntry> : PrimaryBasedLogViewAdaptor<TView, TEntry, SubmissionEntry<TEntry>>
+        where TView : class, new()
         where TEntry : class
     {
         // the latest log view is simply stored here, in memory
         TView GlobalSnapshot;
+        int GlobalVersion;
 
-        public MemoryLogViewAdaptor(ILogViewAdaptorHost host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
+        public MemoryLogViewAdaptor(ILogViewHost<TView, TEntry> host, ILogViewProvider provider, TView initialstate, IProtocolServices services)
             : base(host, provider, initialstate, services)
         {
             GlobalSnapshot = initialstate;
+            GlobalVersion = 0;
         }
 
         TView LocalSnapshot;
+        int LocalVersion;
 
-        // no tagging is required, thus the following two are identity functions
-        protected override TEntry TagEntry(TEntry entry)
+        // no special tagging is required, thus we create a plain submission entry
+        protected override SubmissionEntry<TEntry> MakeSubmissionEntry(TEntry entry)
         {
-            return entry;
+            return new SubmissionEntry<TEntry>() { Entry = entry };
         }
-        protected override TEntry UntagEntry(TEntry taggedentry)
-        {
-            return taggedentry;
-        }
-
+      
+ 
         protected override TView LastConfirmedView()
         {
             return LocalSnapshot;
         }
+        protected override int GetConfirmedVersion()
+        {
+            return LocalVersion; 
+        }
         protected override void InitializeConfirmedView(TView initialstate)
         {
             LocalSnapshot = initialstate;
+            LocalVersion = 0;
         }
        
         protected override async Task ReadAsync()
@@ -93,6 +98,7 @@ namespace Orleans.Providers.LogViews
             //await Task.Delay(5000);
             await Task.Delay(1);
             LocalSnapshot = GlobalSnapshot;
+            LocalVersion = GlobalVersion;
         }
 
         /// <summary>
@@ -100,29 +106,34 @@ namespace Orleans.Providers.LogViews
         /// </summary>
         /// <param name="updates"></param>
         /// <returns></returns>
-        protected override async Task<WriteResult> WriteAsync()
+        protected override async Task<int> WriteAsync()
         {
             Trace.TraceInformation("WriteAsync");
 
-            var updates = CopyListOfUpdates();
+            var updates = GetCurrentBatchOfUpdates();
 
             foreach (var u in updates)
+            {
                 try
                 {
-                    GlobalSnapshot.TransitionView(u);
+                    Host.TransitionView(GlobalSnapshot, u.Entry);
                 }
-                catch
+                catch (Exception e)
                 {
-                    //TODO trace
+                    Services.CaughtTransitionException("MemoryLogViewAdaptor.WriteAsync", e);
                 }
+
+                GlobalVersion++;
+            }
+
            // await Task.Delay(5000);
             await Task.Delay(1);
 
-            return new WriteResult()
-            {
-                NumUpdatesWritten = updates.Count,
-                NotificationMessage = new NotificationMessage()
-            };
+            LocalSnapshot = GlobalSnapshot;
+            LocalVersion = GlobalVersion;
+
+            NotifyPromises(updates.Length, true);
+            return updates.Length;
         }
 
     

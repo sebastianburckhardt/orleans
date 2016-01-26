@@ -54,6 +54,7 @@ namespace Tester.GeoClusterTests
         private static ClientWrapper Client0;
         private static ClientWrapper Client1;
 
+
         [ClassInitialize]
         public static void SetupMultiCluster(TestContext c)
         {
@@ -62,15 +63,11 @@ namespace Tester.GeoClusterTests
             // use a random global service id for testing purposes
             var globalserviceid = "testservice" + new Random().Next();
 
-            // configure replication providers
-            Action<ClusterConfiguration> configurationcustomizer = ReplicationProviderConfiguration.Adjust;
-
-
             host = new TestingClusterHost();
 
             // Create two clusters, each with 2 silos. 
-            host.NewGeoCluster(globalserviceid, Cluster0, 2, configurationcustomizer);
-            host.NewGeoCluster(globalserviceid, Cluster1, 2, configurationcustomizer);
+            host.NewGeoCluster(globalserviceid, Cluster0, 2, ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting);
+            host.NewGeoCluster(globalserviceid, Cluster1, 2, ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting);
 
             TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
@@ -123,6 +120,12 @@ namespace Tester.GeoClusterTests
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleQueuedGrain>(i, grainclass);
                 grainRef.SetAGlobal(a).Wait();
+            }
+
+            public Tuple<int,bool> SetAConditional(string grainclass, int i, int a)
+            {
+                var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleQueuedGrain>(i, grainclass);
+                return grainRef.SetAConditional(a).Result;
             }
 
             public void IncrementAGlobal(string grainclass, int i)
@@ -190,6 +193,12 @@ namespace Tester.GeoClusterTests
             }
             IManagementGrain systemManagement;
 
+            public long GetConfirmedVersion(string grainclass, int i)
+            {
+                var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleQueuedGrain>(i, grainclass);
+                return grainRef.GetConfirmedVersion().Result;
+            }
+
         }
 
         #endregion
@@ -222,51 +231,68 @@ namespace Tester.GeoClusterTests
              Func<Task> checker1 = () => Task.Run(() =>
             {
                 int x = GetRandom();
+                var grainidentity = string.Format("grainref={0}", Client0.GetGrainRef(grainClass, x));
                 // force creation of replicas
-                Assert.AreEqual(0, Client0.GetALocal(grainClass, x));
-                Assert.AreEqual(0, Client1.GetALocal(grainClass, x));
+                Assert.AreEqual(0, Client0.GetALocal(grainClass, x), grainidentity);
+                Assert.AreEqual(0, Client1.GetALocal(grainClass, x), grainidentity);
                 // write global on client 0
                 Client0.SetAGlobal(grainClass, x, 333);
                 // read global on client 1
                 int r = Client1.GetAGlobal(grainClass, x);
-                Assert.AreEqual(333, r, "grainref={0}", Client0.GetGrainRef(grainClass, x));
+                Assert.AreEqual(333, r, grainidentity);
                 // check local stability
-                Assert.AreEqual(333, Client0.GetALocal(grainClass, x), "grainref={0}", Client0.GetGrainRef(grainClass, x));
-                Assert.AreEqual(333, Client1.GetALocal(grainClass, x), "grainref={0}", Client0.GetGrainRef(grainClass, x));
+                Assert.AreEqual(333, Client0.GetALocal(grainClass, x), grainidentity);
+                Assert.AreEqual(333, Client1.GetALocal(grainClass, x), grainidentity);
+                // check versions
+                Assert.AreEqual(1, Client0.GetConfirmedVersion(grainClass, x), grainidentity);
+                Assert.AreEqual(1, Client1.GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<Task> checker2 = () => Task.Run(() =>
             {
                 int x = GetRandom();
+                var grainidentity = string.Format("grainref={0}", Client0.GetGrainRef(grainClass, x));
                 // increment on replica 1
                 Client1.IncrementAGlobal(grainClass, x);
                 // expect on replica 0
                 int r = Client0.GetAGlobal(grainClass, x);
-                Assert.AreEqual(1, r);
+                Assert.AreEqual(1, r, grainidentity);
+                // check versions
+                Assert.AreEqual(1, Client0.GetConfirmedVersion(grainClass, x), grainidentity);
+                Assert.AreEqual(1, Client1.GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<Task> checker2b = () => Task.Run(() =>
             {
                 int x = GetRandom();
+                var grainidentity = string.Format("grainref={0}", Client0.GetGrainRef(grainClass, x));
                 // force creation on replica 0
-                Assert.AreEqual(0, Client0.GetAGlobal(grainClass, x));
+                Assert.AreEqual(0, Client0.GetAGlobal(grainClass, x), grainidentity);
                 // increment on replica 1
                 Client1.IncrementAGlobal(grainClass, x);
                 // expect on replica 0
                 int r = Client0.GetAGlobal(grainClass, x);
-                Assert.AreEqual(1, r, "grainref={0}", Client0.GetGrainRef(grainClass, x));
+                Assert.AreEqual(1, r, grainidentity);
+                // check versions
+                Assert.AreEqual(1, Client0.GetConfirmedVersion(grainClass, x), grainidentity);
+                Assert.AreEqual(1, Client1.GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<int,Task> checker3 = (int numupdates) => Task.Run(() =>
             {
                 int x = GetRandom();
+                var grainidentity = string.Format("grainref={0}", Client0.GetGrainRef(grainClass, x));
 
                 // concurrently chaotically increment (numupdates) times
                 Parallel.For(0, numupdates, i => (i % 2 == 0 ? Client0 : Client1).IncrementALocal(grainClass, x));
 
                 Client0.Synchronize(grainClass, x); // push all changes
-                Assert.AreEqual(numupdates, Client1.GetAGlobal(grainClass, x), "grainref={0}", Client0.GetGrainRef(grainClass, x)); // push & get all
-                Assert.AreEqual(numupdates, Client0.GetAGlobal(grainClass, x), "grainref={0}", Client0.GetGrainRef(grainClass, x)); // get all
+                Assert.AreEqual(numupdates, Client1.GetAGlobal(grainClass, x), grainidentity); // push & get all
+                Assert.AreEqual(numupdates, Client0.GetAGlobal(grainClass, x), grainidentity); // get all
+
+                // check versions
+                Assert.AreEqual(numupdates, Client0.GetConfirmedVersion(grainClass, x), grainidentity);
+                Assert.AreEqual(numupdates, Client1.GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<Task> checker4 = () => Task.Run(() =>
@@ -333,6 +359,58 @@ namespace Tester.GeoClusterTests
                 Assert.AreEqual(true, done, "checker6({0}): update did not propagate within 20 sec", preload);
             };
 
+            Func<int,Task> checker7 = (int variation) => Task.Run(() =>
+            {
+                int x = GetRandom();
+
+                if (variation % 2 == 0)
+                    Client1.GetAGlobal(grainClass, x);
+                if ((variation / 2) % 2 == 0)
+                    Client0.GetAGlobal(grainClass, x);
+
+                var grainidentity = string.Format("grainref={0}", Client0.GetGrainRef(grainClass, x));
+
+                // write conditional on client 0, should always succeed
+                {
+                    var result = Client0.SetAConditional(grainClass, x, 333);
+                    Assert.AreEqual(0, result.Item1, grainidentity);
+                    Assert.AreEqual(true, result.Item2, grainidentity);
+                    Assert.AreEqual(1, Client0.GetConfirmedVersion(grainClass, x), grainidentity);
+                }
+
+                if ((variation / 4) % 2 == 1)
+                    System.Threading.Thread.Sleep(100);
+
+                // write conditional on client1, may or may not succeed based on timing
+                {
+                    var result = Client1.SetAConditional(grainClass, x, 444);
+                    if (result.Item1 == 0) // was stale, thus failed
+                    {
+                        Assert.AreEqual(false, result.Item2, grainidentity);
+                        // must have updated as a result
+                        Assert.AreEqual(1, Client1.GetConfirmedVersion(grainClass, x), grainidentity);
+                        // check stability
+                        Assert.AreEqual(333, Client0.GetALocal(grainClass, x), grainidentity);
+                        Assert.AreEqual(333, Client1.GetALocal(grainClass, x), grainidentity);
+                        Assert.AreEqual(333, Client0.GetAGlobal(grainClass, x), grainidentity);
+                        Assert.AreEqual(333, Client1.GetAGlobal(grainClass, x), grainidentity);
+                    }
+                    else // was up-to-date, thus succeeded
+                    {
+                        Assert.AreEqual(true, result.Item2, grainidentity);
+                        Assert.AreEqual(1, result.Item1, grainidentity);
+                        // version is now 2
+                        Assert.AreEqual(2, Client1.GetConfirmedVersion(grainClass, x), grainidentity);
+                        // check stability
+                        Assert.AreEqual(444, Client1.GetALocal(grainClass, x), grainidentity);
+                        Assert.AreEqual(444, Client0.GetAGlobal(grainClass, x), grainidentity);
+                        Assert.AreEqual(444, Client1.GetAGlobal(grainClass, x), grainidentity);
+                    }
+                }
+            });
+
+ 
+
             // first, run short ones in sequence
             await checker1();
             await checker2();
@@ -346,6 +424,19 @@ namespace Tester.GeoClusterTests
             await checker6(1);
             await checker6(2);
             await checker6(3);
+
+            await checker7(0);
+            await checker7(4);
+            await checker7(7);
+
+            // run tests under blocked notification to force race one way
+            host.BlockNotificationMessages(Cluster0);
+            await checker7(0);
+            await checker7(1);
+            await checker7(2);
+            await checker7(3);
+            host.UnblockNotificationMessages(Cluster0);
+
 
             // then, run slightly longer tests
             if (phases != 0)
@@ -368,6 +459,14 @@ namespace Tester.GeoClusterTests
                 tasks.Add(checker6(1));
                 tasks.Add(checker6(2));
                 tasks.Add(checker6(3));
+                tasks.Add(checker7(0));
+                tasks.Add(checker7(1));
+                tasks.Add(checker7(2));
+                tasks.Add(checker7(3));
+                tasks.Add(checker7(4));
+                tasks.Add(checker7(5));
+                tasks.Add(checker7(6));
+                tasks.Add(checker7(7));
             }
             await Task.WhenAll(tasks);
         }
