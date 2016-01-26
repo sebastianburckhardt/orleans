@@ -217,7 +217,7 @@ namespace Orleans.Runtime.LogViews
         // called at beginning of WriteAsync to the current batch of updates
         protected TSubmissionEntry[] GetCurrentBatchOfUpdates()
         {
-            return pending.Where(uh => true).ToArray(); // must use a copy
+            return pending.ToArray(); // must use a copy
         }
         // called at beginning of WriteAsync to get current number of pending updates
         protected int GetNumberPendingUpdates()
@@ -629,6 +629,9 @@ namespace Orleans.Runtime.LogViews
                     // if the batch write failed due to conflicts, retry.
                     if (writeresult == 0)
                         continue;
+
+                    // notify waiting promises of the success of conditional updates
+                    NotifyPromises(writeresult, true);
 
                     // record stabilization time, for statistics
                     if (stats != null)
