@@ -419,7 +419,7 @@ namespace Orleans.Runtime
                 {
                     // special case for Membership grain.
                     placement = SystemPlacement.Singleton;
-                    activationStrategy = MultiClusterRegistrationStrategy.GetDefault();
+                    activationStrategy = ClusterLocalRegistration.Singleton;
                 }
 
                 if (newPlacement && !SiloStatusOracle.CurrentStatus.IsTerminating())
