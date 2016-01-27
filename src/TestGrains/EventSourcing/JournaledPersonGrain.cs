@@ -91,5 +91,11 @@ namespace TestGrains
         {
             return string.Concat(this.GetType().Name, "-", this.GetPrimaryKey().ToString());
         }
+
+        protected override void TransitionState(PersonState state, object @event)
+        {
+            dynamic e = @event;
+            state.Apply(e);
+        }
     }
 }
