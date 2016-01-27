@@ -12,6 +12,7 @@ namespace Orleans.Runtime.Management
     /// <summary>
     /// Implementation class for the Orleans management grain.
     /// </summary>
+    [OneInstancePerCluster]
     internal class ManagementGrain : Grain, IManagementGrain
     {
         private Logger logger;
