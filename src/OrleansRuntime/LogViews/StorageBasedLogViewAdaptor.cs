@@ -229,7 +229,6 @@ namespace Orleans.Runtime.LogViews
             if (!batchsuccessfullywritten)
                 return 0;
 
-            NotifyPromises(updates.Length, true);
             return updates.Length;
         }
     

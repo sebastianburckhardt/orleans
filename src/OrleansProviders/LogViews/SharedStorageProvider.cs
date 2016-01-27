@@ -21,7 +21,7 @@ namespace Orleans.Providers.LogViews
     /// metadata (the log position, and write flags) are stored in the primary. 
     /// </para>
     /// </summary>
-    public class StoredViewProvider : ILogViewProvider
+    public class SharedStorageProvider : ILogViewProvider
     {
         public string Name { get; private set; }
 
