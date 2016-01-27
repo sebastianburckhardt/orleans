@@ -419,7 +419,7 @@ namespace Orleans.Runtime
                 {
                     // special case for Membership grain.
                     placement = SystemPlacement.Singleton;
-                    activationStrategy = MultiClusterRegistrationStrategy.GetDefault();
+                    activationStrategy = ClusterLocalRegistration.Singleton;
                 }
 
                 if (newPlacement && !SiloStatusOracle.CurrentStatus.IsTerminating())
@@ -1153,7 +1153,7 @@ namespace Orleans.Runtime
 
             if (singleActivationMode)
             {
-                var result = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, true), this.SchedulingContext);
+                var result = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, singleActivation:true), this.SchedulingContext);
                 if (address.Equals(result.Address)) return;
                
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
