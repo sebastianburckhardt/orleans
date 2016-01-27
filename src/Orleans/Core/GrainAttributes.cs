@@ -92,6 +92,7 @@ namespace Orleans
         /// <summary>
         /// base class for multi cluster registration strategies.
         /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
         public abstract class RegistrationAttribute : Attribute
         {
             internal MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
@@ -105,7 +106,6 @@ namespace Orleans
         /// <summary>
         /// This attribute indicates that instances of the marked grain class will have a single instance across all available clusters. Any requests in any clusters will be forwarded to the single activation instance.
         /// </summary>
-        [AttributeUsage(AttributeTargets.Class)]
         public class GlobalSingleInstanceAttribute : RegistrationAttribute
         {
             public GlobalSingleInstanceAttribute()
@@ -117,10 +117,8 @@ namespace Orleans
         /// <summary>
         /// This attribute indicates that instances of the marked grain class
         /// will have an independent instance for each cluster with 
-        /// no coordination. This is the default, so no need to explicitly specify this attributes 
-        /// for grains.
+        /// no coordination. 
         /// </summary>
-        [AttributeUsage(AttributeTargets.Class)]
         public class OneInstancePerClusterAttribute : RegistrationAttribute
         {
             public OneInstancePerClusterAttribute()

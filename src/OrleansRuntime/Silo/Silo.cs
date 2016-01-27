@@ -179,7 +179,7 @@ namespace Orleans.Runtime
                 TraceLogger.Initialize(nodeConfig);
 
             config.OnConfigChange("Defaults/Tracing", () => TraceLogger.Initialize(nodeConfig, true), false);
-            MultiClusterRegistrationStrategy.Initialize();
+            MultiClusterRegistrationStrategy.Initialize(config.Globals);
             ActivationData.Init(config, nodeConfig);
             StatisticsCollector.Initialize(nodeConfig);
             
