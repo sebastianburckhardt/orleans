@@ -91,7 +91,7 @@ namespace Orleans.Runtime.LogViews
         /// <returns></returns>
         protected virtual void OnNotificationReceived(NotificationMessage payload)
         {
-            // by default, do a refresh if version is larger than current
+            // record latest version we are told
             CreateNotificationTrackerIfNeeded();
             if (notificationtracker.lastversionreceived < payload.Version)
                  notificationtracker.lastversionreceived = payload.Version;
@@ -104,7 +104,8 @@ namespace Orleans.Runtime.LogViews
         /// <returns></returns>
         protected virtual void ProcessNotifications()
         {
-             // do nothing by default - need_refresh takes care of it
+            if (notificationtracker != null && notificationtracker.lastversionreceived > GetConfirmedVersion())
+                need_refresh = true;
         }
 
         /// <summary>
@@ -119,7 +120,6 @@ namespace Orleans.Runtime.LogViews
             return TaskDone.Done;
         }
 
-
         /// <summary>
         /// The grain that is using this adaptor
         /// </summary>
@@ -129,8 +129,6 @@ namespace Orleans.Runtime.LogViews
 
         protected MultiClusterConfiguration Configuration { get; set; }
 
-
-        protected List<IViewListener> listeners = new List<IViewListener>();
 
         protected ILogViewProvider Provider;
 
@@ -188,7 +186,6 @@ namespace Orleans.Runtime.LogViews
         {
             Services.Verbose2("Deactivation Started");
 
-            listeners.Clear();
             await worker.WaitForQuiescence();
             if (Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
             {
@@ -301,7 +298,6 @@ namespace Orleans.Runtime.LogViews
             Services.Verbose2("SubmitRange");
 
             var time = DateTime.UtcNow;
-            var pos = GetConfirmedVersion() + pending.Count;
 
             foreach (var e in logentries)
                 SubmitInternal(time, e);
@@ -371,6 +367,8 @@ namespace Orleans.Runtime.LogViews
                      Services.CaughtTransitionException("PrimaryBasedLogViewAdaptor.SubmitInternal", e);
                  }
              }
+
+             Host.OnViewChanged(true, false);
          }
 
         public TLogView TentativeView
@@ -385,16 +383,6 @@ namespace Orleans.Runtime.LogViews
 
                 return TentativeStateInternal;
             }
-        }
-
-
-        protected void ConfirmedStateChanged()
-        {
-            // invalidate tentative state - it is lazily recomputed
-            TentativeStateInternal = null;
-
-            // set flag to notify listeners
-            ConfirmedStateHasChanged = true;
         }
 
     
@@ -535,8 +523,6 @@ namespace Orleans.Runtime.LogViews
             return stats;
         }
 
-        private bool ConfirmedStateHasChanged;
-
 
         private void CalculateTentativeState()
         {
@@ -555,19 +541,22 @@ namespace Orleans.Runtime.LogViews
                 }
         }
 
+
         /// <summary>
         /// Background worker performs reads from and writes to global state.
         /// </summary>
         /// <returns></returns>
         internal async Task Work()
         {
+            var version = GetConfirmedVersion();
+
+            ProcessNotifications();
+
+            NotifyViewChanges(ref version);
 
             bool have_to_write = (pending.Count != 0);
 
-            bool have_to_read =
-                need_initial_read
-                || (need_refresh && !have_to_write)
-                || (notificationtracker != null && notificationtracker.lastversionreceived > GetConfirmedVersion());
+            bool have_to_read = need_initial_read || (need_refresh && !have_to_write);
 
             Services.Verbose("WorkerCycle Start htr={0} htw={1}", have_to_read, have_to_write);
 
@@ -576,9 +565,9 @@ namespace Orleans.Runtime.LogViews
                 need_refresh = need_initial_read = false; // retrieving fresh version
 
                 await ReadAsync();
-            }
 
-            ProcessNotifications();
+                NotifyViewChanges(ref version);
+            }
 
             if (have_to_write)
             {
@@ -592,13 +581,6 @@ namespace Orleans.Runtime.LogViews
             if (notificationtracker != null)
                 RetryFailedMessages();
 
-            // notify local listeners
-            if (ConfirmedStateHasChanged)
-            {
-                ConfirmedStateHasChanged = false;
-                foreach (var l in listeners)
-                    l.OnViewChanged(GetConfirmedVersion());
-            }
 
             Services.Verbose("WorkerCycle Done");
         }
@@ -613,6 +595,8 @@ namespace Orleans.Runtime.LogViews
         /// <returns></returns>
         internal async Task UpdatePrimary()
         {
+            int version = GetConfirmedVersion();
+
             while (true)
             {
                 try
@@ -626,9 +610,13 @@ namespace Orleans.Runtime.LogViews
                     // try to write the updates as a batch
                     var writeresult = await WriteAsync();
 
+                    NotifyViewChanges(ref version, writeresult);
+
                     // if the batch write failed due to conflicts, retry.
                     if (writeresult == 0)
                         continue;
+
+                    Host.OnViewChanged(false, true);
 
                     // notify waiting promises of the success of conditional updates
                     NotifyPromises(writeresult, true);
@@ -656,6 +644,19 @@ namespace Orleans.Runtime.LogViews
                     // retry again
                     continue;
                 }
+            }
+        }
+
+        private void NotifyViewChanges(ref int version, int numwritten = 0)
+        {
+            var v = GetConfirmedVersion();
+            bool tentativechanged = (v != version + numwritten);
+            bool confirmedchanged = (v != version);
+            if (tentativechanged || confirmedchanged)
+            {
+                TentativeStateInternal = null; // conservative.
+                Host.OnViewChanged(tentativechanged, confirmedchanged);
+                version = v;
             }
         }
 
@@ -716,24 +717,6 @@ namespace Orleans.Runtime.LogViews
         }
     
 
-        public bool SubscribeViewListener(IViewListener listener)
-        {
-            if (listeners.Contains(listener))
-            {
-                return false;
-            }
-            else
-            {
-                listeners.Add(listener);
-            }
-            return true;
-        }
-
-        public bool UnSubscribeViewListener(IViewListener listener)
-        {
-            return listeners.Remove(listener);
-        }
-
 
         /// <summary>
         /// send failure notifications
@@ -755,6 +738,7 @@ namespace Orleans.Runtime.LogViews
         {
             int pos = 0;
             int version = GetConfirmedVersion();
+            bool removedsome = false;
 
             while (pos < pending.Count)
             {
@@ -763,11 +747,18 @@ namespace Orleans.Runtime.LogViews
                     && submissionentry.ConditionalPosition != (version + pos))
                 {
                     pending.RemoveAt(pos); // expect this rarely to be perf issue since conditional updates are usually not batched
+                    removedsome = true;
                     if (submissionentry.ResultPromise != null)
                         submissionentry.ResultPromise.SetResult(false);
                 }
                 else
                     pos++;
+            }
+
+            if (removedsome)
+            {
+                TentativeStateInternal = null;
+                Host.OnViewChanged(true, false);
             }
         }
 

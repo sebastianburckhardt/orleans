@@ -78,8 +78,6 @@ namespace Orleans.Runtime.LogViews
 
                     LastExceptionInternal = null;
                     
-                    ConfirmedStateChanged(); // confirmed state has changed
-
                     Services.Verbose("read success {0}", GlobalStateCache);
 
                     break; // successful
@@ -150,11 +148,10 @@ namespace Orleans.Runtime.LogViews
 
                 batchsuccessfullywritten = true;
 
-                Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
-
                 GlobalStateCache = nextglobalstate;
 
-                ConfirmedStateChanged(); // confirmed state has changed
+                Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
+
             }
             catch (Exception e)
             {
@@ -185,8 +182,6 @@ namespace Orleans.Runtime.LogViews
 
                         Services.Verbose("read success {0}", GlobalStateCache);
 
-                        ConfirmedStateChanged(); // confirmed state has changed
-
                         break;
                     }
                     catch (Exception e)
@@ -204,8 +199,6 @@ namespace Orleans.Runtime.LogViews
                 if (writebit == GlobalStateCache.StateAndMetaData.ContainsBit(Services.MyClusterId))
                 {
                     GlobalStateCache = nextglobalstate;
-
-                    ConfirmedStateChanged(); // confirmed state has changed
 
                     Services.Verbose("last write ({0} updates) was actually a success {1}", updates.Length, GlobalStateCache);
 
@@ -291,8 +284,6 @@ namespace Orleans.Runtime.LogViews
                 GlobalStateCache.StateAndMetaData.ToggleBit(updatenotification.Origin);
 
                 GlobalStateCache.ETag = updatenotification.ETag;         
-
-                ConfirmedStateChanged(); // confirmed state has changed
 
                 Services.Verbose("notification success ({0} updates) {1}", updatenotification.Updates.Count, GlobalStateCache);
             }
