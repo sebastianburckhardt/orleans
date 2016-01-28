@@ -804,8 +804,6 @@ namespace Orleans.Runtime.GrainDirectory
                 var result = await GetDirectoryReference(forwardAddress).LookupAsync(grainId, hopCount + 1);
 
                 // update the cache
-                //List<Tuple<SiloAddress, ActivationId>> entries = result.Item1.Where(t => IsValidSilo(t.Item1)).ToList();
-                //List<ActivationAddress> addresses = entries.Select(t => ActivationAddress.GetAddress(t.Item1, grainId, t.Item2)).ToList();
                 result.Addresses = result.Addresses.Where(t => IsValidSilo(t.Silo)).ToList();
                 if (log.IsVerbose2) log.Verbose2("FullLookup remote {0}={1}", grainId, result.Addresses.ToStrings());
 
