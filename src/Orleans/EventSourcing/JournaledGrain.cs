@@ -143,8 +143,9 @@ namespace Orleans.EventSourcing
         /// <param name="event"></param>
         protected virtual void TransitionState(TGrainState state, object @event)
         {
-            dynamic x = state;
-            x.Apply(@event);
+            dynamic s = state;
+            dynamic e = @event;
+            s.Apply(e);
         }
 
 
