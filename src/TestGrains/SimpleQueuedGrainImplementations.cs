@@ -14,6 +14,12 @@ namespace UnitTests.Grains
     {
     }
 
+    // use the explictly specified "SharedMemory" replication provider
+    [LogViewProvider(ProviderName = "SharedMemory")]
+    public class SimpleQueuedGrainSharedMemory : SimpleQueuedGrain
+    {
+    }
+
     // use the default storage provider as the shared storage
     public class SimpleQueuedGrainDefaultStorage : SimpleQueuedGrain
     {
