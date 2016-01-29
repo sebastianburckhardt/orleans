@@ -8,6 +8,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.Providers.EventStores;
 using Orleans.TestingHost;
 using System.IO;
+using Orleans.Runtime;
 
 namespace UnitTests.EventSourcingTests
 {
@@ -28,6 +29,8 @@ namespace UnitTests.EventSourcingTests
                     DataConnectionString = StorageTestConstants.DataConnectionString,
                     AdjustConfig = (ClusterConfiguration config) => {
                         config.Globals.RegisterLogViewProvider<MemoryEventStore>("TestEventStore");
+                        foreach (var o in config.Overrides)
+                            o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));
                     }
                 }
             );
