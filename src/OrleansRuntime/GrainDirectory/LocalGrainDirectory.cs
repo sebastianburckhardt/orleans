@@ -638,17 +638,15 @@ namespace Orleans.Runtime.GrainDirectory
             list.Add(value);
         }
 
-        public async Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopCount)
+
+        // helper method to avoid code duplication inside UnregisterManyAsync
+        private void UnregisterOrPutInForwardList(IEnumerable<ActivationAddress> addresses, int hopCount,
+            ref Dictionary<SiloAddress, List<ActivationAddress>> forward, List<Task> tasks, string context)
         {
-            (hopCount > 0 ? UnregistrationsManyRemoteReceived : unregistrationsManyIssued).Increment();
-
-            Dictionary<SiloAddress, List<ActivationAddress>> forward = null;
-            var tasks = new List<Task>();
-
             foreach (var address in addresses)
             {
                 // see if the owner is somewhere else (returns null if we are owner)
-                var forwardAddress = this.CheckIfShouldForward(address.Grain, hopCount, "UnregisterManyAsync");
+                var forwardAddress = this.CheckIfShouldForward(address.Grain, hopCount, context);
 
                 if (forwardAddress != null)
                     AddToDictionary(ref forward, forwardAddress, address);
@@ -662,46 +660,36 @@ namespace Orleans.Runtime.GrainDirectory
                     if (registrar.IsSynchronous)
                         registrar.Unregister(address, true);
                     else
-                        tasks.Add(registrar.UnregisterAsync(address, true));
-                }
-            }
-
-            // on all silos other than first, we insert a retry delay and re-check destination
-            if (hopCount > 0 && forward != null)
-            {
-                await Task.Delay(RETRY_DELAY);
-                Dictionary<SiloAddress, List<ActivationAddress>> forward2 = null;
-                foreach (var list in forward.Values)
-                {
-                    foreach (var address in list)
                     {
-                        // see if the owner is somewhere else (returns null if we are owner)
-                        var forwardAddress = this.CheckIfShouldForward(address.Grain, hopCount, "UnregisterManyAsync");
-
-                        if (forwardAddress != null)
-                            AddToDictionary(ref forward2, forwardAddress, address);
-
-                        else
-                        {
-                            // we are the owner
-                            UnregistrationsLocal.Increment();
-                            var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
-
-                            if (registrar.IsSynchronous)
-                                registrar.Unregister(address, true);
-                            else
-                                tasks.Add(registrar.UnregisterAsync(address, true));
-                        }
+                        tasks.Add(registrar.UnregisterAsync(address, true));
                     }
                 }
+            }
+        }
 
-                forward = forward2;
+
+        public async Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopCount)
+        {
+            (hopCount > 0 ? UnregistrationsManyRemoteReceived : unregistrationsManyIssued).Increment();
+
+            Dictionary<SiloAddress, List<ActivationAddress>> forwardlist = null;
+            var tasks = new List<Task>();
+
+            UnregisterOrPutInForwardList(addresses, hopCount, ref forwardlist, tasks, "UnregisterManyAsync");
+
+            // before forwarding to other silos, we insert a retry delay and re-check destination
+            if (hopCount > 0 && forwardlist != null)
+            {
+                await Task.Delay(RETRY_DELAY);
+                Dictionary<SiloAddress, List<ActivationAddress>> forwardlist2 = null;
+                UnregisterOrPutInForwardList(forwardlist.SelectMany(kvp => kvp.Value), hopCount, ref forwardlist2, tasks, "UnregisterManyAsync(recheck)");
+                forwardlist = forwardlist2;
             }
 
             // forward the requests
-            if (forward != null)
+            if (forwardlist != null)
             {
-                foreach (var kvp in forward)
+                foreach (var kvp in forwardlist)
                 {
                     UnregistrationsManyRemoteSent.Increment();
                     tasks.Add(GetDirectoryReference(kvp.Key).UnregisterManyAsync(kvp.Value, hopCount + 1));
