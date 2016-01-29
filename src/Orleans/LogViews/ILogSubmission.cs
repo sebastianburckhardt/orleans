@@ -49,9 +49,6 @@ namespace Orleans.LogViews
         /// <returns></returns>
         Task SynchronizeNowAsync();
 
-        /// <summary>
-        /// A list of the submitted entries that do not yet appear in the confirmed prefix.
-        /// </summary>
-        IEnumerable<TLogEntry> UnconfirmedSuffix { get; }
+ 
     }
 }

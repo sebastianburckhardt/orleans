@@ -21,30 +21,13 @@ namespace Orleans.LogViews
         /// <summary>
         /// The length of the confirmed prefix of the log
         /// </summary>
-        int ConfirmedVersion { get; } 
+        int ConfirmedVersion { get; }
 
         /// <summary>
-        /// Subscribe to notifications on changes to the confirmed view.
+        /// A list of the submitted entries that do not yet appear in the confirmed prefix.
         /// </summary>
-        bool SubscribeViewListener(IViewListener aListener);
-
-        /// <summary>
-        /// Unsubscribe from notifications on changes to the confirmed view.
-        /// </summary>
-        bool UnSubscribeViewListener(IViewListener aListener);
+        IEnumerable<TLogEntry> UnconfirmedSuffix { get; }
 
     }
-
-    /// <summary>
-    /// A listener that is notified when the confirmed view changes.
-    /// </summary>
-    public interface IViewListener
-    {
-        /// <summary>
-        /// Gets called after the confirmed prefix has changed.
-        /// <param name="version">the new length of the confirmed prefix</param>
-        /// </summary>
-        /// 
-        void OnViewChanged(int version);
-    }
+ 
 }

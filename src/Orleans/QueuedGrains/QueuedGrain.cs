@@ -75,6 +75,8 @@ namespace Orleans.QueuedGrains
         }
 
 
+
+
         #region IQueuedGrain
 
         // Delegate all methods of the public interface to the adaptor.
@@ -156,16 +158,7 @@ namespace Orleans.QueuedGrains
             get { return Adaptor.ConfirmedVersion; }
         }
 
-        public bool SubscribeConfirmedStateListener(IViewListener listener)
-        {
-            return Adaptor.SubscribeViewListener(listener);
-        }
-
-        public bool UnSubscribeConfirmedStateListener(IViewListener listener)
-        {
-            return Adaptor.UnSubscribeViewListener(listener);
-        }
-
+  
         public Exception LastException 
         {
             get { return Adaptor.LastException;  }
@@ -188,10 +181,65 @@ namespace Orleans.QueuedGrains
 
         #endregion
 
+        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
+        {
+            if (ConfirmedStateChanged && listeners != null)
+                foreach (var l in listeners)
+                    l.OnConfirmedStateChanged();
+        }
+
+     
+        /// <summary>
+        /// Subscribe to notifications on changes to the confirmed state.
+        /// </summary>
+        public bool SubscribeConfirmedStateListener(IStateChangedListener listener)
+        {
+            if (listeners == null)
+                listeners = new List<IStateChangedListener>();
+
+            if (listeners.Contains(listener))
+            {
+                return false;
+            }
+            else
+            {
+                listeners.Add(listener);
+            }
+            return true;
+        }
 
 
+        /// <summary>
+        /// Unsubscribe from notifications on changes to the confirmed state.
+        /// </summary>
+        public bool UnSubscribeConfirmedStateListener(IStateChangedListener listener)
+        {
+            if (listeners == null)
+                return false;
+            return listeners.Remove(listener);
+        }
+
+
+        protected List<IStateChangedListener> listeners;
 
        
+
+       
+    
+
+
+}
+
+    /// <summary>
+    /// A listener that is notified when the confirmed view changes.
+    /// </summary>
+    public interface IStateChangedListener
+    {
+        /// <summary>
+        /// Gets called after the confirmed prefix has changed.
+        /// <param name="version">the new length of the confirmed prefix</param>
+        /// </summary>
+        /// 
+        void OnConfirmedStateChanged();
     }
-     
 }
