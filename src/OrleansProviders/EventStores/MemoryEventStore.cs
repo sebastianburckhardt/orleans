@@ -9,6 +9,9 @@ using Orleans.Providers;
 
 namespace Orleans.Providers.EventStores
 {
+    /// <summary>
+    /// An in-memory event-store-based log view provider for testing purposes.
+    /// </summary>
     public class MemoryEventStore : EventStoreProviderBase, ILogViewProvider
     {
         private readonly ConcurrentDictionary<string, List<object>> streams = new ConcurrentDictionary<string, List<object>>();
@@ -18,45 +21,73 @@ namespace Orleans.Providers.EventStores
             return TaskDone.Done;
         }
 
-        public override Task AppendToStream(string streamName, int? expectedVersion, IEnumerable<object> events)
+        private const int simulated_IO_delay = 1;
+
+        public override async Task AppendToStream(string streamName, int? expectedVersion, IEnumerable<object> events)
         {
             var stream = streams.GetOrAdd(streamName, x => new List<object>());
 
-            if (expectedVersion.HasValue && expectedVersion.Value != stream.Count)
-                throw new OptimisticConcurrencyException(streamName, expectedVersion.Value);
+            await Task.Delay(simulated_IO_delay); // simulate I/O
 
-            stream.AddRange(events);
+            lock (stream)
+            {
+                if (expectedVersion.HasValue && expectedVersion.Value != stream.Count)
+                    throw new OptimisticConcurrencyException(streamName, expectedVersion.Value);
 
-            return TaskDone.Done;
+                stream.AddRange(events);
+            }
+
+            await Task.Delay(simulated_IO_delay); // simulate I/O
         }
 
         public override Task DeleteStream(string streamName, int? expectedVersion)
         {
-            if(streams.ContainsKey(streamName))
-            {
-                var stream = streams[streamName];
 
-                if (expectedVersion.HasValue && expectedVersion.Value != stream.Count)
-                    throw new OptimisticConcurrencyException(streamName, expectedVersion.Value);
+            List<object> stream;
 
-                streams.TryRemove(streamName, out stream);
-            }
+            if (streams.TryGetValue(streamName, out stream))
+                lock (stream)
+                {
+                    if (expectedVersion.HasValue && expectedVersion.Value != stream.Count)
+                        throw new OptimisticConcurrencyException(streamName, expectedVersion.Value);
+
+                    List<object> ignored;
+                    streams.TryRemove(streamName, out ignored);
+                }
 
             return TaskDone.Done;
         }
 
-        public override Task<IEventStream> LoadStream(string streamName)
+        public override async Task<IEventStream> LoadStream(string streamName)
         {
             var stream = streams.GetOrAdd(streamName, x => new List<object>());
 
-            return Task.FromResult(new EventStream(streamName, stream.Count, stream) as IEventStream);
+            await Task.Delay(simulated_IO_delay); // simulate I/O
+
+            IEventStream result;
+
+            lock (stream)
+              result = new EventStream(streamName, stream.Count, stream.ToList()) as IEventStream;
+
+            await Task.Delay(simulated_IO_delay); // simulate I/O
+
+            return result;
         }
 
-        public override Task<IEventStream> LoadStreamFromVersion(string streamName, int version)
+        public override async Task<IEventStream> LoadStreamFromVersion(string streamName, int version)
         {
             var stream = streams.GetOrAdd(streamName, x => new List<object>());
 
-            return Task.FromResult(new EventStream(streamName, stream.Count, stream.Skip(version).ToList()) as IEventStream);
+            await Task.Delay(simulated_IO_delay); // simulate I/O
+
+            IEventStream result;
+
+            lock (stream)
+                result = new EventStream(streamName, stream.Count, stream.Skip(version).ToList()) as IEventStream;
+
+            await Task.Delay(simulated_IO_delay); // simulate I/O
+
+            return result;
         }
     }
 }
