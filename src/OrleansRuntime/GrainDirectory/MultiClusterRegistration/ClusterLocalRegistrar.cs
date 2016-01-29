@@ -12,37 +12,53 @@ namespace Orleans.Runtime.GrainDirectory
     /// </summary>
     internal class ClusterLocalRegistrar : IGrainRegistrar
     {
-        public GrainDirectoryPartition DirectoryPartition { get; private set; }
+        private GrainDirectoryPartition DirectoryPartition;
 
         public ClusterLocalRegistrar(GrainDirectoryPartition partition)
         {
             DirectoryPartition = partition;
         }
 
-        public virtual Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation)
+        public bool IsSynchronous { get { return true; } }
+
+        public virtual AddressAndTag Register(ActivationAddress address, bool singleActivation)
         {
             if (singleActivation)
             {
                 var result = DirectoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo);
-                return Task.FromResult(result);
+                return result;
             }
             else
             {
                 var tag = DirectoryPartition.AddActivation(address.Grain, address.Activation, address.Silo);
-                return Task.FromResult(new AddressAndTag() { Address = address, VersionTag = tag });
+                return new AddressAndTag() { Address = address, VersionTag = tag };
             }
         }
   
-        public virtual Task UnregisterAsync(ActivationAddress address, bool force)
+        public virtual void Unregister(ActivationAddress address, bool force)
         {
             DirectoryPartition.RemoveActivation(address.Grain, address.Activation, force);
-            return TaskDone.Done;
+        }
+
+        public virtual void Delete(GrainId gid)
+        {
+            DirectoryPartition.RemoveGrain(gid);
+        }
+
+
+        public virtual Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public virtual Task UnregisterAsync(ActivationAddress address, bool force)
+        {
+            throw new InvalidOperationException();
         }
 
         public virtual Task DeleteAsync(GrainId gid)
         {
-            DirectoryPartition.RemoveGrain(gid);
-            return TaskDone.Done;
+            throw new InvalidOperationException();
         }
     }
 }
