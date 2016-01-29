@@ -784,6 +784,8 @@ namespace Orleans.Runtime.LogViews
 
         protected void BroadcastNotification(NotificationMessage msg, string exclude = null)
         {
+            if (Services.MultiClusterConfiguration.Clusters.Count == 1)
+                return;
 
             CreateNotificationTrackerIfNeeded();
 
