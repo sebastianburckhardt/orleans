@@ -155,7 +155,23 @@ namespace Orleans.Providers.EventStores
 
                 LastExceptionInternal = null;
                 success = true;
+
                 Services.Verbose("Write successful");
+
+                // update confirmed state
+                foreach (var item in updates)
+                {
+                    try
+                    {
+                        Host.TransitionView(ConfirmedStateInternal, item.Entry);
+                    }
+                    catch (Exception e)
+                    {
+                        Services.CaughtTransitionException("WriteAsync", e); // logged by log view provider
+                    }
+
+                    ConfirmedVersionInternal++;
+                }
             }
             catch (OptimisticConcurrencyException e)
             {
