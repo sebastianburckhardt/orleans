@@ -16,7 +16,7 @@ namespace Orleans.EventSourcing
         ILogViewAdaptorHost, ILogViewHost<TGrainState, object>
         where TGrainState : class,new()
     {
-        protected JournaledGrain()  { }
+        protected JournaledGrain() { }
 
         /// <summary>
         /// Raise an event.
@@ -78,7 +78,7 @@ namespace Orleans.EventSourcing
         /// Adaptor for log view provider.
         /// The storage keeps the log and/or the latest state.
         /// </summary>
-        internal ILogViewAdaptor<TGrainState,object> LogView { get; private set; }
+        internal ILogViewAdaptor<TGrainState, object> LogView { get; private set; }
 
 
         /// <summary>
@@ -93,9 +93,17 @@ namespace Orleans.EventSourcing
         /// The version of the state.
         /// Always equal to the confirmed version plus the number of unconfirmed events.
         /// </summary>
-        protected int Version 
+        protected int Version
         {
             get { return this.LogView.ConfirmedVersion + this.LogView.UnconfirmedSuffix.Count(); }
+        }
+
+        /// <summary>
+        /// Called whenever the current state may have changed due to local or remote events.
+        /// <para>Override this to react to changes of the state.</para>
+        /// </summary>
+        protected virtual void OnStateChanged()
+        {
         }
 
         /// <summary>
@@ -105,24 +113,35 @@ namespace Orleans.EventSourcing
         {
             get { return this.LogView.ConfirmedView; }
         }
-        
+
         /// <summary>
         /// The version of the confirmed state.
         /// Always equal to the number of confirmed events.
         /// </summary>
-        protected int ConfirmedVersion 
+        protected int ConfirmedVersion
         {
             get { return this.LogView.ConfirmedVersion; }
         }
 
-               /// <summary>
-        /// Waits until all previously raised events have been written. 
+   
+        /// <summary>
+        /// Called after the confirmed state changes (the confirmed version increases by one or more).
+        /// <para>Override this to react to changes of the confirmed state.</para>
+        /// </summary>
+        protected virtual void OnConfirmedStateChanged()
+        {
+            // overridden by journaled grains that want to react to state changes
+        }
+
+
+        /// <summary>
+        /// Waits until all previously raised events have been confirmed. 
         /// </summary>
         /// <returns></returns>
         protected Task WaitForConfirmation()
         {
-           return LogView.ConfirmSubmittedEntriesAsync();
-             
+            return LogView.ConfirmSubmittedEntriesAsync();
+
         }
 
         /// <summary>
@@ -133,6 +152,7 @@ namespace Orleans.EventSourcing
         {
             return LogView.SynchronizeNowAsync();
         }
+
 
 
         /// <summary>
@@ -148,7 +168,6 @@ namespace Orleans.EventSourcing
             s.Apply(e);
         }
 
-
     
 
         #region Adaptor Hookup
@@ -159,9 +178,9 @@ namespace Orleans.EventSourcing
         void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialState, string graintypename, IProtocolServices services)
         {
             // call the replication provider to construct the adaptor, passing the type argument
-            LogView = provider.MakeLogViewAdaptor<TGrainState, object>(this, (TGrainState)initialState, graintypename, services);            
+            LogView = provider.MakeLogViewAdaptor<TGrainState, object>(this, (TGrainState)initialState, graintypename, services);
         }
-        
+
         void ILogViewHost<TGrainState, object>.TransitionView(TGrainState view, object entry)
         {
             TransitionState(view, entry);
@@ -179,19 +198,28 @@ namespace Orleans.EventSourcing
         {
             return LogView.Deactivate();
         }
- 
+
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
         {
             return LogView.OnProtocolMessageReceived(payload);
         }
-    
+
         [AlwaysInterleave]
         Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
         {
             return LogView.OnMultiClusterConfigurationChange(next);
         }
 
+        void ILogViewHost<TGrainState, object>.OnViewChanged(bool tentative, bool confirmed)
+        {
+            if (tentative)
+                OnStateChanged();
+            if (confirmed)
+                OnConfirmedStateChanged();
+        }
+
         #endregion
+
     }
 }

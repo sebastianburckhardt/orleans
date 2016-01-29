@@ -74,9 +74,13 @@ namespace Orleans.Providers.EventStores
             {
                 try
                 {
+                    Services.Verbose("Read issued for position={0}", ConfirmedVersionInternal);
+
                     var eventstream = await EventStore.LoadStreamFromVersion(streamname, ConfirmedVersionInternal);
 
                     LastExceptionInternal = null;
+
+                    Services.Verbose("Read success version={0}", eventstream.Version);
 
                     if (eventstream.Version != ConfirmedVersionInternal)
                         Services.ProtocolError("event store returned wrong version", true);
@@ -104,11 +108,10 @@ namespace Orleans.Providers.EventStores
                         }
                         catch (Exception e)
                         {
-                            Services.CaughtTransitionException("ProcessNotifications", e); // logged by log view provider
+                            Services.CaughtTransitionException("ReadAsync", e); // logged by log view provider
                         }
 
                         ConfirmedVersionInternal++;
-                        ConfirmedStateChanged();
                     }
 
                     return guid_was_seen; // exit the loop, we successfully read all events
@@ -136,9 +139,9 @@ namespace Orleans.Providers.EventStores
         {
             var updates = GetCurrentBatchOfUpdates();
 
-            bool isConditional = updates.Any(se => se.ConditionalPosition != Unconditional);
-
             var guid = Guid.NewGuid(); // used for duplicate filtering on exception path
+
+            Services.Verbose("Write batch size={0} guid={1}", updates.Length, guid);
 
             bool success;
 
@@ -146,16 +149,19 @@ namespace Orleans.Providers.EventStores
             {
                 await EventStore.AppendToStream(
                        streamname,
-                       isConditional ? (int?)ConfirmedVersionInternal : null,
+                       ConfirmedVersionInternal,
                        TagLast(updates, guid)
                     );
 
                 LastExceptionInternal = null;
                 success = true;
+                Services.Verbose("Write successful");
             }
-            catch (OptimisticConcurrencyException)
+            catch (OptimisticConcurrencyException e)
             {
                 success = false;
+                LastExceptionInternal = e;
+                Services.Verbose("Write failed due to conflict");
             }
             catch (Exception e)
             {
@@ -164,10 +170,15 @@ namespace Orleans.Providers.EventStores
                 success = false;
             }
 
-            if (!success && LastExceptionInternal != null)
+            if (!success)
             {
-                // we do not know for sure whether the write really failed. We need to read to find out.
+                // either there was a concurrency failure, or some other problem.
+                // In either case, we need to read the latest state.
+                // if we see the guid in there, we know this actually succeeded
                 success = await ReadAsyncInternal(guid);
+
+                if (success)
+                    Services.Verbose("Write actually succeeded after all");
             }
 
             // let other clusters know that they should fetch the new events
