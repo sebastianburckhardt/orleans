@@ -540,7 +540,8 @@ namespace Orleans.Runtime.GrainDirectory
                 // we are the owner     
                 var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
 
-                return await registrar.RegisterAsync(address, singleActivation);
+                return registrar.IsSynchronous ? registrar.Register(address, singleActivation)
+                    : await registrar.RegisterAsync(address, singleActivation);
             }
             else
             {
@@ -622,7 +623,11 @@ namespace Orleans.Runtime.GrainDirectory
                 // we are the owner
                 UnregistrationsLocal.Increment();
                 var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
-                await registrar.UnregisterAsync(address, force);
+
+                if (registrar.IsSynchronous)
+                    registrar.Unregister(address, force);
+                else
+                    await registrar.UnregisterAsync(address, force);
             }
             else
             {
@@ -662,7 +667,11 @@ namespace Orleans.Runtime.GrainDirectory
                     // we are the owner
                     UnregistrationsLocal.Increment();
                     var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
-                    tasks.Add(registrar.UnregisterAsync(address, true));
+
+                    if (registrar.IsSynchronous)
+                        registrar.Unregister(address, true);
+                    else
+                        tasks.Add(registrar.UnregisterAsync(address, true));
                 }
             }
 
@@ -686,7 +695,11 @@ namespace Orleans.Runtime.GrainDirectory
                             // we are the owner
                             UnregistrationsLocal.Increment();
                             var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
-                            tasks.Add(registrar.UnregisterAsync(address, true));
+
+                            if (registrar.IsSynchronous)
+                                registrar.Unregister(address, true);
+                            else
+                                tasks.Add(registrar.UnregisterAsync(address, true));
                         }
                     }
                 }
@@ -841,7 +854,11 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 // we are the owner
                 var registrar = RegistrarManager.Instance.GetRegistrarForGrain(grainId);
-                await registrar.DeleteAsync(grainId);
+
+                if (registrar.IsSynchronous)
+                    registrar.Delete(grainId);
+                else
+                    await registrar.DeleteAsync(grainId);
             }
             else
             {
