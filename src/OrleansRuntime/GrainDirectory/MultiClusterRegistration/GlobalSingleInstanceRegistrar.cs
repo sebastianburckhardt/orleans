@@ -10,19 +10,38 @@ using Orleans.MultiCluster;
 
 namespace Orleans.Runtime.GrainDirectory
 {
-    internal class GlobalSingleInstanceRegistrar : ClusterLocalRegistrar
+    internal class GlobalSingleInstanceRegistrar : IGrainRegistrar
     {
-
         public GlobalSingleInstanceRegistrar(GrainDirectoryPartition partition, Logger logger)
-            : base(partition)
+             
         {
+            this.DirectoryPartition = partition;
             this.logger = logger;
         }
 
         private static int NUM_RETRIES = 3;
         private Logger logger;
 
-        public override async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleact)
+        private GrainDirectoryPartition DirectoryPartition;
+
+        public bool IsSynchronous { get { return false; } }
+
+        public virtual AddressAndTag Register(ActivationAddress address, bool singleActivation)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public virtual void Unregister(ActivationAddress address, bool force)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public virtual void Delete(GrainId gid)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleact)
         {
             var globalconfig = Silo.CurrentSilo.OrleansConfig.Globals;
 
@@ -131,9 +150,10 @@ namespace Orleans.Runtime.GrainDirectory
             Debugger.Break();
         }
 
-        public override async Task UnregisterAsync(ActivationAddress address, bool force)
+        public Task UnregisterAsync(ActivationAddress address, bool force)
         {
-            await base.UnregisterAsync(address, force);
+            DirectoryPartition.RemoveActivation(address.Grain, address.Activation, force);
+            return TaskDone.Done;
 
             /*
             if (address.Status == MultiClusterStatus.Owned)
@@ -164,6 +184,12 @@ namespace Orleans.Runtime.GrainDirectory
                 }
             }
             */
+        }
+
+        public virtual Task DeleteAsync(GrainId gid)
+        {
+            DirectoryPartition.RemoveGrain(gid);
+            return TaskDone.Done;
         }
 
         public GlobalSingleInstanceResponseTracker SendRequestRound(ActivationAddress address, List<string> remoteClusters)

@@ -1263,7 +1263,6 @@ namespace Orleans.Runtime
                 }
             }
             // We currently don't have any other case for multiple activations except for StatelessWorker. 
-            //await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address), this.SchedulingContext); 
         }
 
         #endregion

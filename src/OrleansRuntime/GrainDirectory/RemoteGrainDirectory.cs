@@ -55,9 +55,9 @@ namespace Orleans.Runtime.GrainDirectory
             return router.DeleteGrainAsync(grainId, hopCount);
         }
 
-        public async Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount)
+        public Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount)
         {
-            return await router.LookupAsync(grainId, hopCount);
+            return router.LookupAsync(grainId, hopCount);
         }
 
         public Task<List<Tuple<GrainId, int, List<ActivationAddress>>>> LookUpMany(List<Tuple<GrainId, int>> grainAndETagList)
