@@ -29,6 +29,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.TestingHost;
 using UnitTests.GrainInterfaces;
+using UnitTests.Tester;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime;
 using Orleans.MultiCluster;
@@ -43,7 +44,7 @@ namespace Tester.GeoClusterTests
     [DeploymentItem("OrleansProviders.dll")]
     [DeploymentItem("OrleansConfigurationForTesting.xml")]
     [DeploymentItem("ClientConfigurationForTesting.xml")]
-    public class QueuedGrainTests
+    public class QueuedGrainTests  
     {
 
         private static TestingClusterHost host;
@@ -69,14 +70,14 @@ namespace Tester.GeoClusterTests
             host.NewGeoCluster(globalserviceid, Cluster0, 2, ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting);
             host.NewGeoCluster(globalserviceid, Cluster1, 2, ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting);
 
-            TestingSiloHost.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
+            host.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
             // Create clients.
             Client0 = host.NewClient<ClientWrapper>(Cluster0, 0);
             Client1 = host.NewClient<ClientWrapper>(Cluster1, 0);
 
             Client1.InjectClusterConfiguration(Cluster0, Cluster1);
-            TestingSiloHost.WaitForMultiClusterGossipToStabilizeAsync(false).WaitWithThrow(waitTimeout);
+            host.WaitForMultiClusterGossipToStabilizeAsync(false).WaitWithThrow(waitTimeout);
 
         }
 

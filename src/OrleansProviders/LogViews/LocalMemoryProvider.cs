@@ -132,7 +132,6 @@ namespace Orleans.Providers.LogViews
             LocalSnapshot = GlobalSnapshot;
             LocalVersion = GlobalVersion;
 
-            NotifyPromises(updates.Length, true);
             return updates.Length;
         }
 

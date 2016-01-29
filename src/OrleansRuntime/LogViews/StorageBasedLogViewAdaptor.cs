@@ -55,7 +55,7 @@ namespace Orleans.Runtime.LogViews
         {
             return new SubmissionEntry<E>() { Entry = entry } ;
         }
-
+      
 
         protected override async Task ReadAsync()
         {
@@ -78,8 +78,6 @@ namespace Orleans.Runtime.LogViews
 
                     LastExceptionInternal = null;
                     
-                    ConfirmedStateChanged(); // confirmed state has changed
-
                     Services.Verbose("read success {0}", GlobalStateCache);
 
                     break; // successful
@@ -139,27 +137,26 @@ namespace Orleans.Runtime.LogViews
 
             var writebit = nextglobalstate.StateAndMetaData.ToggleBit(Services.MyClusterId);
 
-                try
-                {
-                    // for manual testing
-                    //await Task.Delay(5000);
+            try
+            {
+                // for manual testing
+                //await Task.Delay(5000);
 
-                    await globalstorageprovider.WriteStateAsync(graintypename, Services.GrainReference, nextglobalstate);
-                    
+                await globalstorageprovider.WriteStateAsync(graintypename, Services.GrainReference, nextglobalstate);
+
                 LastExceptionInternal = null; // successful
 
                 batchsuccessfullywritten = true;
 
-                Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
-
                 GlobalStateCache = nextglobalstate;
 
-                ConfirmedStateChanged(); // confirmed state has changed
-                }
-                catch (Exception e) 
-                {
-                    LastExceptionInternal = e;
-                }
+                Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
+
+            }
+            catch (Exception e)
+            {
+                LastExceptionInternal = e;
+            }
 
             if (!batchsuccessfullywritten)
             {
@@ -184,12 +181,10 @@ namespace Orleans.Runtime.LogViews
                         LastExceptionInternal = null; // successful
 
                         Services.Verbose("read success {0}", GlobalStateCache);
-                        
-                        ConfirmedStateChanged(); // confirmed state has changed
 
                         break;
                     }
-                    catch (Exception e) 
+                    catch (Exception e)
                     {
                         LastExceptionInternal = e;
                     }
@@ -197,15 +192,13 @@ namespace Orleans.Runtime.LogViews
                     Services.Verbose("read failed");
 
                     increasebackoff(ref backoff_msec);
-                }            
+                }
 
                 // check if last apparently failed write was in fact successful
 
                 if (writebit == GlobalStateCache.StateAndMetaData.ContainsBit(Services.MyClusterId))
                 {
                     GlobalStateCache = nextglobalstate;
-
-                    ConfirmedStateChanged(); // confirmed state has changed
 
                     Services.Verbose("last write ({0} updates) was actually a success {1}", updates.Length, GlobalStateCache);
 
@@ -217,10 +210,10 @@ namespace Orleans.Runtime.LogViews
             // broadcast notifications to all other clusters
             if (batchsuccessfullywritten)
                 BroadcastNotification(new UpdateNotificationMessage()
-                {
+                   {
                        GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion,
                        Updates = updates.Select(se => se.Entry).ToList(),
-                    Origin = Services.MyClusterId,
+                       Origin = Services.MyClusterId,
                        ETag = GlobalStateCache.ETag
                    });
 
@@ -229,10 +222,9 @@ namespace Orleans.Runtime.LogViews
             if (!batchsuccessfullywritten)
                 return 0;
 
-            NotifyPromises(updates.Length, true);
             return updates.Length;
-                }
-
+        }
+    
         
         [Serializable]
         protected class UpdateNotificationMessage : NotificationMessage 
@@ -249,7 +241,7 @@ namespace Orleans.Runtime.LogViews
             {
                 return string.Format("v{0} ({1} updates by {2}) etag={2}", GlobalVersion, Updates.Count, Origin, ETag);
             }
-        }
+         }
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
@@ -292,8 +284,6 @@ namespace Orleans.Runtime.LogViews
                 GlobalStateCache.StateAndMetaData.ToggleBit(updatenotification.Origin);
 
                 GlobalStateCache.ETag = updatenotification.ETag;         
-
-                ConfirmedStateChanged(); // confirmed state has changed
 
                 Services.Verbose("notification success ({0} updates) {1}", updatenotification.Updates.Count, GlobalStateCache);
             }

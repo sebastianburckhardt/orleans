@@ -10,6 +10,7 @@ using Orleans.TestingHost;
 using UnitTests.StorageTests;
 using Orleans.MultiCluster;
 using UnitTests.Tester;
+using UnitTests.TestHelper;
 
 namespace Tests.GeoClusterTests
 {
@@ -37,10 +38,6 @@ namespace Tests.GeoClusterTests
         public static void ClassInitialize(TestContext testContext)
         {
             TraceLogger.Initialize(new NodeConfiguration());
-
-            UnitTestSiloHost.CheckForAzureStorage();
-
-            TestingSiloHost.StopAllSilos();
         }
 
         [TestInitialize]

@@ -46,7 +46,7 @@ namespace Orleans.TestingHost
 
             props = new Dictionary<string, string>();
             props.Add("GlobalStorageProvider", "AzureStore");
-            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.StoredViewProvider", "SharedStorage", props);
+            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedStorage", props);
 
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.LocalMemoryProvider", "LocalMemory");
 
