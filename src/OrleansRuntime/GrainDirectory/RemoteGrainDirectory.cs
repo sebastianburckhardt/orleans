@@ -30,7 +30,7 @@ namespace Orleans.Runtime.GrainDirectory
         public Task RegisterMany(List<ActivationAddress> addresses, bool singleActivation)
         {
             if (addresses == null || addresses.Count == 0)
-                throw new ArgumentException("addresses");
+                throw new ArgumentException("addresses cannot be an empty list or null");
 
             // validate that this request arrived correctly
             //logger.Assert(ErrorCode.Runtime_Error_100140, silo.Matches(router.MyAddress), "destination address != my address");
