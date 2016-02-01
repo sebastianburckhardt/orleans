@@ -155,7 +155,7 @@ namespace Orleans.Runtime
 
             OrleansConfig = config;
             globalConfig = config.Globals;
-            config.OnConfigChange("Defaults", () => nodeConfig = config.GetConfigurationForNode(name));
+            config.OnConfigChange("Defaults", () => nodeConfig = config.GetOrAddConfigurationForNode(name));
 
             if (!TraceLogger.IsInitialized)
                 TraceLogger.Initialize(nodeConfig);
@@ -165,8 +165,8 @@ namespace Orleans.Runtime
             ActivationData.Init(config, nodeConfig);
             StatisticsCollector.Initialize(nodeConfig);
             
-            CodeGeneratorManager.GenerateAndCacheCodeForAllAssemblies();
             SerializationManager.Initialize(globalConfig.UseStandardSerializer, globalConfig.SerializationProviders, globalConfig.UseJsonFallbackSerializer);
+            CodeGeneratorManager.GenerateAndCacheCodeForAllAssemblies();
             initTimeout = globalConfig.MaxJoinAttemptTime;
             if (Debugger.IsAttached)
             {
