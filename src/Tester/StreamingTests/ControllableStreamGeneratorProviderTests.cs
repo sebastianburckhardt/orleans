@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,14 +7,13 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.Runtime;
-using Orleans.Runtime.Configuration;
 using Orleans.Streams;
 using Orleans.TestingHost;
-using Tester.TestStreamProviders.Controllable;
 using Tester.TestStreamProviders.Generator;
 using Tester.TestStreamProviders.Generator.Generators;
 using TestGrainInterfaces;
 using TestGrains;
+using UnitTests.Grains;
 using UnitTests.Tester;
 
 namespace UnitTests.StreamingTests
@@ -25,7 +25,7 @@ namespace UnitTests.StreamingTests
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
-        private const string StreamProviderName = GeneratedEventCollectorGrain.StreamProviderName;
+        private const string StreamProviderName = GeneratedStreamTestConstants.StreamProviderName;
         private static readonly string StreamProviderTypeName = typeof(GeneratorStreamProvider).FullName;
         private const string StreamNamespace = GeneratedEventCollectorGrain.StreamNamespace;
 
@@ -57,8 +57,8 @@ namespace UnitTests.StreamingTests
                         config.Globals.RegisterStreamProvider<GeneratorStreamProvider>(StreamProviderName, settings);
 
                         // make sure all node configs exist, for dynamic cluster queue balancer
-                        config.GetConfigurationForNode("Primary");
-                        config.GetConfigurationForNode("Secondary_1");
+                        config.GetOrAddConfigurationForNode("Primary");
+                        config.GetOrAddConfigurationForNode("Secondary_1");
                     }
                 });
         }
@@ -101,16 +101,16 @@ namespace UnitTests.StreamingTests
             }
             finally
             {
-                var reporter = GrainClient.GrainFactory.GetGrain<IGeneratedEventReporterGrain>(GeneratedEventCollectorGrain.ReporterId);
+                var reporter = GrainClient.GrainFactory.GetGrain<IGeneratedEventReporterGrain>(GeneratedStreamTestConstants.ReporterId);
                 reporter.Reset().Ignore();
             }
         }
 
         private async Task<bool> CheckCounters(SimpleGeneratorConfig generatorConfig, bool assertIsTrue)
         {
-            var reporter = GrainClient.GrainFactory.GetGrain<IGeneratedEventReporterGrain>(GeneratedEventCollectorGrain.ReporterId);
+            var reporter = GrainClient.GrainFactory.GetGrain<IGeneratedEventReporterGrain>(GeneratedStreamTestConstants.ReporterId);
 
-            var report = await reporter.GetReport(GeneratedEventCollectorGrain.StreamProviderName, GeneratedEventCollectorGrain.StreamNamespace);
+            var report = await reporter.GetReport(GeneratedStreamTestConstants.StreamProviderName, GeneratedEventCollectorGrain.StreamNamespace);
             if (assertIsTrue)
             {
                 // one stream per queue
