@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Examples.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.QueuedGrains;
 
 
 
@@ -52,7 +52,7 @@ namespace Examples.Grains
     /// <summary>
     /// The grain implementation
     /// </summary>
-    [ReplicationProvider(ProviderName = "SharedStorage")]
+    [LogViewProvider(ProviderName = "SharedStorage")]
     public class ReservationGrain : QueuedGrain<ReservationState>, IReservationGrain
     {
         public async Task<bool> Reserve(int seatnumber, string userid)

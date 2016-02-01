@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Examples.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.LogViews;
+using Orleans.QueuedGrains;
 
 namespace Examples.Grains
 {
@@ -99,7 +100,7 @@ namespace Examples.Grains
     /// <summary>
     /// The grain implementation for the chat grain.
     /// </summary>
-    [ReplicationProvider(ProviderName = "SharedStorage")]
+    [LogViewProvider(ProviderName = "SharedStorage")]
     public class ChatGrain : QueuedGrain<ChatState>, IChatGrain
     {
         public async Task<Comment[]> Get(DateTime olderthan, int limit)

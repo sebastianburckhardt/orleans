@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using Examples.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.QueuedGrains;
+using Orleans.LogViews;
 
  
 
@@ -62,7 +63,7 @@ namespace Examples.Grains
    /// <summary>
    /// The grain implementation
    /// </summary>
-    [ReplicationProvider(ProviderName = "SharedStorage")]
+    [LogViewProvider(ProviderName = "SharedStorage")]
     public class LeaderBoardGrain : QueuedGrain<LeaderBoardState>, ILeaderBoardGrain
     {
         public Task<Score[]> GetTopTen()

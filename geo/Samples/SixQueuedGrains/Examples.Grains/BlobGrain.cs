@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Examples.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.QueuedGrains;
 
 
 

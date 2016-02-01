@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Examples.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.LogViews;
+using Orleans.QueuedGrains;
 
 namespace Examples.Grains
 {
@@ -47,7 +48,7 @@ namespace Examples.Grains
     /// It favors availability over consistency - an approximate counter value is returned in
     /// situations where cluster communication is not working.
     /// </summary>
-    [ReplicationProvider(ProviderName = "SharedStorage")]
+    [LogViewProvider(ProviderName = "SharedStorage")]
     public class CounterGrain : QueuedGrain<CounterState>, ICounterGrain
     {
         public Task<int> Get()
@@ -66,7 +67,7 @@ namespace Examples.Grains
     /// Another version of the counter grain that favors consistency over availability.
     /// All operations are linearizable. Meaning they block if communication is not working.
     /// </summary>
-    [ReplicationProvider(ProviderName = "SharedStorage")]
+    [LogViewProvider(ProviderName = "SharedStorage")]
     public class LinearizableCounterGrain : QueuedGrain<CounterState>, ICounterGrain
     {
         public async Task Increment()

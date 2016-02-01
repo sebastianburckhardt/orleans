@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Examples.Interfaces;
 using Orleans.Providers;
-using Orleans.Replication;
+using Orleans.QueuedGrains;
 #pragma warning disable 1998
 
 namespace Examples.Grains
