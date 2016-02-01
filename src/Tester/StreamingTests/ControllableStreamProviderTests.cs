@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.Runtime;
-using Orleans.Runtime.Configuration;
 using Orleans.Streams;
 using Orleans.TestingHost;
 using Tester.TestStreamProviders.Controllable;
@@ -37,8 +36,8 @@ namespace UnitTests.StreamingTests
                                 {PersistentStreamProviderConfig.STREAM_PUBSUB_TYPE, StreamPubSubType.ImplicitOnly.ToString()}
                             };
                         config.Globals.RegisterStreamProvider<ControllableTestStreamProvider>(StreamProviderName, settings);
-                        config.GetConfigurationForNode("Primary");
-                        config.GetConfigurationForNode("Secondary_1");
+                        config.GetOrAddConfigurationForNode("Primary");
+                        config.GetOrAddConfigurationForNode("Secondary_1");
                     }
                 });
         }

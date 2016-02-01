@@ -5,13 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
-using Orleans.Runtime.Configuration;
 using Orleans.Streams;
 using Orleans.TestingHost;
 using Tester.TestStreamProviders.Generator;
 using Tester.TestStreamProviders.Generator.Generators;
 using TestGrainInterfaces;
 using TestGrains;
+using UnitTests.Grains;
 using UnitTests.Tester;
 
 namespace UnitTests.StreamingTests
@@ -23,7 +23,7 @@ namespace UnitTests.StreamingTests
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
-        private const string StreamProviderName = GeneratedEventCollectorGrain.StreamProviderName;
+        private const string StreamProviderName = GeneratedStreamTestConstants.StreamProviderName;
         private const string StreamNamespace = GeneratedEventCollectorGrain.StreamNamespace;
 
         private readonly static SimpleGeneratorConfig GeneratorConfig = new SimpleGeneratorConfig
@@ -60,8 +60,8 @@ namespace UnitTests.StreamingTests
                         config.Globals.RegisterStreamProvider<GeneratorStreamProvider>(StreamProviderName, settings);
 
                         // make sure all node configs exist, for dynamic cluster queue balancer
-                        config.GetConfigurationForNode("Primary");
-                        config.GetConfigurationForNode("Secondary_1");
+                        config.GetOrAddConfigurationForNode("Primary");
+                        config.GetOrAddConfigurationForNode("Secondary_1");
                     }
                 });
         }
@@ -75,9 +75,9 @@ namespace UnitTests.StreamingTests
 
         private async Task<bool> CheckCounters(bool assertIsTrue)
         {
-            var reporter = GrainClient.GrainFactory.GetGrain<IGeneratedEventReporterGrain>(GeneratedEventCollectorGrain.ReporterId);
+            var reporter = GrainClient.GrainFactory.GetGrain<IGeneratedEventReporterGrain>(GeneratedStreamTestConstants.ReporterId);
 
-            var report = await reporter.GetReport(GeneratedEventCollectorGrain.StreamProviderName, GeneratedEventCollectorGrain.StreamNamespace);
+            var report = await reporter.GetReport(StreamProviderName, StreamNamespace);
             if (assertIsTrue)
             {
                 // one stream per queue
