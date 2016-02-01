@@ -29,13 +29,14 @@ namespace Orleans.Runtime.GrainDirectory
 
         public Task RegisterMany(List<ActivationAddress> addresses, bool singleActivation)
         {
+            if (addresses == null || addresses.Count == 0)
+                throw new ArgumentException("addresses cannot be an empty list or null");
+
             // validate that this request arrived correctly
             //logger.Assert(ErrorCode.Runtime_Error_100140, silo.Matches(router.MyAddress), "destination address != my address");
 
             if (logger.IsVerbose2) logger.Verbose2("RegisterMany Count={0}", addresses.Count);
 
-            if (addresses.Count == 0)
-                return TaskDone.Done;
 
             return Task.WhenAll(addresses.Select(addr => router.RegisterAsync(addr, singleActivation, 1)));
         }
