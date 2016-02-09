@@ -97,12 +97,12 @@
     <Compile Include="Core\InvocationMethodInfoMap.cs" />
     <Compile Include="Core\IStatefulGrain.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
+    <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
     <Compile Include="LogViews\ILogSubmission.cs" />
     <Compile Include="LogViews\ILogView.cs" />
     <Compile Include="LogViews\ILogViewHost.cs" />
     <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="QueuedGrains\QueuedGrainState.cs" />
-    <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
     <Compile Include="Configuration\LimitValue.cs" />

@@ -96,6 +96,7 @@
     <Compile Include="..\..\test\Tester\TestUtils.cs">
       <Link>Tester\TestUtils.cs</Link>
     </Compile>
+    <Compile Include="GeoClusterTests\BasicQueuedGrainTests.cs" />
     <Compile Include="StreamingTests\AQStreamingTests.cs" />
     <Compile Include="AssemblyLoaderTests.cs" />
     <Compile Include="AsynchAgentRestartTest.cs" />

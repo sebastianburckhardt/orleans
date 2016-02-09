@@ -414,7 +414,7 @@ namespace Orleans.Runtime
                     ActivationCollector.TryRescheduleCollection(result);
                     return result;
                 }
-                
+
                 int typeCode = address.Grain.GetTypeCode();
                 string actualGrainType = null;
                 MultiClusterRegistrationStrategy activationStrategy;
@@ -538,15 +538,15 @@ namespace Orleans.Runtime
                                 // If this was a duplicate, it's not an error, just a race.
                                 // Forward on all of the pending messages, and then forget about this activation.
                                 string logMsg = String.Format("Tried to create a duplicate activation {0}, but we'll use {1} instead. " +
-                                    "GrainInstanceType is {2}. " +
+                                                            "GrainInstanceType is {2}. " +
                                                             "{3}" +
                                                             "Full activation address is {4}. We have {5} messages to forward.",
-                                    address,
-                                    target,
-                                    activation.GrainInstanceType,
+                                                address,
+                                                target,
+                                                activation.GrainInstanceType,
                                                 primary != null ? "Primary Directory partition for this grain is " + primary + ". " : String.Empty,
-                                    address.ToFullString(),
-                                    activation.WaitingCount);
+                                                address.ToFullString(),
+                                                activation.WaitingCount);
                                 if (activation.IsStatelessWorker)
                                 {
                                     if (logger.IsVerbose) logger.Verbose(ErrorCode.Catalog_DuplicateActivation, logMsg);
@@ -1256,7 +1256,7 @@ namespace Orleans.Runtime
             {
                 var result = await scheduler.RunOrQueueTask(() => directory.RegisterAsync(address, singleActivation:true), this.SchedulingContext);
                 if (address.Equals(result.Address)) return;
-               
+
                 SiloAddress primaryDirectoryForGrain = directory.GetPrimaryForGrain(address.Grain);
                 throw new DuplicateActivationException(result.Address, primaryDirectoryForGrain);
             }
@@ -1274,7 +1274,7 @@ namespace Orleans.Runtime
                     throw new DuplicateActivationException(id);
                 }
             }
-            // We currently don't have any other case for multiple activations except for StatelessWorker. 
+            // We currently don't have any other case for multiple activations except for StatelessWorker.
         }
 
         #endregion

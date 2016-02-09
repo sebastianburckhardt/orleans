@@ -22,8 +22,8 @@ namespace Orleans.Runtime
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
         internal StorageInterface StorageInterface { get; private set; }
-
-
+   
+     
         public GrainTypeData(Type type, Type stateObjectType, StorageInterface storageInterface)
         {
             Type = type;
