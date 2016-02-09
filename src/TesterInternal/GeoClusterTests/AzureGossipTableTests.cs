@@ -85,7 +85,7 @@ namespace Tests.GeoClusterTests
             }
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Gossip"), TestCategory("Azure"), TestCategory("Storage")]
+        [TestMethod, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
         public async Task AzureGossip_ConfigGossip()
         {
             // start clean
@@ -137,7 +137,7 @@ namespace Tests.GeoClusterTests
             //Assert.IsTrue(false, "test how failing tests are reported");       
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Gossip"), TestCategory("Azure"), TestCategory("Storage")]
+        [TestMethod, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
         public async Task AzureGossip_GatewayGossip()
         {
             // start clean
