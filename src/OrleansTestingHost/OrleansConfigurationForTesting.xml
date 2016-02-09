@@ -17,6 +17,15 @@
        <!--
        <TraceLevelOverride LogPrefix="Runtime.Dispatcher" TraceLevel="Verbose" />
        <TraceLevelOverride LogPrefix="AssemblyLoader.Silo" TraceLevel="Warning" />
+       <TraceLevelOverride LogPrefix="Runtime.MembershipOracle" TraceLevel="Verbose" />
+       <TraceLevelOverride LogPrefix="Runtime.Dispatcher" TraceLevel="Verbose2" />
+       <TraceLevelOverride LogPrefix="Runtime.Message" TraceLevel="Verbose" />
+       <TraceLevelOverride LogPrefix="Runtime.Catalog" TraceLevel="Verbose" />
+       <TraceLevelOverride LogPrefix="GrainAssemblyLoader" TraceLevel="Warning" />
+       <TraceLevelOverride LogPrefix="Runtime.Orleans.GrainDirectory.LocalGrainDirectory" TraceLevel="Verbose" />
+       <TraceLevelOverride LogPrefix="Runtime.MultiClusterOracle" TraceLevel="Verbose3" />
+       <TraceLevelOverride LogPrefix="Runtime.AzureTableBasedGossipChannel" TraceLevel="Verbose3" />
+       <TraceLevelOverride LogPrefix="Runtime.GossipTableInstanceManager" TraceLevel="Verbose3" />
        -->
     </Tracing>
     <Statistics MetricsTableWriteInterval="30s" PerfCounterWriteInterval="30s" LogWriteInterval="300s" WriteLogStatisticsToTable="true" StatisticsCollectionLevel="Info"/>

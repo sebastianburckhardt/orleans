@@ -7,7 +7,6 @@ using System.Xml;
 using Orleans.Runtime.MembershipService;
 using Orleans.MultiCluster;
 
-
 namespace Orleans.Runtime.Management
 {
     /// <summary>
@@ -310,5 +309,70 @@ namespace Orleans.Runtime.Management
         {
             return InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<ISiloControl>(Constants.SiloControlId, silo);
         }
+
+        #region MultiCluster
+
+        public Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways()
+        {
+            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+                throw new OrleansException("No multicluster network configured");
+
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            return Task.FromResult(multiclusteroracle.GetGateways().Select(g => (IMultiClusterGatewayInfo) g).ToList());
+        }
+
+        public Task<MultiClusterConfiguration> GetMultiClusterConfiguration()
+        {
+            if (! Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+                throw new OrleansException("No multicluster network configured");
+
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            return Task.FromResult(multiclusteroracle.GetMultiClusterConfiguration());
+        }
+
+        public async Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkstabilityfirst = true)
+        {
+            if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
+                throw new OrleansException("No multicluster network configured");
+
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+
+            var configuration = new MultiClusterConfiguration(DateTime.UtcNow, clusters.ToList(), comment);
+
+            if (!MultiClusterConfiguration.OlderThan(multiclusteroracle.GetMultiClusterConfiguration(), configuration))
+                throw new OrleansException("Could not inject multi-cluster configuration: current configuration is newer than clock");
+
+            if (checkstabilityfirst)
+                try
+                {
+                    var unstablesilos = await multiclusteroracle.StabilityCheck(multiclusteroracle.GetMultiClusterConfiguration());
+
+                    if (unstablesilos.Count > 0)
+                    {
+                        var msg = string.Format("Found unstable silos {0}", string.Join(",", unstablesilos.Keys));
+                        throw new OrleansException(msg);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new OrleansException("Could not inject multi-cluster configuration: stability check failed", e);
+                }
+
+
+            await multiclusteroracle.InjectMultiClusterConfiguration(configuration);
+
+            return configuration;
+        }
+
+        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck()
+        {
+            var multiclusteroracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            var expected = multiclusteroracle.GetMultiClusterConfiguration();
+            return multiclusteroracle.StabilityCheck(expected);
+        }
+
+        #endregion
+
+
     }
 }

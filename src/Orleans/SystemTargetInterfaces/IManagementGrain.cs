@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.MultiCluster;
 
 
 namespace Orleans.Runtime
@@ -134,5 +135,40 @@ namespace Orleans.Runtime
         /// <param name="configuration">XML elements and attributes to update</param>
         /// <returns></returns>
         Task UpdateConfiguration(SiloAddress[] hostIds, Dictionary<string, string> configuration, Dictionary<string, string> tracing);
+
+
+#region MultiCluster Management
+
+        /// <summary>
+        /// Get the current list of multicluster gateways.
+        /// </summary>
+        /// <returns>A list of the currently known gateways</returns>
+        Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways();
+
+        /// <summary>
+        /// Get the current multicluster configuration.
+        /// </summary>
+        /// <returns>The current multicluster configuration, or null if there is none</returns>
+        Task<MultiClusterConfiguration> GetMultiClusterConfiguration();
+
+        /// <summary>
+        /// Contact all silos in all clusters and return silos that do not have the latest configuration. 
+        /// If some clusters and/or silos cannot be reached, an exception is thrown.
+        /// </summary>
+        /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
+        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck();
+ 
+        /// <summary>
+        /// Configure the active multi-cluster, by injecting a multicluster configuration.
+        /// </summary>
+        /// <param name="clusters">the clusters that should be part of the active configuration</param>
+        /// <param name="comment">a comment to store alongside the configuration</param>
+        /// <param name="checkstabilityfirst">if true, checks that all clusters are reachable and up-to-date before injecting the new configuration</param>
+        /// <returns> The task completes once information has propagated to the gossip channels</returns>
+        Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkstabilityfirst = true);
+
+#endregion
+
+
     }
 }

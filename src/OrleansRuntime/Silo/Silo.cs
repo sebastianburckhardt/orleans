@@ -17,6 +17,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Placement;
 using Orleans.Runtime.Counters;
+using Orleans.Runtime.MultiClusterNetwork;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.MembershipService;
 using Orleans.Runtime.Messaging;
@@ -28,6 +29,8 @@ using Orleans.Serialization;
 using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.Timers;
+using Orleans.MultiCluster;
+
 
 namespace Orleans.Runtime
 {
@@ -66,6 +69,7 @@ namespace Orleans.Runtime
         private readonly SiloType siloType;
         private readonly SiloStatisticsManager siloStatistics;
         private readonly MembershipFactory membershipFactory;
+        private readonly MultiClusterOracleFactory multiClusterFactory;
         private StorageProviderManager storageProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private BootstrapProviderManager bootstrapProviderManager;
@@ -73,6 +77,8 @@ namespace Orleans.Runtime
         private IReminderService reminderService;
         private ProviderManagerSystemTarget providerManagerSystemTarget;
         private IMembershipOracle membershipOracle;
+        private IMultiClusterOracle multiClusterOracle;
+
         private ClientObserverRegistrar clientRegistrar;
         private Watchdog platformWatchdog;
         private readonly TimeSpan initTimeout;
@@ -95,6 +101,7 @@ namespace Orleans.Runtime
         internal GrainTypeManager LocalTypeManager { get { return typeManager; } }
         internal ILocalGrainDirectory LocalGrainDirectory { get { return localGrainDirectory; } }
         internal ISiloStatusOracle LocalSiloStatusOracle { get { return membershipOracle; } }
+        internal IMultiClusterOracle LocalMultiClusterOracle { get { return multiClusterOracle; } }
         internal IConsistentRingProvider RingProvider { get; private set; }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
@@ -108,6 +115,12 @@ namespace Orleans.Runtime
 
         internal IServiceProvider Services { get { return services; } }
 
+        public string ClusterId
+        {
+            get { return globalConfig.HasMultiClusterNetwork ? globalConfig.ClusterId : null; } 
+        }
+
+     
         /// <summary> SiloAddress for this silo. </summary>
         public SiloAddress SiloAddress { get { return messageCenter.MyAddress; } }
 
@@ -307,6 +320,8 @@ namespace Orleans.Runtime
             incomingAgent = new IncomingMessageAgent(Message.Categories.Application, messageCenter, activationDirectory, scheduler, dispatcher);
 
             membershipFactory = new MembershipFactory();
+            multiClusterFactory = new MultiClusterOracleFactory();
+            
             reminderFactory = new LocalReminderServiceFactory();
             
             SystemStatus.Current = SystemStatus.Created;
@@ -340,6 +355,12 @@ namespace Orleans.Runtime
 
             logger.Verbose("Creating {0} System Target", "MembershipOracle");
             RegisterSystemTarget((SystemTarget) membershipOracle);
+
+            if (multiClusterOracle != null)
+            {
+                logger.Verbose("Creating {0} System Target", "MultiClusterOracle");
+                RegisterSystemTarget((SystemTarget)multiClusterOracle);
+            }
 
             logger.Verbose("Finished creating System Targets for this silo.");
         }
@@ -443,6 +464,7 @@ namespace Orleans.Runtime
 
             IMembershipTable membershipTable = membershipFactory.GetMembershipTable(GlobalConfig.LivenessType, GlobalConfig.MembershipTableAssembly);
             membershipOracle = membershipFactory.CreateMembershipOracle(this, membershipTable);
+            multiClusterOracle = multiClusterFactory.CreateGossipOracle(this).WaitForResultWithThrow(initTimeout);
             
             // This has to follow the above steps that start the runtime components
             CreateSystemTargets();
@@ -494,6 +516,18 @@ namespace Orleans.Runtime
             scheduler.QueueTask(LocalSiloStatusOracle.BecomeActive, statusOracleContext)
                 .WaitWithThrow(initTimeout);
             if (logger.IsVerbose) { logger.Verbose("Local silo status oracle became active successfully."); }
+
+            //if running in multi cluster scenario, start the MultiClusterNetwork Oracle
+            if (GlobalConfig.HasMultiClusterNetwork) 
+            {
+                logger.Info("Creating multicluster oracle with my ServiceId={0} and ClusterId={1}.",
+                    GlobalConfig.GlobalServiceId, GlobalConfig.ClusterId);
+
+                ISchedulingContext clusterStatusContext = ((SystemTarget) multiClusterOracle).SchedulingContext;
+                scheduler.QueueTask(() => multiClusterOracle.Start(LocalSiloStatusOracle), clusterStatusContext)
+                                    .WaitWithThrow(initTimeout);
+                if (logger.IsVerbose) { logger.Verbose("multicluster oracle created successfully."); }
+            }
 
             try
             {
@@ -905,6 +939,29 @@ namespace Orleans.Runtime
             internal void SuppressFastKillInHandleProcessExit()
             {
                 ExecuteFastKillInProcessExit = false;
+            }
+
+            internal IDictionary<GrainId, IGrainInfo> GetDirectory()
+            {
+                return silo.localGrainDirectory.DirectoryPartition.GetItems();
+            }
+          
+            internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypenamesContaining(string expr)
+            {
+                var x = new Dictionary<GrainId, IGrainInfo>();
+                foreach (var kvp in GetDirectory())
+                {
+                    if (kvp.Key.IsSystemTarget || kvp.Key.IsClient || !kvp.Key.IsGrain)
+                        continue;// Skip system grains, system targets and clients
+                    if (silo.catalog.GetGrainTypeName(kvp.Key).Contains(expr))
+                        x.Add(kvp.Key, kvp.Value);
+                }
+                return x;
+            }
+
+            internal void InjectMultiClusterConfiguration(MultiClusterConfiguration config)
+            {
+                silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
             }
 
             // store silos for which we simulate faulty communication
