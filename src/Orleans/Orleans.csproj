@@ -34,7 +34,7 @@
     <DocumentationFile>obj\Debug\Orleans.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <WarningsAsErrors>4014</WarningsAsErrors>
-    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
+    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -93,6 +93,8 @@
     <Compile Include="CodeGeneration\SkipCodeGenerationAttribute.cs" />
     <Compile Include="CodeGeneration\IGrainState.cs" />
     <Compile Include="CodeGeneration\TypeFormattingOptions.cs" />
+    <Compile Include="Core\IGrainInvokeInterceptor.cs" />
+    <Compile Include="Core\InvocationMethodInfoMap.cs" />
     <Compile Include="Core\IStatefulGrain.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
     <Compile Include="LogViews\ILogSubmission.cs" />

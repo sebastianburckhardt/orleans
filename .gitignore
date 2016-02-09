@@ -197,3 +197,4 @@ FakesAssemblies/
 **/pingme.txt
 .vs/
 **/project.lock.json
+src/SetupTestScriptOutput.txt

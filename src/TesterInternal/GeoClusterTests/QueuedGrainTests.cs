@@ -92,7 +92,7 @@ namespace Tester.GeoClusterTests
             }
             catch (Exception e)
             {
-                TestingSiloHost.WriteLog("Exception caught in test cleanup function: {0}", e);
+                Console.WriteLine("Exception caught in test cleanup function: {0}", e);
             }
         }
 
