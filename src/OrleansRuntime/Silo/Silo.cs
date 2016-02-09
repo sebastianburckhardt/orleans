@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
+using Orleans.GrainDirectory;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
@@ -167,13 +168,13 @@ namespace Orleans.Runtime
 
             OrleansConfig = config;
             globalConfig = config.Globals;
-            config.OnConfigChange("Defaults", () => nodeConfig = config.GetOrAddConfigurationForNode(name));
+            config.OnConfigChange("Defaults", () => nodeConfig = config.GetOrCreateNodeConfigurationForSilo(name));
 
             if (!TraceLogger.IsInitialized)
                 TraceLogger.Initialize(nodeConfig);
 
             config.OnConfigChange("Defaults/Tracing", () => TraceLogger.Initialize(nodeConfig, true), false);
-
+            MultiClusterRegistrationStrategy.Initialize();
             ActivationData.Init(config, nodeConfig);
             StatisticsCollector.Initialize(nodeConfig);
             
@@ -274,6 +275,8 @@ namespace Orleans.Runtime
             // Now the router/directory service
             // This has to come after the message center //; note that it then gets injected back into the message center.;
             localGrainDirectory = new LocalGrainDirectory(this); 
+
+            RegistrarManager.InitializeGrainDirectoryManager(localGrainDirectory);
 
             // Now the activation directory.
             // This needs to know which router to use so that it can keep the global directory in synch with the local one.
@@ -487,7 +490,7 @@ namespace Orleans.Runtime
             // Load and init stream providers before silo becomes active
             var siloStreamProviderManager = (StreamProviderManager) grainRuntime.StreamProviderManager;
             scheduler.QueueTask(
-                () => siloStreamProviderManager.LoadStreamProviders(this.GlobalConfig.ProviderConfigurations, SiloProviderRuntime.Instance),
+                () => siloStreamProviderManager.LoadStreamProviders(GlobalConfig.ProviderConfigurations, SiloProviderRuntime.Instance),
                     providerManagerSystemTarget.SchedulingContext)
                         .WaitWithThrow(initTimeout);
             InsideRuntimeClient.Current.CurrentStreamProviderManager = siloStreamProviderManager;
@@ -502,7 +505,7 @@ namespace Orleans.Runtime
                 scheduler.QueueTask(() => membershipFactory.WaitForTableToInit(membershipTable), statusOracleContext)
                         .WaitWithThrow(initTimeout);
             }
-            scheduler.QueueTask(() => membershipTable.InitializeMembershipTable(this.GlobalConfig, true, TraceLogger.GetLogger(membershipTable.GetType().Name)), statusOracleContext)
+            scheduler.QueueTask(() => membershipTable.InitializeMembershipTable(GlobalConfig, true, TraceLogger.GetLogger(membershipTable.GetType().Name)), statusOracleContext)
                 .WaitWithThrow(initTimeout);
           
             scheduler.QueueTask(() => LocalSiloStatusOracle.Start(), statusOracleContext)
@@ -542,7 +545,7 @@ namespace Orleans.Runtime
                 if (reminderService != null)
                 {
                     // so, we have the view of the membership in the consistentRingProvider. We can start the reminder service
-                    scheduler.QueueTask(reminderService.Start, ((SystemTarget) reminderService).SchedulingContext)
+                    scheduler.QueueTask(reminderService.Start, ((SystemTarget)reminderService).SchedulingContext)
                         .WaitWithThrow(initTimeout);
                     if (logger.IsVerbose)
                     {
@@ -914,7 +917,7 @@ namespace Orleans.Runtime
             /// <returns></returns>
             internal IStorageProvider GetStorageProvider(string name)
             {
-                var provider = silo.StorageProviderManager.GetProvider(name) as IStorageProvider;
+                IStorageProvider provider = silo.StorageProviderManager.GetProvider(name) as IStorageProvider;
                 return CheckReturnBoundaryReference("storage provider", provider);
             }
 
@@ -925,7 +928,7 @@ namespace Orleans.Runtime
 
             internal IBootstrapProvider GetBootstrapProvider(string name)
             {
-                var provider = silo.BootstrapProviders.First(p => p.Name == name);
+                IBootstrapProvider provider = silo.BootstrapProviders.First(p => p.Name.Equals(name));
                 return CheckReturnBoundaryReference("bootstrap provider", provider);
             }
 
@@ -974,14 +977,14 @@ namespace Orleans.Runtime
                 SimulatedMessageLoss = null;
             }
 
-            SafeRandom random = new SafeRandom();
+            private readonly SafeRandom random = new SafeRandom();
 
             internal bool ShouldDrop(Message msg)
             {
                 if (SimulatedMessageLoss != null)
                 {
-                    double blockedpercentage = 0.0;
-                    Silo.CurrentSilo.TestHook.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
+                    double blockedpercentage;
+                    CurrentSilo.TestHook.SimulatedMessageLoss.TryGetValue(msg.TargetSilo.Endpoint, out blockedpercentage);
                     return (random.NextDouble() * 100 < blockedpercentage);
                 }
                 else
@@ -1038,7 +1041,7 @@ namespace Orleans.Runtime
                 /// </summary>
                 public GeneratedAssemblies()
                 {
-                    this.Assemblies = new Dictionary<string, byte[]>();
+                    Assemblies = new Dictionary<string, byte[]>();
                 }
 
                 /// <summary>
@@ -1059,7 +1062,7 @@ namespace Orleans.Runtime
                 {
                     if (!string.IsNullOrWhiteSpace(key))
                     {
-                        this.Assemblies[key] = value;
+                        Assemblies[key] = value;
                     }
                 }
             }
@@ -1087,7 +1090,7 @@ namespace Orleans.Runtime
             if (schedulingContext == null)
             {
                 if (context == null)
-                    logger.Error(ErrorCode.Runtime_Error_100102, String.Format("Silo caught an UnobservedException with context==null."), exception);
+                    logger.Error(ErrorCode.Runtime_Error_100102, "Silo caught an UnobservedException with context==null.", exception);
                 else
                     logger.Error(ErrorCode.Runtime_Error_100103, String.Format("Silo caught an UnobservedException with context of type different than OrleansContext. The type of the context is {0}. The context is {1}",
                         context.GetType(), context), exception);
