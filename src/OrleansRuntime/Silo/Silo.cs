@@ -31,7 +31,6 @@ using Orleans.Streams;
 using Orleans.Timers;
 using Orleans.MultiCluster;
 
-
 namespace Orleans.Runtime
 {
 
@@ -78,7 +77,6 @@ namespace Orleans.Runtime
         private ProviderManagerSystemTarget providerManagerSystemTarget;
         private IMembershipOracle membershipOracle;
         private IMultiClusterOracle multiClusterOracle;
-
         private ClientObserverRegistrar clientRegistrar;
         private Watchdog platformWatchdog;
         private readonly TimeSpan initTimeout;
@@ -321,7 +319,6 @@ namespace Orleans.Runtime
 
             membershipFactory = new MembershipFactory();
             multiClusterFactory = new MultiClusterOracleFactory();
-            
             reminderFactory = new LocalReminderServiceFactory();
             
             SystemStatus.Current = SystemStatus.Created;

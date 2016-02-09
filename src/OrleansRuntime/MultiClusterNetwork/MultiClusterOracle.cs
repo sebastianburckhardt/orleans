@@ -16,7 +16,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         private GrainTimer timer;
 
-        private ISiloStatusOracle silostatusoracle;
+        private ISiloStatusOracle siloStatusOracle;
+        private MultiClusterConfiguration injectedConfig;
 
         private string globalServiceId;
         private string clusterId;
@@ -105,20 +106,17 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public async Task InjectMultiClusterConfiguration(MultiClusterConfiguration config)
         {
-            injectedconfig = config;
+            this.injectedConfig = config;
             PushChanges();
 
             // wait for the gossip channel tasks and reproduce any exceptions
-            foreach (var ct in channeltasks.Values)
+            foreach (var ct in this.channelTasks.Values)
             {
-                await ct.task;
-                if (ct.lastexception != null)
-                    throw ct.lastexception;
+                await ct.Task;
+                if (ct.LastException != null)
+                    throw ct.LastException;
             }
         }
-
-        private MultiClusterConfiguration injectedconfig;
-
 
         public void SiloStatusChangeNotification(SiloAddress updatedSilo, SiloStatus status)
         {
@@ -144,18 +142,19 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 if (string.IsNullOrEmpty(clusterId))
                     throw new OrleansException("Internal Error: missing cluster id");
 
-                this.silostatusoracle = oracle;
+                this.siloStatusOracle = oracle;
 
-                silostatusoracle.SubscribeToSiloStatusEvents(this);
+                this.siloStatusOracle.SubscribeToSiloStatusEvents(this);
 
                 // startup: pull all the info from the tables, then inject default multi cluster if none found
                 foreach (var ch in gossipChannels)
                     FullGossipWithChannel(ch);
-                await Task.WhenAll(channeltasks.Select(kvp => kvp.Value.task));
+
+                await Task.WhenAll(this.channelTasks.Select(kvp => kvp.Value.Task));
                 if (GetMultiClusterConfiguration() == null && defaultMultiCluster != null)
                 {
-                    injectedconfig = new MultiClusterConfiguration(DateTime.UtcNow, defaultMultiCluster, "DefaultMultiCluster");
-                    logger.Info("No configuration found. Using default configuration {0} ", injectedconfig);
+                    this.injectedConfig = new MultiClusterConfiguration(DateTime.UtcNow, defaultMultiCluster, "DefaultMultiCluster");
+                    logger.Info("No configuration found. Using default configuration {0} ", this.injectedConfig);
                 }
 
                 PushChanges();
@@ -195,22 +194,22 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
              logger.Verbose("--- PushChanges: assess");
 
-            var activelocalgateways = silostatusoracle.GetApproximateMultiClusterGateways();
+            var activeLocalGateways = this.siloStatusOracle.GetApproximateMultiClusterGateways();
 
-            var iamgateway = activelocalgateways.Contains(Silo);
+            var iAmGateway = activeLocalGateways.Contains(Silo);
 
             var deltas = new MultiClusterData();
 
-            InjectLocalStatus(iamgateway, ref deltas);
+            InjectLocalStatus(iAmGateway, ref deltas);
 
             InjectConfiguration(ref deltas);
 
-            if (iamgateway)
-                DemoteLocalGateways(activelocalgateways, ref deltas);
+            if (iAmGateway)
+                DemoteLocalGateways(activeLocalGateways, ref deltas);
 
             if (logger.IsVerbose)
-                logger.Verbose("--- PushChanges: found activegateways={0} iamgateway={1} push={2}",
-                   string.Join(",", activelocalgateways), iamgateway, deltas);
+                logger.Verbose("--- PushChanges: found activeGateways={0} iAmGateway={1} push={2}",
+                   string.Join(",", activeLocalGateways), iAmGateway, deltas);
 
             if (!deltas.IsEmpty)
             {
@@ -220,7 +219,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                         PushGossipToCluster(x, deltas);
 
                 // push deltas to all local silos
-                foreach (var kvp in silostatusoracle.GetApproximateSiloStatuses())
+                foreach (var kvp in this.siloStatusOracle.GetApproximateSiloStatuses())
                     if (!kvp.Key.Equals(Silo) && kvp.Value == SiloStatus.Active)
                         PushGossipToSilo(kvp.Key, deltas);
 
@@ -252,7 +251,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             {
                 var address = gateways[pick].Key;
                 var cluster = gateways[pick].Value.ClusterId;
-                FullGossipWithSilo(gateways[pick].Key, gateways[pick].Value.ClusterId);
+                FullGossipWithSilo(address, cluster);
             }
             else
             {
@@ -261,31 +260,29 @@ namespace Orleans.Runtime.MultiClusterNetwork
             }
 
             // report summary of encountered communication problems in log
-            var unreachableclusters = string.Join(",", clustertasks
-                .Where(kvp => kvp.Value.lastexception != null)
-                .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.lastexception.GetType().Name)));
-            if (!string.IsNullOrEmpty(unreachableclusters))
-                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach  reach clusters {0}", unreachableclusters);
-            var unreachablesilos = string.Join(",", silotasks
-                .Where(kvp => kvp.Value.lastexception != null)
-                .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.lastexception.GetType().Name)));
-            if (!string.IsNullOrEmpty(unreachablesilos))
-                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach  reach silos {0}", unreachablesilos);
-            var unreachablechannels = string.Join(",", channeltasks
-                  .Where(kvp => kvp.Value.lastexception != null)
-                  .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.lastexception.GetType().Name)));
+            var unreachableClusters = string.Join(",", this.clusterTasks
+                .Where(kvp => kvp.Value.LastException != null)
+                .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.LastException.GetType().Name)));
+            if (!string.IsNullOrEmpty(unreachableClusters))
+                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach clusters {0}", unreachableClusters);
+            var unreachableSilos = string.Join(",", this.siloTasks
+                .Where(kvp => kvp.Value.LastException != null)
+                .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.LastException.GetType().Name)));
+            if (!string.IsNullOrEmpty(unreachableSilos))
+                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach silos {0}", unreachableSilos);
+            var unreachableChannels = string.Join(",", this.channelTasks
+                  .Where(kvp => kvp.Value.LastException != null)
+                  .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.LastException.GetType().Name)));
 
-            if (!string.IsNullOrEmpty(unreachablechannels))
-                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach channels {0}", unreachablechannels);
+            if (!string.IsNullOrEmpty(unreachableChannels))
+                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach channels {0}", unreachableChannels);
 
             // discard old status information
-            RemoveStaleTaskStatusEntries(clustertasks);
-            RemoveStaleTaskStatusEntries(silotasks);
+            RemoveStaleTaskStatusEntries(this.clusterTasks);
+            RemoveStaleTaskStatusEntries(this.siloTasks);
 
             logger.Verbose("--- PeriodicBackgroundGossip: done");
         }
-
-
 
         // the set of all known clusters
         private IEnumerable<string> AllClusters()
@@ -303,24 +300,24 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             var tbr = new List<K>();
             foreach (var kvp in d)
-                if ((DateTime.UtcNow - kvp.Value.lastuse).TotalMilliseconds > 2.5 * RandomizedResendActiveStatusAfter.TotalMilliseconds)
+                if ((DateTime.UtcNow - kvp.Value.LastUse).TotalMilliseconds > 2.5 * RandomizedResendActiveStatusAfter.TotalMilliseconds)
                     tbr.Add(kvp.Key);
             foreach (var k in tbr)
                 d.Remove(k);
         }
       
         // called by remote nodes that push changes
-        public Task Push(IMultiClusterGossipData multiclusterdata, bool forwardlocally)
+        public Task Push(IMultiClusterGossipData gossipData, bool forwardLocally)
         {
-            logger.Verbose("--- Push: receive {0} data {1}", forwardlocally ? "remote" : "local", multiclusterdata);
+            logger.Verbose("--- Push: receive {0} data {1}", forwardLocally ? "remote" : "local", gossipData);
 
-            var data = (MultiClusterData)multiclusterdata;
+            var data = (MultiClusterData)gossipData;
 
             var delta = localData.ApplyDataAndNotify(data);
 
             // forward changes to all local silos
-            if (forwardlocally)
-                foreach (var kvp in silostatusoracle.GetApproximateSiloStatuses())
+            if (forwardLocally)
+                foreach (var kvp in this.siloStatusOracle.GetApproximateSiloStatuses())
                     if (!kvp.Key.Equals(Silo) && kvp.Value == SiloStatus.Active)
                         PushGossipToSilo(kvp.Key, delta);
 
@@ -332,11 +329,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
         }
 
         // called by remote nodes' full background gossip
-        public Task<IMultiClusterGossipData> PushAndPull(IMultiClusterGossipData multiclusterdata)
+        public Task<IMultiClusterGossipData> PushAndPull(IMultiClusterGossipData gossipData)
         {
-            logger.Verbose("--- PushAndPull: gossip {0}", multiclusterdata);
+            logger.Verbose("--- PushAndPull: gossip {0}", gossipData);
 
-            var data = (MultiClusterData)multiclusterdata;
+            var data = (MultiClusterData)gossipData;
 
             var delta = localData.ApplyDataAndNotify(data);
 
@@ -349,45 +346,47 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck(MultiClusterConfiguration expected)
         {
-            var localtask = FindUnstableSilos(expected, true);
+            var localTask = FindUnstableSilos(expected, true);
 
-            var remotetasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
+            var remoteTasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
             foreach (var cluster in GetActiveClusters())
+            {
                 if (cluster != clusterId)
                 {
                     var silo = GetRandomClusterGateway(cluster);
                     if (silo == null)
                         throw new OrleansException("no gateway for cluster " + cluster);
-                    var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, silo);
-                    remotetasks.Add(remoteoracle.FindUnstableSilos(expected, true));
+                    var remoteOracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, silo);
+                    remoteTasks.Add(remoteOracle.FindUnstableSilos(expected, true));
                 }
+            }
 
-            var result = await localtask;
+            var result = await localTask;
 
-            await Task.WhenAll(remotetasks);
+            await Task.WhenAll(remoteTasks);
 
-            foreach (var t in remotetasks)
-                foreach (var kvp in t.Result)
-                    result.Add(kvp.Key, kvp.Value);
+            foreach (var kvp in remoteTasks.SelectMany(t => t.Result))
+            {
+                result.Add(kvp.Key, kvp.Value);
+            }
 
             return result;
         }
 
-
-        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardlocally)
+        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardLocally)
         {
-            logger.Verbose("--- FindUnstableSilos: {0}, {1}", forwardlocally ? "remote" : "local", expected);
+            logger.Verbose("--- FindUnstableSilos: {0}, {1}", forwardLocally ? "remote" : "local", expected);
 
             var result = new Dictionary<SiloAddress, MultiClusterConfiguration>();
 
             if (! MultiClusterConfiguration.SameAs(localData.Current.Configuration, expected))
                 result.Add(this.Silo, localData.Current.Configuration);
 
-            if (forwardlocally)
+            if (forwardLocally)
             {
                 var tasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
 
-                  foreach (var kvp in silostatusoracle.GetApproximateSiloStatuses())
+                  foreach (var kvp in this.siloStatusOracle.GetApproximateSiloStatuses())
                        if (!kvp.Key.Equals(Silo) && kvp.Value == SiloStatus.Active)
                        {
                            var silo = kvp.Key;
@@ -407,8 +406,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return result;
         }
 
-      
-
         private void PushMyStatusToNewDestinations(MultiClusterData delta)
         {
             // for quicker convergence, we push active local status information
@@ -420,19 +417,18 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 || myentry.Status != GatewayStatus.Active)
                 return;
 
-
             foreach (var kvp in delta.Gateways)
             {
                 var destinationcluster = kvp.Value.ClusterId;
 
                 if (destinationcluster == clusterId) // local cluster
                 {
-                    if (!silotasks.ContainsKey(kvp.Key) || !silotasks[kvp.Key].knowsme)
+                    if (!this.siloTasks.ContainsKey(kvp.Key) || !this.siloTasks[kvp.Key].KnowsMe)
                         PushGossipToSilo(kvp.Key, new MultiClusterData(myentry));
                 }
                 else // remote cluster
                 {
-                    if (!clustertasks.ContainsKey(destinationcluster) || !clustertasks[destinationcluster].knowsme)
+                    if (!this.clusterTasks.ContainsKey(destinationcluster) || !this.clusterTasks[destinationcluster].KnowsMe)
                         PushGossipToCluster(destinationcluster, new MultiClusterData(myentry));
                 }
             }
@@ -440,168 +436,165 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         private class GossipStatus
         {
-            public SiloAddress address;
-            public Task task = TaskDone.Done;
-            public Exception lastexception;
-            public bool knowsme;
-            public bool pending;
-            public DateTime lastuse = DateTime.UtcNow;
+            public SiloAddress Address;
+            public Task Task = TaskDone.Done;
+            public Exception LastException;
+            public bool KnowsMe;
+            public bool Pending;
+            public DateTime LastUse = DateTime.UtcNow;
         }
 
         // tasks for gossip
-        private Dictionary<SiloAddress, GossipStatus> silotasks = new Dictionary<SiloAddress, GossipStatus>();
-        private Dictionary<string, GossipStatus> clustertasks = new Dictionary<string, GossipStatus>();
-        private Dictionary<IGossipChannel, GossipStatus> channeltasks = new Dictionary<IGossipChannel,GossipStatus>();
+        private Dictionary<SiloAddress, GossipStatus> siloTasks = new Dictionary<SiloAddress, GossipStatus>();
+        private Dictionary<string, GossipStatus> clusterTasks = new Dictionary<string, GossipStatus>();
+        private Dictionary<IGossipChannel, GossipStatus> channelTasks = new Dictionary<IGossipChannel,GossipStatus>();
  
         // numbering for tasks (helps when analyzing logs)
-        private int idcounter;
+        private int idCounter;
 
-
-        private void PushGossipToSilo(SiloAddress destinationsilo, MultiClusterData delta)
+        private void PushGossipToSilo(SiloAddress destinationSilo, MultiClusterData delta)
         {
             GossipStatus status;
-            if (!silotasks.TryGetValue(destinationsilo, out status))
-                silotasks[destinationsilo] = status = new GossipStatus();
+            if (!this.siloTasks.TryGetValue(destinationSilo, out status))
+                this.siloTasks[destinationSilo] = status = new GossipStatus();
 
-            int id = ++idcounter;
-            logger.Verbose("-{0} PushGossipToSilo {1} {2}", id, destinationsilo, delta);
+            int id = ++this.idCounter;
+            logger.Verbose("-{0} PushGossipToSilo {1} {2}", id, destinationSilo, delta);
 
             // the task that actually pushes
-            Func<Task, Task> pushasync = async (Task prev) =>
+            Func<Task, Task> pushAsync = async (Task prev) =>
             {
                 await prev; // wait for previous push to same silo
-                status.lastuse = DateTime.UtcNow;
-                status.pending = true;
-                status.address = destinationsilo;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = true;
+                status.Address = destinationSilo;
                 try
                 {
                     // push to the remote system target
-                    var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, destinationsilo);
-                    await remoteoracle.Push(delta, false);
+                    var remoteOracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, destinationSilo);
+                    await remoteOracle.Push(delta, false);
 
-                    status.lastexception = null;
+                    status.LastException = null;
                     if (delta.Gateways.ContainsKey(this.Silo))
-                        status.knowsme = delta.Gateways[this.Silo].Status == GatewayStatus.Active;
+                        status.KnowsMe = delta.Gateways[this.Silo].Status == GatewayStatus.Active;
                     logger.Verbose("-{0} PushGossipToSilo successful", id);
                 }
                 catch (Exception e)
                 {
                     logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure,
-                        string.Format("-{0} PushGossipToSilo {1} failed", id, destinationsilo), e);
-                    status.lastexception = e;
+                        string.Format("-{0} PushGossipToSilo {1} failed", id, destinationSilo), e);
+                    status.LastException = e;
                 }
-                status.lastuse = DateTime.UtcNow;
-                status.pending = false;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = false;
             };
 
             // queue the push - we are not awaiting it!
-            status.task = pushasync(status.task);
+            status.Task = pushAsync(status.Task);
         }
 
-     
-
-        private void PushGossipToCluster(string destinationcluster, MultiClusterData delta)
+        private void PushGossipToCluster(string destinationCluster, MultiClusterData delta)
         {
             GossipStatus status;
-            if (!clustertasks.TryGetValue(destinationcluster, out status))
-                clustertasks[destinationcluster] = status = new GossipStatus();
+            if (!this.clusterTasks.TryGetValue(destinationCluster, out status))
+                this.clusterTasks[destinationCluster] = status = new GossipStatus();
 
-            int id = ++idcounter;
-            logger.Verbose("-{0} PushGossipToCluster {1} {2}", id, destinationcluster, delta);
+            int id = ++this.idCounter;
+            logger.Verbose("-{0} PushGossipToCluster {1} {2}", id, destinationCluster, delta);
 
             // the task that actually pushes
-            Func<Task, Task> pushasync = async (Task prev) =>
+            Func<Task, Task> pushAsync = async (Task prev) =>
             {
                 await prev; // wait for previous push to same cluster
-                status.lastuse = DateTime.UtcNow;
-                status.pending = true;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = true;
                 try
                 {
                     // pick a random gateway if we don't already have one or it is not active anymore
-                    if (status.address == null 
-                        || !localData.Current.IsActiveGatewayForCluster(status.address, destinationcluster))
+                    if (status.Address == null 
+                        || !localData.Current.IsActiveGatewayForCluster(status.Address, destinationCluster))
                     {
-                        status.address = GetRandomClusterGateway(destinationcluster);
+                        status.Address = GetRandomClusterGateway(destinationCluster);
                     }
 
-                    if (status.address == null)
+                    if (status.Address == null)
                         throw new OrleansException("could not notify cluster: no gateway found");
 
                     // push to the remote system target
-                    var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, status.address);
+                    var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, status.Address);
                     await remoteoracle.Push(delta, true);
 
-                    status.lastexception = null;
+                    status.LastException = null;
                     if (delta.Gateways.ContainsKey(this.Silo))
-                        status.knowsme = delta.Gateways[this.Silo].Status == GatewayStatus.Active;
+                        status.KnowsMe = delta.Gateways[this.Silo].Status == GatewayStatus.Active;
                     logger.Verbose("-{0} PushGossipToCluster successful", id);
                 }
                 catch (Exception e)
                 {
                     logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure,
-                        string.Format("-{0} PushGossipToCluster {1} failed", id, destinationcluster), e);
-                    status.lastexception = e;
-                    status.address = null; // this gateway was no good... pick random gateway again next time
+                        string.Format("-{0} PushGossipToCluster {1} failed", id, destinationCluster), e);
+                    status.LastException = e;
+                    status.Address = null; // this gateway was no good... pick random gateway again next time
                 }
-                status.lastuse = DateTime.UtcNow;
-                status.pending = false;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = false;
             };
 
             // queue the push - we are not awaiting it!
-            status.task = pushasync(status.task);
+            status.Task = pushAsync(status.Task);
         }
 
         private void PushGossipToChannel(IGossipChannel channel, MultiClusterData delta)
         {
             GossipStatus status;
-            if (!channeltasks.TryGetValue(channel, out status))
-                channeltasks[channel] = status = new GossipStatus();
+            if (!this.channelTasks.TryGetValue(channel, out status))
+                this.channelTasks[channel] = status = new GossipStatus();
 
-            int id = ++idcounter;
+            int id = ++this.idCounter;
             logger.Verbose("-{0} PushGossipToChannel {1} {2}", id, channel.Name, delta);
 
             // the task that actually pushes
-            Func<Task, Task> pushasync = async (Task prev) =>
+            Func<Task, Task> pushAsync = async (Task prev) =>
             {
                 await prev; // wait for previous push to same cluster
-                status.lastuse = DateTime.UtcNow;
-                status.pending = true;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = true;
                 try
                 {
                     await channel.Push(delta);
 
-                    status.lastexception = null;
+                    status.LastException = null;
                     logger.Verbose("-{0} PushGossipToChannel successful, answer={1}", id, delta);
                 }
                 catch (Exception e)
                 {
                     logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure,
                         string.Format("-{0} PushGossipToChannel {1} failed", id, channel.Name), e);
-                    status.lastexception = e;
+                    status.LastException = e;
                 }
-                status.lastuse = DateTime.UtcNow;
-                status.pending = false;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = false;
             };
 
             // queue the push - we are not awaiting it!
-            status.task = pushasync(status.task);
+            status.Task = pushAsync(status.Task);
         }
 
         private void FullGossipWithChannel(IGossipChannel channel)
         {
             GossipStatus status;
-            if (!channeltasks.TryGetValue(channel, out status))
-                channeltasks[channel] = status = new GossipStatus();
+            if (!this.channelTasks.TryGetValue(channel, out status))
+                this.channelTasks[channel] = status = new GossipStatus();
 
-            int id = ++idcounter;
+            int id = ++this.idCounter;
             logger.Verbose("-{0} FullGossipWithChannel {1}", id, channel.Name);
 
             // the task that actually gossips
-            Func<Task, Task> gossipasync = async (Task prev) =>
+            Func<Task, Task> gossipAsync = async (Task prev) =>
             {
                 await prev; // wait for previous gossip with same channel
-                status.lastuse = DateTime.UtcNow;
-                status.pending = true;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = true;
                 try
                 {
                     var answer = await channel.PushAndPull(localData.Current);
@@ -609,7 +602,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     // apply what we have learnt
                     var delta = localData.ApplyDataAndNotify(answer);
 
-                    status.lastexception = null;
+                    status.LastException = null;
                     logger.Verbose("-{0} FullGossipWithChannel successful", id);
 
                     PushMyStatusToNewDestinations(delta);
@@ -618,50 +611,50 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 {
                     logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure,
                         string.Format("-{0} FullGossipWithChannel {1} failed", id, channel.Name), e);
-                    status.lastexception = e;
+                    status.LastException = e;
                 }
-                status.lastuse = DateTime.UtcNow;
-                status.pending = false;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = false;
             };
 
             // queue the gossip - we are not awaiting it!
-            status.task = gossipasync(status.task);
+            status.Task = gossipAsync(status.Task);
         }
 
-        private void FullGossipWithSilo(SiloAddress destinationsilo, string destinationcluster)
+        private void FullGossipWithSilo(SiloAddress destinationSilo, string destinationCluster)
         {
             GossipStatus status;
 
-            if (destinationcluster != clusterId)
+            if (destinationCluster != clusterId)
             {
-                if (!clustertasks.TryGetValue(destinationcluster, out status))
-                    clustertasks[destinationcluster] = status = new GossipStatus();
+                if (!this.clusterTasks.TryGetValue(destinationCluster, out status))
+                    this.clusterTasks[destinationCluster] = status = new GossipStatus();
             }
             else
             {
-                if (!silotasks.TryGetValue(destinationsilo, out status))
-                    silotasks[destinationsilo] = status = new GossipStatus();
+                if (!this.siloTasks.TryGetValue(destinationSilo, out status))
+                    this.siloTasks[destinationSilo] = status = new GossipStatus();
             }
 
-            int id = ++idcounter;
-            logger.Verbose("-{0} FullGossipWithSilo {1} in cluster {2}", id, destinationsilo, destinationcluster);
+            int id = ++this.idCounter;
+            logger.Verbose("-{0} FullGossipWithSilo {1} in cluster {2}", id, destinationSilo, destinationCluster);
 
             // the task that actually gossips
             Func<Task, Task> pushasync = async (Task prev) =>
             {
                await prev; // wait for previous gossip to same silo
-               status.lastuse = DateTime.UtcNow;
-               status.pending = true;
-               status.address = destinationsilo;
+               status.LastUse = DateTime.UtcNow;
+               status.Pending = true;
+               status.Address = destinationSilo;
                try
                 {
-                    var remoteoracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, destinationsilo);
-                    var answer = (MultiClusterData) await remoteoracle.PushAndPull(localData.Current);
+                    var remoteOracle = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, destinationSilo);
+                    var answer = (MultiClusterData) await remoteOracle.PushAndPull(localData.Current);
 
                     // apply what we have learnt
                     var delta = localData.ApplyDataAndNotify(answer);
                     
-                    status.lastexception = null;
+                    status.LastException = null;
                     logger.Verbose("-{0} FullGossipWithSilo successful, answer={1}", id, answer);
 
                     PushMyStatusToNewDestinations(delta);
@@ -669,25 +662,25 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 catch (Exception e)
                 {
                     logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure,
-                        string.Format("-{0} FullGossipWithSilo {1} in cluster {2} failed", id, destinationsilo, destinationcluster), e);
-                    status.lastexception = e;
+                        string.Format("-{0} FullGossipWithSilo {1} in cluster {2} failed", id, destinationSilo, destinationCluster), e);
+                    status.LastException = e;
                 }
-                status.lastuse = DateTime.UtcNow;
-                status.pending = false;
+                status.LastUse = DateTime.UtcNow;
+                status.Pending = false;
             };
 
             // queue the push - we are not awaiting it!
-            status.task = pushasync(status.task);
+            status.Task = pushasync(status.Task);
         }
 
 
         private void InjectConfiguration(ref MultiClusterData deltas)
         {
-            if (injectedconfig == null)
+            if (this.injectedConfig == null)
                 return;
 
-            var data = new MultiClusterData(injectedconfig);
-            injectedconfig = null;
+            var data = new MultiClusterData(this.injectedConfig);
+            this.injectedConfig = null;
 
             if (logger.IsVerbose)
                 logger.Verbose("-InjectConfiguration {0}", data.Configuration.ToString());
@@ -698,33 +691,32 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 deltas = deltas.Merge(delta);
         }
 
-
-        private void InjectLocalStatus(bool isgateway, ref MultiClusterData deltas)
+        private void InjectLocalStatus(bool isGateway, ref MultiClusterData deltas)
         {
-            var mystatus = new GatewayEntry()
+            var myStatus = new GatewayEntry()
             {
                 ClusterId = clusterId,
                 SiloAddress = Silo,
-                Status = isgateway ? GatewayStatus.Active : GatewayStatus.Inactive,
+                Status = isGateway ? GatewayStatus.Active : GatewayStatus.Inactive,
                 HeartbeatTimestamp = DateTime.UtcNow,
             };
 
-            GatewayEntry whatsthere;
+            GatewayEntry whatsThere;
 
             // do not update if we are reporting inactive status and entry is not already there
-            if (!localData.Current.Gateways.TryGetValue(Silo, out whatsthere) && !isgateway)
+            if (!localData.Current.Gateways.TryGetValue(Silo, out whatsThere) && !isGateway)
                 return;
 
             // send if status is changed, or we are active and haven't said so in a while
-            if (whatsthere == null
-                || whatsthere.Status != mystatus.Status
-                || (mystatus.Status == GatewayStatus.Active
-                      && mystatus.HeartbeatTimestamp - whatsthere.HeartbeatTimestamp > RandomizedResendActiveStatusAfter))
+            if (whatsThere == null
+                || whatsThere.Status != myStatus.Status
+                || (myStatus.Status == GatewayStatus.Active
+                      && myStatus.HeartbeatTimestamp - whatsThere.HeartbeatTimestamp > RandomizedResendActiveStatusAfter))
             {
-                logger.Verbose2("-InjectLocalStatus {0}", mystatus);
+                logger.Verbose2("-InjectLocalStatus {0}", myStatus);
 
                 // update current data with status
-                var delta = localData.ApplyDataAndNotify(new MultiClusterData(mystatus));
+                var delta = localData.ApplyDataAndNotify(new MultiClusterData(myStatus));
 
                 if (!delta.IsEmpty)
                     deltas = deltas.Merge(delta);
@@ -735,29 +727,29 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return;
         }
 
-        private void DemoteLocalGateways(IEnumerable<SiloAddress> activegateways, ref MultiClusterData deltas)
+        private void DemoteLocalGateways(IEnumerable<SiloAddress> activeGateways, ref MultiClusterData deltas)
         {
             var now = DateTime.UtcNow;
 
             // mark gateways as inactive if they have not recently advertised their existence,
             // and if they are not designated gateways as per membership table
-            var tobeupdated = localData.Current.Gateways
+            var toBeUpdated = localData.Current.Gateways
                 .Where(g => g.Value.ClusterId == clusterId
                        && g.Value.Status == GatewayStatus.Active
                        && (now - g.Value.HeartbeatTimestamp > CleanupSilentGoneGatewaysAfter)
-                       && !activegateways.Contains(g.Key))
+                       && !activeGateways.Contains(g.Key))
                 .Select(g => new GatewayEntry()
                 {
                     ClusterId = g.Value.ClusterId,
                     SiloAddress = g.Key,
                     Status = GatewayStatus.Inactive,
                     HeartbeatTimestamp = g.Value.HeartbeatTimestamp + CleanupSilentGoneGatewaysAfter,
-                });
+                }).ToList();
 
-            if (tobeupdated.Count() == 0)
+            if (toBeUpdated.Count == 0)
                 return;
 
-            var data = new MultiClusterData(tobeupdated);
+            var data = new MultiClusterData(toBeUpdated);
 
             if (logger.IsVerbose)
                 logger.Verbose("-DemoteLocalGateways {0}", data.ToString());

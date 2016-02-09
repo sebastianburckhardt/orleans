@@ -35,7 +35,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 return Gateways.Count == 0 && Configuration == null;
             }
         }
-
    
         private static Dictionary<SiloAddress, GatewayEntry> emptyd = new Dictionary<SiloAddress, GatewayEntry>();
 
@@ -51,18 +50,18 @@ namespace Orleans.Runtime.MultiClusterNetwork
             Gateways = emptyd;
             Configuration = null;
         }
-        public MultiClusterData(GatewayEntry gatewayentry)
+        public MultiClusterData(GatewayEntry gatewayEntry)
         {
             var l = new Dictionary<SiloAddress, GatewayEntry>();
-            l.Add(gatewayentry.SiloAddress, gatewayentry);
+            l.Add(gatewayEntry.SiloAddress, gatewayEntry);
             Gateways = l;
             Configuration = null;
         }
-        public MultiClusterData(IEnumerable<GatewayEntry> gatewayentries)
+        public MultiClusterData(IEnumerable<GatewayEntry> gatewayEntries)
         {
             var l = new Dictionary<SiloAddress, GatewayEntry>();
-            foreach (var gatewayentry in gatewayentries)
-                l.Add(gatewayentry.SiloAddress, gatewayentry);
+            foreach (var gatewayEntry in gatewayEntries)
+                l.Add(gatewayEntry.SiloAddress, gatewayEntry);
             Gateways = l;
             Configuration = null;
         }
@@ -102,6 +101,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <summary>
         ///  merge source into this object, and return result.
         ///  Ignores expired entries in source, and removes expired entries from this.
+        /// </summary>
         /// <param name="source">The source data to apply to the data in this object</param>
         /// <returns>The updated data</returns>
         public MultiClusterData Merge(MultiClusterData source)
@@ -109,7 +109,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
             MultiClusterData ignore;
             return Merge(source, out ignore);
         }
-
 
         /// <summary>
         ///  incorporate source, producing new result, and report delta.
@@ -121,47 +120,47 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public MultiClusterData Merge(MultiClusterData source, out MultiClusterData delta)
         {
             //--  configuration 
-            var sourceconf = source.Configuration;
-            var thisconf = this.Configuration;
-            MultiClusterConfiguration resultconf = null;
-            MultiClusterConfiguration deltaconf = null;
-            if (MultiClusterConfiguration.OlderThan(thisconf, sourceconf))
+            var sourceConf = source.Configuration;
+            var thisConf = this.Configuration;
+            MultiClusterConfiguration resultConf;
+            MultiClusterConfiguration deltaConf = null;
+            if (MultiClusterConfiguration.OlderThan(thisConf, sourceConf))
             {
-                resultconf = sourceconf;
-                deltaconf = sourceconf;
+                resultConf = sourceConf;
+                deltaConf = sourceConf;
             }
             else
-                resultconf = thisconf;
+                resultConf = thisConf;
 
             //--  gateways
-            var sourcelist = source.Gateways;
-            var thislist = this.Gateways;
-            var resultlist = new Dictionary<SiloAddress, GatewayEntry>();
-            var deltalist = new Dictionary<SiloAddress, GatewayEntry>();
-            foreach (var key in sourcelist.Keys.Union(thislist.Keys).Distinct())
+            var sourceList = source.Gateways;
+            var thisList = this.Gateways;
+            var resultList = new Dictionary<SiloAddress, GatewayEntry>();
+            var deltaList = new Dictionary<SiloAddress, GatewayEntry>();
+            foreach (var key in sourceList.Keys.Union(thisList.Keys).Distinct())
             {
                 GatewayEntry thisentry;
                 GatewayEntry sourceentry;
-                thislist.TryGetValue(key, out thisentry);
-                sourcelist.TryGetValue(key, out sourceentry);
+                thisList.TryGetValue(key, out thisentry);
+                sourceList.TryGetValue(key, out sourceentry);
 
                 if (sourceentry != null && !sourceentry.Expired
                      && (thisentry == null || thisentry.HeartbeatTimestamp < sourceentry.HeartbeatTimestamp))
                 {
-                    resultlist.Add(key, sourceentry);
-                    deltalist.Add(key, sourceentry);
+                    resultList.Add(key, sourceentry);
+                    deltaList.Add(key, sourceentry);
                 }
                 else if (thisentry != null)
                 {
                     if (!thisentry.Expired)
-                        resultlist.Add(key, thisentry);
+                        resultList.Add(key, thisentry);
                     else
-                        deltalist.Add(key, thisentry);
+                        deltaList.Add(key, thisentry);
                 }
             }
 
-            delta = new MultiClusterData(deltalist, deltaconf);
-            return new MultiClusterData(resultlist, resultconf);
+            delta = new MultiClusterData(deltaList, deltaConf);
+            return new MultiClusterData(resultList, resultConf);
         }
 
         /// <summary>
@@ -171,29 +170,27 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <returns></returns>
         public MultiClusterData Minus(MultiClusterData exclude)
         {
-
-            IReadOnlyDictionary<SiloAddress, GatewayEntry> resultlist;
+            IReadOnlyDictionary<SiloAddress, GatewayEntry> resultList;
             if (exclude.Gateways.Count == 0)
-                resultlist = this.Gateways;
-            else {
-                var list = new Dictionary<SiloAddress, GatewayEntry>();
-                foreach(var g in this.Gateways)
-                    if (!exclude.Gateways.ContainsKey(g.Key))
-                       list.Add(g.Key, g.Value);
-                resultlist = list;
+            {
+                resultList = this.Gateways;
+            }
+            else
+            {
+                resultList = this.Gateways
+                    .Where(g => !exclude.Gateways.ContainsKey(g.Key))
+                    .ToDictionary(g => g.Key, g => g.Value);
             }
 
-            MultiClusterConfiguration resultconf;
-            if (exclude.Configuration == null)
-                resultconf = this.Configuration;
-            else
-                resultconf = null;
+            var resultConf = exclude.Configuration == null ? this.Configuration : null;
 
-            return new MultiClusterData(resultlist, resultconf);
+            return new MultiClusterData(resultList, resultConf);
         }
 
         public bool Equals(MultiClusterData other)
         {
+            if (other == null) return false;
+
             if ((this.Configuration == null) != (other.Configuration == null))
               return false;
 
@@ -215,9 +212,19 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return true;
         }
 
-    }
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as MultiClusterData);
+        }
 
-     
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((this.Gateways != null ? this.Gateways.GetHashCode() : 0)*397) ^ (this.Configuration != null ? this.Configuration.GetHashCode() : 0);
+            }
+        }
+    }
 
     /// <summary>
     /// Information about gateways, as stored/transmitted in the multicluster network.
@@ -236,17 +243,14 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         public DateTime HeartbeatTimestamp { get; set; }
 
-
         /// <summary>
         /// Whether this entry has expired based on its timestamp.
         /// </summary>
         public bool Expired
         {
-            get
-            {
-                return DateTime.UtcNow - HeartbeatTimestamp > ExpiresAfter;
-            }
+            get { return DateTime.UtcNow - HeartbeatTimestamp > ExpiresAfter; }
         }
+
         /// <summary>
         /// time after which entries expire.
         /// </summary>
@@ -254,10 +258,17 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public bool Equals(GatewayEntry other)
         {
+            if (other == null) return false;
+
             return SiloAddress.Equals(other.SiloAddress)
                 && Status.Equals(other.Status)
                 && HeartbeatTimestamp.Equals(other.HeartbeatTimestamp)
                 && ClusterId.Equals(other.ClusterId);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as GatewayEntry);
         }
 
         public override int GetHashCode()

@@ -73,5 +73,20 @@ namespace Orleans.MultiCluster
             return true;
         }
 
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as MultiClusterConfiguration);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = this.AdminTimestamp.GetHashCode();
+                hashCode = (hashCode*397) ^ (this.Clusters != null ? this.Clusters.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (this.Comment != null ? this.Comment.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
     }
 }

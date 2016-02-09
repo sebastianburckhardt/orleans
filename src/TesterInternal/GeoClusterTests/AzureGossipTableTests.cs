@@ -9,8 +9,6 @@ using Orleans.Runtime.MultiClusterNetwork;
 using Orleans.TestingHost;
 using UnitTests.StorageTests;
 using Orleans.MultiCluster;
-using UnitTests.Tester;
-using UnitTests.TestHelper;
 
 namespace Tests.GeoClusterTests
 {
@@ -111,7 +109,7 @@ namespace Tests.GeoClusterTests
 
             // retrieve (by push/pull empty)
             answer = await gossipTable.PushAndPull(new MultiClusterData());
-            Assert.IsTrue(answer.Configuration.Equals(conf1));
+            Assert.AreEqual(conf1, answer.Configuration);
 
             // gossip stable
             answer = await gossipTable.PushAndPull(new MultiClusterData(conf1));
@@ -123,10 +121,10 @@ namespace Tests.GeoClusterTests
 
             // gossip returns latest
             answer = await gossipTable.PushAndPull(new MultiClusterData(conf1));
-            Assert.IsTrue(answer.Configuration.Equals(conf2));
+            Assert.AreEqual(conf2, answer.Configuration);
             await gossipTable.Push(new MultiClusterData(conf1));
             answer = await gossipTable.PushAndPull(new MultiClusterData());
-            Assert.IsTrue(answer.Configuration.Equals(conf2));
+            Assert.AreEqual(conf2, answer.Configuration);
             answer = await gossipTable.PushAndPull(new MultiClusterData(conf2));
             Assert.IsTrue(answer.IsEmpty);
 
@@ -134,7 +132,8 @@ namespace Tests.GeoClusterTests
             answer = await gossipTable.PushAndPull(new MultiClusterData(conf3));
             Assert.IsTrue(answer.IsEmpty);
 
-            //Assert.IsTrue(false, "test how failing tests are reported");       
+            answer = await gossipTable.PushAndPull(new MultiClusterData(conf1));
+            Assert.AreEqual(conf3, answer.Configuration);
         }
 
         [TestMethod, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
@@ -181,15 +180,15 @@ namespace Tests.GeoClusterTests
 
             // push H1, retrieve G1 
             var answer = await gossipTable.PushAndPull(new MultiClusterData(H1));
-            Assert.IsTrue(answer.Gateways.Count == 1);
+            Assert.AreEqual(1, answer.Gateways.Count);
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress1));
-            Assert.IsTrue(answer.Gateways[siloAddress1].Equals(G1));
+            Assert.AreEqual(G1, answer.Gateways[siloAddress1]);
 
             // push G2, retrieve H1
             answer = await gossipTable.PushAndPull(new MultiClusterData(G2));
-            Assert.IsTrue(answer.Gateways.Count == 1);
+            Assert.AreEqual(1, answer.Gateways.Count);
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress2));
-            Assert.IsTrue(answer.Gateways[siloAddress2].Equals(H1));
+            Assert.AreEqual(H1, answer.Gateways[siloAddress2]);
 
             // gossip stable
             await gossipTable.Push(new MultiClusterData(H1));
@@ -206,11 +205,11 @@ namespace Tests.GeoClusterTests
 
             // retrieve all
             answer = await gossipTable.PushAndPull(new MultiClusterData(new GatewayEntry[] { G1, H1 }));
-            Assert.IsTrue(answer.Gateways.Count == 2);
+            Assert.AreEqual(2, answer.Gateways.Count);
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress1));
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress2));
-            Assert.IsTrue(answer.Gateways[siloAddress1].Equals(G2));
-            Assert.IsTrue(answer.Gateways[siloAddress2].Equals(H2));
+            Assert.AreEqual(G2, answer.Gateways[siloAddress1]);
+            Assert.AreEqual(H2, answer.Gateways[siloAddress2]);
         }
     }
 }
