@@ -20,7 +20,7 @@ namespace Tester.GeoClusterTests
            // not needed
         }
 
-        [TestMethod, TestCategory("Gossip"), TestCategory("BVT"), TestCategory("Functional")]
+        [TestMethod, TestCategory("GeoCluster"), TestCategory("BVT"), TestCategory("Functional")]
         public void MultiClusterData_Configuration()
         {
             var ts1 = new DateTime(year: 2011, month: 1, day: 1);
@@ -41,13 +41,13 @@ namespace Tester.GeoClusterTests
             TestAlgebraicProperties(gd3, gd2);
         }
 
-        [TestMethod, TestCategory("Gossip"), TestCategory("BVT"), TestCategory("Functional")]
+        [TestMethod, TestCategory("GeoCluster"), TestCategory("BVT"), TestCategory("Functional")]
         public void MultiClusterData_Gateways()
         {
             var ts1 = DateTime.UtcNow;
             var ts2 = ts1 + new TimeSpan(hours: 0, minutes: 0, seconds: 1);
             var ts3 = ts1 + new TimeSpan(hours: 0, minutes: 0, seconds: 2);
-
+            
             IPAddress ip;
             Assert.IsTrue(IPAddress.TryParse("127.0.0.1", out ip));
             IPEndPoint ep1 = new IPEndPoint(ip, 21111);
