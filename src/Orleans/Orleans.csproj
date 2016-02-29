@@ -104,7 +104,6 @@
     <Compile Include="Core\GrainStateStorageBridge.cs" />
     <Compile Include="Core\IGrainIdentity.cs" />
     <Compile Include="MultiCluster\MultiClusterConfiguration.cs" />
-    <Compile Include="MultiCluster\IProtocolParticipant.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GrainDirectory\MultiClusterRegistrationStrategy.cs" />

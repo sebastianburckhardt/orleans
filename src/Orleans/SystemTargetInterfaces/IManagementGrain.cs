@@ -155,7 +155,7 @@ namespace Orleans.Runtime
         /// If some clusters and/or silos cannot be reached, an exception is thrown.
         /// </summary>
         /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
-        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck();
+        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> CheckMultiClusterStability();
  
         /// <summary>
         /// Configure the active multi-cluster, by injecting a multicluster configuration.

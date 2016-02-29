@@ -19,12 +19,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
         private ISiloStatusOracle siloStatusOracle;
         private MultiClusterConfiguration injectedConfig;
 
-        private string globalServiceId;
         private string clusterId;
 
         private IReadOnlyList<string> defaultMultiCluster;
 
-        public MultiClusterOracle(SiloAddress silo, string clusterid, List<IGossipChannel> sources, GlobalConfiguration config)
+        public MultiClusterOracle(SiloAddress silo, List<IGossipChannel> sources, GlobalConfiguration config)
             : base(Constants.MultiClusterOracleId, silo)
         {
             if (sources == null) throw new ArgumentNullException("sources");
@@ -33,7 +32,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
             logger = TraceLogger.GetLogger("MultiClusterOracle");
             gossipChannels = sources;
             localData = new MultiClusterOracleData(logger);
-            globalServiceId = config.GlobalServiceId;
             clusterId = config.ClusterId;
             defaultMultiCluster = config.DefaultMultiCluster;  
             random = new Random(silo.GetHashCode());
@@ -109,29 +107,23 @@ namespace Orleans.Runtime.MultiClusterNetwork
             this.injectedConfig = config;
             PushChanges();
 
-            // wait for the gossip channel tasks and reproduce any exceptions
+            // wait for the gossip channel tasks and aggregate exceptions
+            var exceptions = new List<Exception>();
             foreach (var ct in this.channelTasks.Values)
             {
                 await ct.Task;
                 if (ct.LastException != null)
-                    throw ct.LastException;
+                    exceptions.Add(ct.LastException);
             }
+
+            if (exceptions.Count > 0)
+                throw new AggregateException(exceptions);
         }
 
         public void SiloStatusChangeNotification(SiloAddress updatedSilo, SiloStatus status)
         {
             // any status change can cause changes in gateway list
             PushChanges();
-        }
-
-        public bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer)
-        {
-            return localData.SubscribeToMultiClusterConfigurationEvents(observer);
-        }
-
-        public bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
-        {
-            return localData.UnSubscribeFromMultiClusterConfigurationEvents(observer);
         }
 
         public async Task Start(ISiloStatusOracle oracle)
@@ -344,7 +336,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return Task.FromResult((IMultiClusterGossipData)delta);
         }
 
-        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck(MultiClusterConfiguration expected)
+        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> CheckMultiClusterStability(MultiClusterConfiguration expected)
         {
             var localTask = FindUnstableSilos(expected, true);
 
@@ -379,7 +371,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             var result = new Dictionary<SiloAddress, MultiClusterConfiguration>();
 
-            if (! MultiClusterConfiguration.SameAs(localData.Current.Configuration, expected))
+            if (! MultiClusterConfiguration.Equals(localData.Current.Configuration, expected))
                 result.Add(this.Silo, localData.Current.Configuration);
 
             if (forwardLocally)

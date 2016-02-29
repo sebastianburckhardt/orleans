@@ -346,7 +346,7 @@ namespace Orleans.Runtime.Management
             {
                 try
                 {
-                    var unstableSilos = await multiClusterOracle.StabilityCheck(multiClusterOracle.GetMultiClusterConfiguration());
+                    var unstableSilos = await multiClusterOracle.CheckMultiClusterStability(multiClusterOracle.GetMultiClusterConfiguration());
 
                     if (unstableSilos.Count > 0)
                     {
@@ -365,11 +365,11 @@ namespace Orleans.Runtime.Management
             return configuration;
         }
 
-        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck()
+        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> CheckMultiClusterStability()
         {
             var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
             var expected = multiClusterOracle.GetMultiClusterConfiguration();
-            return multiClusterOracle.StabilityCheck(expected);
+            return multiClusterOracle.CheckMultiClusterStability(expected);
         }
 
         #endregion

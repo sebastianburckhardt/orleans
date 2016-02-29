@@ -38,17 +38,13 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return tableManager.DeleteTableEntries();
         }
 
-        public struct Pair<L,R>
+      
+        private static void UpdateDictionaryRight<T, L, R>(Dictionary<T, KeyValuePair<L, R>> d, T key, R val)
         {
-            public L Item1;
-            public R Item2;
-        }
-        private static void UpdateDictionaryRight<T, L, R>(Dictionary<T, Pair<L, R>> d, T key, R val)
-        {
-            Pair<L, R> current;
-            d.TryGetValue(key, out current);
-            current.Item2 = val;
-            d[key] = current;
+            if (d.ContainsKey(key))
+                d[key] = new KeyValuePair<L, R>(d[key].Key, val);
+            else
+                d.Add(key, new KeyValuePair<L, R>(default(L), val));
         }
 
         // IGossipChannel
@@ -94,14 +90,14 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             MultiClusterConfiguration conf1;
             Tuple<GossipTableEntry, string> conf2 = null;
-            var gateways = new Dictionary<SiloAddress, Pair<GatewayEntry, Tuple<GossipTableEntry, string>>>();
+            var gateways = new Dictionary<SiloAddress, KeyValuePair<GatewayEntry, Tuple<GossipTableEntry, string>>>();
             MultiClusterConfiguration returnedConfiguration = null;
 
             // collect left-hand side data
             conf1 = pushed.Configuration;
             foreach (var e in pushed.Gateways)
                if (!e.Value.Expired)
-                   gateways[e.Key] = new Pair<GatewayEntry, Tuple<GossipTableEntry, string>> { Item1 = e.Value };
+                   gateways[e.Key] = new KeyValuePair<GatewayEntry, Tuple<GossipTableEntry, string>> (e.Value, null);
 
             foreach (var tuple in entriesFromStorage)
             {
@@ -151,8 +147,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             foreach (var pair in gateways)
             {
-                var left = pair.Value.Item1;
-                var right = pair.Value.Item2;
+                var left = pair.Value.Key;
+                var right = pair.Value.Value;
 
                 // push gateway entry
                 if ((left != null && !left.Expired)

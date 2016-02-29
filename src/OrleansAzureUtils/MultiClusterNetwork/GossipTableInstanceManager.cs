@@ -122,7 +122,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         private GossipTableInstanceManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
         {
-            GlobalServiceId = globalServiceId;
+            GlobalServiceId = AzureStorageUtils.SanitizeTableProperty(globalServiceId);
             this.logger = logger;
             storage = new AzureTableDataManager<GossipTableEntry>(
                 INSTANCE_TABLE_NAME, storageConnectionString, logger);

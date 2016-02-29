@@ -287,7 +287,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             var diff = ClusterId.CompareTo(other.ClusterId);
             if (diff != 0) return diff;
-            diff = SiloAddress.ToString().CompareTo(other.SiloAddress.ToString());
+            diff = SiloAddress.CompareTo(other.SiloAddress);
             if (diff != 0) return diff;
             diff = HeartbeatTimestamp.CompareTo(other.HeartbeatTimestamp);
             return diff;
