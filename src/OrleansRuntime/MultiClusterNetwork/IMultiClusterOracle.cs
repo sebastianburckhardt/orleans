@@ -34,7 +34,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// Check stability: contact all silos in all clusters, return silos that do not have the expected configuration.
         /// </summary>
         /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
-        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck(MultiClusterConfiguration expected);
+        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> CheckMultiClusterStability(MultiClusterConfiguration expected);
   
         /// <summary>
         /// Returns a list of cluster ids for active clusters based on what gateways we have stored in the table.
