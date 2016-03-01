@@ -770,7 +770,7 @@ namespace Orleans.Runtime
                 // Streams and Bootstrap - the order is less clear. Seems like Bootstrap may indirecly depend on Streams, but not the other way around.
                 // 8:
                 SafeExecute(() =>
-                {                
+                {
                     scheduler.QueueTask(() => statisticsProviderManager.CloseProviders(), providerManagerSystemTarget.SchedulingContext)
                             .WaitWithThrow(initTimeout);
                 });
@@ -878,7 +878,7 @@ namespace Orleans.Runtime
         {
             private readonly Silo silo;
             internal bool ExecuteFastKillInProcessExit;
-
+            
             internal IConsistentRingProvider ConsistentRingProvider
             {
                 get { return CheckReturnBoundaryReference("ring provider", silo.RingProvider); }
@@ -971,6 +971,12 @@ namespace Orleans.Runtime
                         x.Add(kvp.Key, kvp.Value);
                 }
                 return x;
+            }
+
+
+            internal void InjectMultiClusterConfiguration(MultiClusterConfiguration config)
+            {
+                silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();
             }
 
             // store silos for which we simulate faulty communication
