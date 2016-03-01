@@ -10,24 +10,24 @@ namespace Orleans.Runtime
         /// One-way small-scale gossip: send partial data to recipient
         /// </summary>
         /// <param name="data">The gossip data</param>
-        /// <param name="forwardlocally">Whether to forward the changes to local silos</param>
+        /// <param name="forwardLocally">Whether to forward the changes to local silos</param>
         /// <returns></returns>
-        Task Push(IMultiClusterGossipData GossipData, bool forwardlocally);
+        Task Push(IMultiClusterGossipData gossipData, bool forwardLocally);
 
         /// <summary>
         /// Two-way bulk gossip: send all known data to recipient, and receive all unknown data
         /// </summary>
-        /// <param name="data">The pushed gossip data</param>
+        /// <param name="gossipData">The pushed gossip data</param>
         /// <returns>The returned gossip data</returns>
-        Task<IMultiClusterGossipData> PushAndPull(IMultiClusterGossipData data);
+        Task<IMultiClusterGossipData> PushAndPull(IMultiClusterGossipData gossipData);
 
         /// <summary>
         /// Find silos whose configuration does not match the expected configuration.
         /// </summary>
         /// <param name="expected">the configuration to compare with</param>
-        /// <param name="forwardlocally">whether to recursively include all silos in the same cluster</param>
+        /// <param name="forwardLocally">whether to recursively include all silos in the same cluster</param>
         /// <returns></returns>
-        Task<Dictionary<SiloAddress,MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardlocally);
+        Task<Dictionary<SiloAddress,MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardLocally);
     }
 
 

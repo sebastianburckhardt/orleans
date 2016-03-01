@@ -7,12 +7,7 @@ using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.MultiCluster;
-using System.Net;
 using Orleans.Runtime.MultiClusterNetwork;
-using Orleans.TestingHost;
-
-
-// ReSharper disable InconsistentNaming
 
 namespace Tests.GeoClusterTests
 {
@@ -55,8 +50,12 @@ namespace Tests.GeoClusterTests
                 return systemManagement.GetHosts().Result;
             }
         }
- 
 
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            StopAllClientsAndClusters();
+        }
 
         [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
         [Timeout(120000)]
@@ -135,8 +134,6 @@ namespace Tests.GeoClusterTests
             var activegateways = gateways.Where(g => g.Status == GatewayStatus.Active).ToList();
             Assert.AreEqual(1, activegateways.Count, "Expect 1 active gateway");
             Assert.AreEqual("A", activegateways[0].ClusterId);
-
-            StopAllClientsAndClusters();
         }
 
         private void AssertSameList(List<IMultiClusterGatewayInfo> a, List<IMultiClusterGatewayInfo> b)
@@ -151,8 +148,6 @@ namespace Tests.GeoClusterTests
                 Assert.AreEqual(a[i].Status, b[i].Status, "status at pos " + i + " must match");
             }
         }
-
-  
 
         [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
         [Timeout(120000)]
@@ -244,8 +239,6 @@ namespace Tests.GeoClusterTests
                             string.Join(",", activegateways.Where(g => g.ClusterId == clusterA).Select(g => g.SiloAddress.Endpoint.Port).OrderBy(x => x)));
             Assert.AreEqual(string.Join(",", portB0, portB2),
                             string.Join(",", activegateways.Where(g => g.ClusterId == clusterB).Select(g => g.SiloAddress.Endpoint.Port).OrderBy(x => x)));
-
-            StopAllClientsAndClusters();
         }
     }
 }

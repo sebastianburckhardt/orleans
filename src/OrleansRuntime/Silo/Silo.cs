@@ -34,7 +34,6 @@ using Orleans.Streams;
 using Orleans.Timers;
 using Orleans.MultiCluster;
 
-
 namespace Orleans.Runtime
 {
 
@@ -82,7 +81,6 @@ namespace Orleans.Runtime
         private ProviderManagerSystemTarget providerManagerSystemTarget;
         private IMembershipOracle membershipOracle;
         private IMultiClusterOracle multiClusterOracle;
-
         private ClientObserverRegistrar clientRegistrar;
         private Watchdog platformWatchdog;
         private readonly TimeSpan initTimeout;
@@ -324,7 +322,6 @@ namespace Orleans.Runtime
 
             membershipFactory = new MembershipFactory();
             multiClusterFactory = new MultiClusterOracleFactory();
-            
             reminderFactory = new LocalReminderServiceFactory();
             
             SystemStatus.Current = SystemStatus.Created;
@@ -952,24 +949,6 @@ namespace Orleans.Runtime
             internal void SuppressFastKillInHandleProcessExit()
             {
                 ExecuteFastKillInProcessExit = false;
-            }
-
-            internal IDictionary<GrainId, IGrainInfo> GetDirectory()
-            {
-                return silo.localGrainDirectory.DirectoryPartition.GetItems();
-            }
-
-            internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypenamesContaining(string expr)
-            {
-                var x = new Dictionary<GrainId, IGrainInfo>();
-                foreach (var kvp in GetDirectory())
-                {
-                    if (kvp.Key.IsSystemTarget || kvp.Key.IsClient || !kvp.Key.IsGrain)
-                        continue;// Skip system grains, system targets and clients
-                    if (silo.catalog.GetGrainTypeName(kvp.Key).Contains(expr))
-                        x.Add(kvp.Key, kvp.Value);
-                }
-                return x;
             }
 
             internal void InjectMultiClusterConfiguration(MultiClusterConfiguration config)

@@ -505,6 +505,7 @@ namespace Orleans.Runtime.MembershipService
             if (IsFunctionalMBR(CurrentStatus))
             {
                 foreach (var entry in table.Members.Select(tuple => tuple.Item1))
+                {
                     if (!entry.SiloAddress.Endpoint.Equals(MyAddress.Endpoint))
                     {
                         bool changed = membershipOracleData.TryUpdateStatusAndNotify(entry);
@@ -514,6 +515,8 @@ namespace Orleans.Runtime.MembershipService
                     {
                         membershipOracleData.UpdateMyFaultAndUpdateZone(entry);
                     }
+                }
+
                 if (localViewChanged)
                     UpdateListOfProbedSilos();
             }

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans.Runtime;
-using Orleans.Runtime.MultiClusterNetwork;
-using Orleans.MultiCluster;
 using Orleans.Runtime.MembershipService;
 using UpdateFaultCombo = Orleans.Runtime.MembershipService.MembershipOracleData.UpdateFaultCombo;
 using System.Collections.Generic;
@@ -17,7 +14,6 @@ namespace UnitTests.GeoClusterTests
     [TestClass]
     public class GatewaySelectionTests
     {
-     
         [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
         public void TestMultiClusterGatewaySelection()
         {
@@ -36,7 +32,7 @@ namespace UnitTests.GeoClusterTests
                 SiloAddress.New(new IPEndPoint(4,234),1),
             };
             
-            Func<SiloAddress,UpdateFaultCombo> group = (a) => new UpdateFaultCombo(a.Endpoint.Port, a.Generation);
+            Func<SiloAddress,UpdateFaultCombo> group = (SiloAddress a) => new UpdateFaultCombo(a.Endpoint.Port, a.Generation);
 
             // randomize order
             var r = new Random();
@@ -49,6 +45,5 @@ namespace UnitTests.GeoClusterTests
             for (int i = 0; i < 10; i++)
                 Assert.AreEqual(candidates[i], x[i]);
         }
-
     }
 }
