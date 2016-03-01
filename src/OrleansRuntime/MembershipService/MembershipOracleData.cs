@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Orleans.Runtime.Configuration;
-using System.Diagnostics;
 
 namespace Orleans.Runtime.MembershipService
 {
@@ -13,7 +12,7 @@ namespace Orleans.Runtime.MembershipService
         private Dictionary<SiloAddress, SiloStatus> localTableCopy;            // a cached copy of a local table, including current silo, for fast access
         private Dictionary<SiloAddress, SiloStatus> localTableCopyOnlyActive;  // a cached copy of a local table, for fast access, including only active nodes and current silo (if active)
         private Dictionary<SiloAddress, string> localNamesTableCopy;           // a cached copy of a map from SiloAddress to Silo Name, not including current silo, for fast access
-        private List<SiloAddress> localMultiClusterGatewaysCopy;                           // a cached copy of the silos that are designated gateways
+        private List<SiloAddress> localMultiClusterGatewaysCopy;               // a cached copy of the silos that are designated gateways
 
         private readonly List<ISiloStatusListener> statusListeners;
         private readonly TraceLogger logger;
@@ -27,11 +26,10 @@ namespace Orleans.Runtime.MembershipService
         internal SiloStatus CurrentStatus { get; private set; } // current status of this silo.
         internal string SiloName { get; private set; } // name of this silo.
  
-        private readonly string GlobalServiceId; // set by configuration
-        private readonly int MaxMultiClusterGateways; // set by configuration
+        private readonly string globalServiceId; // set by configuration
+        private readonly int maxMultiClusterGateways; // set by configuration
 
-        private UpdateFaultCombo MyFaultAndUpdateZones;
- 
+        private UpdateFaultCombo myFaultAndUpdateZones;
 
         internal MembershipOracleData(Silo silo, TraceLogger log)
         {
@@ -47,8 +45,8 @@ namespace Orleans.Runtime.MembershipService
             MyAddress = silo.SiloAddress;
             MyHostname = silo.LocalConfig.DNSHostName;
             SiloName = silo.LocalConfig.SiloName;
-            GlobalServiceId = silo.GlobalConfig.GlobalServiceId;
-            MaxMultiClusterGateways = silo.GlobalConfig.MaxMultiClusterGateways;
+            this.globalServiceId = silo.GlobalConfig.GlobalServiceId;
+            this.maxMultiClusterGateways = silo.GlobalConfig.MaxMultiClusterGateways;
             CurrentStatus = SiloStatus.Created;
             clusterSizeStatistic = IntValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER_SIZE, () => localTableCopyOnlyActive.Count);
             clusterStatistic = StringValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER,
@@ -59,7 +57,6 @@ namespace Orleans.Runtime.MembershipService
                             return Utils.EnumerableToString(list);
                         });
         }
-
         
         // ONLY access localTableCopy and not the localTable, to prevent races, as this method may be called outside the turn.
         internal SiloStatus GetApproximateSiloStatus(SiloAddress siloAddress)
@@ -151,7 +148,7 @@ namespace Orleans.Runtime.MembershipService
             localTableCopyOnlyActive = tmpLocalTableCopyOnlyActive;
             localNamesTableCopy = tmpLocalTableNamesCopy;
 
-            if (!string.IsNullOrEmpty(GlobalServiceId))
+            if (!string.IsNullOrEmpty(this.globalServiceId))
                 localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
 
             NotifyLocalSubscribers(MyAddress, CurrentStatus);
@@ -213,7 +210,7 @@ namespace Orleans.Runtime.MembershipService
 
         internal void UpdateMyFaultAndUpdateZone(MembershipEntry entry)
         {
-            MyFaultAndUpdateZones = new UpdateFaultCombo(entry.FaultZone, entry.UpdateZone);
+            this.myFaultAndUpdateZones = new UpdateFaultCombo(entry.FaultZone, entry.UpdateZone);
         }
 
         internal bool TryUpdateStatusAndNotify(MembershipEntry entry)
@@ -224,7 +221,7 @@ namespace Orleans.Runtime.MembershipService
             localTableCopyOnlyActive = GetSiloStatuses(status => status.Equals(SiloStatus.Active), true);    // only active silos including me.
             localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.InstanceName);   // all the silos excluding me.
             
-            if (!string.IsNullOrEmpty(GlobalServiceId))
+            if (!string.IsNullOrEmpty(this.globalServiceId))
                 localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
 
             if (logger.IsVerbose) logger.Verbose("-Updated my local view of {0} status. It is now {1}.", entry.SiloAddress.ToLongString(), GetSiloStatus(entry.SiloAddress));
@@ -281,15 +278,17 @@ namespace Orleans.Runtime.MembershipService
         private List<SiloAddress> DetermineMultiClusterGateways()
         {
             // function should never be called if we are not in a multicluster
-            if (string.IsNullOrEmpty(GlobalServiceId))
+            if (string.IsNullOrEmpty(this.globalServiceId))
                 throw new OrleansException("internal error: should not call this function without multicluster network");
 
             // take all the active silos if their count does not exceed the desired number of gateways
-            if (localTableCopyOnlyActive.Count <= MaxMultiClusterGateways)
+            if (localTableCopyOnlyActive.Count <= this.maxMultiClusterGateways)
                 return localTableCopyOnlyActive.Keys.ToList();
 
-            return DeterministicBalancedChoice<SiloAddress,UpdateFaultCombo>(localTableCopyOnlyActive.Keys, MaxMultiClusterGateways,
-               (SiloAddress a) => a.Equals(MyAddress) ? MyFaultAndUpdateZones : new UpdateFaultCombo(localTable[a]));
+            return DeterministicBalancedChoice<SiloAddress, UpdateFaultCombo>(
+                localTableCopyOnlyActive.Keys,
+                this.maxMultiClusterGateways,
+               (SiloAddress a) => a.Equals(MyAddress) ? this.myFaultAndUpdateZones : new UpdateFaultCombo(localTable[a]));
         }
 
         // pick a specified number of elements from a set of candidates
@@ -335,28 +334,31 @@ namespace Orleans.Runtime.MembershipService
             return result;
         }
 
-       internal struct UpdateFaultCombo : IComparable
+        internal struct UpdateFaultCombo : IComparable
         {
             public readonly int UpdateZone;
             public readonly int FaultZone;
+
             public UpdateFaultCombo(int updateZone, int faultZone)
             {
                 UpdateZone = updateZone;
                 FaultZone = faultZone;
             }
-            public UpdateFaultCombo(MembershipEntry e) {
+
+            public UpdateFaultCombo(MembershipEntry e)
+            {
                 UpdateZone = e.UpdateZone;
                 FaultZone = e.FaultZone;
             }
+
             public int CompareTo(object x)
             {
-                var other = (UpdateFaultCombo) x;
+                var other = (UpdateFaultCombo)x;
                 int comp = UpdateZone.CompareTo(other.UpdateZone);
                 if (comp != 0) return comp;
                 return FaultZone.CompareTo(other.FaultZone);
             }
         }
- 
 
         public override string ToString()
         {

@@ -1,38 +1,11 @@
-/*
-Project Orleans Cloud Service SDK ver. 1.0
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the ""Software""), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans.TestingHost;
-using TestGrainInterfaces;
 using UnitTests.Tester;
+using TestGrainInterfaces;
+using Xunit;
 
 namespace Tester.GeoClusterTests
 {
-    [TestClass]
-    [DeploymentItem("TestGrainInterfaces.dll")]
-    [DeploymentItem("TestGrains.dll")]
-    [DeploymentItem("OrleansAzureUtils.dll")]
     public class SimpleGlobalSingleInstanceGrainTests : HostedTestClusterEnsureDefaultStarted
     {
         private const string SimpleGrainNamePrefix = "UnitTests.Grains.SimpleG";
@@ -42,7 +15,7 @@ namespace Tester.GeoClusterTests
             return GrainFactory.GetGrain<ISimpleGlobalSingleInstanceGrain>(GetRandomGrainId(), SimpleGrainNamePrefix);
         }
 
-        [TestMethod, TestCategory("BVT"), TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure")]
+        [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure")]
         public async Task SimpleGlobalSingleInstanceGrainTest()
         {
             int i = 0;
@@ -54,7 +27,7 @@ namespace Tester.GeoClusterTests
                 await grain.SetA(r1);
                 await grain.SetB(r2);
                 int result = await grain.GetAxB();
-                Assert.AreEqual(r1 * r2, result);
+                Assert.Equal(r1 * r2, result);
             }
         }
     }

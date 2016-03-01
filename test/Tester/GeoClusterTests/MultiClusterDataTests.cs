@@ -1,26 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans.Runtime;
 using Orleans.Runtime.MultiClusterNetwork;
 using Orleans.MultiCluster;
+using Xunit;
 
 namespace Tester.GeoClusterTests
 {
     /// <summary>
     /// Test gossip channel functionality
     /// </summary>
-    [TestClass]
     public class MultiClusterDataTests
     {
-        [TestInitialize]
-        public void InitializeForTesting()
-        {
-           // not needed
-        }
-
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("BVT"), TestCategory("Functional")]
+        [Fact, TestCategory("GeoCluster"), TestCategory("BVT"), TestCategory("Functional")]
         public void MultiClusterData_Configuration()
         {
             var ts1 = new DateTime(year: 2011, month: 1, day: 1);
@@ -41,7 +34,7 @@ namespace Tester.GeoClusterTests
             TestAlgebraicProperties(gd3, gd2);
         }
 
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("BVT"), TestCategory("Functional")]
+        [Fact, TestCategory("GeoCluster"), TestCategory("BVT"), TestCategory("Functional")]
         public void MultiClusterData_Gateways()
         {
             var ts1 = DateTime.UtcNow;
@@ -49,7 +42,7 @@ namespace Tester.GeoClusterTests
             var ts3 = ts1 + new TimeSpan(hours: 0, minutes: 0, seconds: 2);
             
             IPAddress ip;
-            Assert.IsTrue(IPAddress.TryParse("127.0.0.1", out ip));
+            Assert.True(IPAddress.TryParse("127.0.0.1", out ip));
             IPEndPoint ep1 = new IPEndPoint(ip, 21111);
             var siloAddress1 = SiloAddress.New(ep1, 0);
             IPEndPoint ep2 = new IPEndPoint(ip, 21112);
@@ -148,10 +141,10 @@ namespace Tester.GeoClusterTests
             MultiClusterData delta;
             var merge = to.Merge(what, out delta);
 
-            Assert.IsTrue(merge.Equals(expectedMerge));
+            Assert.Equal(expectedMerge, merge);
 
             if (expectedDelta != null)
-               Assert.IsTrue(delta.Equals(expectedDelta));
+               Assert.Equal(expectedDelta, expectedDelta);
         }
     }
 }
