@@ -19,6 +19,8 @@ namespace Orleans.SystemTargetInterfaces
     /// <summary>
     /// Reponse message used by Global Single Instance Protocol
     /// </summary>
+    /// 
+    [Serializable]
     internal class RemoteClusterActivationResponse
     {
         public ActivationResponseStatus ResponseStatus { get; set; }
