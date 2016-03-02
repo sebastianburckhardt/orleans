@@ -110,7 +110,7 @@ namespace Tests.GeoClusterTests
             int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
             int baseCount = baseCount0 + baseCount1;
 
-            const int numGrains = 2;
+            const int numGrains = 2000;
 
             // Create grains on both clusters. Alternating between the two.
             Parallel.For(0, numGrains, i =>
