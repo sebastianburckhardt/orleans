@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Orleans.LogViews
 {
-    // marker class for grains that use a log view provider to manage their state
+    // superclass for all grains that use a log view provider to manage their state
+    // (such as event-sourced grains and queued grains)
+    [MultiCluster.OneInstancePerCluster]
     public abstract class LogViewGrain<TLogView> : Grain
     {
 
