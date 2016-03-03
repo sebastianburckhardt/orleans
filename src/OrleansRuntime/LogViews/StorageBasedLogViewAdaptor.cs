@@ -229,7 +229,7 @@ namespace Orleans.Runtime.LogViews
         [Serializable]
         protected class UpdateNotificationMessage : NotificationMessage 
         {
-            public long GlobalVersion { get; set; }
+            public int GlobalVersion { get; set; }
 
             public string Origin { get; set; }
 
@@ -239,7 +239,7 @@ namespace Orleans.Runtime.LogViews
 
             public override string ToString()
             {
-                return string.Format("v{0} ({1} updates by {2}) etag={2}", GlobalVersion, Updates.Count, Origin, ETag);
+                return string.Format("v{0} ({1} updates by {2}) etag={3}", GlobalVersion, Updates.Count, Origin, ETag);
             }
          }
 
@@ -279,7 +279,7 @@ namespace Orleans.Runtime.LogViews
                         Services.CaughtTransitionException("ProcessNotifications", e);
                     }
 
-                GlobalStateCache.StateAndMetaData.GlobalVersion++;
+                GlobalStateCache.StateAndMetaData.GlobalVersion = updatenotification.GlobalVersion;
 
                 GlobalStateCache.StateAndMetaData.ToggleBit(updatenotification.Origin);
 

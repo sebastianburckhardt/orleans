@@ -415,8 +415,6 @@ namespace Tester.GeoClusterTests
                 }
             });
 
- 
-
             // first, run short ones in sequence
             await checker1();
             await checker2();
@@ -447,7 +445,6 @@ namespace Tester.GeoClusterTests
             // then, run slightly longer tests
             if (phases != 0)
             {
-                await checker3(20);
                 await checker3(phases);
             }
 
