@@ -40,6 +40,15 @@ namespace Orleans.Azure.Samples.Web {
         protected global::System.Web.UI.WebControls.Button ButtonSayHello;
         
         /// <summary>
+        /// OipcGrain control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox OipcGrain;
+        
+        /// <summary>
         /// UpdateProgress1 control.
         /// </summary>
         /// <remarks>
@@ -65,6 +74,15 @@ namespace Orleans.Azure.Samples.Web {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button ButtonSayHelloSingleInstance;
+        
+        /// <summary>
+        /// GsiGrain control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox GsiGrain;
         
         /// <summary>
         /// UpdateProgress2 control.

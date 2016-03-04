@@ -57,12 +57,13 @@ namespace Orleans.Azure.Samples.Web
       
         protected async void ButtonSayHello_Click(object sender, EventArgs e)
         {
-            IHelloEnvironment grainRef = GrainClient.GrainFactory.GetGrain<IHelloEnvironment>(0, "HelloGeoGrains.RegularGrain");
+            var targetgrain = OipcGrain.Text;
+            IHelloGrain grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrain>(targetgrain, "HelloGeoGrains.OneInstancePerClusterGrain");
 
             try
             {   
-                string reply = await grainRef.RequestDetails();
-                this.ReplyText.Text = "Grain answered: " + reply + "\n\n at " + DateTime.UtcNow + " UTC";
+                string reply = await grainRef.Ping();
+                this.ReplyText.Text = "OneInstancePerCluster-Grain \"" + targetgrain + "\" answered: " + reply + "\n\n at " + DateTime.UtcNow + " UTC";
             }
             catch (Exception exc)
             {
@@ -74,12 +75,13 @@ namespace Orleans.Azure.Samples.Web
 
         protected async void ButtonSayHelloSingleInstance_Click(object sender, EventArgs e)
         {
-            IHelloEnvironment grainRef = GrainClient.GrainFactory.GetGrain<IHelloEnvironment>(0, "HelloGeoGrains.SingleInstanceGrain");
+            var targetgrain = GsiGrain.Text;
+            IHelloGrain grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrain>(targetgrain, "HelloGeoGrains.GlobalSingleInstanceGrain");
 
             try
             {
-                string reply = await grainRef.RequestDetails();
-                this.ReplyText.Text = "Grain answered: " + reply + "\n\n at " + DateTime.UtcNow + " UTC";
+                string reply = await grainRef.Ping();
+                this.ReplyText.Text = "GlobalSingleInstance-Grain \"" + targetgrain + "\" answered: " + reply + "\n\n at " + DateTime.UtcNow + " UTC";
             }
             catch (Exception exc)
             {
