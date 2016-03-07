@@ -95,6 +95,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public async Task InjectMultiClusterConfiguration(MultiClusterConfiguration config)
         {
             this.injectedConfig = config;
+
+            logger.Info("Starting MultiClusterConfiguration Injection, configuration={0} ", config);
+
             PushChanges();
 
             // wait for the gossip channel tasks and aggregate exceptions
@@ -105,6 +108,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 .Where(ct => ct.LastException != null)
                 .Select(ct => ct.LastException)
                 .ToList();
+
+            logger.Info("Completed MultiClusterConfiguration Injection, {0} exceptions", exceptions.Count);
 
             if (exceptions.Count > 0)
                 throw new AggregateException(exceptions);
@@ -126,8 +131,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
                 this.siloStatusOracle = oracle;
 
-                this.siloStatusOracle.SubscribeToSiloStatusEvents(this);
-
                 // startup: pull all the info from the tables, then inject default multi cluster if none found
                 foreach (var ch in gossipChannels)
                 {
@@ -140,6 +143,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     this.injectedConfig = new MultiClusterConfiguration(DateTime.UtcNow, defaultMultiCluster, "DefaultMultiCluster");
                     logger.Info("No configuration found. Using default configuration {0} ", this.injectedConfig);
                 }
+
+                this.siloStatusOracle.SubscribeToSiloStatusEvents(this);
 
                 PushChanges();
 
@@ -185,12 +190,18 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             var iAmGateway = activeLocalGateways.Contains(Silo);
 
+            // collect deltas that need to be pushed to all other gateways. 
+            // Most of the time, this will contain just zero or one change.
             var deltas = new MultiClusterData();
 
+            // Determine local status, and add to deltas if it changed
             InjectLocalStatus(iAmGateway, ref deltas);
 
+            // Determine if admin has injected a new configuration, and add to deltas if that is the case
             InjectConfiguration(ref deltas);
 
+            // Determine if there are some stale gateway entries of this cluster that should be demoted, 
+            // and add those demotions to deltas
             if (iAmGateway)
                 DemoteLocalGateways(activeLocalGateways, ref deltas);
 
