@@ -22,19 +22,19 @@
            <asp:Timer ID="UpdateTimer" runat="server" Interval="5000" OnTick="Timer1_Tick" />
             <table>
                 <tr>
-                    <td>
-                        <p>
-                            Confirmed State<p>
-                                <asp:TextBox ID="ConfirmedState" runat="server" Height="230px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
-                                <p>
-                                    Unconfirmed Updates<p>
-                                        <asp:TextBox ID="UnconfirmedUpdates" runat="server" Height="110px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
-                    </td>
                     <td style="vertical-align: top">
                         <p>
-                            Tentative State<p>
+                            Tentative State (= Last Confirmed + Queue) <p>
                                 <asp:TextBox ID="TentativeState" runat="server" Height="393px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
                     </td>
+                    <td>
+                               <p>
+                                    Queue of Unconfirmed Updates<p>
+                                        <asp:TextBox ID="UnconfirmedUpdates" runat="server" Height="110px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
+                        <p>
+                            Last Confirmed state<p>
+                                <asp:TextBox ID="ConfirmedState" runat="server" Height="230px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
+                     </td>
                 </tr>
             </table>
                 <p>

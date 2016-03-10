@@ -67,13 +67,13 @@ namespace Orleans.Azure.Samples.Web {
         protected global::System.Web.UI.Timer UpdateTimer;
         
         /// <summary>
-        /// ConfirmedState control.
+        /// TentativeState control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox ConfirmedState;
+        protected global::System.Web.UI.WebControls.TextBox TentativeState;
         
         /// <summary>
         /// UnconfirmedUpdates control.
@@ -85,13 +85,13 @@ namespace Orleans.Azure.Samples.Web {
         protected global::System.Web.UI.WebControls.TextBox UnconfirmedUpdates;
         
         /// <summary>
-        /// TentativeState control.
+        /// ConfirmedState control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox TentativeState;
+        protected global::System.Web.UI.WebControls.TextBox ConfirmedState;
         
         /// <summary>
         /// ButtonRefresh control.
