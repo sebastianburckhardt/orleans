@@ -11,7 +11,6 @@ using Orleans.Storage;
 
 namespace Orleans.Runtime.LogViews
 {
-  
     /// <summary>
     /// A log view adaptor that wraps around a traditional storage adaptor
     ///<para>
@@ -20,9 +19,9 @@ namespace Orleans.Runtime.LogViews
     /// </para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class StorageBasedLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,SubmissionEntry<E>> where T : class,new() where E: class
+    public class StorageProviderLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,SubmissionEntry<E>> where T : class,new() where E: class
     {
-        public StorageBasedLogViewAdaptor(ILogViewHost<T,E> host, T initialstate, ILogViewProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IProtocolServices services)
+        public StorageProviderLogViewAdaptor(ILogViewHost<T,E> host, T initialstate, ILogViewProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IProtocolServices services)
             : base(host, repprovider, initialstate, services)
         {
             this.globalstorageprovider = globalstorageprovider;
@@ -30,9 +29,7 @@ namespace Orleans.Runtime.LogViews
         }
 
         IStorageProvider globalstorageprovider;
-        string graintypename;
-
-        // stores the confirmed state including metadata
+        string graintypename;        // stores the confirmed state including metadata
         GrainStateWithMetaDataAndETag<T> GlobalStateCache;
 
         protected override T LastConfirmedView()

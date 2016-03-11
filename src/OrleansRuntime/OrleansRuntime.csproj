@@ -112,7 +112,7 @@
     <Compile Include="LogViews\ProtocolServices.cs" />
     <Compile Include="LogViews\LogViewProviderManager.cs" />
     <Compile Include="LogViews\GrainStateWithMetaData.cs" />
-    <Compile Include="LogViews\StorageBasedLogViewAdaptor.cs" />
+    <Compile Include="LogViews\StorageProviderLogViewAdaptor.cs" />
     <Compile Include="Scheduler\ITaskScheduler.cs" />
     <Compile Include="Silo\IStartupBuilder.cs" />
     <Compile Include="Storage\IStorageProviderManager.cs" />
