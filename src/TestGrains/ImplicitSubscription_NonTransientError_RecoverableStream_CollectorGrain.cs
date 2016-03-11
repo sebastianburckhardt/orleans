@@ -76,7 +76,7 @@ namespace TestGrains
 
             State.Accumulator++;
             State.LastProcessedToken = sequenceToken;
-            if (evt.EventType != GeneratedEvent.GeneratedEventType.End)
+            if (evt.EventType != GeneratedEvent.GeneratedEventType.Report)
             {
                 // every 10 events, checkpoint our grain state
                 if (State.Accumulator%10 != 0) return;
