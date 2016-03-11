@@ -37,6 +37,13 @@
     <WarningsAsErrors>4014</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>    
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
@@ -59,6 +66,7 @@
     <Compile Include="IExtensionTestGrain.cs" />
     <Compile Include="IExternalTypeGrain.cs" />
     <Compile Include="IFaultableConsumerGrain.cs" />
+    <Compile Include="IFSharpParametersGrain.cs" />
     <Compile Include="IGeneratorTestDerivedFromCSharpInterfaceInExternalAssemblyGrain.cs" />
     <Compile Include="IGeneratorTestDerivedFromFSharpInterfaceInExternalAssemblyGrain.cs" />
     <Compile Include="IGeneratorTestDerivedDerivedGrain.cs" />
@@ -74,6 +82,7 @@
     <Compile Include="IKeyExtensionTestGrain.cs" />
     <Compile Include="IMultifacetReader.cs" />
     <Compile Include="IMultifacetWriter.cs" />
+    <Compile Include="IJsonEchoGrain.cs" />
     <Compile Include="IMultipleImplicitSubscriptionGrain.cs" />
     <Compile Include="IMultipleSubscriptionConsumerGrain.cs" />
     <Compile Include="GrainInterfaceHierarchyIGrains.cs" />
@@ -137,6 +146,9 @@
       <Project>{aeff3b6c-7986-4bf9-85f5-2571decf8959}</Project>
       <Name>TestInterfaces</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Begin Orleans: Without these lines the project won't build properly -->

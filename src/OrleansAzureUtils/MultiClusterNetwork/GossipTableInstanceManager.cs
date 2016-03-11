@@ -156,21 +156,23 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return instance;
         }
 
-        internal async Task<List<Tuple<GossipTableEntry, string>>> FindAllGossipTableEntries()
+        internal async Task<List<GossipTableEntry>> FindAllGossipTableEntries()
         {
             var queryResults = await storage.ReadAllTableEntriesForPartitionAsync(this.GlobalServiceId).ConfigureAwait(false);
 
-            return queryResults.ToList();
+            return queryResults.Select(tuple => tuple.Item1).ToList();
         }
 
-        internal Task<Tuple<GossipTableEntry, string>> ReadConfigurationEntryAsync()
+        internal async Task<GossipTableEntry> ReadConfigurationEntryAsync()
         {
-            return storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.CONFIGURATION_ROW);
+            var result = await storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.CONFIGURATION_ROW).ConfigureAwait(false);
+            return result != null ? result.Item1 : null;
         }
 
-        internal Task<Tuple<GossipTableEntry, string>> ReadGatewayEntryAsync(GatewayEntry gateway)
+        internal async Task<GossipTableEntry> ReadGatewayEntryAsync(GatewayEntry gateway)
         {
-            return storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress, gateway.ClusterId));
+            var result = await storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress, gateway.ClusterId)).ConfigureAwait(false);
+            return result != null ? result.Item1 : null;
         }
 
         internal async Task<bool> TryCreateConfigurationEntryAsync(MultiClusterConfiguration configuration)
@@ -230,13 +232,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return (await TryUpdateTableEntryAsync(row, eTag).ConfigureAwait(false) != null);
         }
 
-        internal async Task<bool> TryDeleteGatewayEntryAsync(GossipTableEntry row, string eTag)
+        internal Task<bool> TryDeleteGatewayEntryAsync(GossipTableEntry row, string eTag)
         {
-            //Debug.Assert(row.ETag == eTag);
-            //Debug.Assert(row.PartitionKey == GlobalServiceId);
-            //Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(row.SiloAddress, row.ClusterId));
-
-            return await TryDeleteTableEntryAsync(row, eTag).ConfigureAwait(false);
+            return TryDeleteTableEntryAsync(row, eTag);
         }
 
         internal async Task<int> DeleteTableEntries()

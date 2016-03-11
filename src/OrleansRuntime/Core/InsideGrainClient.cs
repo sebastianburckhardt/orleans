@@ -170,9 +170,6 @@ namespace Orleans.Runtime
             if (context == null && !oneWay)
                 logger.Warn(ErrorCode.IGC_SendRequest_NullContext, "Null context {0}: {1}", message, new StackTrace());
 
-            if (Message.WriteMessagingTraces)
-                message.AddTimestamp(Message.LifecycleTag.Create);
-
             if (message.IsExpirableMessage(Config.Globals))
                 message.Expiration = DateTime.UtcNow + ResponseTimeout + Constants.MAXIMUM_CLOCK_SKEW;
             
@@ -325,10 +322,6 @@ namespace Orleans.Runtime
                     return;
                 }
 
-                //MessagingProcessingStatisticsGroup.OnRequestProcessed(message, "Invoked");
-                if (Message.WriteMessagingTraces)
-                    message.AddTimestamp(Message.LifecycleTag.InvokeIncoming);
-
                 RequestContext.Import(message.RequestContextData);
                 if (Config.Globals.PerformDeadlockDetection && !message.TargetGrain.IsSystemTarget)
                 {
@@ -337,12 +330,12 @@ namespace Orleans.Runtime
                     // in RuntimeClient.CreateMessage -> RequestContext.ExportToMessage(message);
                 }
 
-                var invoker = invokable.GetInvoker(message.InterfaceId, message.GenericGrainType);
-
                 object resultObject;
                 try
                 {
                     var request = (InvokeMethodRequest) message.BodyObject;
+
+                    var invoker = invokable.GetInvoker(request.InterfaceId, message.GenericGrainType);
 
                     if (invoker is IGrainExtensionMethodInvoker
                         && !(target is IGrainExtension))

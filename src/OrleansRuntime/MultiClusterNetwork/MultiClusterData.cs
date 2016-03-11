@@ -93,7 +93,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public bool IsActiveGatewayForCluster(SiloAddress address, string clusterid)
         {
             GatewayEntry info;
-            return  Gateways.TryGetValue(address, out info) 
+            return Gateways.TryGetValue(address, out info) 
                 && info.ClusterId == clusterid && info.Status == GatewayStatus.Active;
         }
 
@@ -130,7 +130,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 deltaConf = sourceConf;
             }
             else
+            {
                 resultConf = thisConf;
+            }
 
             //--  gateways
             var sourceList = source.Gateways;
@@ -139,23 +141,23 @@ namespace Orleans.Runtime.MultiClusterNetwork
             var deltaList = new Dictionary<SiloAddress, GatewayEntry>();
             foreach (var key in sourceList.Keys.Union(thisList.Keys).Distinct())
             {
-                GatewayEntry thisentry;
-                GatewayEntry sourceentry;
-                thisList.TryGetValue(key, out thisentry);
-                sourceList.TryGetValue(key, out sourceentry);
+                GatewayEntry thisEntry;
+                GatewayEntry sourceEntry;
+                thisList.TryGetValue(key, out thisEntry);
+                sourceList.TryGetValue(key, out sourceEntry);
 
-                if (sourceentry != null && !sourceentry.Expired
-                     && (thisentry == null || thisentry.HeartbeatTimestamp < sourceentry.HeartbeatTimestamp))
+                if (sourceEntry != null && !sourceEntry.Expired
+                     && (thisEntry == null || thisEntry.HeartbeatTimestamp < sourceEntry.HeartbeatTimestamp))
                 {
-                    resultList.Add(key, sourceentry);
-                    deltaList.Add(key, sourceentry);
+                    resultList.Add(key, sourceEntry);
+                    deltaList.Add(key, sourceEntry);
                 }
-                else if (thisentry != null)
+                else if (thisEntry != null)
                 {
-                    if (!thisentry.Expired)
-                        resultList.Add(key, thisentry);
+                    if (!thisEntry.Expired)
+                        resultList.Add(key, thisEntry);
                     else
-                        deltaList.Add(key, thisentry);
+                        deltaList.Add(key, thisEntry);
                 }
             }
 
