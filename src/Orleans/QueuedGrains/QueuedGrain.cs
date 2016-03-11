@@ -9,19 +9,37 @@ using Orleans.LogViews;
 namespace Orleans.QueuedGrains
 {
 
+
+    /// <summary>
+    /// Queued grain specialization where all update objects implement IUpdateOperation.
+    /// </summary>
+    /// <typeparam name="TGrainState"></typeparam>
+
+    public abstract class QueuedGrain<TGrainState> :
+       QueuedGrain<TGrainState, IUpdateOperation<TGrainState>>
+       where TGrainState : class,new()
+    {
+        protected override void ApplyUpdate(TGrainState state, IUpdateOperation<TGrainState> update)
+        {
+            update.Update(state);
+        }
+
+    }
+
     /// <summary>
     /// Queued grain base class. 
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : 
+    public abstract class QueuedGrain<TGrainState,TUpdate> : 
         LogViewGrain<TGrainState>, IProtocolParticipant,
-        ILogViewAdaptorHost, ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>
+        ILogViewAdaptorHost, ILogViewHost<TGrainState, TUpdate>
         where TGrainState : class,new()
+        where TUpdate : class
     {
         protected QueuedGrain()
         { }
 
         
-        internal ILogViewAdaptor<TGrainState,IUpdateOperation<TGrainState>> Adaptor { get; private set; }
+        internal ILogViewAdaptor<TGrainState,TUpdate> Adaptor { get; private set; }
 
         /// <summary>
         /// Called right after grain is constructed, to install the log view adaptor.
@@ -29,16 +47,29 @@ namespace Orleans.QueuedGrains
         void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeLogViewAdaptor<TGrainState,IUpdateOperation<TGrainState>>(this, (TGrainState) initialstate, graintypename, services);            
+            Adaptor = provider.MakeLogViewAdaptor<TGrainState,TUpdate>(this, (TGrainState) initialstate, graintypename, services);            
         }
 
-
-        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.TransitionView(TGrainState view, IUpdateOperation<TGrainState> entry)
+        void ILogViewHost<TGrainState, TUpdate>.TransitionView(TGrainState view, TUpdate entry)
         {
-                entry.Update(view);
+            ApplyUpdate(view, entry);
         }
 
-        string ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.IdentityString
+        /// <summary>
+        /// By default, updates are applied to state objects by calling "Apply(updateobject)" dynamically. To change this behavior, override this method.
+        /// </summary>
+        /// <param name="state">The state to mutate</param>
+        /// <param name="update">The update object to apply</param>
+        /// <returns></returns>
+        protected virtual void ApplyUpdate(TGrainState state, TUpdate update)
+        {
+             // call the Apply function dynamically
+            dynamic s = state;
+            dynamic u = update;
+            s.Apply(u);
+        }
+
+        string ILogViewHost<TGrainState, TUpdate>.IdentityString
         {
             get { return Identity.IdentityString; }
         }
@@ -96,7 +127,7 @@ namespace Orleans.QueuedGrains
         /// The update becomes visible in (TentativeState) immediately. All queued updates are written to the global state automatically in the background.
         /// <param name="update">An object representing the update</param>
         /// </summary>
-        public void EnqueueUpdate(IUpdateOperation<TGrainState> update)
+        public void EnqueueUpdate(TUpdate update)
         {
             Adaptor.Submit(update);
         }
@@ -108,7 +139,7 @@ namespace Orleans.QueuedGrains
         /// <param name="update">An object representing the update</param>
         /// <returns>true if the update was successful, and false if the update failed due to conflicts.</returns>
         /// </summary>
-        public Task<bool> TryConditionalUpdateAsync(IUpdateOperation<TGrainState> update)
+        public Task<bool> TryConditionalUpdateAsync(TUpdate update)
         {
            return Adaptor.TryAppend(update);
         }
@@ -117,7 +148,7 @@ namespace Orleans.QueuedGrains
         /// <summary>
         /// Returns the current queue of unconfirmed updates.
         /// </summary>
-        public IEnumerable<IUpdateOperation<TGrainState>> UnconfirmedUpdates
+        public IEnumerable<TUpdate> UnconfirmedUpdates
         { 
            get { return Adaptor.UnconfirmedSuffix; } 
         }
@@ -181,7 +212,7 @@ namespace Orleans.QueuedGrains
 
         #endregion
 
-        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
+        void ILogViewHost<TGrainState, TUpdate>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
         {
             if (ConfirmedStateChanged && listeners != null)
                 foreach (var l in listeners)
