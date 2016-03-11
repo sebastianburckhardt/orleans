@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Orleans.QueuedGrains;
 
-namespace ReplicatedEventSample.Grains
+namespace ReplicatedEventSample.Interfaces
 {
     [Serializable]
     public class Outcome

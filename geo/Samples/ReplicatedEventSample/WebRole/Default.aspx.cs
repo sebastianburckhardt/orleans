@@ -27,6 +27,7 @@ using ReplicatedEventSample.Interfaces;
 using Orleans.Runtime.Host;
 using System.Threading.Tasks;
 using Microsoft.Azure;
+using System.Text;
 
 namespace Orleans.Azure.Samples.Web
 {
@@ -45,90 +46,58 @@ namespace Orleans.Azure.Samples.Web
                     }
                     AzureClient.Initialize(clientConfigFile);
 
-                    UpdateMessageText();
+                    NameTextBox.Text = "event0";
                 }
 
             }
         }
 
-        private static int sequencecounter = 1;
-
-        private void UpdateMessageText()
-        {
-            NameTextBox.Text = CloudConfigurationManager.GetSetting("MessagePrefix") + " " + sequencecounter++;
-        }
-
         protected async void ButtonRefresh_Click(object sender, EventArgs e)
         {
-            await Refresh();
+            await RefreshTickerLine();
         }
 
         protected async void Timer1_Tick(object sender, EventArgs e)
         {
-            await Refresh();
+            await RefreshTickerLine();
         }
 
-        private async Task Refresh()
+        private async Task RefreshTickerLine()
         {
             try
             {
-                IEventGrain grainRef = GrainClient.GrainFactory.GetGrain<IEventGrain>(0);
-                LocalState s = await grainRef.GetLocalState();
-                UpdateText(s);
+                // get ticker line
+                ITickerGrain tickergrain = GrainClient.GrainFactory.GetGrain<ITickerGrain>(0);
+                TextBox1.Text = await tickergrain.GetTickerLine();
             }
             catch (Exception exc)
             {
-                DisplayError(exc);
+                while (exc is AggregateException) exc = exc.InnerException;
+                this.TextBox1.Text = exc.ToString();
             }
         }
- 
-        private void UpdateText(LocalState s)
-        {
-           var confirmedstate = string.Join("\n", s.ConfirmedState);
-           if (this.ConfirmedState.Text != confirmedstate)
-               this.ConfirmedState.Text = confirmedstate;
-           var unconfirmedupdates = string.Join("\n", s.UnconfirmedUpdates);
-           if (this.UnconfirmedUpdates.Text != unconfirmedupdates)
-               this.UnconfirmedUpdates.Text = unconfirmedupdates;
-           var tentativestate = string.Join("\n", s.TentativeState);
-           if (this.TentativeState.Text != tentativestate)
-               this.TentativeState.Text = tentativestate;
-        }
-        private void DisplayError(Exception exc)
-        {
-            while (exc is AggregateException) exc = exc.InnerException;
+    
 
-            this.TentativeState.Text = "Error connecting to Orleans: " + exc + " at " + DateTime.Now;
-            this.ConfirmedState.Text = "";
-            this.UnconfirmedUpdates.Text = "";
-        }
-
-        protected async void ButtonAppendMessage_Click(object sender, EventArgs e)
+        protected async void ButtonLookup_Click(object sender, EventArgs e)
         {
             try
             {
-                IEventGrain grainRef = GrainClient.GrainFactory.GetGrain<IEventGrain>(0);
-                LocalState s = await grainRef.AppendMessage(NameTextBox.Text);
-                UpdateText(s);
-                UpdateMessageText();
-            }
-            catch (Exception exc)
-            {
-                DisplayError(exc);
-            }
-        }
+                IEventGrain grainRef = GrainClient.GrainFactory.GetGrain<IEventGrain>(NameTextBox.Text);
+                var topthree = await grainRef.GetTopThree();
+                var s = new StringBuilder();
+                if (topthree.Count > 0)
+                    s.AppendLine("First Place: " + topthree[0]);
+                if (topthree.Count > 1)  // if this were real we would check for ties
+                    s.AppendLine("Second Place: " + topthree[1]);
+                if (topthree.Count > 2)
+                    s.AppendLine("Third Place: " + topthree[2]); 
 
-        protected async void ButtonClearAll_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                IEventGrain grainRef = GrainClient.GrainFactory.GetGrain<IEventGrain>(0);
-                LocalState s = await grainRef.ClearAll();
-                UpdateText(s);
+                this.TextBox2.Text = s.ToString();
             }
             catch (Exception exc)
             {
-                DisplayError(exc);
+                while (exc is AggregateException) exc = exc.InnerException;
+                this.TextBox2.Text = exc.ToString();
             }
         }
 

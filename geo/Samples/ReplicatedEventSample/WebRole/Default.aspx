@@ -14,34 +14,22 @@
             <asp:PostBackTrigger ControlID="ButtonRefresh" />
         </Triggers>
         <ContentTemplate>
+            <p>
+                The ticker below refreshes automatically every 5 seconds.
+                <asp:Button ID="ButtonRefresh" Style="margin-left: 10px; vertical-align: middle" runat="server" Text="Refresh Ticker Now" OnClick="ButtonRefresh_Click" />
+            </p>
+            <p>
+               <asp:TextBox ID="TextBox1" runat="server" Height="39px" ReadOnly="true" TextMode="MultiLine" Width="640px">...Connecting...</asp:TextBox>
+            </p>
             <p id="InputSpace">
-                <p>The grain contains a list of messages, supporting two operations: AppendMessage and ClearAll.</p>
-                <asp:TextBox runat="server" ID="NameTextBox"></asp:TextBox>
-                <asp:Button ID="ButtonAppendMessage" runat="server" Text="AppendMessage" OnClick="ButtonAppendMessage_Click" />
-                <asp:Button ID="ButtonClearAll" runat="server" Style="margin-left: 40px" Text="ClearAll" OnClick="ButtonClearAll_Click" />
-           <asp:Timer ID="UpdateTimer" runat="server" Interval="5000" OnTick="Timer1_Tick" />
-            <table>
-                <tr>
-                    <td>
-                        <p>
-                            Confirmed State<p>
-                                <asp:TextBox ID="ConfirmedState" runat="server" Height="230px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
-                                <p>
-                                    Unconfirmed Updates<p>
-                                        <asp:TextBox ID="UnconfirmedUpdates" runat="server" Height="110px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
-                    </td>
-                    <td style="vertical-align: top">
-                        <p>
-                            Tentative State<p>
-                                <asp:TextBox ID="TentativeState" runat="server" Height="393px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
-                    </td>
-                </tr>
-            </table>
-                <p>
-                    This page refreshes automatically every 5 seconds, to display the current local grain state.
-                <asp:Button ID="ButtonRefresh" Style="margin-left: 10px; vertical-align: middle" runat="server" Text="Refresh Now" OnClick="ButtonRefresh_Click" />
-                </p>
-        </ContentTemplate>
+                Enter name of event to look up top three (event0...event9): <asp:TextBox runat="server" ID="NameTextBox" Height="26px" Width="170px"></asp:TextBox>
+                <asp:Button ID="ButtonLookup" runat="server" OnClick="ButtonLookup_Click" Style="margin-left: 10px; vertical-align: middle" Text="Look Up" />
+            </p>
+            <p>
+               <asp:TextBox ID="TextBox2" runat="server" Height="79px" ReadOnly="true" TextMode="MultiLine" Width="640px"></asp:TextBox>
+            </p>
+            <asp:Timer ID="UpdateTimer" runat="server" Interval="5000" OnTick="Timer1_Tick" />
+         </ContentTemplate>
     </asp:UpdatePanel>
     <asp:UpdateProgress ID="UpdateProgress1" runat="server" AssociatedUpdatePanelID="UpdatePanel1">
         <ProgressTemplate>

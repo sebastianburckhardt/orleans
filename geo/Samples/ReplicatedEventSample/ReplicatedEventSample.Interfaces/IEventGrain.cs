@@ -8,13 +8,12 @@ using Orleans.Concurrency;
 
 namespace ReplicatedEventSample.Interfaces
 {
-    public interface IEventGrain : IGrainWithIntegerKey
+    public interface IEventGrain : IGrainWithStringKey
     {
-        Task NewOutcome(Outcome outcome)
+        Task NewOutcome(Outcome outcome);
 
         Task<List<KeyValuePair<string, int>>> GetTopThree();
 
-        Task<string> GetRecentOutcome();
     }
 
   
