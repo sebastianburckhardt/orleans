@@ -55,17 +55,5 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <returns>a gateway address, or null if none is found for the given cluster</returns>
         SiloAddress GetRandomClusterGateway(string cluster);
 
-        /// <summary>
-        /// Subscribe to multicluster configuration change events.
-        /// </summary>
-        /// <param name="observer">An observer to receive configuration change notifications.</param>
-        /// <returns>bool value indicating that subscription succeeded or not.</returns>
-        bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer);
-
-        /// <summary>
-        /// UnSubscribe from multicluster configuration change events.
-        /// </summary>
-        /// <returns>bool value indicating that subscription succeeded or not.</returns>
-        bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer);
     }
 }
