@@ -70,7 +70,7 @@ namespace Orleans.Providers.LogViews
             where TView : class, new()
             where TEntry : class
         {
-            return new StorageBasedLogViewAdaptor<TView,TEntry>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
+            return new StorageProviderLogViewAdaptor<TView,TEntry>(hostgrain, initialstate, this, globalstorageprovider, graintypename, services);
         }
     }
 
