@@ -192,12 +192,6 @@
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\QueuedGrainSample.Interfaces\QueuedGrainSample.Interfaces.csproj">
-      <Project>{0b475524-90dd-4d3b-b150-c9dbf30a8346}</Project>
-      <Name>QueuedGrainSample.Interfaces</Name>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

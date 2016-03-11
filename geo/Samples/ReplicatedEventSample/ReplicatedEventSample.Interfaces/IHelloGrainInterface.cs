@@ -10,11 +10,11 @@ namespace ReplicatedEventSample.Interfaces
 {
     public interface IEventGrain : IGrainWithIntegerKey
     {
-        Task NewOutcome(string name, int rank);
+        Task NewOutcome(Outcome outcome)
 
-        Task<List<string>> GetTopThree();
+        Task<List<KeyValuePair<string, int>>> GetTopThree();
 
-        Task<int> GetRank(string name);
+        Task<string> GetRecentOutcome();
     }
 
   

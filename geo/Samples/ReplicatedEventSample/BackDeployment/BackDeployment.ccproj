@@ -56,14 +56,6 @@
       <RoleName>Orleans.Silos</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
-    <ProjectReference Include="..\WebRole\WebRole.csproj">
-      <Name>WebRole</Name>
-      <Project>{313b557f-4b35-4064-bac7-fdc47845c534}</Project>
-      <Private>True</Private>
-      <RoleType>Web</RoleType>
-      <RoleName>WebRole</RoleName>
-      <UpdateDiagnosticsConnectionStringOnPublish>False</UpdateDiagnosticsConnectionStringOnPublish>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Orleans.SilosContent\" />

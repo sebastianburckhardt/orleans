@@ -195,16 +195,6 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\QueuedGrainSample.Grains\QueuedGrainSample.Grains.csproj">
-      <Project>{27a256fd-e8f8-46b8-997c-fa092f9c4503}</Project>
-      <Name>QueuedGrainSample.Grains</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\QueuedGrainSample.Interfaces\QueuedGrainSample.Interfaces.csproj">
-      <Project>{0b475524-90dd-4d3b-b150-c9dbf30a8346}</Project>
-      <Name>QueuedGrainSample.Interfaces</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
