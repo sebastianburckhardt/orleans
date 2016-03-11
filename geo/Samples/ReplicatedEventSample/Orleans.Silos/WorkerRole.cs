@@ -68,15 +68,6 @@ namespace Orleans.Azure.Silos
 
             config.LoadFromFile("OrleansConfiguration.xml");
 
-            // check if the user forgot to change Orleans.xml before deploying to cloud
-            if (! CloudConfigurationManager.GetSetting("DataConnectionString").Contains("UseDevelopmentStorage")
-                && config.Globals
-                .ProviderConfigurations[ProviderCategoryConfiguration.STORAGE_PROVIDER_CATEGORY_NAME]
-                .Providers["GloballySharedAzureAccount"]
-                .Properties["DataConnectionString"]
-                .Contains("UseDevelopmentStorage"))
-                throw new Exception("please edit OrleansConfiguration.xml to configure global azure storage account before deploying to cloud");
-
             // insert the ClusterId based on the cloud configuration
             config.Globals.ClusterId =  CloudConfigurationManager.GetSetting("ClusterId");
 

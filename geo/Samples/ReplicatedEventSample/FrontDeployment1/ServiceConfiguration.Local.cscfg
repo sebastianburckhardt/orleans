@@ -10,7 +10,7 @@
   <Role name="Orleans.Silos">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="ClusterId" value="Deployment1" />
+      <Setting name="ClusterId" value="FrontDeployment1" />
       <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
     </ConfigurationSettings>

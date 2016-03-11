@@ -17,8 +17,6 @@ namespace ReplicatedEventSample.Grains
     public class EventGrain : QueuedGrain<EventState, Outcome>, IEventGrain, IStateChangedListener
     {
 
-
-
         public Task NewOutcome(Outcome outcome)
         {
             EnqueueUpdate(outcome);
@@ -32,6 +30,7 @@ namespace ReplicatedEventSample.Grains
                 .Take(3)
                 .Select(o => new KeyValuePair<string, int>(o.Value.Name, o.Value.Score))
                 .ToList();
+           
             return Task.FromResult(result);
         }
 

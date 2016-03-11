@@ -5,7 +5,8 @@
     <title>Orleans in Azure</title>
 </asp:Content>
 <asp:Content ID="BodyContent" runat="server" ContentPlaceHolderID="MainContent">
-    <h2>Back deployment</h2>
+    <h2>Welcome to Orleans running in Azure!
+    </h2>
     <asp:ScriptManager ID="ScriptManager1" runat="server" />
     <asp:UpdatePanel ID="UpdatePanel1" runat="server" UpdateMode="Conditional">
         <Triggers>
@@ -21,11 +22,11 @@
                <asp:TextBox ID="TextBox1" runat="server" Height="39px" ReadOnly="true" TextMode="MultiLine" Width="640px">...Connecting...</asp:TextBox>
             </p>
             <p id="InputSpace">
-                Enter name of event to look up: <asp:TextBox runat="server" ID="NameTextBox" Height="26px" Width="170px"></asp:TextBox>
-                <asp:Button ID="ButtonLookup" runat="server" OnClick="ButtonLookup_Click" Style="margin-left: 10px; vertical-align: middle" Text="Look Up" />
+                Enter number of events for which to generate outcomes: <asp:TextBox runat="server" ID="CountTextBox" Height="26px" Width="170px"></asp:TextBox>
+                <asp:Button ID="ButtonStart" runat="server" OnClick="ButtonStart_Click" Style="margin-left: 10px; vertical-align: middle" Text="Start Outcome Generators" />
             </p>
             <p>
-               <asp:TextBox ID="TextBox2" runat="server" Height="174px" ReadOnly="true" TextMode="MultiLine" Width="640px"></asp:TextBox>
+               <asp:TextBox ID="TextBox2" runat="server" Height="43px" ReadOnly="true" TextMode="MultiLine" Width="640px"></asp:TextBox>
             </p>
             <asp:Timer ID="UpdateTimer" runat="server" Interval="5000" OnTick="Timer1_Tick" />
          </ContentTemplate>

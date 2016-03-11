@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IEventGrain.cs" />
+    <Compile Include="IGeneratorGrain.cs" />
     <Compile Include="ITickerGrain.cs" />
     <Compile Include="Outcome.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

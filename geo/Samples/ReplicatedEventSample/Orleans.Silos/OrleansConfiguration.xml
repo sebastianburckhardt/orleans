@@ -3,12 +3,11 @@
   <Globals>
     <Liveness LivenessType="AzureTable" />
     <StorageProviders>
-      <!-- Set this to a globally shared storage account before deploying to cloud -->
-      <Provider Type="Orleans.Storage.AzureTableStorage" Name="GloballySharedAzureAccount" DataConnectionString="UseDevelopmentStorage=true" />
-      <!--<Provider Type="Orleans.Storage.AzureTableStorage" Name="GloballySharedAzureAccount" DataConnectionString="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME;AccountKey=MYACCOUNTKEY" />-->
+      <!-- for now, we use the memory store as a default, which works for queued grain too -->
+      <Provider Type="Orleans.Storage.MemoryStorage" Name="Default" />
     </StorageProviders>
     <MultiClusterNetwork GlobalServiceId ="HelloGeoSilo"
-                         DefaultMultiCluster="Deployment1,Deployment2,Deployment3"
+                         DefaultMultiCluster="FrontDeployment1,FrontDeployment2,BackDeployment"
                          ClusterId="IS_CONFIGURED_ON_START_IN_WorkerRole.cs">
       <GossipChannel Type="AzureTable" ConnectionString="UseDevelopmentStorage=true" />      
     </MultiClusterNetwork>

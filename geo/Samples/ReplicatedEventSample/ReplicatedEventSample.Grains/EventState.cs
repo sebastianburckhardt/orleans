@@ -19,6 +19,10 @@ namespace ReplicatedEventSample.Grains
         /// </summary>
         public SortedDictionary<DateTime,Outcome> outcomes;
 
+        public EventState()
+        {
+            outcomes = new SortedDictionary<DateTime, Outcome>();
+        }
 
         public void Apply(Outcome outcome)
         {

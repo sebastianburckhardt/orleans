@@ -11,4 +11,11 @@
   <!--<NetworkConfiguration>
     <VirtualNetworkSite name="MYVNET" />
   </NetworkConfiguration>-->
+  <Role name="WebRole2">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
+      <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME3;AccountKey=MYACCOUNTKEY3" />
+    </ConfigurationSettings>
+  </Role>
 </ServiceConfiguration>

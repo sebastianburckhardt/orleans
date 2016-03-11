@@ -56,13 +56,23 @@
       <RoleName>Orleans.Silos</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
+    <ProjectReference Include="..\WebRole2\WebRole2.csproj">
+      <Name>WebRole2</Name>
+      <Project>{137cb72c-434b-448c-a124-ee49e0647c36}</Project>
+      <Private>True</Private>
+      <RoleType>Web</RoleType>
+      <RoleName>WebRole2</RoleName>
+      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Orleans.SilosContent\" />
+    <Folder Include="WebRole2Content\" />
     <Folder Include="WebRoleContent\" />
   </ItemGroup>
   <ItemGroup>
     <DiagnosticsConfiguration Include="Orleans.SilosContent\diagnostics.wadcfgx" />
+    <DiagnosticsConfiguration Include="WebRole2Content\diagnostics.wadcfgx" />
     <DiagnosticsConfiguration Include="WebRoleContent\diagnostics.wadcfgx" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
