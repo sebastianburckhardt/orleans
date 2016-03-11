@@ -71,7 +71,7 @@ namespace Orleans.Runtime
         /// Get a list of silos that are designated to function as gateways.
         /// </summary>
         /// <returns></returns>
-        IEnumerable<SiloAddress> GetApproximateMultiClusterGateways();
+        IReadOnlyList<SiloAddress> GetApproximateMultiClusterGateways();
 
 
         /// <summary>

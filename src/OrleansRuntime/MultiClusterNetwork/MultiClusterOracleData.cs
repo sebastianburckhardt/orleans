@@ -1,8 +1,4 @@
-﻿using Orleans.MultiCluster;
-using System;
-using System.Collections.Generic;
-
-namespace Orleans.Runtime.MultiClusterNetwork
+﻿namespace Orleans.Runtime.MultiClusterNetwork
 {
     class MultiClusterOracleData 
     {
@@ -48,9 +44,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 return data;
 
             MultiClusterData delta;
-            MultiClusterData prev = localData;
+            MultiClusterData prev = this.localData;
 
-            localData = prev.Merge(data, out delta);
+            this.localData = prev.Merge(data, out delta);
 
             if (logger.IsVerbose2)
                 logger.Verbose2("ApplyDataAndNotify: delta {0}", delta);

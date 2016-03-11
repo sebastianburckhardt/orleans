@@ -1,7 +1,7 @@
 @setlocal
 @ECHO off
 
-if .%TEST_CATEGORIES%. == .. set TEST_CATEGORIES="TestCategory=BVT"
+if [] == [%TEST_CATEGORIES%] set TEST_CATEGORIES="TestCategory=BVT"
 
 SET CONFIGURATION=Release
 
@@ -9,10 +9,6 @@ SET CMDHOME=%~dp0
 @REM Remove trailing backslash \
 set CMDHOME=%CMDHOME:~0,-1%
 
-if "%FrameworkDir%" == "" set FrameworkDir=%WINDIR%\Microsoft.NET\Framework
-if "%FrameworkVersion%" == "" set FrameworkVersion=v4.0.30319
-
-if NOT "%VS120COMNTOOLS%" == "" set VSIDEDIR=%VS120COMNTOOLS%..\IDE
 if NOT "%VS140COMNTOOLS%" == "" set VSIDEDIR=%VS140COMNTOOLS%..\IDE
 SET VSTESTEXEDIR=%VSIDEDIR%\CommonExtensions\Microsoft\TestWindow
 SET VSTESTEXE=%VSTESTEXEDIR%\VSTest.console.exe
@@ -36,12 +32,12 @@ REM ---- Temporary script while we migrate TesterInternal project.
 @echo off
 
 set TESTER=%OutDir%\Tester.dll
-if []==[%FILTERS%] set FILTERS=-trait "Category=BVT"
+if []==[%TEST_FILTERS%] set TEST_FILTERS=-trait "Category=BVT"
 
 @echo on
 call "%CMDHOME%\SetupTestScript.cmd" "%OutDir%"
 
-packages\xunit.runner.console.2.1.0\tools\xunit.console %TESTER% %FILTERS% -xml "TestResults/xUnit-Results.xml" -parallel none -noshadow
+packages\xunit.runner.console.2.1.0\tools\xunit.console %TESTER% %TEST_FILTERS% -xml "TestResults/xUnit-Results.xml" -parallel none -noshadow
 
 popd
 endlocal

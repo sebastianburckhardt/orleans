@@ -241,7 +241,7 @@ namespace Orleans.Runtime.MembershipService
         }
 
         // ONLY access gatewaysLocalCopy to prevent races
-        public IEnumerable<SiloAddress> GetApproximateMultiClusterGateways()
+        public IReadOnlyList<SiloAddress> GetApproximateMultiClusterGateways()
         {
             return membershipOracleData.GetApproximateMultiClusterGateways();
         }

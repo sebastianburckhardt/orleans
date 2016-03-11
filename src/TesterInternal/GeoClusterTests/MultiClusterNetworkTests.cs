@@ -163,6 +163,12 @@ namespace Tests.GeoClusterTests
             Action<ClusterConfiguration> configcustomizer = (ClusterConfiguration c) =>
             {
                 c.Globals.DefaultMultiCluster = new List<string>(2) { clusterA, clusterB };
+
+                // logging  
+                foreach (var o in c.Overrides)
+                {
+                   o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("Runtime.MultiClusterOracle", Severity.Verbose));
+                }
             };
       
             // create cluster A and clientA
@@ -179,6 +185,9 @@ namespace Tests.GeoClusterTests
             var portB1 = Clusters[clusterB].Silos[1].Endpoint.Port;
             var portB2 = Clusters[clusterB].Silos[2].Endpoint.Port;
 
+            // wait for membership to stabilize
+            await WaitForLivenessToStabilizeAsync();
+            // wait for gossip network to stabilize
             await WaitForMultiClusterGossipToStabilizeAsync(false);
 
             // check that default configuration took effect
