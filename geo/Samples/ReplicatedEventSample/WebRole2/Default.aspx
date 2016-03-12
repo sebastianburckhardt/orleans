@@ -5,8 +5,7 @@
     <title>Orleans in Azure</title>
 </asp:Content>
 <asp:Content ID="BodyContent" runat="server" ContentPlaceHolderID="MainContent">
-    <h2>Welcome to Orleans running in Azure!
-    </h2>
+    <h2>Back Deployment</h2>
     <asp:ScriptManager ID="ScriptManager1" runat="server" />
     <asp:UpdatePanel ID="UpdatePanel1" runat="server" UpdateMode="Conditional">
         <Triggers>

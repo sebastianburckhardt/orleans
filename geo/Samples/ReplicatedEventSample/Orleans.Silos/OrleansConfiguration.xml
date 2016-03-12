@@ -7,7 +7,7 @@
       <Provider Type="Orleans.Storage.MemoryStorage" Name="Default" />
     </StorageProviders>
     <MultiClusterNetwork GlobalServiceId ="HelloGeoSilo"
-                         DefaultMultiCluster="FrontDeployment1,FrontDeployment2,BackDeployment"
+                         DefaultMultiCluster="Front1,Front2,Back"
                          ClusterId="IS_CONFIGURED_ON_START_IN_WorkerRole.cs">
       <GossipChannel Type="AzureTable" ConnectionString="UseDevelopmentStorage=true" />      
     </MultiClusterNetwork>

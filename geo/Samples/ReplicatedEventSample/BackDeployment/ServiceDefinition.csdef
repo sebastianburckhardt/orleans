@@ -1,5 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceDefinition name="OrleansAzureSample" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2015-04.2.6">
+  <WebRole name="WebRole2" vmsize="ExtraSmall">
+    <Imports>
+    </Imports>
+    <ConfigurationSettings>
+      <Setting name="DataConnectionString" />
+    </ConfigurationSettings>
+    <Sites>
+      <Site name="Web">
+        <Bindings>
+          <Binding name="Endpoint1" endpointName="Endpoint1" />
+        </Bindings>
+      </Site>
+    </Sites>
+    <Endpoints>
+      <InputEndpoint name="Endpoint1" protocol="http" port="100" />
+    </Endpoints>
+  </WebRole>
   <WorkerRole name="Orleans.Silos" vmsize="Small">
     <Startup>
       <Task commandLine="ServerGC.cmd" executionContext="elevated" taskType="simple">
@@ -19,20 +36,4 @@
       <InternalEndpoint name="OrleansProxyEndpoint" protocol="tcp" port="30003" />
     </Endpoints>
   </WorkerRole>
-  <WebRole name="WebRole2" vmsize="Small">
-    <Sites>
-      <Site name="Web">
-        <Bindings>
-          <Binding name="Endpoint1" endpointName="Endpoint1" />
-        </Bindings>
-      </Site>
-    </Sites>
-    <ConfigurationSettings>
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
-      <Setting name="DataConnectionString" />
-    </ConfigurationSettings>
-    <Endpoints>
-      <InputEndpoint name="Endpoint1" protocol="http" port="80" />
-    </Endpoints>
-  </WebRole>
 </ServiceDefinition>

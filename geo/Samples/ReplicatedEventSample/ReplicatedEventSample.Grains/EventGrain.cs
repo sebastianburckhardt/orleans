@@ -19,6 +19,7 @@ namespace ReplicatedEventSample.Grains
 
         public Task NewOutcome(Outcome outcome)
         {
+            logger.Info("{3} new outcome {0} {1} {2}", outcome.Timestamp, outcome.Name, outcome.Score, this.GetPrimaryKeyString());
             EnqueueUpdate(outcome);
             return TaskDone.Done;
         }
@@ -43,9 +44,12 @@ namespace ReplicatedEventSample.Grains
             // we want to react to changes in the event state, so we subscribe on activation
             SubscribeConfirmedStateListener(this);
 
+            logger = GetLogger();
+
             return TaskDone.Done;
         }
 
+        Orleans.Runtime.Logger logger;
 
         bool results_have_started;
         string last_announced_leader;

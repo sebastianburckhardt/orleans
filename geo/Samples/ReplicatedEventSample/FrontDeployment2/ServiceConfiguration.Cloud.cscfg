@@ -8,9 +8,9 @@
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">
-    <Instances count="1" />
+    <Instances count="2" />
     <ConfigurationSettings>
-      <Setting name="ClusterId" value="FrontDeployment2" />
+      <Setting name="ClusterId" value="Front2" />
       <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME2;AccountKey=MYACCOUNTKEY2" />
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME2;AccountKey=MYACCOUNTKEY2" />
     </ConfigurationSettings>

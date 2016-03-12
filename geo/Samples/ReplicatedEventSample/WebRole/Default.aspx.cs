@@ -54,6 +54,7 @@ namespace Orleans.Azure.Samples.Web
 
         protected async void ButtonRefresh_Click(object sender, EventArgs e)
         {
+            TextBox1.Text = "";
             await RefreshTickerLine();
         }
 
@@ -80,6 +81,7 @@ namespace Orleans.Azure.Samples.Web
 
         protected async void ButtonLookup_Click(object sender, EventArgs e)
         {
+            TextBox2.Text = "";
             try
             {
                 IEventGrain grainRef = GrainClient.GrainFactory.GetGrain<IEventGrain>(NameTextBox.Text);

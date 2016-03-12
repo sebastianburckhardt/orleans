@@ -15,7 +15,7 @@
       </Site>
     </Sites>
     <Endpoints>
-      <InputEndpoint name="Endpoint1" protocol="http" port="92" />
+      <InputEndpoint name="Endpoint1" protocol="http" port="120" />
     </Endpoints>
   </WebRole>
   <WorkerRole name="Orleans.Silos" vmsize="Small">

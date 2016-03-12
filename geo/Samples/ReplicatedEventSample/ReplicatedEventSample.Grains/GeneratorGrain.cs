@@ -23,7 +23,10 @@ namespace ReplicatedEventSample.Grains
                 // find event grain for this generator
                 eventgrain = GrainFactory.GetGrain<IEventGrain>("event" + this.GetPrimaryKeyLong());
 
-                RegisterTimer(Generate, null, TimeSpan.FromSeconds(random.Next(20)), TimeSpan.Zero);
+                
+                RegisterTimer(Generate, null, 
+                    TimeSpan.FromSeconds(random.Next(20)),  // start within 20 secs
+                    TimeSpan.FromSeconds(2)); // one outcome about every two seconds
             }
 
             return TaskDone.Done;
@@ -35,8 +38,8 @@ namespace ReplicatedEventSample.Grains
 
         private async Task Generate(Object ignoredparameter)
         {
-            // wait 0-2 seconds
-            await Task.Delay((int) (2000 * random.NextDouble()));
+            // wait 0-1 seconds
+            await Task.Delay((int) (1000 * random.NextDouble()));
 
             // pick random name and score for outcome
             var outcome = new Outcome()

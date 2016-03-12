@@ -39,7 +39,7 @@ namespace ReplicatedEventSample.Grains
         {
          
             if (last_thing_that_happened == null 
-                || timestamp + TimeSpan.FromSeconds(15) < DateTime.UtcNow)
+                || timestamp + TimeSpan.FromSeconds(30) < DateTime.UtcNow)
                 return Task.FromResult("no news right now");
 
             else
