@@ -28,38 +28,39 @@ namespace Orleans.Runtime.MultiClusterNetwork
             if (channels.Count == 0)
                 logger.Warn(ErrorCode.MultiClusterNetwork_NoChannelsConfigured, "No gossip channels are configured.");
 
-            var gossiporacle = new MultiClusterOracle(silo.SiloAddress, channels, silo.GlobalConfig);
+            var gossipOracle = new MultiClusterOracle(silo.SiloAddress, channels, silo.GlobalConfig);
 
             logger.Info("Created multicluster oracle.");
 
-            return gossiporacle;
+            return gossipOracle;
         }
 
         internal async Task<List<IGossipChannel>> GetGossipChannels(Silo silo)
         {
-            List<IGossipChannel> channellist = new List<IGossipChannel>();
+            List<IGossipChannel> gossipChannels = new List<IGossipChannel>();
 
-            var channelconfigurations = silo.GlobalConfig.GossipChannels;
-            if (channelconfigurations != null)
-                foreach (var channelconf in channelconfigurations)
+            var channelConfigurations = silo.GlobalConfig.GossipChannels;
+            if (channelConfigurations != null)
+            {
+                foreach (var channelConfiguration in channelConfigurations)
                 {
-                    switch (channelconf.ChannelType)
+                    switch (channelConfiguration.ChannelType)
                     {
                         case GlobalConfiguration.GossipChannelType.AzureTable:
-                            var tablechannel = AssemblyLoader.LoadAndCreateInstance<IGossipChannel>(Constants.ORLEANS_AZURE_UTILS_DLL, logger);
-                            await tablechannel.Initialize(silo.GlobalConfig, channelconf.ConnectionString);
-                            channellist.Add(tablechannel);
-
+                            var tableChannel = AssemblyLoader.LoadAndCreateInstance<IGossipChannel>(Constants.ORLEANS_AZURE_UTILS_DLL, logger);
+                            await tableChannel.Initialize(silo.GlobalConfig, channelConfiguration.ConnectionString);
+                            gossipChannels.Add(tableChannel);
                             break;
 
                         default:
                             break;
                     }
 
-                    logger.Info("Configured Gossip Channel: Type={0} ConnectionString={1}", channelconf.ChannelType, channelconf.ConnectionString);
+                    logger.Info("Configured Gossip Channel: Type={0} ConnectionString={1}", channelConfiguration.ChannelType, channelConfiguration.ConnectionString);
                 }
+            }
 
-            return channellist;
+            return gossipChannels;
         }
     }
 }

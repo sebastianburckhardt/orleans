@@ -27,8 +27,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             logger.Info("Initializing Gossip Channel for ServiceId={0} using connection: {1}, SeverityLevel={2}",
                 globalconfig.GlobalServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
 
-            tableManager =
-                await GossipTableInstanceManager.GetManager(globalconfig.GlobalServiceId, connectionstring, logger);
+            tableManager = await GossipTableInstanceManager.GetManager(globalconfig.GlobalServiceId, connectionstring, logger);
         }
 
         // used by unit tests
@@ -39,12 +38,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
         }
 
       
-        private static void UpdateDictionaryRight<T, L, R>(Dictionary<T, KeyValuePair<L, R>> d, T key, R val)
+        private static void UpdateDictionaryRightValue<TKey, TLeft, TRight>(Dictionary<TKey, KeyValuePair<TLeft, TRight>> dict, TKey key, TRight rightValue)
         {
-            if (d.ContainsKey(key))
-                d[key] = new KeyValuePair<L, R>(d[key].Key, val);
+            if (dict.ContainsKey(key))
+                dict[key] = new KeyValuePair<TLeft, TRight>(dict[key].Key, rightValue);
             else
-                d.Add(key, new KeyValuePair<L, R>(default(L), val));
+                dict.Add(key, new KeyValuePair<TLeft, TRight>(default(TLeft), rightValue));
         }
 
         // IGossipChannel
@@ -52,15 +51,20 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             logger.Verbose("-Push data:{0}", data);
 
-            var retrievalTasks = new List<Task<Tuple<GossipTableEntry,string>>>();
+            var retrievalTasks = new List<Task<GossipTableEntry>>();
             if (data.Configuration != null)
+            {
                 retrievalTasks.Add(tableManager.ReadConfigurationEntryAsync());
-            foreach(var gateway in data.Gateways.Values)
+            }
+
+            foreach (var gateway in data.Gateways.Values)
+            {
                 retrievalTasks.Add(tableManager.ReadGatewayEntryAsync(gateway));
+            }
 
             await Task.WhenAll(retrievalTasks);
 
-            var entriesFromStorage = retrievalTasks.Select(t => t.Result).Where(tuple => tuple != null);
+            var entriesFromStorage = retrievalTasks.Select(t => t.Result).Where(entry => entry != null);
             await DiffAndWriteBack(data, entriesFromStorage); 
         }
 
@@ -86,42 +90,43 @@ namespace Orleans.Runtime.MultiClusterNetwork
             }
         }
 
-        internal async Task<MultiClusterData> DiffAndWriteBack(MultiClusterData pushed, IEnumerable<Tuple<GossipTableEntry, string>> entriesFromStorage)
+        internal async Task<MultiClusterData> DiffAndWriteBack(MultiClusterData dataToPush, IEnumerable<GossipTableEntry> entriesFromStorage)
         {
-            MultiClusterConfiguration conf1;
-            Tuple<GossipTableEntry, string> conf2 = null;
-            var gateways = new Dictionary<SiloAddress, KeyValuePair<GatewayEntry, Tuple<GossipTableEntry, string>>>();
+            GossipTableEntry configRow = null;
+            var gateways = new Dictionary<SiloAddress, KeyValuePair<GatewayEntry, GossipTableEntry>>();
             MultiClusterConfiguration returnedConfiguration = null;
 
             // collect left-hand side data
-            conf1 = pushed.Configuration;
-            foreach (var e in pushed.Gateways)
-               if (!e.Value.Expired)
-                   gateways[e.Key] = new KeyValuePair<GatewayEntry, Tuple<GossipTableEntry, string>> (e.Value, null);
-
-            foreach (var tuple in entriesFromStorage)
+            MultiClusterConfiguration configToPush = dataToPush.Configuration;
+            foreach (var gatewayEntry in dataToPush.Gateways.Values)
             {
-                var tableEntry = tuple.Item1;
+                if (!gatewayEntry.Expired)
+                    gateways[gatewayEntry.SiloAddress] = new KeyValuePair<GatewayEntry, GossipTableEntry>(gatewayEntry, null);
+            }
+
+            foreach (var tableEntry in entriesFromStorage)
+            {
                 if (tableEntry.RowKey.Equals(GossipTableEntry.CONFIGURATION_ROW))
                 {
-                    conf2 = tuple;
+                    configRow = tableEntry;
                     // interpret empty admin timestamp by taking the azure table timestamp instead
                     // this allows an admin to inject a configuration by editing table more easily
-                    if (conf2.Item1.GossipTimestamp == default(DateTime))
-                        conf2.Item1.GossipTimestamp = conf2.Item1.Timestamp.UtcDateTime;
+                    if (configRow.GossipTimestamp == default(DateTime))
+                        configRow.GossipTimestamp = configRow.Timestamp.UtcDateTime;
                 }
                 else
                 {
                     try
                     {
                         tableEntry.UnpackRowKey();
-                        UpdateDictionaryRight(gateways, tableEntry.SiloAddress, tuple);
+                        UpdateDictionaryRightValue(gateways, tableEntry.SiloAddress, tableEntry);
                     }
                     catch (Exception exc)
                     {
-                        logger.Error(ErrorCode.AzureTable_61, String.Format(
-                            "Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.",
-                            tableEntry), exc);
+                        logger.Error(
+                            ErrorCode.AzureTable_61,
+                            string.Format("Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.", tableEntry),
+                            exc);
                     }
                 }
             }
@@ -129,47 +134,55 @@ namespace Orleans.Runtime.MultiClusterNetwork
             var writeback = new List<Task>();
             var sendback = new Dictionary<SiloAddress,GatewayEntry>();
 
-            // push configuration
-            if (conf1 != null &&
-                (conf2 == null || conf2.Item1.GossipTimestamp < conf1.AdminTimestamp))
+            if (configToPush != null &&
+                (configRow == null || configRow.GossipTimestamp < configToPush.AdminTimestamp))
             {
-                if (conf2 == null)
-                    writeback.Add(tableManager.TryCreateConfigurationEntryAsync(conf1));
+                // push configuration
+                if (configRow == null)
+                    writeback.Add(tableManager.TryCreateConfigurationEntryAsync(configToPush));
                 else
-                    writeback.Add(tableManager.TryUpdateConfigurationEntryAsync(conf1, conf2.Item1, conf2.Item2));
+                    writeback.Add(tableManager.TryUpdateConfigurationEntryAsync(configToPush, configRow, configRow.ETag));
             }
-           // pull configuration
-            else if (conf2 != null &&
-                 (conf1 == null || conf1.AdminTimestamp < conf2.Item1.GossipTimestamp))
+            else if (configRow != null &&
+                 (configToPush == null || configToPush.AdminTimestamp < configRow.GossipTimestamp))
             {
-                returnedConfiguration = conf2.Item1.ToConfiguration();
+                // pull configuration
+                returnedConfiguration = configRow.ToConfiguration();
             }
 
-            foreach (var pair in gateways)
+            foreach (var gatewayEntryPair in gateways.Values)
             {
-                var left = pair.Value.Key;
-                var right = pair.Value.Value;
+                GatewayEntry gatewayEntry = gatewayEntryPair.Key;
+                GossipTableEntry tableEntry = gatewayEntryPair.Value;
 
-                // push gateway entry
-                if ((left != null && !left.Expired)
-                     && (right == null || right.Item1.GossipTimestamp < left.HeartbeatTimestamp))
+                if ((gatewayEntry != null && !gatewayEntry.Expired)
+                     && (tableEntry == null || tableEntry.GossipTimestamp < gatewayEntry.HeartbeatTimestamp))
                 {
-                    if (right == null)
-                        writeback.Add(tableManager.TryCreateGatewayEntryAsync(left));
+                    // push gateway entry, since we have a newer value
+                    if (tableEntry == null)
+                    {
+                        writeback.Add(tableManager.TryCreateGatewayEntryAsync(gatewayEntry));
+                    }
                     else
-                        writeback.Add(tableManager.TryUpdateGatewayEntryAsync(left, right.Item1, right.Item2));
+                    {
+                        writeback.Add(tableManager.TryUpdateGatewayEntryAsync(gatewayEntry, tableEntry, tableEntry.ETag));
+                    }
                 }
-                // pull or remove gateway entry
-                else if (right != null &&
-                        (left == null || left.HeartbeatTimestamp < right.Item1.GossipTimestamp))
+                else if (tableEntry != null &&
+                        (gatewayEntry == null || gatewayEntry.HeartbeatTimestamp < tableEntry.GossipTimestamp))
                 {
-                    var gatewayEntry = right.Item1.ToGatewayEntry();
+                    // pull or remove gateway entry
+                    gatewayEntry = tableEntry.ToGatewayEntry();
                     if (gatewayEntry.Expired)
-                        writeback.Add(tableManager.TryDeleteGatewayEntryAsync(right.Item1, right.Item2));
+                    {
+                        writeback.Add(tableManager.TryDeleteGatewayEntryAsync(tableEntry, tableEntry.ETag));
+                    }
                     else
-                        sendback.Add(right.Item1.SiloAddress, right.Item1.ToGatewayEntry()); // gets sent back
+                    {
+                        // gets sent back
+                        sendback.Add(tableEntry.SiloAddress, tableEntry.ToGatewayEntry());
+                    }
                 }
-
             }
 
             await Task.WhenAll(writeback);
