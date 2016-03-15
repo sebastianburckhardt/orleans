@@ -6,7 +6,7 @@
       <!-- for now, we use the memory store as a default, which works for queued grain too -->
       <Provider Type="Orleans.Storage.MemoryStorage" Name="Default" />
     </StorageProviders>
-    <MultiClusterNetwork GlobalServiceId ="HelloGeoSilo"
+    <MultiClusterNetwork GlobalServiceId ="ReplicatedEventSample"
                          DefaultMultiCluster="Front1,Front2,Back"
                          ClusterId="IS_CONFIGURED_ON_START_IN_WorkerRole.cs">
       <GossipChannel Type="AzureTable" ConnectionString="UseDevelopmentStorage=true" />      
