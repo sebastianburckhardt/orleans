@@ -216,15 +216,21 @@ namespace Tester.GeoClusterTests
             await DoReplicationTests("UnitTests.Grains.SimpleQueuedGrainSharedMemory");
         }
     
+        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        public async Task ReplicationTestBattery_CustomStorageProvider()
+        {
+            await DoReplicationTests("UnitTests.Grains.SimpleQueuedGrainCustomStorage");
+        }
+
 
         private async Task DoReplicationTests(string grainClass, int phases = 100)
         {
-            await FourCheckers(grainClass, phases);
+            await AllChecks(grainClass, phases);
         }
 
      
 
-        private async Task FourCheckers(string grainClass, int phases)
+        private async Task AllChecks(string grainClass, int phases)
         {
             Random random = new Random();
 

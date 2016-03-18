@@ -17,11 +17,11 @@ namespace Orleans.Providers.LogViews
     /// A log view adaptor that wraps around a user-provided storage interface
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class CustomStorageLogViewAdaptor<T, E> : PrimaryBasedLogViewAdaptor<T, E, SubmissionEntry<E>>
+    public class CustomStorageAdaptor<T, E> : PrimaryBasedLogViewAdaptor<T, E, SubmissionEntry<E>>
         where T : class,new()
         where E : class
     {
-        public CustomStorageLogViewAdaptor(ILogViewHost<T, E> host, T initialstate, ILogViewProvider repprovider, IProtocolServices services)
+        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate, ILogViewProvider repprovider, IProtocolServices services)
             : base(host, repprovider, initialstate, services)
         {
             if (! (host is ICustomStorageInterface<T,E>))

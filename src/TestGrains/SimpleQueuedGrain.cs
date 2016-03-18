@@ -30,15 +30,16 @@ using Orleans.Providers;
 using Orleans.QueuedGrains;
 using UnitTests.GrainInterfaces;
 
-
 namespace UnitTests.Grains
 {
+
+
     [Serializable]
-    public class MyGrainState 
+    public class MyGrainState
     {
-        public int A { get; set; }
-        public int B { get; set; }
-        public Dictionary<String, int> Reservations { get; set; }
+        public int A;
+        public int B;
+        public Dictionary<String, int> Reservations;
 
         public MyGrainState()
         {
@@ -49,59 +50,40 @@ namespace UnitTests.Grains
         {
             return string.Format("A={0} B={1} R={{{2}}}", A, B, string.Join(", ", Reservations.Select(kvp => string.Format("{0}:{1}", kvp.Key, kvp.Value))));
         }
-    }
 
-    #region Update Operations
+        public void Apply(UpdateA x) { A = x.Val; }
+        public void Apply(UpdateB x) { B = x.Val; }
+        public void Apply(IncrementA x) { A++; }
+
+        public void Apply(AddReservation x) { Reservations[x.Val.ToString()] = x.Val; }
+        public void Apply(RemoveReservation x) { Reservations.Remove(x.Val.ToString()); }
+
+    }
+ 
 
     [Serializable]
-    public class UpdateA : IUpdateOperation<MyGrainState>
-    {
-        public int Val { get; set; }
-        public void Update(MyGrainState state) { state.A = Val; }
-    }
+    public class UpdateA { public int Val; }
     [Serializable]
-    public class UpdateB : IUpdateOperation<MyGrainState>
-    {
-        public int Val { get; set; }
-        public void Update(MyGrainState state) { state.B = Val; }
-    }
+    public class UpdateB  { public int Val; }
     [Serializable]
-    public class IncrementA : IUpdateOperation<MyGrainState>
-    {
-        public void Update(MyGrainState state) { state.A++; }
-    }
+    public class IncrementA  { public int Val; }
     [Serializable]
-    public class AddReservation : IUpdateOperation<MyGrainState>
-    {
-        public int Val { get; set; }
-        public void Update(MyGrainState state)
-        {
-            state.Reservations[Val.ToString()] = Val;
-        }
-    }
+    public class AddReservation { public int Val; }
     [Serializable]
-    public class RemoveReservation : IUpdateOperation<MyGrainState>
-    {
-        public int Val { get; set; }
-        public void Update(MyGrainState state)
-        {
-            state.Reservations.Remove(Val.ToString());
-        }
-    }
+    public class RemoveReservation { public int Val; }
 
 
-    #endregion
 
     /// <summary>
     /// A simple grain with two fields A, B that can be updated or incremented
     /// We subclass this to create variations for all storage providers
     /// </summary>
-    public abstract class SimpleQueuedGrain : QueuedGrain<MyGrainState>, ISimpleQueuedGrain
+    public abstract class SimpleQueuedGrain : QueuedGrainWithDynamicApply<MyGrainState>, ISimpleQueuedGrain
     {
         public async Task SetAGlobal(int x)
         {
             EnqueueUpdate(new UpdateA() { Val = x });
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
         }
 
         public async Task<Tuple<int, bool>> SetAConditional(int x)
@@ -119,7 +101,7 @@ namespace UnitTests.Grains
         public async Task SetBGlobal(int x)
         {
             EnqueueUpdate(new UpdateB() { Val = x });
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
         }
 
         public Task SetBLocal(int x)
@@ -131,7 +113,7 @@ namespace UnitTests.Grains
         public async Task IncrementAGlobal()
         {
             EnqueueUpdate(new IncrementA());
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
         }
 
         public Task IncrementALocal()
@@ -192,6 +174,19 @@ namespace UnitTests.Grains
             return Task.FromResult(this.ConfirmedVersion);
         }
 
+        public async Task<KeyValuePair<int, object>> Read()
+        {
+            await SynchronizeNowAsync();
+            return new KeyValuePair<int, object>(ConfirmedVersion, ConfirmedState);
+        }
+        public async Task<bool> Update(IReadOnlyList<object> updates, int expectedversion)
+        {
+            if (expectedversion > ConfirmedVersion)
+                await SynchronizeNowAsync();
+            if (expectedversion != ConfirmedVersion)
+                return false;
+            return await TryConditionalUpdateSequenceAsync(updates);
+        }
 
         public Task Deactivate()
         {

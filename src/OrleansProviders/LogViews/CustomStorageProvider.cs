@@ -18,7 +18,7 @@ namespace Orleans.Providers.LogViews
     /// (for grains that implement ICustomPrimaryStorage)
     /// </para>
     /// </summary>
-    public class CustomStorageLogViewProvider : ILogViewProvider
+    public class CustomStorageProvider : ILogViewProvider
     {
         public string Name { get; private set; }
 
@@ -52,7 +52,7 @@ namespace Orleans.Providers.LogViews
             where TView : class, new()
             where TEntry : class
         {
-            return new CustomStorageLogViewAdaptor<TView, TEntry>(hostgrain, initialstate, this, services);
+            return new CustomStorageAdaptor<TView, TEntry>(hostgrain, initialstate, this, services);
         }
     }
 

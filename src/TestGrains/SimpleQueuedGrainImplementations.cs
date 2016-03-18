@@ -1,9 +1,11 @@
-﻿using Orleans.Providers;
+﻿using Orleans;
+using Orleans.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnitTests.GrainInterfaces;
 
 namespace UnitTests.Grains
 {
@@ -36,5 +38,33 @@ namespace UnitTests.Grains
     public class SimpleQueuedGrainLocalMemoryStorage : SimpleQueuedGrain
     {
     }
+
+    // use the explictly specified "CustomStorage" replication provider
+    [LogViewProvider(ProviderName = "CustomStorage")]
+    public class SimpleQueuedGrainCustomStorage : SimpleQueuedGrain,
+        Orleans.LogViews.ICustomStorageInterface<MyGrainState, object>
+    {
+
+      // we use another impl of this grain as the primary.
+        ISimpleQueuedGrain storagegrain;
+
+        public override Task OnActivateAsync()
+        {
+            storagegrain = GrainFactory.GetGrain<ISimpleQueuedGrain>(this.GetPrimaryKeyLong(), "UnitTests.Grains.SimpleQueuedGrainSharedStorage");
+            return TaskDone.Done;
+        }
+
+        public Task<bool> ApplyUpdatesToStorageAsync(IReadOnlyList<object> updates, int expectedversion)
+        {
+            return storagegrain.Update(updates, expectedversion);
+        }
+
+        public async Task<KeyValuePair<int, MyGrainState>> ReadStateFromStorageAsync()
+        {
+            var kvp = await storagegrain.Read();
+            return new KeyValuePair<int, MyGrainState>(kvp.Key, (MyGrainState)kvp.Value);
+        }
+    }
+
 
 }

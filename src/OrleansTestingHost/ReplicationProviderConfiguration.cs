@@ -55,6 +55,8 @@ namespace Orleans.TestingHost
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedMemory", props);
 
 
+            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage", props);
+
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.LocalMemoryProvider", "LocalMemory");
 
             // logging  

@@ -42,8 +42,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LogViews\CustomStorageLogViewProvider.cs" />
-    <Compile Include="LogViews\CustomStorageLogViewAdaptor.cs" />
+    <Compile Include="LogViews\CustomStorageProvider.cs" />
+    <Compile Include="LogViews\CustomStorageAdaptor.cs" />
     <Compile Include="Streams\Common\PooledCache\CachedMessageBlock.cs" />
     <Compile Include="Streams\Common\PooledCache\FixedSizeObjectPool.cs" />
     <Compile Include="Streams\Common\PooledCache\FixedSizeBuffer.cs" />
