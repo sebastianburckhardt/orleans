@@ -38,7 +38,7 @@ namespace Examples.Grains
         public int Seat { get; set; }
         public string UserId { get; set; }
 
-        public void Update(ReservationState state)
+        public void ApplyToState(ReservationState state)
         {
             // insert a reservation, but only if the seat is still free
             // this is a "first writer wins" conflict resolution
@@ -53,15 +53,20 @@ namespace Examples.Grains
     /// The grain implementation
     /// </summary>
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class ReservationGrain : QueuedGrain<ReservationState>, IReservationGrain
+    public class ReservationGrain : QueuedGrain<ReservationState,IUpdateOperation<ReservationState>>, IReservationGrain
     {
+        protected override void ApplyDeltaToState(ReservationState state, IUpdateOperation<ReservationState> delta)
+        {
+            delta.ApplyToState(state);
+        }
+
         public async Task<bool> Reserve(int seatnumber, string userid)
         {
             // first, enqueue the request
             EnqueueUpdate(new ReservationRequest() { Seat = seatnumber, UserId = userid });
 
             // then, wait for the request to propagate
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
 
             // check if the reservation went through
             var success = (ConfirmedState.Reservations.ContainsKey(seatnumber)

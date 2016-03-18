@@ -35,7 +35,7 @@ namespace Examples.Grains
         /// <summary>
         /// Effect of the increment on the counter state.
         /// </summary>
-        public void Update(CounterState state)
+        public void ApplyToState(CounterState state)
         {
             state.Count++;
         }
@@ -49,8 +49,13 @@ namespace Examples.Grains
     /// situations where cluster communication is not working.
     /// </summary>
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class CounterGrain : QueuedGrain<CounterState>, ICounterGrain
+    public class CounterGrain : QueuedGrain<CounterState,IUpdateOperation<CounterState>>, ICounterGrain
     {
+        protected override void ApplyDeltaToState(CounterState state, IUpdateOperation<CounterState> delta)
+        {
+            delta.ApplyToState(state);
+        }
+
         public Task<int> Get()
         {
             return Task.FromResult(TentativeState.Count);
@@ -68,12 +73,17 @@ namespace Examples.Grains
     /// All operations are linearizable. Meaning they block if communication is not working.
     /// </summary>
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class LinearizableCounterGrain : QueuedGrain<CounterState>, ICounterGrain
+    public class LinearizableCounterGrain : QueuedGrain<CounterState, IUpdateOperation<CounterState>>, ICounterGrain
     {
+        protected override void ApplyDeltaToState(CounterState state, IUpdateOperation<CounterState> delta)
+        {
+            delta.ApplyToState(state);
+        }
+
         public async Task Increment()
         {
             EnqueueUpdate(new IncrementedEvent());
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
         }
         public async Task<int> Get()
         {

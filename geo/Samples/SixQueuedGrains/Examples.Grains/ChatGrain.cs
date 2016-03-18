@@ -17,7 +17,7 @@ namespace Examples.Grains
     /// <summary>
     /// The state of the chat grain
     /// </summary>
-    public class ChatState : GrainState
+    public class ChatState
     {
         // the current list of comments.
         // it's a public property so it gets serialized/deserialized
@@ -46,7 +46,7 @@ namespace Examples.Grains
         /// <summary>
         /// Effect of posting a comment.
         /// </summary>
-        public void Update(ChatState state)
+        public void ApplyToState(ChatState state)
         {
             state.Entries.Add(Comment);
         }
@@ -67,7 +67,7 @@ namespace Examples.Grains
         /// <summary>
         /// Effect of deleting a comment.
         /// </summary>
-        public void Update(ChatState state)
+        public void ApplyToState(ChatState state)
         {
             var ignore = state.Entries.Remove(Comment);
             // deleting a non-existing comment is a no-op.
@@ -88,7 +88,7 @@ namespace Examples.Grains
         /// <summary>
         /// Effect of deleting all comments in the range.
         /// </summary>
-        public void Update(ChatState state)
+        public void ApplyToState(ChatState state)
         {
             state.Entries.RemoveAll(e => e.Timestamp >= From && e.Timestamp <= To);
         }
@@ -101,7 +101,7 @@ namespace Examples.Grains
     /// The grain implementation for the chat grain.
     /// </summary>
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class ChatGrain : QueuedGrain<ChatState>, IChatGrain
+    public class ChatGrain : QueuedGrain<ChatState, IUpdateOperation<ChatState>>, IChatGrain
     {
         public async Task<Comment[]> Get(DateTime olderthan, int limit)
         {
@@ -127,6 +127,11 @@ namespace Examples.Grains
         {
             EnqueueUpdate(new CommentRangeDeletedEvent() { From = from, To = to });
             return TaskDone.Done;
+        }
+
+        protected override void ApplyDeltaToState(ChatState state, IUpdateOperation<ChatState> delta)
+        {
+            delta.ApplyToState(state);
         }
 
     }

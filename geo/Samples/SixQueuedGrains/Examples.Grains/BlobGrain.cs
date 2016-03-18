@@ -18,7 +18,7 @@ namespace Examples.Grains
     /// The state of the blob grain
     /// </summary>
     [Serializable]
-    public class BlobState : GrainState
+    public class BlobState
     {
         public byte[] Value { get; set; }
     }
@@ -32,7 +32,7 @@ namespace Examples.Grains
     {
         public byte[] NewValue { get; set; }
 
-        public void Update(BlobState state)
+        public void ApplyToState(BlobState state)
         {
             state.Value = NewValue;
         }
@@ -44,8 +44,14 @@ namespace Examples.Grains
     /// <summary>
     /// The grain implementation
     /// </summary>
-    public class BlobGrain : QueuedGrain<BlobState>, IBlobGrain
+    public class BlobGrain : QueuedGrain<BlobState,IUpdateOperation<BlobState>>, IBlobGrain
     {
+        protected override void ApplyDeltaToState(BlobState state, IUpdateOperation<BlobState> delta)
+        {
+            delta.ApplyToState(state);
+        }
+
+
         public Task<byte[]> Get()
         {
             return Task.FromResult(this.TentativeState.Value);

@@ -48,15 +48,15 @@ namespace Examples.Grains
         /// How to update the leaderboard state based on a posted score.
         /// </summary>
         /// <param name="state"></param>
-        public void Update(LeaderBoardState leaderboard)
+        public void ApplyToState(LeaderBoardState state)
         {
             // add the score to the list of scores
-            leaderboard.TopTenScores.Add(Score);
+            state.TopTenScores.Add(Score);
             // sort by points, descending
-            leaderboard.TopTenScores.Sort((s1,s2) => s2.Points.CompareTo(s1.Points));
+            state.TopTenScores.Sort((s1,s2) => s2.Points.CompareTo(s1.Points));
             // keep only the first 10
-            while (leaderboard.TopTenScores.Count > 10)
-                leaderboard.TopTenScores.RemoveAt(10);
+            while (state.TopTenScores.Count > 10)
+                state.TopTenScores.RemoveAt(10);
         }
     }
 
@@ -64,8 +64,13 @@ namespace Examples.Grains
    /// The grain implementation
    /// </summary>
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class LeaderBoardGrain : QueuedGrain<LeaderBoardState>, ILeaderBoardGrain
+    public class LeaderBoardGrain : QueuedGrain<LeaderBoardState, IUpdateOperation<LeaderBoardState>>, ILeaderBoardGrain
     {
+        protected override void ApplyDeltaToState(LeaderBoardState state, IUpdateOperation<LeaderBoardState> delta)
+        {
+            delta.ApplyToState(state);
+        }
+
         public Task<Score[]> GetTopTen()
         {
             return Task.FromResult(TentativeState.TopTenScores.ToArray());

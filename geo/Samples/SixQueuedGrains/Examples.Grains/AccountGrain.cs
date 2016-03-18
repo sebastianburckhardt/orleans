@@ -14,7 +14,7 @@ namespace Examples.Grains
     /// <summary>
     /// The state of the account grain
     /// </summary>
-    public class AccountState : GrainState
+    public class AccountState 
     {
         // the current account balance.
         // it's a public property so it gets serialized/deserialized
@@ -47,7 +47,7 @@ namespace Examples.Grains
         /// Effect of the deposit on the account state
         /// </summary>
         /// <param name="state"></param>
-        public void Update(AccountState state)
+        public void ApplyToState(AccountState state)
         {
             state.Balance += Amount;
         }
@@ -75,7 +75,7 @@ namespace Examples.Grains
         /// Effect of the withdrawal on the account state
         /// </summary>
         /// <param name="state"></param>
-        public void Update(AccountState state)
+        public void ApplyToState(AccountState state)
         {
             if (state.Balance >= Amount)
             {
@@ -92,14 +92,17 @@ namespace Examples.Grains
      
 
     [StorageProvider(ProviderName = "AzureStore")]
-    public class AccountGrain : QueuedGrain<AccountState>, IAccountGrain
+    public class AccountGrain : QueuedGrain<AccountState,IUpdateOperation<AccountState>>, IAccountGrain
     {
 
         // we use a random number generator to create unique identifiers
         private System.Security.Cryptography.RandomNumberGenerator rng;
 
+        protected override void ApplyDeltaToState(AccountState state, IUpdateOperation<AccountState> delta)
+        {
+            delta.ApplyToState(state);
+        }
 
-         
         public async Task<uint> EstimatedBalance()
         {
             // return the current balance, including unconfirmed operations
@@ -120,8 +123,9 @@ namespace Examples.Grains
         {
             // first, queue a deposit operation
             EnqueueUpdate(new DepositOperation() { Amount = amount });
+
             // then, wait for it to be confirmed
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
         }
 
 
@@ -143,9 +147,9 @@ namespace Examples.Grains
 
             // queue a withdrawal operation
             EnqueueUpdate(new WithdrawalOperation() { Amount = amount, Guid = guid });
-            
+
             // wait for the queue to drain, i.e. to confirm the update
-            await CurrentQueueHasDrained();
+            await ConfirmUpdates();
 
             // determine success
             var success = ! ConfirmedState.RejectedWithdrawals.Contains(guid);
