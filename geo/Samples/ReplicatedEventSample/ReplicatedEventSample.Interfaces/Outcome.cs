@@ -23,7 +23,12 @@ namespace ReplicatedEventSample.Interfaces
         /// <summary>
         /// Time at which the score was achieved
         /// </summary>
-        public DateTime Timestamp;
+        public DateTime When;
 
     }
+
+
+
+
+
 }

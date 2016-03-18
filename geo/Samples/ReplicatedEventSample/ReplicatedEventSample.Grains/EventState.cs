@@ -30,10 +30,10 @@ namespace ReplicatedEventSample.Grains
                 throw new ArgumentNullException("outcome");
 
             // idempotency check: ignore update if already there
-            if (outcomes.ContainsKey(outcome.Timestamp))
+            if (outcomes.ContainsKey(outcome.When))
                 return;
 
-            outcomes.Add(outcome.Timestamp, outcome);
+            outcomes.Add(outcome.When, outcome);
         }
     }
 

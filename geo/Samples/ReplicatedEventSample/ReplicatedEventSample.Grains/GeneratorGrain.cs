@@ -46,7 +46,7 @@ namespace ReplicatedEventSample.Grains
             {
                Name = ((char) ('A' + random.Next(26))).ToString(),
                Score = random.Next(100),
-               Timestamp = DateTime.UtcNow
+               When = DateTime.UtcNow
             };
 
             // notify event grain of new outcome
