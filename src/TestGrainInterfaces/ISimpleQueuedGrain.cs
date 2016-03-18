@@ -85,6 +85,8 @@ namespace UnitTests.GrainInterfaces
         #endregion
 
 
+        Task<KeyValuePair<int, object>> Read();
+        Task<bool> Update(IReadOnlyList<object> updates, int expectedversion);
 
         #region Other
 

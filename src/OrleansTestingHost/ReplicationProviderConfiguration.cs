@@ -48,6 +48,8 @@ namespace Orleans.TestingHost
             props.Add("GlobalStorageProvider", "AzureStore");
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedStorage", props);
 
+            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage", props);
+
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.LocalMemoryProvider", "LocalMemory");
 
             // logging  
