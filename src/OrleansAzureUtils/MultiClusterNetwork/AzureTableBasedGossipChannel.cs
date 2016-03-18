@@ -51,6 +51,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             logger.Verbose("-Push data:{0}", data);
 
+            // this is typically called with just one, or very few, items in data
+            // thus, it is sufficiently performant to read rows individually
+
             var retrievalTasks = new List<Task<GossipTableEntry>>();
             if (data.Configuration != null)
             {
@@ -184,6 +187,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     }
                 }
             }
+
+            // we are writing back rows as individual tasks because we dont' want batch to fail if 
+            // individual tasks fail
+
+            // this may perform somewhat suboptimal if a lot of data is written at once (compared to a batched write), 
+            // but that happens relatively rarely, e.g. when adding new cluster with lots of nodes
 
             await Task.WhenAll(writeback);
 

@@ -211,6 +211,13 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             if (!deltas.IsEmpty)
             {
+                // Now we do the actual pushing. Note that we push deltas only once and 
+                // simply log any errors without retrying. To handle problems 
+                // caused by lost messages we rely instead on the periodic background gossip: 
+                // each node periodically does full two-way gossip (PushAndPull) with 
+                // some random other node or channel. This ensures all information 
+                // eventually gets everywhere.
+
                 // push deltas to all remote clusters 
                 foreach (var x in this.AllClusters().Where(x => x != this.clusterId))
                 {
@@ -379,6 +386,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     tasks.Add(remoteOracle.FindUnstableSilos(expected, true));
                 }
             }
+
+            // This function is called  during manual admin operations through 
+            // IManagementGrain (change configuration, or check stability).
+            // Users are going to want to see the exception details to figure out 
+            // what is going on.
 
             await Task.WhenAll(tasks);
             var result = tasks.SelectMany(t => t.Result).ToDictionary(r => r.Key, r => r.Value);
