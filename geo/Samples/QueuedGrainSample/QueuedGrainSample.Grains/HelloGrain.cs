@@ -22,12 +22,18 @@ namespace QueuedGrainSample.Grains
         }
     }
 
+    public interface IDelta
+    {
+        void ApplyToState(SampleGrainState state);
+    }
+
+ 
     [Serializable]
-    public class AppendMessage : IUpdateOperation<SampleGrainState>
+    public class AppendMessage : IDelta
     {
         public string Message { get; set; }
 
-        public void Update(SampleGrainState state)
+        public void ApplyToState(SampleGrainState state)
         {
             state.Messages.Add(Message);
         }
@@ -38,10 +44,10 @@ namespace QueuedGrainSample.Grains
     }
 
     [Serializable]
-    public class ClearAll : IUpdateOperation<SampleGrainState>
+    public class ClearAll : IDelta
     {
-        
-        public void Update(SampleGrainState state)
+
+        public void ApplyToState(SampleGrainState state)
         {
             state.Messages.Clear();
         }
@@ -51,8 +57,9 @@ namespace QueuedGrainSample.Grains
         }
     }
 
+
     [StorageProvider(ProviderName = "GloballySharedAzureAccount")]
-    public class HelloGrain : QueuedGrain<SampleGrainState>, IHelloGrainInterface
+    public class HelloGrain : QueuedGrain<SampleGrainState,IDelta>, IHelloGrainInterface
     {
         public Task<LocalState> AppendMessage(string msg)
         {
@@ -75,5 +82,11 @@ namespace QueuedGrainSample.Grains
                 UnconfirmedUpdates = this.UnconfirmedUpdates.Select((u) => u.ToString()).ToList()
             });
         }
+
+        protected override void ApplyDeltaToState(SampleGrainState state, IDelta delta)
+        {
+            delta.ApplyToState(state);
+        }
     }
+    
 }
