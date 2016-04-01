@@ -787,7 +787,7 @@ namespace Orleans.Runtime.LogViews
         {
             // if there is only one cluster, or if we are global single instance, don't send notifications.
             if (Services.MultiClusterConfiguration.Clusters.Count == 1
-                || Services.RegistrationStrategy == GlobalSingleInstanceRegistration.Singleton)
+                || Services.RegistrationStrategy != ClusterLocalRegistration.Singleton)
                 return;
 
             CreateNotificationTrackerIfNeeded();
