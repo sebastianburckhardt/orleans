@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Orleans.Runtime;
+using Orleans.MultiCluster;
 
 namespace Orleans.Storage
 {
@@ -12,6 +13,7 @@ namespace Orleans.Storage
     /// </summary>
     /// <seealso cref="MemoryStorage"/>
     /// <seealso cref="IMemoryStorageGrain"/>
+    [GlobalSingleInstance]
     internal class MemoryStorageGrain : Grain, IMemoryStorageGrain
     {
         private IDictionary<string, GrainStateStore> grainStore;
