@@ -28,11 +28,10 @@ namespace Orleans.QueuedGrains
     /// A queued grain where delta objects implement the IUpdateOperation interface
     /// </summary>
     /// <typeparam name=""></typeparam>
-    public class QueuedGrainWithApplicableDeltas<TState,TDelta> : QueuedGrain<TState, TDelta>
+    public class QueuedGrainWithApplicableDeltas<TState> : QueuedGrain<TState, IUpdateOperation<TState>>
         where TState : class, new()
-        where TDelta : class, IUpdateOperation<TState>
     {
-        protected override void ApplyDeltaToState(TState state, TDelta delta)
+        protected override void ApplyDeltaToState(TState state, IUpdateOperation<TState> delta)
         {
             // call the Apply function dynamically
             dynamic s = state;
@@ -47,7 +46,7 @@ namespace Orleans.QueuedGrains
     /// <typeparam name=""></typeparam>
     public class QueuedGrainWithApplicableState<TState, TDelta> : QueuedGrain<TState, TDelta>
         where TState : class, IUpdatedBy<TDelta>, new()
-        where TDelta : class, IUpdateOperation<TState>
+        where TDelta : class 
     {
         protected override void ApplyDeltaToState(TState state, TDelta delta)
         {
