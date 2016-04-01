@@ -11,7 +11,7 @@ namespace Orleans.GrainDirectory
     /// the global-single-instance protocol to coordinate grain directories.
     /// </summary>
     [Serializable]
-    internal class GlobalSingleInstanceRegistration : MultiClusterRegistrationStrategy
+    public class GlobalSingleInstanceRegistration : MultiClusterRegistrationStrategy
     {
 
         private static GlobalSingleInstanceRegistration singleton;

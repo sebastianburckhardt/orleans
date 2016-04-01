@@ -76,6 +76,11 @@ namespace Tester.GeoClusterTests
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainSharedStorage");
         }
         [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        public async Task BasicQueuedGrainTest_SingleInstance()
+        {
+            await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainSingleInstance");
+        }
+        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
         public async Task BasicQueuedGrainTest_CustomStorage()
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainCustomStorage");

@@ -1,4 +1,5 @@
 ﻿using Orleans;
+using Orleans.MultiCluster;
 using Orleans.Providers;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,14 @@ namespace UnitTests.Grains
 
     // use the default storage provider as the shared storage
     public class SimpleQueuedGrainDefaultStorage : SimpleQueuedGrain
+    {
+    }
+
+
+    // use  singleinstance and the explictly specified "SharedStorage" provider
+    [GlobalSingleInstance]
+    [LogViewProvider(ProviderName = "SharedStorage")]
+    public class SimpleQueuedGrainSingleInstance : SimpleQueuedGrain
     {
     }
 

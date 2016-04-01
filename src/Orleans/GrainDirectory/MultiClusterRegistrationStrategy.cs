@@ -20,10 +20,11 @@ namespace Orleans.GrainDirectory
         {
             InitializeStrategies();
 
-            if (config.HasMultiClusterNetwork && config.UseGlobalSingleInstanceByDefault)
-                defaultStrategy = GlobalSingleInstanceRegistration.Singleton;
-            else
-                defaultStrategy = ClusterLocalRegistration.Singleton;    
+            //if (config.HasMultiClusterNetwork && config.UseGlobalSingleInstanceByDefault)
+            //    defaultStrategy = GlobalSingleInstanceRegistration.Singleton;
+            //else
+
+            defaultStrategy = ClusterLocalRegistration.Singleton;    
         }
       
         private static void InitializeStrategies()
