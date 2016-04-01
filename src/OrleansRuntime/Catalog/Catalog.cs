@@ -673,7 +673,7 @@ namespace Orleans.Runtime
                 else if (grainTypeData.StorageInterface == StorageInterface.LogViewAdaptor)  // QueuedGrain<T> 
                 {
                     var logviewprovider = SetupLogViewProvider(data, attr);
-                    var svc = new ProtocolServices(grain, logviewprovider);
+                    var svc = new ProtocolServices(grain, logviewprovider, MultiClusterRegistrationStrategy.FromAttributes(grainType));
                     ((ILogViewAdaptorHost)grain).InstallAdaptor(logviewprovider, state, data.GrainTypeName, svc);
                 }
             }

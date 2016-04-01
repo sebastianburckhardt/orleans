@@ -21,6 +21,7 @@ namespace Orleans.Runtime
         internal Type StateObjectType { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
+        internal MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
         internal StorageInterface StorageInterface { get; private set; }
    
      

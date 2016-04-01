@@ -8,7 +8,6 @@ namespace Orleans.LogViews
 {
     // superclass for all grains that use a log view provider to manage their state
     // (such as event-sourced grains and queued grains)
-    [MultiCluster.OneInstancePerCluster]
     public abstract class LogViewGrain<TLogView> : Grain
     {
 
