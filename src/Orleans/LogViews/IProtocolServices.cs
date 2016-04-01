@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.MultiCluster;
+using Orleans.GrainDirectory;
 
 namespace Orleans.LogViews
 {
@@ -28,6 +29,12 @@ namespace Orleans.LogViews
         /// The untyped reference for this grain.
         /// </summary>
         GrainReference GrainReference { get;  }
+
+        
+        /// <summary>
+        /// The multicluster registration strategy for this grain.
+        /// </summary>
+        MultiClusterRegistrationStrategy RegistrationStrategy { get; }
 
         /// <summary>
         /// The id of this cluster.

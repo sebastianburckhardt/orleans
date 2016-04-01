@@ -9,6 +9,7 @@ using Orleans.LogViews;
 using Orleans.MultiCluster;
 using Orleans.Runtime;
 using Orleans.SystemTargetInterfaces;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.LogViews
 {
@@ -24,16 +25,18 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
+        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set;  }
 
         private Grain grain;   // links to the grain that owns this service object
 
         // cached 
 
 
-        internal ProtocolServices(Grain gr, ILogViewProvider provider)
+        internal ProtocolServices(Grain gr, ILogViewProvider provider, MultiClusterRegistrationStrategy strategy)
         {
             this.grain = gr;
             this.Provider = provider;
+            this.RegistrationStrategy = strategy;
 
             if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
                 PseudoMultiClusterConfiguration = new MultiClusterConfiguration(DateTime.UtcNow, new string[] { PseudoReplicaId }.ToList());

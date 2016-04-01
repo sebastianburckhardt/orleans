@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
+using Orleans.MultiCluster;
 
 namespace Orleans.GrainDirectory
 {
@@ -12,7 +13,7 @@ namespace Orleans.GrainDirectory
     /// Strategy objects are used as keys to select the proper registrar.
     /// </summary>
     [Serializable]
-    internal abstract class MultiClusterRegistrationStrategy
+    public abstract class MultiClusterRegistrationStrategy
     {
         private static MultiClusterRegistrationStrategy defaultStrategy;
 
@@ -42,6 +43,14 @@ namespace Orleans.GrainDirectory
         internal static MultiClusterRegistrationStrategy GetDefault()
         {
             return defaultStrategy;
+        }
+
+        internal static MultiClusterRegistrationStrategy FromAttributes(Type graintype)
+        {
+            var attrs = graintype.GetCustomAttributes(typeof(RegistrationAttribute), true);
+            if (attrs.Length == 0)
+                return defaultStrategy;
+            return ((RegistrationAttribute)attrs[0]).RegistrationStrategy;
         }
 
         internal abstract bool IsSingleInstance();

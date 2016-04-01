@@ -9,6 +9,7 @@ using Orleans.Concurrency;
 using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.MultiCluster;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.LogViews
 {
@@ -784,7 +785,9 @@ namespace Orleans.Runtime.LogViews
 
         protected void BroadcastNotification(NotificationMessage msg, string exclude = null)
         {
-            if (Services.MultiClusterConfiguration.Clusters.Count == 1)
+            // if there is only one cluster, or if we are global single instance, don't send notifications.
+            if (Services.MultiClusterConfiguration.Clusters.Count == 1
+                || Services.RegistrationStrategy == GlobalSingleInstanceRegistration.Singleton)
                 return;
 
             CreateNotificationTrackerIfNeeded();
