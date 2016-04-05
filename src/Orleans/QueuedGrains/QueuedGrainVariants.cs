@@ -33,10 +33,7 @@ namespace Orleans.QueuedGrains
     {
         protected override void ApplyDeltaToState(TState state, IUpdateOperation<TState> delta)
         {
-            // call the Apply function dynamically
-            dynamic s = state;
-            dynamic u = delta;
-            s.Apply(u);
+            delta.ApplyToState(state);
         }
     }
 
