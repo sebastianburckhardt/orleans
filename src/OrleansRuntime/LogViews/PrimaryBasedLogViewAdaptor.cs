@@ -793,8 +793,8 @@ namespace Orleans.Runtime.LogViews
             CreateNotificationTrackerIfNeeded();
 
             foreach (var kvp in notificationtracker.sendstatus)
-                SendNotificationMessage(kvp.Key, kvp.Value, msg).Ignore();  // exceptions are recorded in NotificationStatus
-
+                if (kvp.Key != exclude)
+                    SendNotificationMessage(kvp.Key, kvp.Value, msg).Ignore();  // exceptions are recorded in NotificationStatus
         }
 
 
