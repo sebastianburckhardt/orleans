@@ -38,7 +38,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
         }
 
 
-        // IGossipChannel
+        #region IGossipChannel
+
         public async Task Publish(MultiClusterData data)
         {
             logger.Verbose("-Publish data:{0}", data);
@@ -65,7 +66,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
             await Task.WhenAll(tasks);
         }
 
-        // IGossipChannel
         public async Task<MultiClusterData> Synchronize(MultiClusterData pushed)
         {
             logger.Verbose("-Synchronize pushed:{0}", pushed);
@@ -119,6 +119,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 throw e;
             }
         }
+
+        #endregion
+
 
         // compare config with configInStorage, and
         // - write config to storage if it is newer (or do nothing on etag conflict)
