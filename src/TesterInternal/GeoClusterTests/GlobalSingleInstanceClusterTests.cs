@@ -88,7 +88,7 @@ namespace Tests.GeoClusterTests
         public async Task TestClusterCreation_1_1()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
 
             // Create two clusters, each with a single silo.
             var cluster0 = "cluster0";
@@ -163,7 +163,7 @@ namespace Tests.GeoClusterTests
         public async Task TestClusterCreation_5_5()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
             
             // Create two clusters, each with 5 silos.
             var cluster0 = "cluster0";
@@ -271,10 +271,10 @@ namespace Tests.GeoClusterTests
         public async Task TestClusterRace_1_1()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
             Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
             {
-                c.Globals.GlobalServiceId = globalserviceid;
+                c.Globals.ServiceId = globalserviceid;
             };
 
             // Create two clusters, each with 1 silo. 
@@ -319,7 +319,7 @@ namespace Tests.GeoClusterTests
         public async Task TestClusterRace_5_5()
         {  
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
 
             // Create two clusters, each with 5 silos.
             var cluster0 = "cluster0";
@@ -426,7 +426,7 @@ namespace Tests.GeoClusterTests
         public async Task TestConflictResolution_1_1()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
             Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
             {
                 // run the retry process every 5 seconds to keep this test shorter
@@ -515,7 +515,7 @@ namespace Tests.GeoClusterTests
         public async Task TestConflictResolution_3_3()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
             Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
             {
                 // run the retry process every 5 seconds to keep this test shorter
