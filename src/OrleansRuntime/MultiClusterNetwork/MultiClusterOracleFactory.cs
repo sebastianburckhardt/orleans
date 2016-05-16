@@ -48,7 +48,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     {
                         case GlobalConfiguration.GossipChannelType.AzureTable:
                             var tableChannel = AssemblyLoader.LoadAndCreateInstance<IGossipChannel>(Constants.ORLEANS_AZURE_UTILS_DLL, logger);
-                            await tableChannel.Initialize(silo.GlobalConfig, channelConfiguration.ConnectionString);
+                            await tableChannel.Initialize(silo.GlobalConfig.ServiceId, channelConfiguration.ConnectionString);
                             gossipChannels.Add(tableChannel);
                             break;
 
