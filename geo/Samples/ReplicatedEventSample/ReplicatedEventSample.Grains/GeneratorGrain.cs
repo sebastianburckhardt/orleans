@@ -16,24 +16,26 @@ namespace ReplicatedEventSample.Grains
             // keep generating for at least 10 minutes
             DelayDeactivation(TimeSpan.FromMinutes(10));
 
+            // use different deterministic pseudo-random sequence for each grain
+            random = new Random((int) this.GetPrimaryKeyLong());
+
             if (!started)
             {
                 started = true;
              
                 // find event grain for this generator
                 eventgrain = GrainFactory.GetGrain<IEventGrain>("event" + this.GetPrimaryKeyLong());
-
-                
+               
                 RegisterTimer(Generate, null, 
                     TimeSpan.FromSeconds(random.Next(20)),  // start within 20 secs
-                    TimeSpan.FromSeconds(2)); // one outcome about every two seconds
+                    TimeSpan.FromSeconds(2 + random.NextDouble())); // one outcome about every 2.5 seconds
             }
 
             return TaskDone.Done;
         }
 
         bool started;
-        Random random = new Random();
+        Random random;
         IEventGrain eventgrain;
 
         private async Task Generate(Object ignoredparameter)
