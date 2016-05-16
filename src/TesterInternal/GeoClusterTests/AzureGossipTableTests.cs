@@ -66,7 +66,7 @@ namespace Tests.GeoClusterTests
             };
 
             gossipTable = new AzureTableBasedGossipChannel();
-            var done = gossipTable.Initialize(config, config.DataConnectionString);
+            var done = gossipTable.Initialize(config.ServiceId, config.DataConnectionString);
             if (!done.Wait(timeout))
             {
                 throw new TimeoutException("Could not create/read table.");

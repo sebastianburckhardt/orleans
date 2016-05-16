@@ -19,15 +19,15 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public string Name { get; private set; }
 
-        public async Task Initialize(GlobalConfiguration globalconfig, string connectionstring)
+        public async Task Initialize(Guid serviceid, string connectionstring)
         {
             Name = "AzureTableBasedGossipChannel-" + ++sequenceNumber;
             logger = TraceLogger.GetLogger(Name, TraceLogger.LoggerType.Runtime);
 
             logger.Info("Initializing Gossip Channel for ServiceId={0} using connection: {1}, SeverityLevel={2}",
-                globalconfig.ServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
+                serviceid, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
 
-            tableManager = await GossipTableInstanceManager.GetManager(globalconfig.ServiceId, connectionstring, logger);
+            tableManager = await GossipTableInstanceManager.GetManager(serviceid, connectionstring, logger);
         }
 
         // used by unit tests

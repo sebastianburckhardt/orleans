@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
-
+using System;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
@@ -18,7 +18,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         /// <param name="config"></param>
         /// <returns></returns>
-        Task Initialize(GlobalConfiguration globalconfig, string connectionstring);
+        Task Initialize(Guid serviceid, string connectionstring);
 
         /// <summary>
         /// A name for the channel.
