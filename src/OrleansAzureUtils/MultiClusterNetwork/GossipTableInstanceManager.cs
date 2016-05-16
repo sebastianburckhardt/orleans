@@ -156,13 +156,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return instance;
         }
 
-        internal async Task<List<GossipTableEntry>> FindAllGossipTableEntries()
-        {
-            var queryResults = await storage.ReadAllTableEntriesForPartitionAsync(this.GlobalServiceId).ConfigureAwait(false);
-
-            return queryResults.Select(tuple => tuple.Item1).ToList();
-        }
-
+       
         internal async Task<GossipTableEntry> ReadConfigurationEntryAsync()
         {
             var result = await storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.CONFIGURATION_ROW).ConfigureAwait(false);
@@ -172,8 +166,63 @@ namespace Orleans.Runtime.MultiClusterNetwork
         internal async Task<GossipTableEntry> ReadGatewayEntryAsync(GatewayEntry gateway)
         {
             var result = await storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress, gateway.ClusterId)).ConfigureAwait(false);
-            return result != null ? result.Item1 : null;
+
+            if (result != null)
+            {
+                var tableEntry = result.Item1;
+                try
+                {
+                    tableEntry.UnpackRowKey();
+                    return tableEntry;
+                }
+                catch (Exception exc)
+                {
+                    logger.Error(
+                        ErrorCode.AzureTable_61,
+                        string.Format("Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.", tableEntry),
+                        exc);
+                }
+            }
+
+            return null;
         }
+
+        internal async Task<Tuple<GossipTableEntry, Dictionary<SiloAddress, GossipTableEntry>>> ReadAllEntriesAsync()
+        {
+            var queryResults = await storage.ReadAllTableEntriesForPartitionAsync(this.GlobalServiceId).ConfigureAwait(false);
+
+            // organize the returned storage entries by what they represent
+            GossipTableEntry configInStorage = null;
+            var gatewayInfoInStorage = new Dictionary<SiloAddress, GossipTableEntry>();
+
+            foreach (var x in queryResults)
+            {
+                var tableEntry = x.Item1;
+
+                if (tableEntry.RowKey.Equals(GossipTableEntry.CONFIGURATION_ROW))
+                {
+                    configInStorage = tableEntry;
+                }
+                else
+                {
+                    try
+                    {
+                        tableEntry.UnpackRowKey();
+                        gatewayInfoInStorage.Add(tableEntry.SiloAddress, tableEntry);
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.Error(
+                            ErrorCode.AzureTable_61,
+                            string.Format("Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.", tableEntry),
+                            exc);
+                    }
+                }
+            }
+
+            return new Tuple<GossipTableEntry, Dictionary<SiloAddress, GossipTableEntry>>(configInStorage, gatewayInfoInStorage);
+        }
+
 
         internal async Task<bool> TryCreateConfigurationEntryAsync(MultiClusterConfiguration configuration)
         {
