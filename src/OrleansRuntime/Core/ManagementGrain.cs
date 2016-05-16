@@ -330,7 +330,7 @@ namespace Orleans.Runtime.Management
             return Task.FromResult(multiClusterOracle.GetMultiClusterConfiguration());
         }
 
-        public async Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkStabilityFirst = true)
+        public async Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkForLaggingSilosFirst = true)
         {
             if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork) 
                 throw new OrleansException("No multicluster network configured");
@@ -342,11 +342,11 @@ namespace Orleans.Runtime.Management
             if (!MultiClusterConfiguration.OlderThan(multiClusterOracle.GetMultiClusterConfiguration(), configuration))
                 throw new OrleansException("Could not inject multi-cluster configuration: current configuration is newer than clock");
 
-            if (checkStabilityFirst)
+            if (checkForLaggingSilosFirst)
             {
                 try
                 {
-                    var unstableSilos = await multiClusterOracle.CheckMultiClusterStability(multiClusterOracle.GetMultiClusterConfiguration());
+                    var unstableSilos = await multiClusterOracle.FindLaggingSilos(multiClusterOracle.GetMultiClusterConfiguration());
 
                     if (unstableSilos.Count > 0)
                     {
@@ -365,11 +365,11 @@ namespace Orleans.Runtime.Management
             return configuration;
         }
 
-        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> CheckMultiClusterStability()
+        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindLaggingSilos()
         {
             var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
             var expected = multiClusterOracle.GetMultiClusterConfiguration();
-            return multiClusterOracle.CheckMultiClusterStability(expected);
+            return multiClusterOracle.FindLaggingSilos(expected);
         }
 
         #endregion

@@ -12,14 +12,14 @@ namespace Orleans.Runtime
         /// <param name="data">The gossip data</param>
         /// <param name="forwardLocally">Whether to forward the changes to local silos</param>
         /// <returns></returns>
-        Task Push(IMultiClusterGossipData gossipData, bool forwardLocally);
+        Task Publish(IMultiClusterGossipData gossipData, bool forwardLocally);
 
         /// <summary>
         /// Two-way bulk gossip: send all known data to recipient, and receive all unknown data
         /// </summary>
         /// <param name="gossipData">The pushed gossip data</param>
         /// <returns>The returned gossip data</returns>
-        Task<IMultiClusterGossipData> PushAndPull(IMultiClusterGossipData gossipData);
+        Task<IMultiClusterGossipData> Synchronize(IMultiClusterGossipData gossipData);
 
         /// <summary>
         /// Find silos whose configuration does not match the expected configuration.
@@ -27,7 +27,7 @@ namespace Orleans.Runtime
         /// <param name="expected">the configuration to compare with</param>
         /// <param name="forwardLocally">whether to recursively include all silos in the same cluster</param>
         /// <returns></returns>
-        Task<Dictionary<SiloAddress,MultiClusterConfiguration>> FindUnstableSilos(MultiClusterConfiguration expected, bool forwardLocally);
+        Task<Dictionary<SiloAddress,MultiClusterConfiguration>> FindLaggingSilos(MultiClusterConfiguration expected, bool forwardLocally);
     }
 
 

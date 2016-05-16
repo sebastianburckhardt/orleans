@@ -90,10 +90,10 @@ namespace Tests.GeoClusterTests
             await gossipTable.DeleteAllEntries();
 
             // push empty data
-            await gossipTable.Push(new MultiClusterData());
+            await gossipTable.Publish(new MultiClusterData());
 
             // push and pull empty data
-            var answer = await gossipTable.PushAndPull(new MultiClusterData());
+            var answer = await gossipTable.Synchronize(new MultiClusterData());
             Assert.IsTrue(answer.IsEmpty);
 
             var ts1 = new DateTime(year: 2011, month: 1, day: 1);
@@ -105,34 +105,34 @@ namespace Tests.GeoClusterTests
             var conf3 = new MultiClusterConfiguration(ts3, new string[] { }.ToList());
 
             // push configuration 1
-            await gossipTable.Push(new MultiClusterData(conf1));
+            await gossipTable.Publish(new MultiClusterData(conf1));
 
             // retrieve (by push/pull empty)
-            answer = await gossipTable.PushAndPull(new MultiClusterData());
+            answer = await gossipTable.Synchronize(new MultiClusterData());
             Assert.AreEqual(conf1, answer.Configuration);
 
             // gossip stable
-            answer = await gossipTable.PushAndPull(new MultiClusterData(conf1));
+            answer = await gossipTable.Synchronize(new MultiClusterData(conf1));
             Assert.IsTrue(answer.IsEmpty);
 
             // push configuration 2
-            answer = await gossipTable.PushAndPull(new MultiClusterData(conf2));
+            answer = await gossipTable.Synchronize(new MultiClusterData(conf2));
             Assert.IsTrue(answer.IsEmpty);
 
             // gossip returns latest
-            answer = await gossipTable.PushAndPull(new MultiClusterData(conf1));
+            answer = await gossipTable.Synchronize(new MultiClusterData(conf1));
             Assert.AreEqual(conf2, answer.Configuration);
-            await gossipTable.Push(new MultiClusterData(conf1));
-            answer = await gossipTable.PushAndPull(new MultiClusterData());
+            await gossipTable.Publish(new MultiClusterData(conf1));
+            answer = await gossipTable.Synchronize(new MultiClusterData());
             Assert.AreEqual(conf2, answer.Configuration);
-            answer = await gossipTable.PushAndPull(new MultiClusterData(conf2));
+            answer = await gossipTable.Synchronize(new MultiClusterData(conf2));
             Assert.IsTrue(answer.IsEmpty);
 
             // push final configuration
-            answer = await gossipTable.PushAndPull(new MultiClusterData(conf3));
+            answer = await gossipTable.Synchronize(new MultiClusterData(conf3));
             Assert.IsTrue(answer.IsEmpty);
 
-            answer = await gossipTable.PushAndPull(new MultiClusterData(conf1));
+            answer = await gossipTable.Synchronize(new MultiClusterData(conf1));
             Assert.AreEqual(conf3, answer.Configuration);
         }
 
@@ -176,35 +176,35 @@ namespace Tests.GeoClusterTests
             };
 
             // push G1
-            await gossipTable.Push(new MultiClusterData(G1));
+            await gossipTable.Publish(new MultiClusterData(G1));
 
             // push H1, retrieve G1 
-            var answer = await gossipTable.PushAndPull(new MultiClusterData(H1));
+            var answer = await gossipTable.Synchronize(new MultiClusterData(H1));
             Assert.AreEqual(1, answer.Gateways.Count);
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress1));
             Assert.AreEqual(G1, answer.Gateways[siloAddress1]);
 
             // push G2, retrieve H1
-            answer = await gossipTable.PushAndPull(new MultiClusterData(G2));
+            answer = await gossipTable.Synchronize(new MultiClusterData(G2));
             Assert.AreEqual(1, answer.Gateways.Count);
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress2));
             Assert.AreEqual(H1, answer.Gateways[siloAddress2]);
 
             // gossip stable
-            await gossipTable.Push(new MultiClusterData(H1));
-            await gossipTable.Push(new MultiClusterData(G1));
-            answer = await gossipTable.PushAndPull(new MultiClusterData(new GatewayEntry[] { H1, G2 }));
+            await gossipTable.Publish(new MultiClusterData(H1));
+            await gossipTable.Publish(new MultiClusterData(G1));
+            answer = await gossipTable.Synchronize(new MultiClusterData(new GatewayEntry[] { H1, G2 }));
             Assert.IsTrue(answer.IsEmpty);
 
             // retrieve
-            answer = await gossipTable.PushAndPull(new MultiClusterData(new GatewayEntry[] { H1, G2 }));
+            answer = await gossipTable.Synchronize(new MultiClusterData(new GatewayEntry[] { H1, G2 }));
             Assert.IsTrue(answer.IsEmpty);
 
             // push H2 
-            await gossipTable.Push(new MultiClusterData(H2));
+            await gossipTable.Publish(new MultiClusterData(H2));
 
             // retrieve all
-            answer = await gossipTable.PushAndPull(new MultiClusterData(new GatewayEntry[] { G1, H1 }));
+            answer = await gossipTable.Synchronize(new MultiClusterData(new GatewayEntry[] { G1, H1 }));
             Assert.AreEqual(2, answer.Gateways.Count);
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress1));
             Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress2));

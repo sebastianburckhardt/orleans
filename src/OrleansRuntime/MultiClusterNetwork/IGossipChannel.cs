@@ -9,7 +9,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
     /// 
     /// A gossip channel stores multicluster data (configuration, gateways) and exchanges
     /// this data with silos using a gossip-style communication, offering
-    /// two different methods (push or push-and-pull).
+    /// two different methods (Publish or Synchronize).
     /// </summary>
     public interface IGossipChannel
     {
@@ -32,7 +32,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         /// <param name="data">The data to update</param>
         /// <returns></returns>
-        Task Push(MultiClusterData data);
+        Task Publish(MultiClusterData data);
 
          /// <summary>
         /// Two-way bulk gossip.
@@ -41,7 +41,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         /// <param name="gossipdata">The gossip data to compare to the current contents, and store if newer, or not there</param>
         /// <returns>returns all stored data that is newer, or not part of, the gossipdata</returns>
-        Task<MultiClusterData> PushAndPull(MultiClusterData gossipdata);
+        Task<MultiClusterData> Synchronize(MultiClusterData gossipdata);
 
     }
  

@@ -39,36 +39,36 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
 
         // IGossipChannel
-        public async Task Push(MultiClusterData data)
+        public async Task Publish(MultiClusterData data)
         {
-            logger.Verbose("-Push data:{0}", data);
+            logger.Verbose("-Publish data:{0}", data);
             // this is (almost) always called with just one item in data to be written back
             // so we are o.k. with doing individual tasks for each storage read and write
 
             var tasks = new List<Task>();
             if (data.Configuration != null)
             {
-                Func<Task> pushconfig = async () => {
+                Func<Task> publishconfig = async () => {
                     var configInStorage = await tableManager.ReadConfigurationEntryAsync();
                     await DiffAndWriteBackConfigAsync(data.Configuration, configInStorage);
                 };
-                tasks.Add(pushconfig());    
+                tasks.Add(publishconfig());    
             }
             foreach (var gateway in data.Gateways.Values)
             {
-                Func<Task> pushgatewayinfo = async () => {
+                Func<Task> publishgatewayinfo = async () => {
                     var gatewayInfoInStorage = await tableManager.ReadGatewayEntryAsync(gateway);
                     await DiffAndWriteBackGatewayInfoAsync(gateway, gatewayInfoInStorage);
                 };
-                tasks.Add(pushgatewayinfo());
+                tasks.Add(publishgatewayinfo());
             }
             await Task.WhenAll(tasks);
         }
 
         // IGossipChannel
-        public async Task<MultiClusterData> PushAndPull(MultiClusterData pushed)
+        public async Task<MultiClusterData> Synchronize(MultiClusterData pushed)
         {
-            logger.Verbose("-PushAndPull pushed:{0}", pushed);
+            logger.Verbose("-Synchronize pushed:{0}", pushed);
 
             try
             {
@@ -108,13 +108,13 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 }
                 var delta = new MultiClusterData(gw, configDeltaTask.Result);
 
-                logger.Verbose("-PushAndPull pulled delta:{0}", delta);
+                logger.Verbose("-Synchronize pulled delta:{0}", delta);
 
                 return delta;
             }
             catch (Exception e)
             {
-                logger.Info("-PushAndPull encountered exception {0}", e);
+                logger.Info("-Synchronize encountered exception {0}", e);
 
                 throw e;
             }
