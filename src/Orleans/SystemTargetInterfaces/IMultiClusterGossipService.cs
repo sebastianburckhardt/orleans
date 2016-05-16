@@ -27,7 +27,7 @@ namespace Orleans.Runtime
         /// <param name="expected">the configuration to compare with</param>
         /// <param name="forwardLocally">whether to recursively include all silos in the same cluster</param>
         /// <returns></returns>
-        Task<Dictionary<SiloAddress,MultiClusterConfiguration>> FindLaggingSilos(MultiClusterConfiguration expected, bool forwardLocally);
+        Task<List<SiloAddress>> FindLaggingSilos(MultiClusterConfiguration expected, bool forwardLocally);
     }
 
 

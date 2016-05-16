@@ -155,7 +155,7 @@ namespace Orleans.Runtime
         /// If some clusters and/or silos cannot be reached, an exception is thrown.
         /// </summary>
         /// <returns>A list of silo addresses of silos that do not have the latest configuration</returns>
-        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindLaggingSilos();
+        Task<List<SiloAddress>> FindLaggingSilos();
  
         /// <summary>
         /// Configure the active multi-cluster, by injecting a multicluster configuration.

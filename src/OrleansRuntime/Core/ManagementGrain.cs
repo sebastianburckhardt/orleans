@@ -346,11 +346,11 @@ namespace Orleans.Runtime.Management
             {
                 try
                 {
-                    var unstableSilos = await multiClusterOracle.FindLaggingSilos(multiClusterOracle.GetMultiClusterConfiguration());
+                    var laggingSilos = await multiClusterOracle.FindLaggingSilos(multiClusterOracle.GetMultiClusterConfiguration());
 
-                    if (unstableSilos.Count > 0)
+                    if (laggingSilos.Count > 0)
                     {
-                        var msg = string.Format("Found unstable silos {0}", string.Join(",", unstableSilos.Keys));
+                        var msg = string.Format("Found unstable silos {0}", string.Join(",", laggingSilos));
                         throw new OrleansException(msg);
                     }
                 }
@@ -365,7 +365,7 @@ namespace Orleans.Runtime.Management
             return configuration;
         }
 
-        public Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindLaggingSilos()
+        public Task<List<SiloAddress>> FindLaggingSilos()
         {
             var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
             var expected = multiClusterOracle.GetMultiClusterConfiguration();

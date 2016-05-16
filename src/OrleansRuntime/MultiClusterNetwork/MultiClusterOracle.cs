@@ -370,11 +370,15 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return Task.FromResult((IMultiClusterGossipData)delta);
         }
 
-        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindLaggingSilos(MultiClusterConfiguration expected)
+        // initiate a search for lagging silos, contacting other silos and clusters
+        public async Task<List<SiloAddress>> FindLaggingSilos(MultiClusterConfiguration expected)
         {
-            var tasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
+            var tasks = new List<Task<List<SiloAddress>>>();
+
+            // check this cluster for lagging silos
             tasks.Add(FindLaggingSilos(expected, true));
 
+            // check all other clusters for lagging silos
             foreach (var cluster in GetActiveClusters())
             {
                 if (cluster != this.clusterId)
@@ -391,25 +395,27 @@ namespace Orleans.Runtime.MultiClusterNetwork
             // IManagementGrain (change configuration, or check stability).
             // Users are going to want to see the exception details to figure out 
             // what is going on.
-
             await Task.WhenAll(tasks);
-            var result = tasks.SelectMany(t => t.Result).ToDictionary(r => r.Key, r => r.Value);
 
-            return result;
+            return tasks.SelectMany(t => t.Result).ToList();
         }
 
-        public async Task<Dictionary<SiloAddress, MultiClusterConfiguration>> FindLaggingSilos(MultiClusterConfiguration expected, bool forwardLocally)
+        // receive a remote request for finding lagging silos in this cluster or on this silo
+        public async Task<List<SiloAddress>> FindLaggingSilos(MultiClusterConfiguration expected, bool forwardLocally)
         {
-            logger.Verbose("--- FindUnstableSilos: {0}, {1}", forwardLocally ? "remote" : "local", expected);
+            logger.Verbose("--- FindLaggingSilos: {0}, {1}", forwardLocally ? "remote" : "local", expected);
 
-            var result = new Dictionary<SiloAddress, MultiClusterConfiguration>();
+            var result = new List<SiloAddress>();
 
+            // check if this silo is lagging
             if (!MultiClusterConfiguration.Equals(localData.Current.Configuration, expected))
-                result.Add(this.Silo, localData.Current.Configuration);
+                result.Add(this.Silo);
 
             if (forwardLocally)
             {
-                var tasks = new List<Task<Dictionary<SiloAddress, MultiClusterConfiguration>>>();
+                // contact all other active silos in this cluster
+
+                var tasks = new List<Task<List<SiloAddress>>>();
 
                 foreach (var activeSilo in this.GetApproximateOtherActiveSilos())
                 {
@@ -419,13 +425,13 @@ namespace Orleans.Runtime.MultiClusterNetwork
  
                 await Task.WhenAll(tasks);
 
-                foreach (var kvp in tasks.SelectMany(t => t.Result))
+                foreach (var silo in tasks.SelectMany(t => t.Result))
                 {
-                    result.Add(kvp.Key, kvp.Value);
+                    result.Add(silo);
                 }
             }
 
-            logger.Verbose("--- FindUnstableSilos: done, found {0}", result.Count);
+            logger.Verbose("--- FindLaggingSilos: done, found {0}", result.Count);
 
             return result;
         }
