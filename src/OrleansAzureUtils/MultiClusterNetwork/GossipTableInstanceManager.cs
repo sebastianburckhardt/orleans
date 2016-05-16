@@ -59,9 +59,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return String.Format(RowKeyFormat, clusterid, silo.Endpoint.Address, silo.Endpoint.Port, silo.Generation);
         }
 
-        internal void UnpackRowKey()
+        internal void ParseSiloAddressFromRowKey()
         {
-            const string debugInfo = "UnpackRowKey";
+            const string debugInfo = "ParseSiloAddressFromRowKey";
             try
             {
                 var segments = RowKey.Split(SeparatorChars, 4);
@@ -171,7 +171,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 var tableEntry = result.Item1;
                 try
                 {
-                    tableEntry.UnpackRowKey();
+                    tableEntry.ParseSiloAddressFromRowKey();
                     return tableEntry;
                 }
                 catch (Exception exc)
@@ -206,7 +206,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 {
                     try
                     {
-                        tableEntry.UnpackRowKey();
+                        tableEntry.ParseSiloAddressFromRowKey();
                         gatewayInfoInStorage.Add(tableEntry.SiloAddress, tableEntry);
                     }
                     catch (Exception exc)
@@ -236,22 +236,18 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 Comment = configuration.Comment ?? ""
             };
 
-            return (await TryCreateTableEntryAsync(entry).ConfigureAwait(false) != null);
+            return (await TryCreateTableEntryAsync(entry).ConfigureAwait(false));
         }
 
         internal async Task<bool> TryUpdateConfigurationEntryAsync(MultiClusterConfiguration configuration, GossipTableEntry entry, string eTag)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
-            //Debug.Assert(entry.ETag == eTag);
-            //Debug.Assert(entry.PartitionKey == GlobalServiceId);
-            //Debug.Assert(entry.RowKey == GossipTableEntry.CONFIGURATION_ROW);
-
             entry.GossipTimestamp = configuration.AdminTimestamp;
             entry.Clusters = string.Join(GossipTableEntry.ClustersListSeparator, configuration.Clusters);
             entry.Comment = configuration.Comment ?? "";
 
-            return (await TryUpdateTableEntryAsync(entry, eTag).ConfigureAwait(false) != null);
+            return (await TryUpdateTableEntryAsync(entry, eTag).ConfigureAwait(false));
         }
 
         internal async Task<bool> TryCreateGatewayEntryAsync(GatewayEntry entry)
@@ -264,20 +260,16 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 GossipTimestamp = entry.HeartbeatTimestamp
             };
 
-            return (await TryCreateTableEntryAsync(row).ConfigureAwait(false) != null);
+            return (await TryCreateTableEntryAsync(row).ConfigureAwait(false));
         }
 
 
         internal async Task<bool> TryUpdateGatewayEntryAsync(GatewayEntry entry, GossipTableEntry row, string eTag)
-        {
-            //Debug.Assert(row.ETag == eTag);
-            //Debug.Assert(row.PartitionKey == GlobalServiceId);
-            //Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(entry.SiloAddress, entry.ClusterId));
-            
+        {            
             row.Status = entry.Status.ToString();
             row.GossipTimestamp = entry.HeartbeatTimestamp;
 
-            return (await TryUpdateTableEntryAsync(row, eTag).ConfigureAwait(false) != null);
+            return (await TryUpdateTableEntryAsync(row, eTag).ConfigureAwait(false));
         }
 
         internal Task<bool> TryDeleteGatewayEntryAsync(GossipTableEntry row, string eTag)
@@ -309,11 +301,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <summary>
         /// Try once to conditionally update a data entry in the Azure table. Returns null if etag does not match.
         /// </summary>
-        private async Task<string> TryUpdateTableEntryAsync(GossipTableEntry data, string dataEtag, [CallerMemberName]string operation = null)
+        private async Task<bool> TryUpdateTableEntryAsync(GossipTableEntry data, string dataEtag, [CallerMemberName]string operation = null)
         {
             try
             {
-                return await storage.UpdateTableEntryAsync(data, dataEtag).ConfigureAwait(false);
+                var etag = await storage.UpdateTableEntryAsync(data, dataEtag).ConfigureAwait(false);
+                return true;
             }
             catch (Exception exc)
             {
@@ -322,7 +315,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
 
                 if (logger.IsVerbose2) logger.Verbose2("{0} failed with httpStatusCode={1}, restStatus={2}", operation, httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return null;
+                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
 
                 throw;
             }
@@ -331,11 +324,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <summary>
         /// Try once to insert a new data entry in the Azure table. Returns null if etag does not match.
         /// </summary>
-        private async Task<string> TryCreateTableEntryAsync(GossipTableEntry data, [CallerMemberName]string operation = null)
+        private async Task<bool> TryCreateTableEntryAsync(GossipTableEntry data, [CallerMemberName]string operation = null)
         {
             try
             {
-                return await storage.CreateTableEntryAsync(data).ConfigureAwait(false);
+                var etag = await storage.CreateTableEntryAsync(data).ConfigureAwait(false);
+                return true;
             }
             catch (Exception exc)
             {
@@ -344,7 +338,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
 
                 if (logger.IsVerbose2) logger.Verbose2("{0} failed with httpStatusCode={1}, restStatus={2}", operation, httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return null;
+                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
 
                 throw;
             }
