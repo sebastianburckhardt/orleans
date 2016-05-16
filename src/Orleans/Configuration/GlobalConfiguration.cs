@@ -214,14 +214,9 @@ namespace Orleans.Runtime.Configuration
         {
             get
             {
-                return !(string.IsNullOrEmpty(GlobalServiceId) || string.IsNullOrEmpty(ClusterId));
+                return !(string.IsNullOrEmpty(ClusterId));
             }
         }
-
-        /// <summary>
-        /// Shared Global service Id between different datacenters/deployments.
-        /// </summary>
-        public string GlobalServiceId { get; set; }
 
         /// <summary>
         /// Cluster id (one per deployment, unique across all the deployments/clusters)
@@ -588,7 +583,6 @@ namespace Orleans.Runtime.Configuration
             if (HasMultiClusterNetwork)
             {
                 sb.AppendLine("   MultiClusterNetwork:");
-                sb.AppendFormat("      GlobalServiceId: {0}", GlobalServiceId ?? "").AppendLine();
                 sb.AppendFormat("      ClusterId: {0}", ClusterId ?? "").AppendLine();
                 sb.AppendFormat("      DefaultMultiCluster: {0}", DefaultMultiCluster != null ? string.Join(",", DefaultMultiCluster) : "null").AppendLine();
                 sb.AppendFormat("      MaxMultiClusterGateways: {0}", MaxMultiClusterGateways).AppendLine();
@@ -820,15 +814,12 @@ namespace Orleans.Runtime.Configuration
                         }
                         break;
                     case "MultiClusterNetwork":
-                        GlobalServiceId = child.GetAttribute("GlobalServiceId");
                         ClusterId = child.GetAttribute("ClusterId");
 
                         // we always trim cluster ids to avoid surprises when parsing comma-separated lists
                         if (ClusterId != null) 
                             ClusterId = ClusterId.Trim(); 
 
-                        if (string.IsNullOrEmpty(GlobalServiceId))
-                            throw new FormatException("MultiClusterNetwork.GlobalServiceId cannot be blank");
                         if (string.IsNullOrEmpty(ClusterId))
                             throw new FormatException("MultiClusterNetwork.ClusterId cannot be blank");
                         if (ClusterId.Contains(","))

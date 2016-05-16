@@ -62,7 +62,7 @@ namespace Tests.GeoClusterTests
         public async Task TestMultiClusterConf_1_1()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
          
             // create cluster A and clientA
             var clusterA = "A";
@@ -154,7 +154,7 @@ namespace Tests.GeoClusterTests
         public async Task TestMultiClusterConf_3_3()
         {
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
 
             // use two clusters
             var clusterA = "A";

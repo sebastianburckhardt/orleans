@@ -62,7 +62,7 @@ namespace Tester.GeoClusterTests
             TimeSpan waitTimeout = TimeSpan.FromSeconds(60);
 
             // use a random global service id for testing purposes
-            var globalserviceid = "testservice" + new Random().Next();
+            var globalserviceid = Guid.NewGuid();
 
             host = new TestingClusterHost();
 

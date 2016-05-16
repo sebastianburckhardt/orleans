@@ -26,7 +26,7 @@ namespace Orleans.Runtime.MembershipService
         internal SiloStatus CurrentStatus { get; private set; } // current status of this silo.
         internal string SiloName { get; private set; } // name of this silo.
  
-        private readonly string globalServiceId; // set by configuration
+        private readonly bool multiClusterActive; // set by configuration if multicluster is active
         private readonly int maxMultiClusterGateways; // set by configuration
 
         private UpdateFaultCombo myFaultAndUpdateZones;
@@ -45,7 +45,7 @@ namespace Orleans.Runtime.MembershipService
             MyAddress = silo.SiloAddress;
             MyHostname = silo.LocalConfig.DNSHostName;
             SiloName = silo.LocalConfig.SiloName;
-            this.globalServiceId = silo.GlobalConfig.GlobalServiceId;
+            this.multiClusterActive = silo.GlobalConfig.HasMultiClusterNetwork;
             this.maxMultiClusterGateways = silo.GlobalConfig.MaxMultiClusterGateways;
             CurrentStatus = SiloStatus.Created;
             clusterSizeStatistic = IntValueStatistic.FindOrCreate(StatisticNames.MEMBERSHIP_ACTIVE_CLUSTER_SIZE, () => localTableCopyOnlyActive.Count);
@@ -148,7 +148,7 @@ namespace Orleans.Runtime.MembershipService
             localTableCopyOnlyActive = tmpLocalTableCopyOnlyActive;
             localNamesTableCopy = tmpLocalTableNamesCopy;
 
-            if (!string.IsNullOrEmpty(this.globalServiceId))
+            if (this.multiClusterActive)
                 localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
 
             NotifyLocalSubscribers(MyAddress, CurrentStatus);
@@ -221,7 +221,7 @@ namespace Orleans.Runtime.MembershipService
             localTableCopyOnlyActive = GetSiloStatuses(status => status.Equals(SiloStatus.Active), true);    // only active silos including me.
             localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.InstanceName);   // all the silos excluding me.
             
-            if (!string.IsNullOrEmpty(this.globalServiceId))
+            if (this.multiClusterActive)
                 localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
 
             if (logger.IsVerbose) logger.Verbose("-Updated my local view of {0} status. It is now {1}.", entry.SiloAddress.ToLongString(), GetSiloStatus(entry.SiloAddress));
@@ -278,7 +278,7 @@ namespace Orleans.Runtime.MembershipService
         private List<SiloAddress> DetermineMultiClusterGateways()
         {
             // function should never be called if we are not in a multicluster
-            if (string.IsNullOrEmpty(this.globalServiceId))
+            if (! this.multiClusterActive)
                 throw new OrleansException("internal error: should not call this function without multicluster network");
 
             // take all the active silos if their count does not exceed the desired number of gateways
