@@ -18,7 +18,7 @@ namespace Tests.GeoClusterTests
     {
         private readonly TraceLogger logger;
 
-        private string globalServiceId; //this should be the same for all clusters. Use this as partition key.
+        private Guid globalServiceId; //this should be the same for all clusters. Use this as partition key.
         //this should be unique per cluster. Can we use deployment id? 
         //problem with only using deployment id is that it is not known before deployment and hence not in the config file.
         private string deploymentId;
@@ -41,8 +41,8 @@ namespace Tests.GeoClusterTests
         [TestInitialize]
         public void TestInitialize()
         {
-            globalServiceId = "test-multiDC-gossip";
-            deploymentId = "test-" + Guid.NewGuid();
+            globalServiceId = Guid.NewGuid();
+            deploymentId = "test-" + globalServiceId;
 
             IPAddress ip;
             if (!IPAddress.TryParse("127.0.0.1", out ip))
@@ -59,7 +59,7 @@ namespace Tests.GeoClusterTests
 
             GlobalConfiguration config = new GlobalConfiguration
             {
-                GlobalServiceId = globalServiceId,
+                ServiceId = globalServiceId,
                 ClusterId = "0",
                 DeploymentId = deploymentId,
                 DataConnectionString = StorageTestConstants.DataConnectionString

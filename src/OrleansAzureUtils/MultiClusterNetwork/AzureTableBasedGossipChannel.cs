@@ -25,9 +25,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
             logger = TraceLogger.GetLogger(Name, TraceLogger.LoggerType.Runtime);
 
             logger.Info("Initializing Gossip Channel for ServiceId={0} using connection: {1}, SeverityLevel={2}",
-                globalconfig.GlobalServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
+                globalconfig.ServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
 
-            tableManager = await GossipTableInstanceManager.GetManager(globalconfig.GlobalServiceId, connectionstring, logger);
+            tableManager = await GossipTableInstanceManager.GetManager(globalconfig.ServiceId, connectionstring, logger);
         }
 
         // used by unit tests

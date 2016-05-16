@@ -101,12 +101,12 @@ namespace Tests.GeoClusterTests
 
         #region Cluster Creation
 
-        public void NewGeoCluster(string globalServiceId, string clusterId, int numSilos, Action<ClusterConfiguration> customizer = null)
+        public void NewGeoCluster(Guid globalServiceId, string clusterId, int numSilos, Action<ClusterConfiguration> customizer = null)
         {
             Action<ClusterConfiguration> extendedcustomizer = config =>
                 {
                     // configure multi-cluster network
-                    config.Globals.GlobalServiceId = globalServiceId;
+                    config.Globals.ServiceId = globalServiceId;
                     config.Globals.ClusterId = clusterId;
                     config.Globals.MaxMultiClusterGateways = 2;
                     config.Globals.DefaultMultiCluster = null;

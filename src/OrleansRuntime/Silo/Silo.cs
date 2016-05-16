@@ -518,7 +518,7 @@ namespace Orleans.Runtime
             if (GlobalConfig.HasMultiClusterNetwork) 
             {
                 logger.Info("Creating multicluster oracle with my ServiceId={0} and ClusterId={1}.",
-                    GlobalConfig.GlobalServiceId, GlobalConfig.ClusterId);
+                    GlobalConfig.ServiceId, GlobalConfig.ClusterId);
 
                 ISchedulingContext clusterStatusContext = ((SystemTarget) multiClusterOracle).SchedulingContext;
                 scheduler.QueueTask(() => multiClusterOracle.Start(LocalSiloStatusOracle), clusterStatusContext)
