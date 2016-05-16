@@ -18,7 +18,6 @@ namespace Orleans.Runtime.Management
         private Logger logger;
         private IMembershipTable membershipTable;
 
-
         public override Task OnActivateAsync()
         {
             logger = TraceLogger.GetLogger("ManagementGrain", TraceLogger.LoggerType.Runtime);
@@ -312,30 +311,26 @@ namespace Orleans.Runtime.Management
 
         #region MultiCluster
 
-        public Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways()
+        private MultiClusterNetwork.IMultiClusterOracle GetMultiClusterOracle()
         {
             if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
                 throw new OrleansException("No multicluster network configured");
+            return Silo.CurrentSilo.LocalMultiClusterOracle;
+        }
 
-            var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
-            return Task.FromResult(multiClusterOracle.GetGateways().Cast<IMultiClusterGatewayInfo>().ToList());
+        public Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways()
+        {
+            return Task.FromResult(GetMultiClusterOracle().GetGateways().Cast<IMultiClusterGatewayInfo>().ToList());
         }
 
         public Task<MultiClusterConfiguration> GetMultiClusterConfiguration()
         {
-            if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
-                throw new OrleansException("No multicluster network configured");
-
-            var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
-            return Task.FromResult(multiClusterOracle.GetMultiClusterConfiguration());
+            return Task.FromResult(GetMultiClusterOracle().GetMultiClusterConfiguration());
         }
 
         public async Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkForLaggingSilosFirst = true)
         {
-            if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork) 
-                throw new OrleansException("No multicluster network configured");
-
-            var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            var multiClusterOracle = GetMultiClusterOracle();
 
             var configuration = new MultiClusterConfiguration(DateTime.UtcNow, clusters.ToList(), comment);
 
@@ -367,7 +362,7 @@ namespace Orleans.Runtime.Management
 
         public Task<List<SiloAddress>> FindLaggingSilos()
         {
-            var multiClusterOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+            var multiClusterOracle = GetMultiClusterOracle();
             var expected = multiClusterOracle.GetMultiClusterConfiguration();
             return multiClusterOracle.FindLaggingSilos(expected);
         }
