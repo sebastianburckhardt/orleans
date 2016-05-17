@@ -1,6 +1,6 @@
 ﻿namespace Orleans.Runtime.MultiClusterNetwork
 {
-    class MultiClusterOracleData 
+    internal class MultiClusterOracleData 
     {
         private volatile MultiClusterData localData;  // immutable, can read without lock
 
