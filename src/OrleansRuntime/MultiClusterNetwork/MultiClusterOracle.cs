@@ -286,19 +286,19 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 .Where(kvp => kvp.Value.LastException != null)
                 .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.LastException.GetType().Name)));
             if (!string.IsNullOrEmpty(unreachableClusters))
-                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach clusters {0}", unreachableClusters);
+                logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach clusters {0}", unreachableClusters);
 
             var unreachableSilos = string.Join(",", this.siloTasks
                 .Where(kvp => kvp.Value.LastException != null)
                 .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.LastException.GetType().Name)));
             if (!string.IsNullOrEmpty(unreachableSilos))
-                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach silos {0}", unreachableSilos);
+                logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach silos {0}", unreachableSilos);
 
             var unreachableChannels = string.Join(",", this.channelTasks
                   .Where(kvp => kvp.Value.LastException != null)
                   .Select(kvp => string.Format("{0}({1})", kvp.Key, kvp.Value.LastException.GetType().Name)));
             if (!string.IsNullOrEmpty(unreachableChannels))
-                logger.Info(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach channels {0}", unreachableChannels);
+                logger.Warn(ErrorCode.MultiClusterNetwork_GossipCommunicationFailure, "Gossip Communication: cannot reach channels {0}", unreachableChannels);
 
             // discard old status information
             RemoveStaleTaskStatusEntries(this.clusterTasks);
