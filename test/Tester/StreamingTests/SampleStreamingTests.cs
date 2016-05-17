@@ -1,10 +1,11 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Providers.Streams.AzureQueue;
 using Orleans.Runtime;
+using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using Orleans.TestingHost.Utils;
 using Tester;
 using UnitTests.GrainInterfaces;
 using UnitTests.Tester;
@@ -13,25 +14,23 @@ using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace UnitTests.StreamingTests
 {
-    public class SampleStreamingTestsFixture : BaseClusterFixture
-    {
-        public SampleStreamingTestsFixture()
-            : base(new TestingSiloHost(
-                new TestingSiloOptions
-                {
-                    SiloConfigFile = new FileInfo("OrleansConfigurationForStreamingUnitTests.xml"),
-                },
-                new TestingClientOptions()
-                {
-                    ClientConfigFile = new FileInfo("ClientConfigurationForStreamTesting.xml")
-                }))
-        {
-        }
-    }
-
     [TestCategory("Streaming")]
-    public class SampleSmsStreamingTests : OrleansTestingBase, IClassFixture<SampleStreamingTestsFixture>
+    public class SampleSmsStreamingTests : OrleansTestingBase, IClassFixture<SampleSmsStreamingTests.Fixture>
     {
+        public class Fixture : BaseTestClusterFixture
+        {
+            protected override TestCluster CreateTestCluster()
+            {
+                var options = new TestClusterOptions(2);
+
+                options.ClusterConfiguration.AddMemoryStorageProvider("PubSubStore");
+
+                options.ClusterConfiguration.AddSimpleMessageStreamProvider(StreamProvider, false);
+                options.ClientConfiguration.AddSimpleMessageStreamProvider(StreamProvider, false);
+                return new TestCluster(options);
+            }
+        }
+
         private const string StreamProvider = StreamTestsConstants.SMS_STREAM_PROVIDER_NAME;
 
         [Fact, TestCategory("BVT"), TestCategory("Functional")]
@@ -83,22 +82,24 @@ namespace UnitTests.StreamingTests
     }
 
     [TestCategory("Streaming")]
-    public class SampleAzureQueueStreamingTests : HostedTestClusterPerTest
+    public class SampleAzureQueueStreamingTests : TestClusterPerTest
     {
         private const string StreamProvider = StreamTestsConstants.AZURE_QUEUE_STREAM_PROVIDER_NAME;
-        private SampleStreamingTestsFixture fixture;
 
-        public override TestingSiloHost CreateSiloHost()
+        public override TestCluster CreateTestCluster()
         {
             TestUtils.CheckForAzureStorage();
-            this.fixture = new SampleStreamingTestsFixture();
-            return fixture.HostedCluster;
+            var options = new TestClusterOptions(2);
+
+            options.ClusterConfiguration.AddMemoryStorageProvider("PubSubStore");
+            options.ClusterConfiguration.AddAzureQueueStreamProvider(StreamProvider);
+            return new TestCluster(options);
         }
 
         public override void Dispose()
         {
-            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, fixture.HostedCluster.DeploymentId, StorageTestConstants.DataConnectionString, logger).Wait();
-            fixture.Dispose();
+            var deploymentId = HostedCluster.DeploymentId;
+            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, StorageTestConstants.DataConnectionString).Wait();
         }
 
         [Fact, TestCategory("Functional")]

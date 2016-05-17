@@ -1,7 +1,7 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
@@ -11,22 +11,18 @@ using Xunit;
 
 namespace UnitTests.General
 {
-    public class DependencyInjectionGrainTestsFixture : BaseClusterFixture
+    public class DependencyInjectionGrainTests : OrleansTestingBase, IClassFixture<DependencyInjectionGrainTests.Fixture>
     {
-        public DependencyInjectionGrainTestsFixture()
-            : base(
-                new TestingSiloHost(new TestingSiloOptions
-                {
-                    StartPrimary = true,
-                    StartSecondary = false,
-                    SiloConfigFile = new FileInfo("OrleansStartupConfigurationForTesting.xml")
-                }))
+        private class Fixture : BaseTestClusterFixture
         {
+            protected override TestCluster CreateTestCluster()
+            {
+                var options = new TestClusterOptions();
+                options.ClusterConfiguration.ApplyToAllNodes(nodeConfig => nodeConfig.StartupTypeName = typeof(TestStartup).AssemblyQualifiedName);
+                return new TestCluster(options);
+            }
         }
-    }
 
-    public class DependencyInjectionGrainTests : OrleansTestingBase, IClassFixture<DependencyInjectionGrainTestsFixture>
-    {
         [Fact, TestCategory("BVT"), TestCategory("Functional")]
         public async Task DiTests_SimpleDiGrainGetGrain()
         {

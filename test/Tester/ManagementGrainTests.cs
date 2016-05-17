@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Orleans;
 using Orleans.Runtime;
+using Tester;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
 using UnitTests.Tester;
 using Xunit;
+using Xunit.Abstractions;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 // ReSharper disable ConvertToConstant.Local
@@ -16,21 +19,30 @@ namespace UnitTests.Management
 {
     public class ManagementGrainTests : HostedTestClusterEnsureDefaultStarted
     {
+        private readonly ITestOutputHelper output;
         private IManagementGrain mgmtGrain;
         
-        public ManagementGrainTests()
+        public ManagementGrainTests(DefaultClusterFixture fixture, ITestOutputHelper output)
+            : base(fixture)
         {
+            this.output = output;
             mgmtGrain = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Management")]
-        public void GetHosts()
+        public async Task GetHosts()
         {
+            if (HostedCluster.SecondarySilos.Count == 0)
+            {
+                HostedCluster.StartAdditionalSilo();
+                await HostedCluster.WaitForLivenessToStabilizeAsync();
+            }
+
+            var numberOfActiveSilos = 1 + HostedCluster.SecondarySilos.Count; // Primary + secondaries
             Dictionary<SiloAddress, SiloStatus> siloStatuses = mgmtGrain.GetHosts(true).Result;
             Assert.IsNotNull(siloStatuses, "Got some silo statuses");
-            Assert.AreEqual(2, siloStatuses.Count, "Number of silo statuses");
+            Assert.AreEqual(numberOfActiveSilos, siloStatuses.Count, "Number of silo statuses");
         }
-
 
         [Fact, TestCategory("Functional"), TestCategory("Management")]
         public void GetSimpleGrainStatistics()
@@ -80,7 +92,7 @@ namespace UnitTests.Management
             StringBuilder sb = new StringBuilder();
             foreach (var s in stats) sb.AppendLine().Append(s);
             sb.AppendLine();
-            Console.WriteLine("Grain statistics returned by Orleans Management Grain - " + when + " : " + sb);
+            output.WriteLine("Grain statistics returned by Orleans Management Grain - " + when + " : " + sb);
             return stats;
         }
     }

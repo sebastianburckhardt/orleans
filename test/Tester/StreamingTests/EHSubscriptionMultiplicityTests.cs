@@ -32,31 +32,27 @@ namespace UnitTests.StreamingTests
         private static readonly EventHubSettings EventHubConfig = new EventHubSettings(StorageTestConstants.EventHubConnectionString,
             EHConsumerGroup, EHPath);
 
-        private static readonly EventHubCheckpointSettings CheckpointSettings =
-            new EventHubCheckpointSettings(StorageTestConstants.DataConnectionString, EHCheckpointTable, CheckpointNamespace,
+        private static readonly EventHubCheckpointerSettings CheckpointerSettings =
+            new EventHubCheckpointerSettings(StorageTestConstants.DataConnectionString, EHCheckpointTable, CheckpointNamespace,
                 TimeSpan.FromSeconds(1));
 
         private readonly SubscriptionMultiplicityTestRunner runner;
 
-        private class Fixture : BaseClusterFixture
+        private class Fixture : BaseTestClusterFixture
         {
-            public Fixture()
-                : base(new TestingSiloHost(
-                    new TestingSiloOptions
-                    {
-                        StartFreshOrleans = true,
-                        SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
-                        AdjustConfig = AdjustClusterConfiguration
-                    }))
+            protected override TestCluster CreateTestCluster()
             {
+                var options = new TestClusterOptions(2);
+                AdjustClusterConfiguration(options.ClusterConfiguration);
+                return new TestCluster(options);
             }
 
             public override void Dispose()
             {
-                var dataManager = new AzureTableDataManager<TableEntity>(CheckpointSettings.TableName, CheckpointSettings.DataConnectionString);
+                base.Dispose();
+                var dataManager = new AzureTableDataManager<TableEntity>(CheckpointerSettings.TableName, CheckpointerSettings.DataConnectionString);
                 dataManager.InitTableAsync().Wait();
                 dataManager.DeleteTableAsync().Wait();
-                base.Dispose();
             }
 
             private static void AdjustClusterConfiguration(ClusterConfiguration config)
@@ -65,7 +61,7 @@ namespace UnitTests.StreamingTests
                 // get initial settings from configs
                 ProviderConfig.WriteProperties(settings);
                 EventHubConfig.WriteProperties(settings);
-                CheckpointSettings.WriteProperties(settings);
+                CheckpointerSettings.WriteProperties(settings);
 
                 // add queue balancer setting
                 settings.Add(PersistentStreamProviderConfig.QUEUE_BALANCER_TYPE, StreamQueueBalancerType.DynamicClusterConfigDeploymentBalancer.ToString());
@@ -73,11 +69,6 @@ namespace UnitTests.StreamingTests
                 // register stream provider
                 config.Globals.RegisterStreamProvider<EventHubStreamProvider>(StreamProviderName, settings);
                 config.Globals.RegisterStorageProvider<MemoryStorage>("PubSubStore");
-
-                // Make sure a node config exist for each silo in the cluster.
-                // This is required for the DynamicClusterConfigDeploymentBalancer to properly balance queues.
-                config.GetOrCreateNodeConfigurationForSilo("Primary");
-                config.GetOrCreateNodeConfigurationForSilo("Secondary_1");
             }
         }
 
