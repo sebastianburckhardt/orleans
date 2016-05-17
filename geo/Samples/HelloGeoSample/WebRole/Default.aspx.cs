@@ -58,6 +58,13 @@ namespace Orleans.Azure.Samples.Web
         protected async void ButtonSayHello_Click(object sender, EventArgs e)
         {
             var targetgrain = OipcGrain.Text;
+
+            if (string.IsNullOrEmpty(targetgrain))
+            {
+                this.ReplyText.Text = "Please enter a key";
+                return;
+            }
+
             IHelloGrain grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrain>(targetgrain, "HelloGeoGrains.OneInstancePerClusterGrain");
 
             try
@@ -78,6 +85,11 @@ namespace Orleans.Azure.Samples.Web
             var targetgrain = GsiGrain.Text;
             IHelloGrain grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrain>(targetgrain, "HelloGeoGrains.GlobalSingleInstanceGrain");
 
+            if (string.IsNullOrEmpty(targetgrain))
+            {
+                this.ReplyText.Text = "Please enter a key";
+                return;
+            }
             try
             {
                 string reply = await grainRef.Ping();

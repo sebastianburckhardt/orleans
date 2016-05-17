@@ -2,17 +2,25 @@
 <OrleansConfiguration xmlns="urn:orleans">
   <Globals>
     <Liveness LivenessType="AzureTable" />
-    <StorageProviders>
-      <!-- for now, we use the memory store as a default, which works for queued grain too -->
-      <Provider Type="Orleans.Storage.MemoryStorage" Name="Default" />
-    </StorageProviders>
+     
+    <!--Use a logview provider with custom storage interface-->
     <LogViewProviders>
       <Provider Type="Orleans.Providers.LogViews.CustomStorageProvider" Name="CustomStorage" />
     </LogViewProviders>
-    <MultiClusterNetwork GlobalServiceId ="ReplicatedEventSample"
-                         DefaultMultiCluster="Front1,Front2,Back"
-                         ClusterId="IS_CONFIGURED_ON_START_IN_WorkerRole.cs">
-      <GossipChannel Type="AzureTable" ConnectionString="UseDevelopmentStorage=true" />      
+
+    <!--Use a unique GUID for this service-->
+    <SystemStore ServiceId="b0470de7-3697-42d6-9934-8bbc966a6aeb"/>
+
+    <!--Run this cluster as part of a multi-cluster -->
+    <MultiClusterNetwork
+      
+             DefaultMultiCluster="Front1,Front2,Back"
+             ClusterId="IS_CONFIGURED_IN_WorkerRole.cs">
+
+      <!--Use a single Gossip Channel for simplicity. 
+      For realistic deployments, use multiple channels in different datacenters.-->
+      <GossipChannel Type="AzureTable" ConnectionString="UseDevelopmentStorage=true" />
+
     </MultiClusterNetwork>
   </Globals>
   <Defaults>
