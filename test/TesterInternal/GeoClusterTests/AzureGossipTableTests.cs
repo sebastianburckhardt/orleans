@@ -9,12 +9,12 @@ using Orleans.Runtime.MultiClusterNetwork;
 using Orleans.TestingHost;
 using UnitTests.StorageTests;
 using Orleans.MultiCluster;
+using Xunit;
+using Assert = Xunit.Assert;
 
 namespace Tests.GeoClusterTests
 {
-    [TestClass]
-    [DeploymentItem("OrleansAzureUtils.dll")]
-    public class AzureGossipTableTests
+    public class AzureGossipTableTests : AzureStorageBasicTestFixture 
     {
         private readonly TraceLogger logger;
 
@@ -30,17 +30,7 @@ namespace Tests.GeoClusterTests
         public AzureGossipTableTests()
         {
             logger = TraceLogger.GetLogger("AzureGossipTableTests", TraceLogger.LoggerType.Application);
-        }
-
-        [ClassInitialize]
-        public static void ClassInitialize(TestContext testContext)
-        {
-            TraceLogger.Initialize(new NodeConfiguration());
-        }
-
-        [TestInitialize]
-        public void TestInitialize()
-        {
+        
             globalServiceId = Guid.NewGuid();
             deploymentId = "test-" + globalServiceId;
 
@@ -73,17 +63,7 @@ namespace Tests.GeoClusterTests
             }
         }
 
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            if (gossipTable != null && SiloInstanceTableTestConstants.DeleteEntriesAfterTest)
-            {
-                gossipTable.DeleteAllEntries().Wait();
-                gossipTable = null;
-            }
-        }
-
-        [TestMethod, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
+        [Fact, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
         public async Task AzureGossip_ConfigGossip()
         {
             // start clean
@@ -94,7 +74,7 @@ namespace Tests.GeoClusterTests
 
             // push and pull empty data
             var answer = await gossipTable.Synchronize(new MultiClusterData());
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             var ts1 = new DateTime(year: 2011, month: 1, day: 1);
             var ts2 = new DateTime(year: 2012, month: 2, day: 2);
@@ -109,34 +89,34 @@ namespace Tests.GeoClusterTests
 
             // retrieve (by push/pull empty)
             answer = await gossipTable.Synchronize(new MultiClusterData());
-            Assert.AreEqual(conf1, answer.Configuration);
+            Assert.Equal(conf1, answer.Configuration);
 
             // gossip stable
             answer = await gossipTable.Synchronize(new MultiClusterData(conf1));
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             // push configuration 2
             answer = await gossipTable.Synchronize(new MultiClusterData(conf2));
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             // gossip returns latest
             answer = await gossipTable.Synchronize(new MultiClusterData(conf1));
-            Assert.AreEqual(conf2, answer.Configuration);
+            Assert.Equal(conf2, answer.Configuration);
             await gossipTable.Publish(new MultiClusterData(conf1));
             answer = await gossipTable.Synchronize(new MultiClusterData());
-            Assert.AreEqual(conf2, answer.Configuration);
+            Assert.Equal(conf2, answer.Configuration);
             answer = await gossipTable.Synchronize(new MultiClusterData(conf2));
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             // push final configuration
             answer = await gossipTable.Synchronize(new MultiClusterData(conf3));
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             answer = await gossipTable.Synchronize(new MultiClusterData(conf1));
-            Assert.AreEqual(conf3, answer.Configuration);
+            Assert.Equal(conf3, answer.Configuration);
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
+        [Fact, TestCategory("Functional"), TestCategory("GeoCluster"), TestCategory("Azure"), TestCategory("Storage")]
         public async Task AzureGossip_GatewayGossip()
         {
             // start clean
@@ -180,36 +160,37 @@ namespace Tests.GeoClusterTests
 
             // push H1, retrieve G1 
             var answer = await gossipTable.Synchronize(new MultiClusterData(H1));
-            Assert.AreEqual(1, answer.Gateways.Count);
-            Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress1));
-            Assert.AreEqual(G1, answer.Gateways[siloAddress1]);
+            Assert.Equal(1, answer.Gateways.Count);
+            Assert.True(answer.Gateways.ContainsKey(siloAddress1));
+            Assert.Equal(G1, answer.Gateways[siloAddress1]);
 
             // push G2, retrieve H1
             answer = await gossipTable.Synchronize(new MultiClusterData(G2));
-            Assert.AreEqual(1, answer.Gateways.Count);
-            Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress2));
-            Assert.AreEqual(H1, answer.Gateways[siloAddress2]);
+            Assert.Equal(1, answer.Gateways.Count);
+            Assert.True(answer.Gateways.ContainsKey(siloAddress2));
+            Assert.Equal(H1, answer.Gateways[siloAddress2]);
 
             // gossip stable
             await gossipTable.Publish(new MultiClusterData(H1));
             await gossipTable.Publish(new MultiClusterData(G1));
             answer = await gossipTable.Synchronize(new MultiClusterData(new GatewayEntry[] { H1, G2 }));
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             // retrieve
             answer = await gossipTable.Synchronize(new MultiClusterData(new GatewayEntry[] { H1, G2 }));
-            Assert.IsTrue(answer.IsEmpty);
+            Assert.True(answer.IsEmpty);
 
             // push H2 
             await gossipTable.Publish(new MultiClusterData(H2));
 
             // retrieve all
             answer = await gossipTable.Synchronize(new MultiClusterData(new GatewayEntry[] { G1, H1 }));
-            Assert.AreEqual(2, answer.Gateways.Count);
-            Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress1));
-            Assert.IsTrue(answer.Gateways.ContainsKey(siloAddress2));
-            Assert.AreEqual(G2, answer.Gateways[siloAddress1]);
-            Assert.AreEqual(H2, answer.Gateways[siloAddress2]);
+            Assert.Equal(2, answer.Gateways.Count);
+            Assert.True(answer.Gateways.ContainsKey(siloAddress1));
+            Assert.True(answer.Gateways.ContainsKey(siloAddress2));
+            Assert.Equal(G2, answer.Gateways[siloAddress1]);
+            Assert.Equal(H2, answer.Gateways[siloAddress2]);
         }
+         
     }
 }

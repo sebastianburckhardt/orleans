@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans.Runtime;
 using Orleans.Runtime.MembershipService;
 using UpdateFaultCombo = Orleans.Runtime.MembershipService.MembershipOracleData.UpdateFaultCombo;
+using Xunit;
+using Assert = Xunit.Assert;
 using System.Collections.Generic;
 
 namespace UnitTests.GeoClusterTests
@@ -14,7 +16,7 @@ namespace UnitTests.GeoClusterTests
     [TestClass]
     public class GatewaySelectionTests
     {
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
+        [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]
         public void TestMultiClusterGatewaySelection()
         {
             var candidates = new SiloAddress[] {
@@ -43,7 +45,7 @@ namespace UnitTests.GeoClusterTests
             var x = MembershipOracleData.DeterministicBalancedChoice(randomized.Values, 10, group);
 
             for (int i = 0; i < 10; i++)
-                Assert.AreEqual(candidates[i], x[i]);
+                Assert.Equal(candidates[i], x[i]);
         }
     }
 }
