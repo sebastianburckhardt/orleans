@@ -63,7 +63,7 @@ namespace Tests.GeoClusterTests
         {
             TimeSpan stabilizationTime = TimeSpan.Zero;
 
-            stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
+            stabilizationTime += TimeSpan.FromMilliseconds(global.BackgroundGossipInterval.TotalMilliseconds * 1.05 + 50);
 
             return stabilizationTime;
         }

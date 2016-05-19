@@ -22,9 +22,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
         private readonly string clusterId;
         private readonly IReadOnlyList<string> defaultMultiCluster;
 
-        // to avoid convoying, each silo randomizes these period intervals
-        private readonly TimeSpan randomizedBackgroundGossipInterval;
-        private TimeSpan randomizedResendActiveStatusAfter;
+        private readonly TimeSpan backgroundGossipInterval;
+        private TimeSpan resendActiveStatusAfter;
 
         private GrainTimer timer;
         private ISiloStatusOracle siloStatusOracle;
@@ -40,16 +39,18 @@ namespace Orleans.Runtime.MultiClusterNetwork
             gossipChannels = sources;
             localData = new MultiClusterOracleData(logger);
             clusterId = config.ClusterId;
-            defaultMultiCluster = config.DefaultMultiCluster;  
+            defaultMultiCluster = config.DefaultMultiCluster;
             random = new SafeRandom();
-            randomizedBackgroundGossipInterval = RandomizeTimespan(config.BackgroundGossipInterval);
-            randomizedResendActiveStatusAfter = RandomizeTimespan(ResendActiveStatusAfter);
+
+            // to avoid convoying, each silo varies these period intervals a little
+            backgroundGossipInterval = RandomizeTimespanSlightly(config.BackgroundGossipInterval);
+            resendActiveStatusAfter = RandomizeTimespanSlightly(ResendActiveStatusAfter);
         }
-   
-        // randomize a timespan by up to 10%
-        private TimeSpan RandomizeTimespan(TimeSpan value)
+
+        // randomize a timespan a little (add between 0% and 5%)
+        private TimeSpan RandomizeTimespanSlightly(TimeSpan value)
         {
-            return TimeSpan.FromMilliseconds(value.TotalMilliseconds * (0.9 + (random.NextDouble() * 0.1)));
+            return TimeSpan.FromMilliseconds(value.TotalMilliseconds * (1 + (random.NextDouble() * 0.05)));
         }
 
         public bool IsFunctionalClusterGateway(SiloAddress siloAddress)
