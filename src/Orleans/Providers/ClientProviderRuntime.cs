@@ -15,6 +15,7 @@ namespace Orleans.Providers
         private StreamDirectory streamDirectory;
         private readonly Dictionary<Type, Tuple<IGrainExtension, IAddressable>> caoTable;
         private readonly AsyncLock lockable;
+        private InvokeInterceptor invokeInterceptor;
 
         public ClientProviderRuntime(IGrainFactory grainFactory, IServiceProvider serviceProvider) 
         {
@@ -26,6 +27,15 @@ namespace Orleans.Providers
 
         public IGrainFactory GrainFactory { get; private set; }
         public IServiceProvider ServiceProvider { get; private set; }
+        public void SetInvokeInterceptor(InvokeInterceptor interceptor)
+        {
+            this.invokeInterceptor = interceptor;
+        }
+
+        public InvokeInterceptor GetInvokeInterceptor()
+        {
+            return this.invokeInterceptor;
+        }
 
         public void StreamingInitialize(ImplicitStreamSubscriberTable implicitStreamSubscriberTable) 
         {
@@ -45,13 +55,16 @@ namespace Orleans.Providers
             return streamDirectory;
         }
 
-        public async Task Reset()
+        public async Task Reset(bool cleanup = true)
         {
             if (streamDirectory != null)
             {
                 var tmp = streamDirectory;
                 streamDirectory = null; // null streamDirectory now, just to make sure we call cleanup only once, in all cases.
-                await tmp.Cleanup(true, true);
+                if (cleanup)
+                {
+                    await tmp.Cleanup(true, true);
+                }
             }
         }
 

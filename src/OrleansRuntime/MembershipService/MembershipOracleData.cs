@@ -130,7 +130,7 @@ namespace Orleans.Runtime.MembershipService
             // make copies
             var tmpLocalTableCopy = GetSiloStatuses(st => true, true); // all the silos including me.
             var tmpLocalTableCopyOnlyActive = GetSiloStatuses(st => st.Equals(SiloStatus.Active), true);    // only active silos including me.
-            var tmpLocalTableNamesCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.InstanceName);   // all the silos excluding me.
+            var tmpLocalTableNamesCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.SiloName);   // all the silos excluding me.
 
             CurrentStatus = status;
 
@@ -194,7 +194,7 @@ namespace Orleans.Runtime.MembershipService
                 SiloAddress = myAddress,
 
                 HostName = myHostname,
-                InstanceName = nodeConf.SiloName,
+                SiloName = nodeConf.SiloName,
 
                 Status = myStatus,
                 ProxyPort = (nodeConf.IsGatewayNode ? nodeConf.ProxyGatewayEndpoint.Port : 0),
@@ -219,7 +219,7 @@ namespace Orleans.Runtime.MembershipService
 
             localTableCopy = GetSiloStatuses(status => true, true); // all the silos including me.
             localTableCopyOnlyActive = GetSiloStatuses(status => status.Equals(SiloStatus.Active), true);    // only active silos including me.
-            localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.InstanceName);   // all the silos excluding me.
+            localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.SiloName);   // all the silos excluding me.
             
             if (this.multiClusterActive)
                 localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();

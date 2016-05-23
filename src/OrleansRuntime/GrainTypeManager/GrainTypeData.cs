@@ -47,7 +47,7 @@ namespace Orleans.Runtime
                 {
                     if (t == typeof(IAddressable)) continue;
 
-                    if (CodeGeneration.GrainInterfaceData.IsGrainInterface(t) && !interfaceTypes.Contains(t))
+                    if (CodeGeneration.GrainInterfaceUtils.IsGrainInterface(t) && !interfaceTypes.Contains(t))
                         interfaceTypes.Add(t);
                 }
 

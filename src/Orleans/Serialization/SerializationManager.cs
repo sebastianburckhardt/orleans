@@ -21,12 +21,14 @@ using System.Runtime.Serialization.Formatters;
 
 namespace Orleans.Serialization
 {
-
     /// <summary>
-    /// SerializationManager to oversee the Orleans syrializer system.
+    /// SerializationManager to oversee the Orleans serializer system.
     /// </summary>
     public static class SerializationManager
     {
+        internal const string UseFullAssemblyNamesProperty = "UseFullAssemblyNames";
+        internal const string IndentJsonProperty = "IndentJSON";
+
         /// <summary>
         /// Deep copier function.
         /// </summary>
@@ -68,6 +70,27 @@ namespace Orleans.Serialization
             get;
             set;
         }
+
+#if DNXCORE50
+        // Workaround for CoreCLR where FormatterServices.GetUninitializedObject is not public (but might change in RTM so we could remove this then).
+        private static readonly Func<Type, object> getUninitializedObjectDelegate =
+            (Func<Type, object>)
+                typeof(string)
+                    .GetTypeInfo()
+                    .Assembly
+                    .GetType("System.Runtime.Serialization.FormatterServices")
+                    .GetMethod("GetUninitializedObject", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
+                    .CreateDelegate(typeof(Func<Type, object>));
+
+        /// <summary>
+        /// Returns an unitialized object with FormatterServices.
+        /// </summary>
+        /// <param name="type">The type to create</param>
+        public static object GetUninitializedObjectWithFormatterServices(Type type)
+        {
+            return getUninitializedObjectDelegate.Invoke(type);
+        }
+#endif
 
         #region Privates
 
@@ -134,8 +157,8 @@ namespace Orleans.Serialization
             {
                 RegisterBuiltInSerializers();
                 BufferPool.InitGlobalBufferPool(new MessagingConfiguration(false));
-                AssemblyProcessor.Initialize();
                 RegisterSerializationProviders(serializationProviders);
+                AssemblyProcessor.Initialize();
                 fallbackSerializer = GetFallbackSerializer(useJsonFallbackSerializer);
             }
             catch (ReflectionTypeLoadException ex)
@@ -192,8 +215,8 @@ namespace Orleans.Serialization
                 FallbackCopiesTimeStatistic = CounterStatistic.FindOrCreate(StatisticNames.SERIALIZATION_BODY_FALLBACK_DEEPCOPY_MILLIS, storeFallback).AddValueConverter(Utils.TicksToMilliSeconds);
             }
 
-            AssemblyProcessor.Initialize();
             RegisterSerializationProviders(serializationProviders);
+            AssemblyProcessor.Initialize();
         }
 
         internal static void RegisterBuiltInSerializers()
@@ -543,6 +566,7 @@ namespace Orleans.Serialization
             bool systemAssembly = !assembly.IsDynamic
                                   && (assembly.FullName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase)
                                       || assembly.FullName.StartsWith("System.", StringComparison.Ordinal));
+            IExternalSerializer externalSerializer;
 
             if (logger.IsVerbose2) logger.Verbose2("Scanning assembly {0} for serialization info", assembly.GetLocationSafe());
 
@@ -676,6 +700,10 @@ namespace Orleans.Serialization
                                         type.Name,
                                         assembly.GetName().Name);
                             }
+                            else if (TryLookupExternalSerializer(type, out externalSerializer))
+                            {
+                                // the lookup registers the serializer.
+                            }
                             else if (!type.GetTypeInfo().IsSerializable)
                             {
                                 // Comparers with no fields can be safely dealt with as just a type name
@@ -700,6 +728,7 @@ namespace Orleans.Serialization
                     }
                     else
                     {
+                        // type is abstract, an interface, system-defined, or its namespace is null
                         Register(type);
                     }
                 }
@@ -1054,10 +1083,10 @@ namespace Orleans.Serialization
         /// <returns>true if <paramref name="t"/> is serializable, false otherwise.</returns>
         internal static bool HasSerializer(Type t)
         {
+            var typeInfo = t.GetTypeInfo();
             lock (serializers)
             {
                 Serializer ser;
-                var typeInfo = t.GetTypeInfo();
                 return serializers.TryGetValue(typeInfo.TypeHandle, out ser)
                        || (typeInfo.IsGenericType && serializers.TryGetValue(typeInfo.GetGenericTypeDefinition().TypeHandle, out ser));
             }
@@ -2320,19 +2349,19 @@ namespace Orleans.Serialization
         /// <returns><see cref="JsonSerializerSettings" /></returns>
         public static JsonSerializerSettings UpdateSerializerSettings(JsonSerializerSettings settings, IProviderConfiguration config)
         {
-            if (config.Properties.ContainsKey("UseFullAssemblyNames"))
+            if (config.Properties.ContainsKey(UseFullAssemblyNamesProperty))
             {
-                bool useFullAssemblyNames = false;
-                if (bool.TryParse(config.Properties["UseFullAssemblyNames"], out useFullAssemblyNames) && useFullAssemblyNames)
+                bool useFullAssemblyNames;
+                if (bool.TryParse(config.Properties[UseFullAssemblyNamesProperty], out useFullAssemblyNames) && useFullAssemblyNames)
                 {
                     settings.TypeNameAssemblyFormat = FormatterAssemblyStyle.Full;
                 }
             }
 
-            if (config.Properties.ContainsKey("IndentJSON"))
+            if (config.Properties.ContainsKey(IndentJsonProperty))
             {
-                bool indentJSON = false;
-                if (bool.TryParse(config.Properties["IndentJSON"], out indentJSON) && indentJSON)
+                bool indentJSON;
+                if (bool.TryParse(config.Properties[IndentJsonProperty], out indentJSON) && indentJSON)
                 {
                     settings.Formatting = Formatting.Indented;
                 }
