@@ -589,7 +589,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     Silo = oracle.GetRandomClusterGateway(Cluster);
                 }
 
-                oracle.logger.Verbose("-{0} Publish to silo {1} ({2}) {3}", Silo, Cluster ?? "local", data);
+                oracle.logger.Verbose("-{0} Publish to silo {1} ({2}) {3}", id, Silo, Cluster ?? "local", data);
                 try
                 {
                     // publish to the remote system target
