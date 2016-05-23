@@ -101,10 +101,13 @@ namespace Orleans.Runtime.MultiClusterNetwork
         {
             int active = Gateways.Values.Count(e => e.Status == GatewayStatus.Active);
 
-            return string.Format("Conf=[{0}] Active=[{1}]} Inactive=[{2}]",
+            var activegateways = Gateways.Values.Where(e => e.Status == GatewayStatus.Active).Select(e => e.SiloAddress);
+            var inactivegateways = Gateways.Values.Where(e => e.Status == GatewayStatus.Inactive).Select(e => e.SiloAddress);
+
+            return string.Format("Conf=[{0}] Active=[{1}] Inactive=[{2}]",
                 Configuration == null ? "null" : Configuration.ToString(),
-                string.Join(",", Gateways.Values.Where(e => e.Status == GatewayStatus.Active).Select(e => e.SiloAddress)),
-                string.Join(",", Gateways.Values.Where(e => e.Status == GatewayStatus.Inactive).Select(e => e.SiloAddress))
+                string.Join(",", activegateways),
+                string.Join(",", inactivegateways)
             );
         }
 
