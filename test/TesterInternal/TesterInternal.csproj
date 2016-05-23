@@ -173,7 +173,6 @@
     <Compile Include="Serialization\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
     <Compile Include="General\InterfaceRules.cs" />
-    <Compile Include="Serialization\FallbackBuiltInSerializationTests.cs" />
     <Compile Include="GrainReferenceCacheTests.cs" />
     <Compile Include="GrainReferenceCastTests.cs" />
     <Compile Include="GrainReferenceTest.cs" />
