@@ -22,31 +22,20 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Orleans;
 using Orleans.TestingHost;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
-using Orleans.Runtime.Configuration;
 using Orleans.Runtime;
-using Orleans.MultiCluster;
 using Tests.GeoClusterTests;
+using Xunit;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
-namespace Tester.GeoClusterTests
+namespace Tests.GeoClusterTests
 {
-    [TestClass]
-    [DeploymentItem("TestGrainInterfaces.dll")]
-    [DeploymentItem("TestGrains.dll")]
-    [DeploymentItem("OrleansAzureUtils.dll")]
-    [DeploymentItem("OrleansProviders.dll")]
-    [DeploymentItem("OrleansConfigurationForTesting.xml")]
-    [DeploymentItem("ClientConfigurationForTesting.xml")]
-    public class QueuedGrainTests  
+    public class QueuedGrainTests : TestingClusterHost, IDisposable
     {
-
         private static TestingClusterHost host;
 
         private const string Cluster0 = "A";
@@ -55,9 +44,7 @@ namespace Tester.GeoClusterTests
         private static ClientWrapper Client0;
         private static ClientWrapper Client1;
 
-
-        [ClassInitialize]
-        public static void SetupMultiCluster(TestContext c)
+        public QueuedGrainTests ()
         {
             TimeSpan waitTimeout = TimeSpan.FromSeconds(60);
 
@@ -81,9 +68,8 @@ namespace Tester.GeoClusterTests
 
         }
 
-        // Kill all clients and silos.
-        [ClassCleanup]
-        public static void CleanupCluster()
+
+        public void Dispose()
         {
             try
             {
@@ -95,6 +81,7 @@ namespace Tester.GeoClusterTests
                 Console.WriteLine("Exception caught in test cleanup function: {0}", e);
             }
         }
+       
 
         #region client wrappers
 
@@ -205,13 +192,13 @@ namespace Tester.GeoClusterTests
         #endregion
 
   
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        [Fact, TestCategory("GeoCluster")]
         public async Task ReplicationTestBattery_SharedStorageProvider()
         {
             await DoReplicationTests("UnitTests.Grains.SimpleQueuedGrainSharedStorage");
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        [Fact, TestCategory("GeoCluster")]
         public async Task ReplicationTestBattery_CustomStorageProvider()
         {
             await DoReplicationTests("UnitTests.Grains.SimpleQueuedGrainCustomStorage");
@@ -477,5 +464,6 @@ namespace Tester.GeoClusterTests
             }
             await Task.WhenAll(tasks);
         }
+
     }
 }

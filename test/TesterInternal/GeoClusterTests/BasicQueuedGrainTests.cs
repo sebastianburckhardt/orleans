@@ -25,24 +25,17 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
-using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using Xunit;
+using Assert = Xunit.Assert;
 
-namespace Tester.GeoClusterTests
+namespace Tests.GeoClusterTests
 {
-    [TestClass]
-    [DeploymentItem("TestGrainInterfaces.dll")]
-    [DeploymentItem("TestGrains.dll")]
-    [DeploymentItem("OrleansProviders.dll")]
-    [DeploymentItem("OrleansConfigurationForTesting.xml")]
-    public class BasicQueuedGrainTests : HostedTestClusterPerFixture
+    public class BasicQueuedGrainTests : TestingSiloHost
     {
-        public static TestingSiloHost CreateSiloHost()
-        {
-            return new TestingSiloHost(
+        public BasicQueuedGrainTests() :
+            base(
                 new TestingSiloOptions
                 {
                     StartFreshOrleans = true,
@@ -52,30 +45,35 @@ namespace Tester.GeoClusterTests
                     DataConnectionString = StorageTestConstants.DataConnectionString,
                     AdjustConfig = ReplicationProviderConfiguration.ConfigureAllReplicationProvidersForTesting
                 }
-            );
+            )
+
+        {
+            this.random = new Random();
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        private Random random;
+
+        [Fact, TestCategory("GeoCluster")]
         public async Task BasicQueuedGrainTest_LocalMemoryStorage()
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainLocalMemoryStorage");
         }
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        [Fact, TestCategory("GeoCluster")]
         public async Task BasicQueuedGrainTest_DefaultStorage()
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainDefaultStorage");
         }
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        [Fact, TestCategory("GeoCluster")]
         public async Task BasicQueuedGrainTest_MemoryStorage()
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainMemoryStorage");
         }
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        [Fact, TestCategory("GeoCluster")]
         public async Task BasicQueuedGrainTest_SharedStorage()
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainSharedStorage");
         }
-        [TestMethod, TestCategory("Functional"), TestCategory("Replication"), TestCategory("Azure")]
+        [Fact, TestCategory("GeoCluster")]
         public async Task BasicQueuedGrainTest_CustomStorage()
         {
             await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleQueuedGrainCustomStorage");
@@ -102,8 +100,8 @@ namespace Tester.GeoClusterTests
                 var grain = GrainFactory.GetGrain<ISimpleQueuedGrain>(x, grainClass);
                 await grain.SetAGlobal(x);
                 int a = await grain.GetAGlobal();
-                Assert.AreEqual(x, a); // value of A survive grain call
-                Assert.AreEqual(1, await grain.GetConfirmedVersion());
+                Assert.Equal(x, a); // value of A survive grain call
+                Assert.Equal(1, await grain.GetConfirmedVersion());
             };
 
             // Local
@@ -111,10 +109,10 @@ namespace Tester.GeoClusterTests
             {
                 int x = GetRandom();
                 var grain = GrainFactory.GetGrain<ISimpleQueuedGrain>(x, grainClass);
-                Assert.AreEqual(0, await grain.GetConfirmedVersion());
+                Assert.Equal(0, await grain.GetConfirmedVersion());
                 await grain.SetALocal(x);
                 int a = await grain.GetALocal();
-                Assert.AreEqual(x, a); // value of A survive grain call
+                Assert.Equal(x, a); // value of A survive grain call
             };
 
             // Local then Global
@@ -125,8 +123,8 @@ namespace Tester.GeoClusterTests
                 var grain = GrainFactory.GetGrain<ISimpleQueuedGrain>(x, grainClass);
                 await grain.SetALocal(x);
                 int a = await grain.GetAGlobal();
-                Assert.AreEqual(x, a);
-                Assert.AreEqual(1, await grain.GetConfirmedVersion());
+                Assert.Equal(x, a);
+                Assert.Equal(1, await grain.GetConfirmedVersion());
             };
 
             // test them in sequence

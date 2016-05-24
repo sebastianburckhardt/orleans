@@ -22,14 +22,19 @@ namespace Tests.GeoClusterTests
     {
         protected readonly Dictionary<string, ClusterInfo> Clusters;
         private TestingSiloHost siloHost;
+        private TestingSiloOptions siloOptions;
 
         private TimeSpan gossipStabilizationTime;
 
-        public TestingClusterHost() : base()
+        public TestingClusterHost()  
         {
             Clusters = new Dictionary<string, ClusterInfo>();
 
             TestUtils.CheckForAzureStorage();
+        }
+        public TestingClusterHost(TestingSiloOptions options)  : base()
+        {
+            siloOptions = options;
         }
 
         protected struct ClusterInfo

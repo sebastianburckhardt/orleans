@@ -149,7 +149,7 @@ namespace Orleans.Runtime.LogViews
             this.Services = services;
             this.Provider = provider;
             InitializeConfirmedView(initialstate);
-            worker = new BackgroundWorker(() => Work());
+            worker = new BatchWorkerFromDelegate(() => Work());
             Services.Verbose2("Constructed {0}", Host.IdentityString);
         }
 
@@ -187,7 +187,11 @@ namespace Orleans.Runtime.LogViews
         {
             Services.Verbose2("Deactivation Started");
 
-            await worker.WaitForQuiescence();
+            while (!worker.IsIdle())
+            {
+                await worker.WaitForCurrentWorkToBeServiced();
+            }
+
             if (Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
             {
                 // unsubscribe this grain from configuration change events
@@ -242,7 +246,7 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Background worker which asynchronously sends operations to the leader
         /// </summary>
-        private BackgroundWorker worker;
+        private BatchWorker worker;
 
 
      
