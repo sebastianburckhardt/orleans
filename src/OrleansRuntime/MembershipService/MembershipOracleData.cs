@@ -25,7 +25,7 @@ namespace Orleans.Runtime.MembershipService
         internal readonly string MyHostname;
         internal SiloStatus CurrentStatus { get; private set; } // current status of this silo.
         internal string SiloName { get; private set; } // name of this silo.
- 
+
         private readonly bool multiClusterActive; // set by configuration if multicluster is active
         private readonly int maxMultiClusterGateways; // set by configuration
 
@@ -37,7 +37,7 @@ namespace Orleans.Runtime.MembershipService
             localTable = new Dictionary<SiloAddress, MembershipEntry>();  
             localTableCopy = new Dictionary<SiloAddress, SiloStatus>();       
             localTableCopyOnlyActive = new Dictionary<SiloAddress, SiloStatus>();
-            localNamesTableCopy = new Dictionary<SiloAddress, string>();
+            localNamesTableCopy = new Dictionary<SiloAddress, string>();  
             localMultiClusterGatewaysCopy = new List<SiloAddress>();
             statusListeners = new List<ISiloStatusListener>();
             
@@ -57,7 +57,7 @@ namespace Orleans.Runtime.MembershipService
                             return Utils.EnumerableToString(list);
                         });
         }
-        
+
         // ONLY access localTableCopy and not the localTable, to prevent races, as this method may be called outside the turn.
         internal SiloStatus GetApproximateSiloStatus(SiloAddress siloAddress)
         {

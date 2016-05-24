@@ -3,25 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.MultiCluster;
 using Orleans.Runtime.MultiClusterNetwork;
+using Xunit;
 
 namespace Tests.GeoClusterTests
 {
-    // We need use ClientWrapper to load a client object in a new app domain. 
-    // This allows us to create multiple clients that are connected to different silos.
-
-    [TestClass]
-    [DeploymentItem("OrleansAzureUtils.dll")]
-    [DeploymentItem("TestGrainInterfaces.dll")]
-    [DeploymentItem("TestGrains.dll")]
-    [DeploymentItem("ClientConfigurationForTesting.xml")]
-    [DeploymentItem("OrleansConfigurationForTesting.xml")]
-    public class MultiClusterNetworkTests : TestingClusterHost
+    public class MultiClusterNetworkTests : TestingClusterHost, IDisposable
     {
+
+        // Kill all clients and silos.
+        public void Dispose()
+        {
+            try
+            {
+                StopAllClientsAndClusters();
+            }
+            catch (Exception e)
+            {
+                WriteLog("Exception caught in test cleanup function: {0}", e);
+            }
+        }
+
+        // We need use ClientWrapper to load a client object in a new app domain. 
+        // This allows us to create multiple clients that are connected to different silos.
         public class ClientWrapper : ClientWrapperBase
         {
             public ClientWrapper(string name, int gatewayport) : base(name, gatewayport)
@@ -51,13 +60,8 @@ namespace Tests.GeoClusterTests
             }
         }
 
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            StopAllClientsAndClusters();
-        }
 
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
+        [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]
         [Timeout(120000)]
         public async Task TestMultiClusterConf_1_1()
         {
@@ -149,7 +153,7 @@ namespace Tests.GeoClusterTests
             }
         }
 
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
+        [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]
         [Timeout(120000)]
         public async Task TestMultiClusterConf_3_3()
         {

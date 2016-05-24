@@ -9,7 +9,7 @@ using System.Globalization;
 using Orleans.Runtime.Configuration;
 using System.Net;
 using Orleans;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using Assert = Xunit.Assert;
 using Tester;
 
 namespace Tests.GeoClusterTests
@@ -63,7 +63,7 @@ namespace Tests.GeoClusterTests
         {
             TimeSpan stabilizationTime = TimeSpan.Zero;
 
-            stabilizationTime += global.BackgroundGossipInterval + TimeSpan.FromMilliseconds(50);
+            stabilizationTime += TimeSpan.FromMilliseconds(global.BackgroundGossipInterval.TotalMilliseconds * 1.05 + 50);
 
             return stabilizationTime;
         }
@@ -232,7 +232,7 @@ namespace Tests.GeoClusterTests
 
                 if (config == null)
                 {
-                    Assert.Fail("Error loading client configuration file");
+                    Assert.True(false, "Error loading client configuration file");
                 }
                 config.GatewayProvider = ClientConfiguration.GatewayProviderType.Config;
                 config.Gateways.Clear();

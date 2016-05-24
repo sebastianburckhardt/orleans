@@ -70,6 +70,7 @@
   <ItemGroup>
     <Compile Include="AssemblyLoader\AssemblyProcessor.cs" />
     <Compile Include="Async\AsyncBatchedContinuationQueue.cs" />
+    <Compile Include="Async\BatchWorker.cs" />
     <Compile Include="Async\MultiTaskCompletionSource.cs" />
     <Compile Include="Async\AsyncSerialExecutor.cs" />
     <Compile Include="Async\AsyncExecutorWithRetries.cs" />

@@ -299,58 +299,34 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
 
         /// <summary>
-        /// Try once to conditionally update a data entry in the Azure table. Returns null if etag does not match.
+        /// Try once to conditionally update a data entry in the Azure table. Returns false if etag does not match.
         /// </summary>
         private async Task<bool> TryUpdateTableEntryAsync(GossipTableEntry data, string dataEtag, [CallerMemberName]string operation = null)
         {
-            try
-            {
-                var etag = await storage.UpdateTableEntryAsync(data, dataEtag).ConfigureAwait(false);
-                return true;
-            }
-            catch (Exception exc)
-            {
-                HttpStatusCode httpStatusCode;
-                string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
-
-                if (logger.IsVerbose2) logger.Verbose2("{0} failed with httpStatusCode={1}, restStatus={2}", operation, httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
-
-                throw;
-            }
+            return await TryOperation(() => storage.UpdateTableEntryAsync(data, dataEtag), operation);
         }
 
         /// <summary>
-        /// Try once to insert a new data entry in the Azure table. Returns null if etag does not match.
-        /// </summary>
+        /// Try once to insert a new data entry in the Azure table. Returns false if there is a conflict.
+        /// </summary>       
         private async Task<bool> TryCreateTableEntryAsync(GossipTableEntry data, [CallerMemberName]string operation = null)
         {
-            try
-            {
-                var etag = await storage.CreateTableEntryAsync(data).ConfigureAwait(false);
-                return true;
-            }
-            catch (Exception exc)
-            {
-                HttpStatusCode httpStatusCode;
-                string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
-
-                if (logger.IsVerbose2) logger.Verbose2("{0} failed with httpStatusCode={1}, restStatus={2}", operation, httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
-
-                throw;
-            }
+            return await TryOperation(() => storage.CreateTableEntryAsync(data), operation);
         }
+
         /// <summary>
-        /// Try once to delete an existing data entry in the Azure table. Returns false if etag does not match.
-        /// </summary>
+        /// Try once to delete a data entry in the Azure table. Returns false if there is a conflict.
+        /// </summary>       
         private async Task<bool> TryDeleteTableEntryAsync(GossipTableEntry data, string etag, [CallerMemberName]string operation = null)
+        {
+            return await TryOperation(() => storage.DeleteTableEntryAsync(data, etag), operation);
+        }
+
+        private async Task<bool> TryOperation(Func<Task> func, string operation = null)
         {
             try
             {
-                await storage.DeleteTableEntryAsync(data, etag).ConfigureAwait(false);
+                await func().ConfigureAwait(false);
                 return true;
             }
             catch (Exception exc)
@@ -365,5 +341,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 throw;
             }
         }
+
     }
 }
