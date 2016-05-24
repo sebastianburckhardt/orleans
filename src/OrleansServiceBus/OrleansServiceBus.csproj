@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\OrleansServiceBus.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\OrleansServiceBus.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Azure.KeyVault.Core">
@@ -47,7 +49,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.ServiceBus">
-      <HintPath>$(SolutionDir)packages\WindowsAzure.ServiceBus.3.0.8\lib\net45-full\Microsoft.ServiceBus.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\WindowsAzure.ServiceBus.3.2.0\lib\net45-full\Microsoft.ServiceBus.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Configuration">
@@ -86,15 +88,17 @@
     <Compile Include="Providers\Streams\EventHub\EventHubAdapterReceiver.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubBatchContainer.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubDataAdapter.cs" />
-    <Compile Include="Providers\Streams\EventHub\EventHubPartitionCheckpoint.cs" />
+    <Compile Include="Providers\Streams\EventHub\EventHubCheckpointer.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubPartitionCheckpointEntity.cs" />
+    <Compile Include="Providers\Streams\EventHub\EventHubQueueCache.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubQueueMapper.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubSequenceToken.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubSettings.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubStreamProvider.cs" />
     <Compile Include="Providers\Streams\EventHub\EventHubStreamProviderConfig.cs" />
-    <Compile Include="Providers\Streams\EventHub\ICheckpointSettings.cs" />
+    <Compile Include="Providers\Streams\EventHub\ICheckpointerSettings.cs" />
     <Compile Include="Providers\Streams\EventHub\IEventHubSettings.cs" />
+    <Compile Include="Providers\Streams\EventHub\IEventHubQueueCache.cs" />
     <Compile Include="Providers\Streams\EventHub\SegmentBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +116,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

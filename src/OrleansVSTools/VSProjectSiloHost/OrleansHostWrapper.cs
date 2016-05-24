@@ -135,6 +135,7 @@ namespace $safeprojectname$
             }
 
             var config = ClusterConfiguration.LocalhostPrimarySilo();
+            config.AddMemoryStorageProvider();
             siloHost = new SiloHost(siloName, config);
 
             if (deploymentId != null)
@@ -150,7 +151,6 @@ namespace $safeprojectname$
     orleans host [<siloName> [<configFile>]] [DeploymentId=<idString>] [/debug]
 Where:
     <siloName>      - Name of this silo in the Config file list (optional)
-    <configFile>    - Path to the Config file to use (optional)
     DeploymentId=<idString> 
                     - Which deployment group this host instance should run in (optional)");
         }
