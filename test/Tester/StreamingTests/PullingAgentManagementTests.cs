@@ -7,33 +7,35 @@ using Xunit;
 using Orleans;
 using Orleans.Providers.Streams.AzureQueue;
 using Orleans.Providers.Streams.Common;
+using Orleans.Providers.Streams.SimpleMessageStream;
 using Orleans.Runtime;
+using Orleans.Runtime.Configuration;
+using Orleans.ServiceBus.Providers;
 using Orleans.TestingHost;
 using Tester;
 using UnitTests.Tester;
 
 namespace UnitTests.StreamingTests
 {
-    public class PullingAgentManagementTestsFixture : BaseClusterFixture
+    public class PullingAgentManagementTests : OrleansTestingBase, IClassFixture<PullingAgentManagementTests.Fixture>
     {
-        public PullingAgentManagementTestsFixture()
-            : base(
-                  new TestingSiloHost(
-                    new TestingSiloOptions
-                    {
-                        StartSecondary = true,
-                        SiloConfigFile = new FileInfo("OrleansConfigurationForStreamingUnitTests.xml"),
-                    },
-                    new TestingClientOptions()
-                    {
-                        ClientConfigFile = new FileInfo("ClientConfigurationForStreamTesting.xml")
-                    }))
+        public class Fixture : BaseTestClusterFixture
         {
-        }
-    }
+            protected override TestCluster CreateTestCluster()
+            {
+                var options = new TestClusterOptions(2);
 
-    public class PullingAgentManagementTests : OrleansTestingBase, IClassFixture<PullingAgentManagementTestsFixture>
-    {
+                options.ClusterConfiguration.AddMemoryStorageProvider("PubSubStore");
+
+                // register stream providers
+                // options.ClusterConfiguration.AddSimpleMessageStreamProvider(StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, false);
+                // options.ClientConfiguration.AddSimpleMessageStreamProvider(StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, false);
+
+                options.ClusterConfiguration.AddAzureQueueStreamProvider(StreamTestsConstants.AZURE_QUEUE_STREAM_PROVIDER_NAME);
+                return new TestCluster(options);
+            }
+        }
+
         private const string adapterName = StreamTestsConstants.AZURE_QUEUE_STREAM_PROVIDER_NAME;
         private readonly string adapterType = typeof(AzureQueueStreamProvider).FullName;
 
@@ -74,7 +76,7 @@ namespace UnitTests.StreamingTests
             int totalNumAgents = numAgents.Select(Convert.ToInt32).Sum();
             if (expectedState == PersistentStreamProviderState.AgentsStarted)
             {
-                Assert.AreEqual(AzureQueueAdapterFactory.DEFAULT_NUM_QUEUES, totalNumAgents);
+                Assert.AreEqual(AzureQueueAdapterFactory.NumQueuesDefaultValue, totalNumAgents);
             }
             else
             {

@@ -79,6 +79,15 @@ namespace Orleans.Runtime.LogViews
             return logViewProviderLoader.GetProviders();
         }
 
+        public void SetInvokeInterceptor(InvokeInterceptor interceptor)
+        {
+            providerRuntime.SetInvokeInterceptor(interceptor);
+        }
+
+        public InvokeInterceptor GetInvokeInterceptor()
+        {
+            return providerRuntime.GetInvokeInterceptor();
+        }
 
         public Logger GetLogger(string loggerName)
         {

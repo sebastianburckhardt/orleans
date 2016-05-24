@@ -1,13 +1,13 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table;
 using Orleans;
 using Orleans.AzureUtils;
+using Orleans.Providers.Streams.Generator;
+using Orleans.Runtime.Configuration;
 using Orleans.ServiceBus.Providers;
 using Orleans.Streams;
 using Orleans.TestingHost;
@@ -20,7 +20,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class EHImplicitSubscriptionStreamRecoveryTests :  OrleansTestingBase, IClassFixture<EHImplicitSubscriptionStreamRecoveryTests.Fixture>
+    public class EHImplicitSubscriptionStreamRecoveryTests : OrleansTestingBase, IClassFixture<EHImplicitSubscriptionStreamRecoveryTests.Fixture>
     {
         private const string StreamProviderName = GeneratedStreamTestConstants.StreamProviderName;
         private const string EHPath = "ehorleanstest";
@@ -34,49 +34,30 @@ namespace UnitTests.StreamingTests
         private static readonly EventHubStreamProviderConfig ProviderConfig =
             new EventHubStreamProviderConfig(StreamProviderName);
 
-        private static readonly EventHubCheckpointSettings CheckpointSettings =
-            new EventHubCheckpointSettings(StorageTestConstants.DataConnectionString, EHCheckpointTable, CheckpointNamespace,
+        private static readonly EventHubCheckpointerSettings CheckpointerSettings =
+            new EventHubCheckpointerSettings(StorageTestConstants.DataConnectionString, EHCheckpointTable, CheckpointNamespace,
                 TimeSpan.FromSeconds(1));
 
         private readonly ImplicitSubscritionRecoverableStreamTestRunner runner;
 
-        private class Fixture : BaseClusterFixture
+        private class Fixture : BaseTestClusterFixture
         {
-            public Fixture()
-                : base(new TestingSiloHost(
-                    new TestingSiloOptions
-                    {
-                        StartFreshOrleans = true,
-                        SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
-                        AdjustConfig = config =>
-                        {
-                            // register stream provider
-                            config.Globals.RegisterStreamProvider<EventHubStreamProvider>(StreamProviderName,
-                                BuildProviderSettings());
-
-                            // Make sure a node config exist for each silo in the cluster.
-                            // This is required for the DynamicClusterConfigDeploymentBalancer to properly balance queues.
-                            config.GetOrCreateNodeConfigurationForSilo("Primary");
-                            config.GetOrCreateNodeConfigurationForSilo("Secondary_1");
-                        }
-                    }, new TestingClientOptions
-                    {
-                        AdjustConfig = config =>
-                        {
-                            config.RegisterStreamProvider<EventHubStreamProvider>(StreamProviderName,
-                                BuildProviderSettings());
-                            config.Gateways.Add(new IPEndPoint(IPAddress.Loopback, 40001));
-                        },
-                    }))
+            protected override TestCluster CreateTestCluster()
             {
+                var options = new TestClusterOptions(2);
+                // register stream provider
+                options.ClusterConfiguration.AddMemoryStorageProvider("Default");
+                options.ClusterConfiguration.Globals.RegisterStreamProvider<EventHubStreamProvider>(StreamProviderName, BuildProviderSettings());
+                options.ClientConfiguration.RegisterStreamProvider<EventHubStreamProvider>(StreamProviderName, BuildProviderSettings());
+                return new TestCluster(options);
             }
 
             public override void Dispose()
             {
-                var dataManager = new AzureTableDataManager<TableEntity>(CheckpointSettings.TableName, CheckpointSettings.DataConnectionString);
+                base.Dispose();
+                var dataManager = new AzureTableDataManager<TableEntity>(CheckpointerSettings.TableName, CheckpointerSettings.DataConnectionString);
                 dataManager.InitTableAsync().Wait();
                 dataManager.DeleteTableAsync().Wait();
-                base.Dispose();
             }
 
             private static Dictionary<string, string> BuildProviderSettings()
@@ -86,7 +67,7 @@ namespace UnitTests.StreamingTests
                 // get initial settings from configs
                 ProviderConfig.WriteProperties(settings);
                 EventHubConfig.WriteProperties(settings);
-                CheckpointSettings.WriteProperties(settings);
+                CheckpointerSettings.WriteProperties(settings);
 
                 // add queue balancer setting
                 settings.Add(PersistentStreamProviderConfig.QUEUE_BALANCER_TYPE, StreamQueueBalancerType.DynamicClusterConfigDeploymentBalancer.ToString());
@@ -129,7 +110,7 @@ namespace UnitTests.StreamingTests
                 // send event on each stream
                 for (int j = 0; j < streamCount; j++)
                 {
-                    await producers[j].OnNextAsync(new GeneratedEvent {EventType = GeneratedEvent.GeneratedEventType.Fill});
+                    await producers[j].OnNextAsync(new GeneratedEvent { EventType = GeneratedEvent.GeneratedEventType.Fill });
                 }
             }
             // send end events

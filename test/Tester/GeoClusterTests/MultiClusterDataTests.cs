@@ -40,7 +40,7 @@ namespace Tester.GeoClusterTests
             var ts1 = DateTime.UtcNow;
             var ts2 = ts1 + new TimeSpan(hours: 0, minutes: 0, seconds: 1);
             var ts3 = ts1 + new TimeSpan(hours: 0, minutes: 0, seconds: 2);
-            
+
             IPAddress ip;
             Assert.True(IPAddress.TryParse("127.0.0.1", out ip));
             IPEndPoint ep1 = new IPEndPoint(ip, 21111);
@@ -97,7 +97,7 @@ namespace Tester.GeoClusterTests
             TestAlgebraicProperties(gd2, gd1);
 
             gd1 = new MultiClusterData(new GatewayEntry[] { H1, G2 });
-            gd2 = new MultiClusterData(new GatewayEntry[] {  });
+            gd2 = new MultiClusterData(new GatewayEntry[] { });
 
             TestAlgebraicProperties(gd1, gd2);
             TestAlgebraicProperties(gd2, gd1);
@@ -136,15 +136,43 @@ namespace Tester.GeoClusterTests
             AssertEffect(B, A, BB);
         }
 
-        private void AssertEffect(MultiClusterData what, MultiClusterData to, MultiClusterData expectedMerge, MultiClusterData expectedDelta=null)
+        private void AssertEffect(MultiClusterData what, MultiClusterData to, MultiClusterData expectedMerge, MultiClusterData expectedDelta = null)
         {
             MultiClusterData delta;
             var merge = to.Merge(what, out delta);
 
-            Assert.Equal(expectedMerge, merge);
+            Assert.True(CheckEquality(expectedMerge, merge));
 
             if (expectedDelta != null)
-               Assert.Equal(expectedDelta, expectedDelta);
+                Assert.Equal(expectedDelta, expectedDelta);
         }
+
+        private bool CheckEquality(MultiClusterData one, MultiClusterData other)
+        {
+            if (one == null) return (other == null);
+            if (other == null) return false;
+
+            if ((one.Configuration == null) != (other.Configuration == null))
+                return false;
+
+            if (one.Gateways.Count != other.Gateways.Count)
+                return false;
+
+            if ((one.Configuration != null) && !one.Configuration.Equals(other.Configuration))
+                return false;
+
+            foreach (var g in one.Gateways)
+            {
+                GatewayEntry othergateway;
+                if (!other.Gateways.TryGetValue(g.Key, out othergateway))
+                    return false;
+                if (!g.Value.Equals(othergateway))
+                    return false;
+            }
+
+            return true;
+        }
+
     }
 }
+

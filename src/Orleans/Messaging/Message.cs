@@ -542,12 +542,13 @@ namespace Orleans.Runtime
             return response;
         }
 
-        public Message CreateRejectionResponse(RejectionTypes type, string info)
+        public Message CreateRejectionResponse(RejectionTypes type, string info, OrleansException ex = null)
         {
             var response = CreateResponseMessage();
             response.Result = ResponseTypes.Rejection;
             response.RejectionType = type;
             response.RejectionInfo = info;
+            response.BodyObject = ex;
             if (logger.IsVerbose) logger.Verbose("Creating {0} rejection with info '{1}' for {2} at:" + Environment.NewLine + "{3}", type, info, this, new System.Diagnostics.StackTrace(true));
             return response;
         }
@@ -663,25 +664,13 @@ namespace Orleans.Runtime
 
         #region Serialization
 
-        internal List<ArraySegment<byte>> Serialize()
-        {
-            int dummy1;
-            int dummy2;
-            return Serialize_Impl(false, out dummy1, out dummy2);
-        }
-
         public List<ArraySegment<byte>> Serialize(out int headerLength)
         {
             int dummy;
-            return Serialize_Impl(false, out headerLength, out dummy);
+            return Serialize_Impl(out headerLength, out dummy);
         }
 
-        public List<ArraySegment<byte>> SerializeForBatching(out int headerLength, out int bodyLength)
-        {
-            return Serialize_Impl(true, out headerLength, out bodyLength);
-        }
-
-        private List<ArraySegment<byte>> Serialize_Impl(bool batching, out int headerLengthOut, out int bodyLengthOut)
+        private List<ArraySegment<byte>> Serialize_Impl(out int headerLengthOut, out int bodyLengthOut)
         {
             var headerStream = new BinaryTokenStreamWriter();
             lock (headers) // Guard against any attempts to modify message headers while we are serializing them
@@ -709,11 +698,9 @@ namespace Orleans.Runtime
             int bodyLength = bodyBytes.Sum(ab => ab.Count);
 
             var bytes = new List<ArraySegment<byte>>();
-            if (!batching)
-            {
-                bytes.Add(new ArraySegment<byte>(BitConverter.GetBytes(headerLength)));
-                bytes.Add(new ArraySegment<byte>(BitConverter.GetBytes(bodyLength)));
-            }
+            bytes.Add(new ArraySegment<byte>(BitConverter.GetBytes(headerLength)));
+            bytes.Add(new ArraySegment<byte>(BitConverter.GetBytes(bodyLength)));
+           
             bytes.AddRange(headerBytes);
             bytes.AddRange(bodyBytes);
 

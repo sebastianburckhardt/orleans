@@ -1,8 +1,12 @@
-﻿using System;
+﻿
+using System;
 
 namespace Orleans.ServiceBus.Providers
 {
-    internal static class SegmentBuilder
+    /// <summary>
+    /// Utility class for encoding data into an ArraySegment.
+    /// </summary>
+    public static class SegmentBuilder
     {
         /// <summary>
         /// Calculates how much space will be needed to append the provided bytes into the segment.
@@ -45,11 +49,11 @@ namespace Orleans.ServiceBus.Providers
                 throw new ArgumentNullException("bytes");
             }
 
-            Buffer.BlockCopy(BitConverter.GetBytes(bytes.Length), 0, segment.Array, segment.Offset + writerOffset, sizeof(int));
+            Array.Copy(BitConverter.GetBytes(bytes.Length), 0, segment.Array, segment.Offset + writerOffset, sizeof(int));
             writerOffset += sizeof(int);
             if (bytes.Length != 0)
             {
-                Buffer.BlockCopy(bytes, 0, segment.Array, segment.Offset + writerOffset, bytes.Length);
+                Array.Copy(bytes, 0, segment.Array, segment.Offset + writerOffset, bytes.Length);
                 writerOffset += bytes.Length;
             }
         }
@@ -68,12 +72,12 @@ namespace Orleans.ServiceBus.Providers
             }
             if (str == null)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(-1), 0, segment.Array, segment.Offset + writerOffset, sizeof(int));
+                Array.Copy(BitConverter.GetBytes(-1), 0, segment.Array, segment.Offset + writerOffset, sizeof(int));
                 writerOffset += sizeof(int);
             }
             else if (string.IsNullOrEmpty(str))
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(0), 0, segment.Array, segment.Offset + writerOffset, sizeof(int));
+                Array.Copy(BitConverter.GetBytes(0), 0, segment.Array, segment.Offset + writerOffset, sizeof(int));
                 writerOffset += sizeof(int);
             }
             else
