@@ -948,13 +948,6 @@
             </xs:annotation>
             <xs:element name="GossipChannel" type="tns:GossipChannelConfig" minOccurs="0" maxOccurs="unbounded" />
           </xs:sequence>
-          <xs:attribute name="GlobalServiceId" type="xs:string" use="required">
-            <xs:annotation>
-              <xs:documentation>
-                The common service id used by all participating clusters.
-              </xs:documentation>
-            </xs:annotation>
-          </xs:attribute>
           <xs:attribute name="ClusterId" type="xs:string" use="required">
             <xs:annotation>
               <xs:documentation>
