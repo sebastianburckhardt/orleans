@@ -106,6 +106,7 @@
     <Compile Include="LogViews\ILogViewHost.cs" />
     <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="QueuedGrains\QueuedGrainVariants.cs" />
+    <Compile Include="Runtime\RingRange.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
     <Compile Include="Configuration\LimitValue.cs" />

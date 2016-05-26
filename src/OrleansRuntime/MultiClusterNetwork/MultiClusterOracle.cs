@@ -520,7 +520,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             public void Publish(MultiClusterData data)
             {
+                // add the data to the data waiting to be published
                 toPublish = toPublish.Merge(data);
+
+                if (oracle.logger.IsVerbose)
+                   LogQueuedPublish(toPublish);
+
                 Notify();
             }
             public void Synchronize()
@@ -559,6 +564,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             protected abstract Task Publish(int id, MultiClusterData data);
             protected abstract Task Synchronize(int id);
+            protected abstract void LogQueuedPublish(MultiClusterData data);
         }
 
         // A worker for gossiping with silos
@@ -584,6 +590,14 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
                 this.Cluster = cluster;
                 this.Silo = null;
+            }
+
+            protected override void LogQueuedPublish(MultiClusterData data)
+            {
+                if (TargetsRemoteCluster)
+                    oracle.logger.Verbose("enqueued publish to cluster {0}, cumulative: {1}", Cluster, data);
+                else
+                    oracle.logger.Verbose("enqueued publish to silo {0}, cumulative: {1}", Silo, data);
             }
 
             protected async override Task Publish(int id, MultiClusterData data)
@@ -666,6 +680,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 : base(oracle)
             {
                 this.channel = channel;
+            }
+
+            protected override void LogQueuedPublish(MultiClusterData data)
+            {
+                oracle.logger.Verbose("enqueue publish to channel {0}, cumulative: {1}", channel.Name, data);
             }
 
             protected async override Task Publish(int id, MultiClusterData data)
