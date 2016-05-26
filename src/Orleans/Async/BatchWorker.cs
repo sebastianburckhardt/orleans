@@ -138,6 +138,37 @@ namespace Orleans
             else if (waitfortask != null)
                 await waitfortask;
         }
+
+        /// <summary>
+        /// Notify the worker that there is more work, and wait for that work to be serviced
+        /// </summary>
+        public async Task NotifyAndWait()
+        {
+            Task<Task> waitfortasktask = null;
+            Task waitfortask = null;
+
+            lock (this)
+            {
+                if (currentWorkCycle != null)
+                {
+                    moreWork = true;
+                    if (nextWorkCyclePromise == null)
+                        nextWorkCyclePromise = new TaskCompletionSource<Task>();
+                    waitfortasktask = nextWorkCyclePromise.Task;
+                }
+                else
+                {
+                    Start();
+                    waitfortask = currentWorkCycle;
+                }
+            }
+
+            if (waitfortasktask != null)
+                await await waitfortasktask;
+
+            else if (waitfortask != null)
+                await waitfortask;
+        }
     }
 
     /// A convenient variant of a batch worker 
