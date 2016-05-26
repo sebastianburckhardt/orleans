@@ -28,10 +28,10 @@ namespace Orleans
         {
             lock (this)
             {
-                if (currentworkcycle != null)
+                if (currentWorkCycle != null)
                 {
                     // lets the current work cycle know that there is more work
-                    morework = true;
+                    moreWork = true;
                 }
                 else
                 {
@@ -42,56 +42,57 @@ namespace Orleans
         }
 
         // task for the current work cycle, or null if idle
-        private Task currentworkcycle;
+        private volatile Task currentWorkCycle;
  
         // flag is set to indicate that more work has arrived during execution of the task
-        private volatile bool morework;
+        private volatile bool moreWork;
 
-        // is non-null if some task is waiting for the next work cycle to finish
-        private TaskCompletionSource<Task> nextworkcyclepromise;
+        // used to communicate the task for the next work cycle to waiters
+        // is non-null only if there are waiters
+        private TaskCompletionSource<Task> nextWorkCyclePromise;
 
         private void Start()
         {
             // start the task that is doing the work
-            currentworkcycle = Work();
+            currentWorkCycle = Work();
 
             // chain a continuation that checks for more work, on the same scheduler
-            currentworkcycle.ContinueWith(t => this.CheckForMoreWork(), TaskScheduler.Current);
+            currentWorkCycle.ContinueWith(t => this.CheckForMoreWork(), TaskScheduler.Current);
         }
 
         // executes at the end of each work cycle
         // on the same task scheduler
         private void CheckForMoreWork()
         {
-            Action signal_thunk = null;
+            Action signalThunk = null;
 
             lock (this)
             {
-                if (morework)
+                if (moreWork)
                 {
-                    morework = false;
+                    moreWork = false;
 
                     // see if someone created a promise for waiting for the next work cycle
                     // if so, take it and remove it
-                    var x = this.nextworkcyclepromise;
-                    this.nextworkcyclepromise = null;
+                    var x = this.nextWorkCyclePromise;
+                    this.nextWorkCyclePromise = null;
 
                     // start the next work cycle
                     Start();
 
                     // if someone is waiting, signal them
                     if (x != null)
-                        signal_thunk = () => { x.SetResult(currentworkcycle); };
+                        signalThunk = () => { x.SetResult(currentWorkCycle); };
                 }
                 else
                 {
-                    currentworkcycle = null;
+                    currentWorkCycle = null;
                 }
             }
 
             // to be safe, must do the signalling out here so it is not under the lock
-            if (signal_thunk != null)
-                signal_thunk();
+            if (signalThunk != null)
+                signalThunk();
         }
 
         /// <summary>
@@ -100,43 +101,9 @@ namespace Orleans
         /// <returns></returns>
         public bool IsIdle()
         {
-            lock (this)
-            {
-                return currentworkcycle == null;
-            }
+            // no lock needed for reading volatile field
+            return currentWorkCycle == null;
         }
-
-        /// <summary>
-        /// Notify the worker that there is more work, and wait for that work to be serviced
-        /// </summary>
-        public async Task NotifyAndWait()
-        {
-            Task<Task> waitfortasktask = null;
-            Task waitfortask = null;
-
-            lock (this)
-            {
-                if (currentworkcycle != null)
-                {
-                    morework = true;
-                    if (nextworkcyclepromise == null)
-                        nextworkcyclepromise = new TaskCompletionSource<Task>();
-                    waitfortasktask = nextworkcyclepromise.Task;
-                }
-                else
-                {
-                    Start();
-                    waitfortask = currentworkcycle;
-                }
-            }
-
-            if (waitfortasktask != null)
-                await await waitfortasktask;
-
-            else if (waitfortask != null)
-                await waitfortask;
-        }
-
 
         /// <summary>
         /// Wait for the current work cycle, and also the next work cycle if there is currently unserviced work.
@@ -150,16 +117,16 @@ namespace Orleans
             // figure out exactly what we need to wait for
             lock (this)
             {
-                if (!morework)
+                if (!moreWork)
                     // just wait for current work cycle
-                    waitfortask = currentworkcycle;
+                    waitfortask = currentWorkCycle;
                 else
                 {
                     // we need to wait for the next work cycle
                     // but that task does not exist yet, so we use a promise that signals when the next work cycle is launched
-                    if (nextworkcyclepromise == null)
-                        nextworkcyclepromise = new TaskCompletionSource<Task>();
-                    waitfortasktask = nextworkcyclepromise.Task;
+                    if (nextWorkCyclePromise == null)
+                        nextWorkCyclePromise = new TaskCompletionSource<Task>();
+                    waitfortasktask = nextWorkCyclePromise.Task;
                 }
             }
 
