@@ -82,7 +82,7 @@ namespace Orleans.Providers.LogViews
                     LastExceptionInternal = e;
                 }
 
-                Services.Verbose("read failed");
+                Services.Verbose("read failed {0}", LastExceptionInternal != null ? (LastExceptionInternal.GetType().Name + LastExceptionInternal.Message) : "");
 
                 increasebackoff(ref backoff_msec);
             }
@@ -133,7 +133,7 @@ namespace Orleans.Providers.LogViews
 
                 if (writesuccessful)
                 {
-                    Services.Verbose("write ({0} updates) success {1}", updates.Count, Version);
+                    Services.Verbose("write ({0} updates) success v{1}", updates.Count, Version + updates.Count);
 
                     // now we update the cached state by applying the same updates
                     // in case we encounter any exceptions we will re-read the whole state from storage
@@ -158,9 +158,8 @@ namespace Orleans.Providers.LogViews
                 LastExceptionInternal = e;
             }
 
-            if (!writesuccessful || !transitionssuccessful)
-            {
-                Services.Verbose("{0} failed", writesuccessful ? "transitions" : "write");
+            if (!writesuccessful || !transitionssuccessful)    {
+                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastExceptionInternal != null ? (LastExceptionInternal.GetType().Name + LastExceptionInternal.Message) : "");
 
                 increasebackoff(ref backoff_msec);
 
@@ -190,7 +189,7 @@ namespace Orleans.Providers.LogViews
                         LastExceptionInternal = e;
                     }
 
-                    Services.Verbose("read failed");
+                    Services.Verbose("read failed {0}", LastExceptionInternal != null ? (LastExceptionInternal.GetType().Name + LastExceptionInternal.Message) : "");
 
                     increasebackoff(ref backoff_msec);
                 }
@@ -201,7 +200,7 @@ namespace Orleans.Providers.LogViews
             if (writesuccessful)
                 BroadcastNotification(new UpdateNotificationMessage()
                    {
-                       GlobalVersion = Version,
+                       Version = Version,
                        Updates = updates,
                        Origin = Services.MyClusterId,
                    });
@@ -215,15 +214,13 @@ namespace Orleans.Providers.LogViews
         [Serializable]
         protected class UpdateNotificationMessage : NotificationMessage 
         {
-            public int GlobalVersion { get; set; }
-
             public string Origin { get; set; }
 
             public List<E> Updates { get; set; }
 
             public override string ToString()
             {
-                return string.Format("v{0} ({1} updates by {2})", GlobalVersion, Updates.Count, Origin);
+                return string.Format("v{0} ({1} updates by {2})", Version, Updates.Count, Origin);
             }
          }
 
@@ -232,7 +229,7 @@ namespace Orleans.Providers.LogViews
         protected override void OnNotificationReceived(NotificationMessage payload)
         {
            var um = (UpdateNotificationMessage) payload;
-           notifications.Add(um.GlobalVersion - um.Updates.Count, um);
+           notifications.Add(um.Version - um.Updates.Count, um);
         }
 
         protected override void ProcessNotifications()
@@ -263,7 +260,7 @@ namespace Orleans.Providers.LogViews
                         Services.CaughtTransitionException("ProcessNotifications", e);
                     }
 
-                Version = updatenotification.GlobalVersion;
+                Version = updatenotification.Version;
 
                 Services.Verbose("notification success ({0} updates) v{1}", updatenotification.Updates.Count, Version);
             }
