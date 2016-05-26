@@ -41,21 +41,25 @@ namespace Orleans.TestingHost
         public static void ConfigureAllReplicationProvidersForTesting(ClusterConfiguration config)
         {
 
+            {
+                var props = new Dictionary<string, string>();
+                props.Add("DataConnectionString", StorageTestConstants.DataConnectionString);
+                config.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
+            }
 
-            var props = new Dictionary<string, string>();
-            props.Add("DataConnectionString", StorageTestConstants.DataConnectionString);
-            config.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
+            {
+                var props = new Dictionary<string, string>();
+                props.Add("GlobalStorageProvider", "AzureStore");
+                config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedStorage", props);
+            }
 
-            props = new Dictionary<string, string>();
-            props.Add("GlobalStorageProvider", "AzureStore");
-            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedStorage", props);
+            {
+                var props = new Dictionary<string, string>();
+                props.Add("GlobalStorageProvider", "MemoryStore");
+                config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedMemory", props);
+            }
 
-            props.Clear();
-            props.Add("GlobalStorageProvider", "MemoryStore");
-            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedMemory", props);
-
-
-            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage", props);
+            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage");
 
             config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.LocalMemoryProvider", "LocalMemory");
 
