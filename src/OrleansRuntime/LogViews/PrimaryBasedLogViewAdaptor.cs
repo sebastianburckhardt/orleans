@@ -741,27 +741,26 @@ namespace Orleans.Runtime.LogViews
         /// </summary>
         protected void RemoveStaleConditionalUpdates()
         {
-            int pos = 0;
             int version = GetConfirmedVersion();
-            bool removedsome = false;
+            bool foundfailedconditionalupdates = false;
 
-            while (pos < pending.Count)
+            for (int pos = 0; pos < pending.Count; pos++)
             {
                 var submissionentry = pending[pos];
                 if (submissionentry.ConditionalPosition != Unconditional
-                    && submissionentry.ConditionalPosition != (version + pos))
+                    && (foundfailedconditionalupdates || 
+                           submissionentry.ConditionalPosition != (version + pos)))
                 {
-                    pending.RemoveAt(pos); // expect this rarely to be perf issue since conditional updates are usually not batched
-                    removedsome = true;
+                    foundfailedconditionalupdates = true;
                     if (submissionentry.ResultPromise != null)
                         submissionentry.ResultPromise.SetResult(false);
                 }
-                else
-                    pos++;
+                pos++;
             }
 
-            if (removedsome)
+            if (foundfailedconditionalupdates)
             {
+                pending.RemoveAll(e => e.ConditionalPosition != Unconditional);
                 TentativeStateInternal = null;
                 Host.OnViewChanged(true, false);
             }
