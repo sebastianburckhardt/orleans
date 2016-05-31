@@ -1,27 +1,4 @@
-﻿/*
-Project Orleans Cloud Service SDK ver. 1.0
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the ""Software""), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -33,8 +10,10 @@ using Orleans.GrainDirectory;
 using Orleans.Runtime;
 using TestGrainInterfaces;
 using Orleans.Runtime.Configuration;
-using Orleans.TestingHost;
-using Orleans.MultiCluster;
+using Xunit;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using UnitTests;
+
 
 // ReSharper disable InconsistentNaming
 
@@ -43,14 +22,21 @@ namespace Tests.GeoClusterTests
     // We need use ClientWrapper to load a client object in a new app domain. 
     // This allows us to create multiple clients that are connected to different silos.
 
-    [TestClass]
-    [DeploymentItem("OrleansAzureUtils.dll")]
-    [DeploymentItem("TestGrainInterfaces.dll")]
-    [DeploymentItem("TestGrains.dll")]
-    [DeploymentItem("ClientConfigurationForTesting.xml")]
-    [DeploymentItem("OrleansConfigurationForTesting.xml")]
-    public class GlobalSingleInstanceClusterTests : TestingClusterHost
+    public class GlobalSingleInstanceClusterTests : TestingClusterHost, IDisposable
     {
+
+        // Kill all clients and silos.
+        public void Dispose()
+        {
+            try
+            {
+                StopAllClientsAndClusters();
+            }
+            catch (Exception e)
+            {
+                WriteLog("Exception caught in test cleanup function: {0}", e);
+            }
+        }
 
         #region client wrappers
 
@@ -79,184 +65,191 @@ namespace Tests.GeoClusterTests
 
         #endregion
 
+        public async Task RunWithTimeout(int msec, Func<Task> test)
+        {
+            var testtask = test();
+            await Task.WhenAny(testtask, Task.Delay(msec));
+            Assert.IsTrue(testtask.IsCompleted, "test took too long, timed out");
+        }
+
+
         #region Creation of clusters and non-conflicting grains
 
         // This function is used to test the activation creation protocol. It runs with two clusters, with 1 silo each.
         // Takes about 1 minute.
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
-        [Timeout(120000)] 
+        [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]
         public async Task TestClusterCreation_1_1()
         {
-            // use a random global service id for testing purposes
-            var globalserviceid = Guid.NewGuid();
-
-            // Create two clusters, each with a single silo.
-            var cluster0 = "cluster0";
-            var cluster1 = "cluster1";
-            NewGeoCluster(globalserviceid, cluster0, 1);
-            NewGeoCluster(globalserviceid, cluster1, 1);
-
-            await WaitForLivenessToStabilizeAsync();
-
-            // Create one client per cluster
-            var client0 = NewClient<ClientWrapper>(cluster0, 0);
-            var client1 = NewClient<ClientWrapper>(cluster1, 0);
-
-            // Configure multicluster
-            client0.InjectMultiClusterConf(cluster0, cluster1);
-            await WaitForMultiClusterGossipToStabilizeAsync(false);
-
-            int baseCount0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
-            int baseCount = baseCount0 + baseCount1;
-
-            const int numGrains = 2000;
-
-            // Create grains on both clusters. Alternating between the two.
-            Parallel.For(0, numGrains, i =>
+            await RunWithTimeout(120000, async () =>
             {
-                int val;
-                if (i % 2 == 0)
-                {
-                    // Make calls to even numbered grains using client0. Client0 is connected to cluster 0.
-                    val = client0.CallGrain(i);
-                }
-                else
-                {
-                    // Make calls to odd numbered grains using client1. Client1 is connected to cluster1.
-                    val = client1.CallGrain(i);
-                }
+                // use a random global service id for testing purposes
+                var globalserviceid = Guid.NewGuid();
 
-                Assert.AreEqual(1, val);
+                // Create two clusters, each with a single silo.
+                var cluster0 = "cluster0";
+                var cluster1 = "cluster1";
+                NewGeoCluster(globalserviceid, cluster0, 1);
+                NewGeoCluster(globalserviceid, cluster1, 1);
+
+                await WaitForLivenessToStabilizeAsync();
+
+                // Create one client per cluster
+                var client0 = NewClient<ClientWrapper>(cluster0, 0);
+                var client1 = NewClient<ClientWrapper>(cluster1, 0);
+
+                // Configure multicluster
+                client0.InjectMultiClusterConf(cluster0, cluster1);
+                await WaitForMultiClusterGossipToStabilizeAsync(false);
+
+                int baseCount0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                int baseCount1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+                int baseCount = baseCount0 + baseCount1;
+
+                const int numGrains = 2000;
+
+                // Create grains on both clusters. Alternating between the two.
+                Parallel.For(0, numGrains, i =>
+                 {
+                     int val;
+                     if (i % 2 == 0)
+                     {
+                      // Make calls to even numbered grains using client0. Client0 is connected to cluster 0.
+                      val = client0.CallGrain(i);
+                     }
+                     else
+                     {
+                      // Make calls to odd numbered grains using client1. Client1 is connected to cluster1.
+                      val = client1.CallGrain(i);
+                     }
+
+                     Assert.AreEqual(1, val);
+                 });
+
+                // We expect all requests to resolve, and all created activations are in state OWNED
+
+                // Ensure that we have the correct number of OWNED grains. 
+                // We have created 2000 grains, 1000 grains are created on cluster 0, 
+                // and 1000 grains are created on cluster1.
+                // Get the grain directory associated with each of the clusters.
+                int own0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                int own1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+                int ownCount = own0 + own1;
+
+                int doubt0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
+                int doubt1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
+
+                int req0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.RequestedOwnership).Count;
+                int req1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.RequestedOwnership).Count;
+
+                Console.WriteLine("Counts: Cluster 0 => Owned={0} Requested={1} Doubtful={2}", own0, req0, doubt0);
+                Console.WriteLine("Counts: Cluster 1 => Owned={0} Requested={1} Doubtful={2}", own1, req1, doubt1);
+
+                // Assert that the number of OWNED grains is equal to the number of grains that we invoked.
+                Assert.AreEqual(numGrains + baseCount, ownCount);
             });
-
-            // We expect all requests to resolve, and all created activations are in state OWNED
-
-            // Ensure that we have the correct number of OWNED grains. 
-            // We have created 2000 grains, 1000 grains are created on cluster 0, 
-            // and 1000 grains are created on cluster1.
-            // Get the grain directory associated with each of the clusters.
-            int own0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            int own1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
-            int ownCount = own0 + own1;
-
-            int doubt0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
-            int doubt1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
-            
-            int req0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.RequestedOwnership).Count;
-            int req1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.RequestedOwnership).Count;
-
-            Console.WriteLine("Counts: Cluster 0 => Owned={0} Requested={1} Doubtful={2}", own0, req0, doubt0);
-            Console.WriteLine("Counts: Cluster 1 => Owned={0} Requested={1} Doubtful={2}", own1, req1, doubt1);
-
-            // Assert that the number of OWNED grains is equal to the number of grains that we invoked.
-            Assert.AreEqual(numGrains + baseCount, ownCount);
-
-            StopAllClientsAndClusters();
         }
-
 
         // This function is used to test the activation creation algorithm when two clusters create non-conflicting activations.
         // Takes around 1:45 min
-        [TestMethod, TestCategory("GeoCluster")]
-        [Timeout(180000)]
+        [Fact, TestCategory("GeoCluster")]
         public async Task TestClusterCreation_5_5()
         {
-            // use a random global service id for testing purposes
-            var globalserviceid = Guid.NewGuid();
-            
-            // Create two clusters, each with 5 silos.
-            var cluster0 = "cluster0";
-            var cluster1 = "cluster1";
-            NewGeoCluster(globalserviceid, cluster0, 5);
-            NewGeoCluster(globalserviceid, cluster1, 5);
+            await RunWithTimeout(180000, async () =>
+            {    // use a random global service id for testing purposes
+                var globalserviceid = Guid.NewGuid();
 
-            await WaitForLivenessToStabilizeAsync();
+                // Create two clusters, each with 5 silos.
+                var cluster0 = "cluster0";
+                var cluster1 = "cluster1";
+                NewGeoCluster(globalserviceid, cluster0, 5);
+                NewGeoCluster(globalserviceid, cluster1, 5);
 
-            // Clients 0 and 1 connected to Cluster 0
-            var client0 = NewClient<ClientWrapper>(cluster0, 0);
-            var client1 = NewClient<ClientWrapper>(cluster0, 1);
-            // Clients 2 and 3 connected to Cluster 1
-            var client2 = NewClient<ClientWrapper>(cluster1, 0);
-            var client3 = NewClient<ClientWrapper>(cluster1, 1);
+                await WaitForLivenessToStabilizeAsync();
 
-            //Configure multicluster
-            client3.InjectMultiClusterConf(cluster0, cluster1);
-            await WaitForMultiClusterGossipToStabilizeAsync(false);
+                // Clients 0 and 1 connected to Cluster 0
+                var client0 = NewClient<ClientWrapper>(cluster0, 0);
+                var client1 = NewClient<ClientWrapper>(cluster0, 1);
+                // Clients 2 and 3 connected to Cluster 1
+                var client2 = NewClient<ClientWrapper>(cluster1, 0);
+                var client3 = NewClient<ClientWrapper>(cluster1, 1);
 
-            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
-            int countsBase = countsBase0 + countsBase1;
+                //Configure multicluster
+                client3.InjectMultiClusterConf(cluster0, cluster1);
+                await WaitForMultiClusterGossipToStabilizeAsync(false);
 
-            // Create 2000 grains, 1000 grains in each cluster. We alternate the calls among two clients connected to the same cluster. This allows
-            // us to ensure that two clients within the same cluster never end up with two separate activations of the same grain.
-            
-            const int numGrains = 2000;
+                int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+                int countsBase = countsBase0 + countsBase1;
 
-            // Ensure that we're running this test with an even number of grains :).
-            Assert.AreEqual(0, numGrains % 2);
+                // Create 2000 grains, 1000 grains in each cluster. We alternate the calls among two clients connected to the same cluster. This allows
+                // us to ensure that two clients within the same cluster never end up with two separate activations of the same grain.
 
-            Stopwatch sw = Stopwatch.StartNew();
+                const int numGrains = 2000;
 
-            Parallel.For(0, numGrains, i =>
-            {
-                int first, second;
-                string pat; // Call pattern
-                if (i % 4 == 0)
+                // Ensure that we're running this test with an even number of grains :).
+                Assert.AreEqual(0, numGrains % 2);
+
+                Stopwatch sw = Stopwatch.StartNew();
+
+                Parallel.For(0, numGrains, i =>
                 {
-                    first = client0.CallGrain(i);
-                    second = client1.CallGrain(i);
-                    pat = "0-1";
-                }
-                else if (i % 4 == 1)
-                {
-                    first = client1.CallGrain(i);
-                    second = client0.CallGrain(i);
-                    pat = "1-0";
-                }
-                else if (i % 4 == 2)
-                {
-                    first = client2.CallGrain(i);
-                    second = client3.CallGrain(i);
-                    pat = "2-3";
-                }
-                else
-                {
-                    first = client3.CallGrain(i);
-                    second = client2.CallGrain(i);
-                    pat = "3-2";
-                }
+                    int first, second;
+                    string pat; // Call pattern
+                    if (i % 4 == 0)
+                    {
+                        first = client0.CallGrain(i);
+                        second = client1.CallGrain(i);
+                        pat = "0-1";
+                    }
+                    else if (i % 4 == 1)
+                    {
+                        first = client1.CallGrain(i);
+                        second = client0.CallGrain(i);
+                        pat = "1-0";
+                    }
+                    else if (i % 4 == 2)
+                    {
+                        first = client2.CallGrain(i);
+                        second = client3.CallGrain(i);
+                        pat = "2-3";
+                    }
+                    else
+                    {
+                        first = client3.CallGrain(i);
+                        second = client2.CallGrain(i);
+                        pat = "3-2";
+                    }
 
-                // Make sure that the values we see are 1 and 2. 
-                // This means that two clients connected to silos in the same cluster 
-                // both called the same activation of the grain.
+                    // Make sure that the values we see are 1 and 2. 
+                    // This means that two clients connected to silos in the same cluster 
+                    // both called the same activation of the grain.
 
-                // TODO: Enable these checks requires the use of the confusingly mis-configured client #
-                Assert.AreEqual(1, first, "Value from first call to grain {0} with call pattern {1}", i, pat);
-                Assert.AreEqual(2, second, "Value from second call to grain {0} with call pattern {1}", i, pat);
+                    // TODO: Enable these checks requires the use of the confusingly mis-configured client #
+                    Assert.AreEqual(1, first, "Value from first call to grain {0} with call pattern {1}", i, pat);
+                    Assert.AreEqual(2, second, "Value from second call to grain {0} with call pattern {1}", i, pat);
+                });
+                sw.Stop();
+
+                WriteLog("Elapsed={0}", sw.Elapsed);
+
+                // Count the total number of OWNED activations in cluster0.
+                var countsCluster0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                // Count the total number of OWNED activations in cluster1. 
+                var countsCluster1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+
+                // Check that total number of OWNED grains that we counted is equal to the number of grains that were activated.
+                Assert.AreEqual(numGrains, countsCluster0 + countsCluster1 - countsBase,
+                    "Total grains: c0={0} c1={1} base0={2} base1={3}",
+                    countsCluster0, countsCluster1, countsBase0, countsBase1);
+
+                // The grains are divided evenly among clusters0 and 1. Verify this.
+                Assert.AreEqual(numGrains / 2, countsCluster0 - countsBase0,
+                    "Cluster 0 grains: count={0} base={1}", countsCluster0, countsBase0);
+                Assert.AreEqual(numGrains / 2, countsCluster1 - countsBase1,
+                    "Cluster 1 grains: count={0} base={1}", countsCluster1, countsBase1);
             });
-            sw.Stop();
-
-            WriteLog("Elapsed={0}", sw.Elapsed);
-
-            // Count the total number of OWNED activations in cluster0.
-            var countsCluster0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            // Count the total number of OWNED activations in cluster1. 
-            var countsCluster1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
- 
-            // Check that total number of OWNED grains that we counted is equal to the number of grains that were activated.
-            Assert.AreEqual(numGrains, countsCluster0 + countsCluster1 - countsBase,
-                "Total grains: c0={0} c1={1} base0={2} base1={3}",
-                countsCluster0, countsCluster1, countsBase0, countsBase1);
-
-            // The grains are divided evenly among clusters0 and 1. Verify this.
-            Assert.AreEqual(numGrains / 2, countsCluster0 - countsBase0,
-                "Cluster 0 grains: count={0} base={1}", countsCluster0, countsBase0);
-            Assert.AreEqual(numGrains / 2, countsCluster1 - countsBase1,
-                "Cluster 1 grains: count={0} base={1}", countsCluster1, countsBase1);
-
-            StopAllClientsAndClusters();
         }
+
         #endregion
 
         #region Race Conditions
@@ -266,78 +259,79 @@ namespace Tests.GeoClusterTests
 
         // This function is used to test the case where two different clusters are racing, 
         // trying to activate the same grain.
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
-        [Timeout(120000)] 
+        [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]
         public async Task TestClusterRace_1_1()
         {
-            // use a random global service id for testing purposes
-            var globalserviceid = Guid.NewGuid();
-            Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
+            await RunWithTimeout(120000, async () =>
             {
-                c.Globals.ServiceId = globalserviceid;
-            };
+                // use a random global service id for testing purposes
+                var globalserviceid = Guid.NewGuid();
+                Action<ClusterConfiguration> customizer = (ClusterConfiguration c) =>
+                {
+                    c.Globals.ServiceId = globalserviceid;
+                };
 
-            // Create two clusters, each with 1 silo. 
-            var cluster0 = "cluster0";
-            var cluster1 = "cluster1";
-            NewGeoCluster(globalserviceid, cluster0, 1);
-            NewGeoCluster(globalserviceid, cluster1, 1);
+                // Create two clusters, each with 1 silo. 
+                var cluster0 = "cluster0";
+                var cluster1 = "cluster1";
+                NewGeoCluster(globalserviceid, cluster0, 1);
+                NewGeoCluster(globalserviceid, cluster1, 1);
 
-            await WaitForLivenessToStabilizeAsync();
+                await WaitForLivenessToStabilizeAsync();
 
-            //Configure multicluster
-            var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
-            cfgclient.InjectMultiClusterConf(cluster0, cluster1);
-            await WaitForMultiClusterGossipToStabilizeAsync(false);
+                //Configure multicluster
+                var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
+                cfgclient.InjectMultiClusterConf(cluster0, cluster1);
+                await WaitForMultiClusterGossipToStabilizeAsync(false);
 
-            // Create two clients, connect each client to the appropriate cluster.
-            var clients = new List<ClientIdentity>
+                // Create two clients, connect each client to the appropriate cluster.
+                var clients = new List<ClientIdentity>
             {
                 new ClientIdentity() { cluster = cluster0, number = 0 },
                 new ClientIdentity() { cluster = cluster1, number = 0 },
             };
 
-            const int numGrains = 2000;
+                const int numGrains = 2000;
 
-            // We perform a run of concurrent experiments. 
-            // we expect that all calls from concurrent clients will reference 
-            // the same activation of a grain.
-            var results = DoConcurrentExperiment(clients, numGrains);
+                // We perform a run of concurrent experiments. 
+                // we expect that all calls from concurrent clients will reference 
+                // the same activation of a grain.
+                var results = DoConcurrentExperiment(clients, numGrains);
 
-            // validate the results and the directory
-            ValidateClusterRaceResults(numGrains, results);
-
-            StopAllClientsAndClusters();
+                // validate the results and the directory
+                ValidateClusterRaceResults(numGrains, results);
+            });
         }
 
         // This test is exactly the same as TestSingleSingleClusterRace. 
         // The only difference is that we run each cluster with more than one silo, 
         // and also use multiple clients connected to silos in the same cluster. 
         // The structure of the experiment itself is identical to that of TestSingleSingleClusterRace.
-        [TestMethod, TestCategory("GeoCluster")]
-        [Timeout(180000)] 
+        [Fact, TestCategory("GeoCluster")]
         public async Task TestClusterRace_5_5()
-        {  
-            // use a random global service id for testing purposes
-            var globalserviceid = Guid.NewGuid();
+        {
+            await RunWithTimeout(180000, async () =>
+            {
+                // use a random global service id for testing purposes
+                var globalserviceid = Guid.NewGuid();
 
-            // Create two clusters, each with 5 silos.
-            var cluster0 = "cluster0";
-            var cluster1 = "cluster1";
-            NewGeoCluster(globalserviceid, cluster0, 5);
-            NewGeoCluster(globalserviceid, cluster1, 5);
+                // Create two clusters, each with 5 silos.
+                var cluster0 = "cluster0";
+                var cluster1 = "cluster1";
+                NewGeoCluster(globalserviceid, cluster0, 5);
+                NewGeoCluster(globalserviceid, cluster1, 5);
 
-            await WaitForLivenessToStabilizeAsync();
+                await WaitForLivenessToStabilizeAsync();
 
-            //Configure multicluster
-            var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
-            cfgclient.InjectMultiClusterConf(cluster0, cluster1);
-            await WaitForMultiClusterGossipToStabilizeAsync(false);
+                //Configure multicluster
+                var cfgclient = NewClient<ClientWrapper>(cluster1, 0);
+                cfgclient.InjectMultiClusterConf(cluster0, cluster1);
+                await WaitForMultiClusterGossipToStabilizeAsync(false);
 
-            const int numGrains = 2000;
+                const int numGrains = 2000;
 
-            // Create multiple clients. Two clients connect to each cluster.
-            var clients = new List<ClientIdentity>
+                // Create multiple clients. Two clients connect to each cluster.
+                var clients = new List<ClientIdentity>
             {
                 new ClientIdentity() { cluster = cluster0, number = 0 },
                 new ClientIdentity() { cluster = cluster1, number = 0 },
@@ -345,14 +339,13 @@ namespace Tests.GeoClusterTests
                 new ClientIdentity() { cluster = cluster1, number = 1 },
             };
 
-            // We perform a run of concurrent experiments. 
-            // we expect that all calls from concurrent clients will reference 
-            // the same activation of a grain.
-            var results = DoConcurrentExperiment(clients, numGrains);
+                // We perform a run of concurrent experiments. 
+                // we expect that all calls from concurrent clients will reference 
+                // the same activation of a grain.
+                var results = DoConcurrentExperiment(clients, numGrains);
 
-            ValidateClusterRaceResults(numGrains, results);
-
-            StopAllClientsAndClusters();
+                ValidateClusterRaceResults(numGrains, results);
+            });
         }
 
         private void ValidateClusterRaceResults(int numGrains, List<Tuple<int, int>>[] results)
@@ -421,218 +414,217 @@ namespace Tests.GeoClusterTests
         #region Conflict Resolution
 
         // This function is used to test the anti-entropy protocol.
-        [TestMethod, TestCategory("GeoCluster"), TestCategory("Functional")]
-        [Timeout(120000)]
+        [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]
         public async Task TestConflictResolution_1_1()
         {
-            // use a random global service id for testing purposes
-            var globalserviceid = Guid.NewGuid();
-            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
+            await RunWithTimeout(120000, async () =>
             {
-                // run the retry process every 5 seconds to keep this test shorter
-                c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
-            };
+                // use a random global service id for testing purposes
+                var globalserviceid = Guid.NewGuid();
+                Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
+                {
+                    // run the retry process every 5 seconds to keep this test shorter
+                    c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
+                };
 
-            // create two clusters with 1 silo each
-            var cluster0 = "cluster0";
-            var cluster1 = "cluster1";
-            NewGeoCluster(globalserviceid, cluster0, 1, configurationcustomizer);
-            NewGeoCluster(globalserviceid, cluster1, 1, configurationcustomizer);
+                // create two clusters with 1 silo each
+                var cluster0 = "cluster0";
+                var cluster1 = "cluster1";
+                NewGeoCluster(globalserviceid, cluster0, 1, configurationcustomizer);
+                NewGeoCluster(globalserviceid, cluster1, 1, configurationcustomizer);
 
-            await WaitForLivenessToStabilizeAsync();
+                await WaitForLivenessToStabilizeAsync();
 
-            var client0 = NewClient<ClientWrapper>(cluster0, 0);
-            var client1 = NewClient<ClientWrapper>(cluster1, 0);
+                var client0 = NewClient<ClientWrapper>(cluster0, 0);
+                var client1 = NewClient<ClientWrapper>(cluster1, 0);
 
-            //Configure multicluster
-            client0.InjectMultiClusterConf(cluster0, cluster1);
-            await WaitForMultiClusterGossipToStabilizeAsync(false);
+                //Configure multicluster
+                client0.InjectMultiClusterConf(cluster0, cluster1);
+                await WaitForMultiClusterGossipToStabilizeAsync(false);
 
-            // Count the total number of already OWNED grain activations
-            // in cluster0 (created during silo creation - like the Membership Grain).
-            // These should be excluded from out test results;
-            // we assume they don't dissapear before the test is over.
-            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+                // Count the total number of already OWNED grain activations
+                // in cluster0 (created during silo creation - like the Membership Grain).
+                // These should be excluded from out test results;
+                // we assume they don't dissapear before the test is over.
+                int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
 
-            // Turn off intercluster messaging to simulate a partition.
-            BlockAllClusterCommunication(cluster0, cluster1);
-            BlockAllClusterCommunication(cluster1, cluster0);
+                // Turn off intercluster messaging to simulate a partition.
+                BlockAllClusterCommunication(cluster0, cluster1);
+                BlockAllClusterCommunication(cluster1, cluster0);
 
-            const int numGrains = 10;
+                const int numGrains = 10;
 
-            // This should create two activations of each grain - one in each cluster.
-            Parallel.For(0, numGrains, i =>
-            {
-                var res0 = client0.CallGrain(i);
-                var res1 = client1.CallGrain(i);
+                // This should create two activations of each grain - one in each cluster.
+                Parallel.For(0, numGrains, i =>
+                {
+                    var res0 = client0.CallGrain(i);
+                    var res1 = client1.CallGrain(i);
 
-                Assert.AreEqual(1, res0);
-                Assert.AreEqual(1, res1);
+                    Assert.AreEqual(1, res0);
+                    Assert.AreEqual(1, res1);
+                });
+
+                // Validate that all the created grains are DOUBTFUL, one activation in each cluster.
+                Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count == numGrains, "c0 - Expecting All are Doubtful");
+                Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count == numGrains, "c1 - Expecting All are Doubtful");
+
+
+                // un-block intercluster messaging.
+                UnblockAllClusterCommunication(cluster0);
+                UnblockAllClusterCommunication(cluster1);
+
+                // Wait for anti-entropy to kick in. 
+                // One of the DOUBTFUL activations must be killed, and the other must be converted to OWNED.
+                await Task.Delay(TimeSpan.FromSeconds(7));
+
+                // Validate that all the duplicates have been resolved.
+                var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+                var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached).Count;
+                var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached).Count;
+                var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
+                var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
+
+                Assert.IsTrue(owned0 + owned1 == numGrains + countsBase1 + countsBase0, "Expecting All are now Owned");
+                Assert.IsTrue(cached0 + cached1 == numGrains, "Expecting All Owned have a cached in the other cluster");
+                Assert.IsTrue(doubtful0 + doubtful1 == 0, "Expecting No Doubtful");
+
+                // We need to ensure that the grain whose DOUBTFUL activation was killed,
+                // and now refers to the 'real' remote OWNED activation.
+                Parallel.For(0, numGrains, i =>
+                {
+                    var res0 = client0.CallGrain(i);
+                    var res1 = client1.CallGrain(i);
+
+                    Assert.IsTrue(res0 == 2 && res1 == 3);
+                });
             });
-
-            // Validate that all the created grains are DOUBTFUL, one activation in each cluster.
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count == numGrains, "c0 - Expecting All are Doubtful");
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count == numGrains, "c1 - Expecting All are Doubtful");
-
-
-            // un-block intercluster messaging.
-            UnblockAllClusterCommunication(cluster0);
-            UnblockAllClusterCommunication(cluster1);
-
-            // Wait for anti-entropy to kick in. 
-            // One of the DOUBTFUL activations must be killed, and the other must be converted to OWNED.
-            await Task.Delay(TimeSpan.FromSeconds(7));
-
-            // Validate that all the duplicates have been resolved.
-            var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
-            var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached).Count;
-            var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached).Count;
-            var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
-            var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
-
-            Assert.IsTrue(owned0 + owned1 == numGrains + countsBase1 + countsBase0, "Expecting All are now Owned");
-            Assert.IsTrue(cached0 + cached1 == numGrains, "Expecting All Owned have a cached in the other cluster");
-            Assert.IsTrue(doubtful0 + doubtful1 == 0, "Expecting No Doubtful");
-
-                  // We need to ensure that the grain whose DOUBTFUL activation was killed,
-            // and now refers to the 'real' remote OWNED activation.
-            Parallel.For(0, numGrains, i =>
-            {
-                var res0 = client0.CallGrain(i);
-                var res1 = client1.CallGrain(i);
-
-                Assert.IsTrue(res0 == 2 && res1 == 3);
-            });
-
-            StopAllClientsAndClusters();
         }
 
         // This test is exactly the same as TestConflictResolution. The only difference is that we use more silos per cluster.
-        [TestMethod, TestCategory("GeoCluster")]
-        [Timeout(330000)] 
+        [Fact, TestCategory("GeoCluster")]
         public async Task TestConflictResolution_3_3()
         {
-            // use a random global service id for testing purposes
-            var globalserviceid = Guid.NewGuid();
-            Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
+            await RunWithTimeout(330000, async () =>
             {
-                // run the retry process every 5 seconds to keep this test shorter
-                c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
-            };
-
-            // create two clusters with 3 silos each
-            var cluster0 = "cluster0";
-            var cluster1 = "cluster1";
-            NewGeoCluster(globalserviceid, cluster0, 3, configurationcustomizer);
-            NewGeoCluster(globalserviceid, cluster1, 3, configurationcustomizer);
-
-            await WaitForLivenessToStabilizeAsync();
-
-            var client0 = NewClient<ClientWrapper>(cluster0, 0);
-            var client1 = NewClient<ClientWrapper>(cluster1, 0);
-            var client2 = NewClient<ClientWrapper>(cluster0, 1);
-            var client3 = NewClient<ClientWrapper>(cluster1, 1);
-
-            //Configure multicluster
-            client2.InjectMultiClusterConf(cluster0, cluster1);
-            await WaitForMultiClusterGossipToStabilizeAsync(false);
-
-            ClientWrapper[] clients = { client0, client1, client2, client3 };
-
-            // Count the total number of already OWNED grain activations
-            // in cluster0 (created during silo creation - like the Membership Grain).
-            // These should be excluded from out test results;
-            // we assume they don't dissapear before the test is over.
-            int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
-
-            // Turn off intercluster messaging to simulate a partition.
-            BlockAllClusterCommunication(cluster0, cluster1);
-            BlockAllClusterCommunication(cluster1, cluster0);
-
-            const int numGrains = 40;
-
-            Parallel.For(0, numGrains, i =>
-            {
-                int res0, res1, res2, res3;
-                if (i % 2 == 1)
+                // use a random global service id for testing purposes
+                var globalserviceid = Guid.NewGuid();
+                Action<ClusterConfiguration> configurationcustomizer = (ClusterConfiguration c) =>
                 {
-                    res0 = clients[0].CallGrain(i);
-                    res1 = clients[1].CallGrain(i);
-                    res2 = clients[2].CallGrain(i);
-                    res3 = clients[3].CallGrain(i);
-                }
-                else
-                {
-                    res0 = clients[1].CallGrain(i);
-                    res1 = clients[0].CallGrain(i);
-                    res2 = clients[0].CallGrain(i);
-                    res3 = clients[1].CallGrain(i);
-                }
+                    // run the retry process every 5 seconds to keep this test shorter
+                    c.Globals.GlobalSingleInstanceRetryInterval = TimeSpan.FromSeconds(5);
+                };
 
-                Assert.AreEqual(1, res0);
-                Assert.AreEqual(1, res1);
-                Assert.AreEqual(2, res2);
-                Assert.AreEqual(2, res3);
+                // create two clusters with 3 silos each
+                var cluster0 = "cluster0";
+                var cluster1 = "cluster1";
+                NewGeoCluster(globalserviceid, cluster0, 3, configurationcustomizer);
+                NewGeoCluster(globalserviceid, cluster1, 3, configurationcustomizer);
+
+                await WaitForLivenessToStabilizeAsync();
+
+                var client0 = NewClient<ClientWrapper>(cluster0, 0);
+                var client1 = NewClient<ClientWrapper>(cluster1, 0);
+                var client2 = NewClient<ClientWrapper>(cluster0, 1);
+                var client3 = NewClient<ClientWrapper>(cluster1, 1);
+
+                //Configure multicluster
+                client2.InjectMultiClusterConf(cluster0, cluster1);
+                await WaitForMultiClusterGossipToStabilizeAsync(false);
+
+                ClientWrapper[] clients = { client0, client1, client2, client3 };
+
+                // Count the total number of already OWNED grain activations
+                // in cluster0 (created during silo creation - like the Membership Grain).
+                // These should be excluded from out test results;
+                // we assume they don't dissapear before the test is over.
+                int countsBase0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                int countsBase1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+
+                // Turn off intercluster messaging to simulate a partition.
+                BlockAllClusterCommunication(cluster0, cluster1);
+                BlockAllClusterCommunication(cluster1, cluster0);
+
+                const int numGrains = 40;
+
+                Parallel.For(0, numGrains, i =>
+                {
+                    int res0, res1, res2, res3;
+                    if (i % 2 == 1)
+                    {
+                        res0 = clients[0].CallGrain(i);
+                        res1 = clients[1].CallGrain(i);
+                        res2 = clients[2].CallGrain(i);
+                        res3 = clients[3].CallGrain(i);
+                    }
+                    else
+                    {
+                        res0 = clients[1].CallGrain(i);
+                        res1 = clients[0].CallGrain(i);
+                        res2 = clients[0].CallGrain(i);
+                        res3 = clients[1].CallGrain(i);
+                    }
+
+                    Assert.AreEqual(1, res0);
+                    Assert.AreEqual(1, res1);
+                    Assert.AreEqual(2, res2);
+                    Assert.AreEqual(2, res3);
+                });
+
+                // Validate that all the created grains are in DOUBTFUL, one activation in each cluster.
+                Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count == numGrains, "c0 - Expecting All are Doubtful");
+                Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count == numGrains, "c1 - Expecting All are Doubtful");
+
+                // Turn on intercluster messaging and wait for the resolution to kick in.
+                UnblockAllClusterCommunication(cluster0);
+                UnblockAllClusterCommunication(cluster1);
+
+                // Wait for anti-entropy to kick in. 
+                // One of the DOUBTFUL activations must be killed, and the other must be converted to OWNED.
+                await Task.Delay(TimeSpan.FromSeconds(7));
+
+
+                // Validate that all the duplicates have been resolved.
+                var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
+                var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
+                var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached).Count;
+                var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached).Count;
+                var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
+                var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
+
+                Assert.IsTrue(owned0 + owned1 == numGrains + countsBase1 + countsBase0, "Expecting All are now Owned");
+                Assert.IsTrue(cached0 + cached1 == numGrains, "Expecting All Owned have a cached in the other cluster");
+                Assert.IsTrue(doubtful0 + doubtful1 == 0, "Expecting No Doubtful");
+
+                // We need to ensure that the grain whose DOUBTFUL activation was killed,
+                // and now refers to the 'real' remote OWNED activation.
+
+                for (int i = 0; i < numGrains; i++)
+                {
+                    int res0, res1, res2, res3;
+                    if (i % 2 == 1)
+                    {
+                        res0 = clients[0].CallGrain(i);
+                        res1 = clients[1].CallGrain(i);
+                        res2 = clients[2].CallGrain(i);
+                        res3 = clients[3].CallGrain(i);
+                    }
+                    else
+                    {
+                        res0 = clients[1].CallGrain(i);
+                        res1 = clients[0].CallGrain(i);
+                        res2 = clients[0].CallGrain(i);
+                        res3 = clients[1].CallGrain(i);
+                    }
+                    //From the previous grain calls, the last value of the counter in each grain was 2.
+                    //So here should be sequenced from 3.
+                    Assert.AreEqual(3, res0);
+                    Assert.AreEqual(4, res1);
+                    Assert.AreEqual(5, res2);
+                    Assert.AreEqual(6, res3);
+                }
             });
-
-            // Validate that all the created grains are in DOUBTFUL, one activation in each cluster.
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count == numGrains, "c0 - Expecting All are Doubtful");
-            Assert.IsTrue(GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count == numGrains, "c1 - Expecting All are Doubtful");
-
-            // Turn on intercluster messaging and wait for the resolution to kick in.
-            UnblockAllClusterCommunication(cluster0);
-            UnblockAllClusterCommunication(cluster1);
-
-            // Wait for anti-entropy to kick in. 
-            // One of the DOUBTFUL activations must be killed, and the other must be converted to OWNED.
-            await Task.Delay(TimeSpan.FromSeconds(7));
-
-  
-            // Validate that all the duplicates have been resolved.
-            var owned0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Owned).Count;
-            var owned1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Owned).Count;
-            var cached0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Cached).Count;
-            var cached1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Cached).Count;
-            var doubtful0 = GetGrainsInClusterWithStatus(cluster0, MultiClusterStatus.Doubtful).Count;
-            var doubtful1 = GetGrainsInClusterWithStatus(cluster1, MultiClusterStatus.Doubtful).Count;
-
-            Assert.IsTrue(owned0 + owned1 == numGrains + countsBase1 + countsBase0, "Expecting All are now Owned");
-            Assert.IsTrue(cached0 + cached1 == numGrains, "Expecting All Owned have a cached in the other cluster");
-            Assert.IsTrue(doubtful0 + doubtful1 == 0, "Expecting No Doubtful");
-
-            // We need to ensure that the grain whose DOUBTFUL activation was killed,
-            // and now refers to the 'real' remote OWNED activation.
-
-           for (int i = 0; i < numGrains; i++)
-            {
-                int res0, res1, res2, res3;
-                if (i % 2 == 1)
-                {
-                    res0 = clients[0].CallGrain(i);
-                    res1 = clients[1].CallGrain(i);
-                    res2 = clients[2].CallGrain(i);
-                    res3 = clients[3].CallGrain(i);
-                }
-                else
-                {
-                    res0 = clients[1].CallGrain(i);
-                    res1 = clients[0].CallGrain(i);
-                    res2 = clients[0].CallGrain(i);
-                    res3 = clients[1].CallGrain(i);
-                }
-                //From the previous grain calls, the last value of the counter in each grain was 2.
-                //So here should be sequenced from 3.
-                Assert.AreEqual(3, res0);
-                Assert.AreEqual(4, res1);
-                Assert.AreEqual(5, res2);
-                Assert.AreEqual(6, res3);
-            }
-
-           StopAllClientsAndClusters();
-
         }
         #endregion
 
