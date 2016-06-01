@@ -12,7 +12,6 @@
     <ConfigurationSettings>
       <Setting name="ClusterId" value="Front1" />
       <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

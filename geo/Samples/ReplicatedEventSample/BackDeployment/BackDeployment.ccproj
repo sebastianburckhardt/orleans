@@ -20,8 +20,8 @@
     </SccAuxPath>
     <SccLocalPath>
     </SccLocalPath>
-    <UseIISExpressByDefault>False</UseIISExpressByDefault>
-    <UseEmulatorExpressByDefault>False</UseEmulatorExpressByDefault>
+    <UseIISExpressByDefault>True</UseIISExpressByDefault>
+    <UseEmulatorExpressByDefault>True</UseEmulatorExpressByDefault>
     <UseWebProjectPorts>True</UseWebProjectPorts>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -54,7 +54,7 @@
       <Private>True</Private>
       <RoleType>Worker</RoleType>
       <RoleName>Orleans.Silos</RoleName>
-      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+      <UpdateDiagnosticsConnectionStringOnPublish>False</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
     <ProjectReference Include="..\WebRole2\WebRole2.csproj">
       <Name>WebRole2</Name>
@@ -68,12 +68,10 @@
   <ItemGroup>
     <Folder Include="Orleans.SilosContent\" />
     <Folder Include="WebRole2Content\" />
-    <Folder Include="WebRoleContent\" />
   </ItemGroup>
   <ItemGroup>
     <DiagnosticsConfiguration Include="Orleans.SilosContent\diagnostics.wadcfgx" />
     <DiagnosticsConfiguration Include="WebRole2Content\diagnostics.wadcfgx" />
-    <DiagnosticsConfiguration Include="WebRoleContent\diagnostics.wadcfgx" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

@@ -20,8 +20,8 @@
     </SccAuxPath>
     <SccLocalPath>
     </SccLocalPath>
-    <UseIISExpressByDefault>False</UseIISExpressByDefault>
-    <UseEmulatorExpressByDefault>False</UseEmulatorExpressByDefault>
+    <UseIISExpressByDefault>True</UseIISExpressByDefault>
+    <UseEmulatorExpressByDefault>True</UseEmulatorExpressByDefault>
     <UseWebProjectPorts>True</UseWebProjectPorts>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -54,7 +54,7 @@
       <Private>True</Private>
       <RoleType>Worker</RoleType>
       <RoleName>Orleans.Silos</RoleName>
-      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+      <UpdateDiagnosticsConnectionStringOnPublish>False</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
     <ProjectReference Include="..\WebRole\WebRole.csproj">
       <Name>WebRole</Name>
