@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
@@ -8,22 +7,26 @@ using Orleans.Runtime;
 
 namespace Orleans.SystemTargetInterfaces
 {
-
     internal enum ActivationResponseStatus
     {
-        PASS,
-        FAILED,
-        FAULTED
+        Pass,
+        Failed,
+        Faulted
     }
 
     /// <summary>
     /// Reponse message used by Global Single Instance Protocol
     /// </summary>
-    /// 
     [Serializable]
     internal class RemoteClusterActivationResponse
     {
-        public ActivationResponseStatus ResponseStatus { get; set; }
+        public static readonly RemoteClusterActivationResponse Pass = new RemoteClusterActivationResponse(ActivationResponseStatus.Pass);
+
+        public RemoteClusterActivationResponse(ActivationResponseStatus responseStatus)
+        {
+            this.ResponseStatus = responseStatus;
+        }
+        public ActivationResponseStatus ResponseStatus { get; private set; }
         public AddressAndTag ExistingActivationAddress { get; set; }
         public string ClusterId { get; set; }
         public bool Owned { get; set; }
