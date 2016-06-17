@@ -10,9 +10,11 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Orleans.Core;
 using Orleans.CodeGeneration;
 using Orleans.GrainDirectory;
 using Orleans.Providers;
+using Orleans.LogViews;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Placement;
@@ -22,6 +24,7 @@ using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.MembershipService;
 using Orleans.Runtime.Messaging;
 using Orleans.Runtime.Providers;
+using Orleans.Runtime.LogViews;
 using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.Startup;
 using Orleans.Runtime.Storage;
@@ -72,6 +75,7 @@ namespace Orleans.Runtime
         private readonly MembershipFactory membershipFactory;
         private readonly MultiClusterOracleFactory multiClusterFactory;
         private StorageProviderManager storageProviderManager;
+        private LogViewProviderManager logViewProviderManager;
         private StatisticsProviderManager statisticsProviderManager;
         private BootstrapProviderManager bootstrapProviderManager;
         private readonly LocalReminderServiceFactory reminderFactory;
@@ -103,6 +107,7 @@ namespace Orleans.Runtime
         internal ISiloStatusOracle LocalSiloStatusOracle { get { return membershipOracle; } }
         internal IMultiClusterOracle LocalMultiClusterOracle { get { return multiClusterOracle; } }
         internal IConsistentRingProvider RingProvider { get; private set; }
+        internal ILogViewProviderManager LogViewProviderManager { get { return logViewProviderManager; } }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
@@ -345,6 +350,9 @@ namespace Orleans.Runtime
             logger.Verbose("Creating {0} System Target", "SiloControl");
             RegisterSystemTarget(new SiloControl(this));
 
+            logger.Verbose("Creating {0} System Target", "ProtocolGateway");
+            RegisterSystemTarget(new ProtocolGateway(this.SiloAddress));
+
             logger.Verbose("Creating {0} System Target", "DeploymentLoadPublisher");
             RegisterSystemTarget(DeploymentLoadPublisher.Instance);
 
@@ -492,6 +500,15 @@ namespace Orleans.Runtime
             catalog.SetStorageManager(storageProviderManager);
             allSiloProviders.AddRange(storageProviderManager.GetProviders());
             if (logger.IsVerbose) { logger.Verbose("Storage provider manager created successfully."); }
+
+            // Initialize log view providers once we have a basic silo runtime environment operating
+            logViewProviderManager = new LogViewProviderManager(grainFactory, Services, storageProviderManager);
+            scheduler.QueueTask(
+                () => logViewProviderManager.LoadLogViewProviders(GlobalConfig.ProviderConfigurations),
+                providerManagerSystemTarget.SchedulingContext)
+                    .WaitWithThrow(initTimeout);
+            catalog.SetLogViewManager(logViewProviderManager);
+            if (logger.IsVerbose) { logger.Verbose("Log view provider manager created successfully."); }
 
             // Load and init stream providers before silo becomes active
             var siloStreamProviderManager = (StreamProviderManager) grainRuntime.StreamProviderManager;
@@ -980,6 +997,10 @@ namespace Orleans.Runtime
                 else
                     return false;
             }
+
+            // switch for dropping notification messages in log view protocols
+            internal bool DropNotificationMessages { get; set; }
+
 
             // this is only for white box testing - use RuntimeClient.Current.SendRequest instead
 

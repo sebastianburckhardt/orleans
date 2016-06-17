@@ -968,6 +968,9 @@ namespace Orleans
         Provider_ProviderLoadedOk               = ProviderManagerBase + 14,
         Provider_ProviderNotFound               = ProviderManagerBase + 15,
         Provider_ProviderNotControllable        = ProviderManagerBase + 16,
+        Provider_CatalogNoLogViewProvider       = ProviderManagerBase + 17,
+        Provider_CatalogLogViewProviderAllocated = ProviderManagerBase + 18,
+        Provider_CatalogUnsupportedProviderAttribute = ProviderManagerBase + 19,
 
         AzureQueueBase = Runtime + 3200,
         AzureQueue_01 = AzureQueueBase + 1,
@@ -1071,6 +1074,13 @@ namespace Orleans
         MultiClusterNetwork_LocalSubscriberException = MultiClusterNetworkBase + 4,
         MultiClusterNetwork_GossipCommunicationFailure = MultiClusterNetworkBase + 5,
         MultiClusterNetwork_NoChannelsConfigured = MultiClusterNetworkBase + 6,
+
+        LogViewBase = Runtime + 4000,
+        LogView_ViewUpdateException = LogViewBase + 1,
+        LogView_CaughtException = LogViewBase + 2,
+        LogView_ProtocolError = LogViewBase + 3,
+        LogView_ProtocolFatalError = LogViewBase + 4,
+
     }
 }
 // ReSharper restore InconsistentNaming

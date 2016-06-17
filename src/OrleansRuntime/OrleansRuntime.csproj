@@ -58,6 +58,8 @@
   <ItemGroup>
     <Compile Include="Catalog\ActivationState.cs" />
     <Compile Include="Counters\PerfCounterConfigData.cs" />
+    <Compile Include="LogViews\NotificationMessage.cs" />
+    <Compile Include="LogViews\NotificationTracker.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterData.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterOracle.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterOracleData.cs" />
@@ -103,6 +105,13 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ReminderService\MockReminderTable.cs" />
+    <Compile Include="LogViews\PrimaryBasedLogViewAdaptor.cs" />
+    <Compile Include="LogViews\ProtocolGateway.cs" />
+    <Compile Include="LogViews\ILogViewProviderManager.cs" />
+    <Compile Include="LogViews\ProtocolServices.cs" />
+    <Compile Include="LogViews\LogViewProviderManager.cs" />
+    <Compile Include="LogViews\GrainStateWithMetaData.cs" />
+    <Compile Include="LogViews\StorageProviderLogViewAdaptor.cs" />
     <Compile Include="Scheduler\ITaskScheduler.cs" />
     <Compile Include="Silo\IStartupBuilder.cs" />
     <Compile Include="Storage\IStorageProviderManager.cs" />

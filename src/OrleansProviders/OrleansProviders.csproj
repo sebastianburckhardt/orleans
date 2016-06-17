@@ -45,6 +45,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuiltInProvidersConfigurationExtensions.cs" />
+    <Compile Include="LogViews\CustomStorageProvider.cs" />
+    <Compile Include="LogViews\CustomStorageAdaptor.cs" />
+    <Compile Include="LogViews\ICustomStorageInterface.cs" />
     <Compile Include="Streams\Common\PooledCache\CachedMessageBlock.cs" />
     <Compile Include="Streams\Common\PooledCache\FixedSizeObjectPool.cs" />
     <Compile Include="Streams\Common\PooledCache\FixedSizeBuffer.cs" />
@@ -57,6 +60,7 @@
     <Compile Include="Streams\Common\SimpleCache\SimpleQueueCache.cs" />
     <Compile Include="Streams\Common\SimpleCache\SimpleQueueCacheCursor.cs" />
     <Compile Include="Streams\Common\SimpleCache\SimpleQueueAdapterCache.cs" />
+    <Compile Include="LogViews\SharedStorageProvider.cs" />
     <Compile Include="Streams\Common\EventSequenceToken.cs" />
     <Compile Include="ProviderErrorCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -79,6 +83,10 @@
     <Compile Include="Streams\Generator\IStreamGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\OrleansRuntime\OrleansRuntime.csproj">
+      <Project>{6ff2004c-cdf8-479c-bf27-c6bfe8ef93e0}</Project>
+      <Name>OrleansRuntime</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Orleans\Orleans.csproj">
       <Project>{bc1bd60c-e7d8-4452-a21c-290aec8e2e74}</Project>
       <Name>Orleans</Name>

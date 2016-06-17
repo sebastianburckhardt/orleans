@@ -79,6 +79,7 @@
     <Compile Include="Async\TaskUtility.cs" />
     <Compile Include="Async\UnobservedExceptionsHandlerClass.cs" />
     <Compile Include="Async\TaskExtensions.cs" />
+    <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />
     <Compile Include="CodeGeneration\GrainState.cs" />
@@ -100,6 +101,8 @@
     <Compile Include="Core\IStatefulGrain.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
     <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
+    <Compile Include="LogViews\ILogViewStorageInterface.cs" />
+    <Compile Include="LogViews\ILogViewHost.cs" />
     <Compile Include="Runtime\RingRange.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
@@ -108,6 +111,10 @@
     <Compile Include="Core\GrainStateStorageBridge.cs" />
     <Compile Include="Core\IGrainIdentity.cs" />
     <Compile Include="MultiCluster\MultiClusterConfiguration.cs" />
+    <Compile Include="MultiCluster\IProtocolParticipant.cs" />
+    <Compile Include="LogViews\ILogViewAdaptor.cs" />
+    <Compile Include="LogViews\ILogViewStatistics.cs" />
+    <Compile Include="LogViews\ILogViewGrain.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GrainDirectory\MultiClusterRegistrationStrategy.cs" />
@@ -120,7 +127,9 @@
     <Compile Include="Messaging\RequestInvocationHistory.cs" />
     <Compile Include="Messaging\Response.cs" />
     <Compile Include="Providers\IControllable.cs" />
+    <Compile Include="LogViews\ILogViewProvider.cs" />
     <Compile Include="Providers\StorageProviderUtils.cs" />
+    <Compile Include="LogViews\IProtocolServices.cs" />
     <Compile Include="Runtime\GrainRuntime.cs" />
     <Compile Include="Runtime\IAddressable.cs" />
     <Compile Include="Placement\PreferLocalPlacement.cs" />
@@ -142,6 +151,7 @@
     <Compile Include="Streams\PersistentStreams\StreamEventDeliveryFailureException.cs" />
     <Compile Include="Streams\Predicates\DefaultStreamFilterPredicateWrapper.cs" />
     <Compile Include="Streams\PubSub\FaultedSubscriptionException.cs" />
+    <Compile Include="SystemTargetInterfaces\IProtocolGateway.cs" />
     <Compile Include="Streams\PubSub\ImplicitStreamPubSub.cs" />
     <Compile Include="Streams\PubSub\StreamPubSubImpl.cs" />
     <Compile Include="Streams\QueueAdapters\IQueueFlowController.cs" />
@@ -386,6 +396,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateVersionNumber" BeforeTargets="VersionInit" Condition="'$(BuildingInsideVisualStudio)' != 'true'" Outputs="$(SolutionDir)Build\Version.txt">
     <PropertyGroup Condition="'$(BuildNumber)' == ''">

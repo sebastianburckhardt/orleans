@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Orleans.Runtime;
 using Orleans.CodeGeneration;
+using Orleans.Storage;
 
 namespace Orleans.Providers
 {
@@ -66,6 +67,15 @@ namespace Orleans.Providers
     public interface IStorageProviderRuntime : IProviderRuntime
     {
         // for now empty, later can add storage specific runtime capabilities.
+    }
+
+    /// <summary>
+    /// Provider-facing interface for manager of log view providers
+    /// </summary>
+    public interface ILogViewProviderRuntime : IProviderRuntime
+    {
+        bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false);
+ 
     }
 
     /// <summary>

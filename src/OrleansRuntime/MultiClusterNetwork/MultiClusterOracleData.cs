@@ -1,8 +1,15 @@
-﻿namespace Orleans.Runtime.MultiClusterNetwork
+﻿using System;
+using System.Collections.Generic;
+using Orleans.MultiCluster;
+
+
+namespace Orleans.Runtime.MultiClusterNetwork
 {
     internal class MultiClusterOracleData 
     {
         private volatile MultiClusterData localData;  // immutable, can read without lock
+
+        private readonly HashSet<GrainReference> confListeners;
 
         private readonly TraceLogger logger;
 
@@ -12,6 +19,27 @@
         {
             logger = log;
             localData = new MultiClusterData();
+            confListeners = new HashSet<GrainReference>();
+        }
+
+        internal bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer)
+        {
+            if (logger.IsVerbose2)
+                logger.Verbose2("SubscribeToMultiClusterConfigurationEvents: {0}", observer);
+
+            if (confListeners.Contains(observer))
+                return false;
+
+            confListeners.Add(observer);
+            return true;
+        }
+
+        internal bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
+        {
+            if (logger.IsVerbose3)
+                logger.Verbose3("UnSubscribeFromMultiClusterConfigurationEvents: {0}", observer);
+
+            return confListeners.Remove(observer);
         }
 
 
@@ -34,7 +62,24 @@
             if (delta.Configuration != null)
             {
                 // notify configuration listeners of change
-                // code will be added in separate PR
+                foreach (var listener in confListeners)
+                {
+                    try
+                    {
+                        if (logger.IsVerbose2)
+                            logger.Verbose2("-NotificationWork: notify IProtocolParticipant {0} of configuration {1}", listener, delta.Configuration);
+
+                        // enqueue conf change event as grain call
+                        var g = InsideRuntimeClient.Current.InternalGrainFactory.Cast<IProtocolParticipant>(listener);
+                        g.OnMultiClusterConfigurationChange(delta.Configuration).Ignore();
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.Error(ErrorCode.MultiClusterNetwork_LocalSubscriberException,
+                            String.Format("IProtocolParticipant {0} threw exception processing configuration {1}",
+                            listener, delta.Configuration), exc);
+                    }
+                }
             }
 
             return delta;

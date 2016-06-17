@@ -7,6 +7,7 @@ using System.Net;
 using System.Xml;
 using Orleans.GrainDirectory;
 using Orleans.Providers;
+using Orleans.LogViews;
 using Orleans.Streams;
 using Orleans.Storage;
 using System.Reflection;
@@ -1016,6 +1017,36 @@ namespace Orleans.Runtime.Configuration
         {
             ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.STORAGE_PROVIDER_CATEGORY_NAME, providerTypeFullName, providerName, properties);
         }
+
+        /// <summary>
+        /// Registers a given log view provider.
+        /// </summary>
+        /// <param name="providerTypeFullName">Full name of the log view provider type</param>
+        /// <param name="providerName">Name of the log view provider</param>
+        /// <param name="properties">Properties that will be passed to the log view provider upon initialization </param>
+        public void RegisterLogViewProvider(string providerTypeFullName, string providerName, IDictionary<string, string> properties = null)
+        {
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.LOG_VIEW_PROVIDER_CATEGORY_NAME, providerTypeFullName, providerName, properties);
+        }
+
+        
+        /// <summary>
+        /// Registers a given type of <typeparamref name="T"/> where <typeparamref name="T"/> is a log view provider
+        /// </summary>
+        /// <typeparam name="T">Non-abstract type which implements <see cref="ILogViewProvider"/> a log view storage interface</typeparam>
+        /// <param name="providerName">Name of the log view provider</param>
+        /// <param name="properties">Properties that will be passed to log view provider upon initialization</param>
+       public void RegisterLogViewProvider<T>(string providerName, IDictionary<string, string> properties = null) where T : ILogViewProvider
+        {
+            Type providerType = typeof(T);
+            if (providerType.IsAbstract ||
+                providerType.IsGenericType ||
+                !typeof(ILogViewProvider).IsAssignableFrom(providerType))
+                throw new ArgumentException("Expected non-generic, non-abstract type which implements ILogViewProvider interface", "typeof(T)");
+
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.LOG_VIEW_PROVIDER_CATEGORY_NAME, providerType.FullName, providerName, properties);
+        } 
+        
 
         /// <summary>
         /// Retrieves an existing provider configuration

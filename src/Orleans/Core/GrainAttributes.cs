@@ -236,14 +236,38 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class StorageProviderAttribute : Attribute
+        public sealed class StorageProviderAttribute : ProviderAttribute
         {
             public StorageProviderAttribute()
             {
-                    ProviderName = Runtime.Constants.DEFAULT_STORAGE_PROVIDER_NAME;
+                ProviderName = Runtime.Constants.DEFAULT_STORAGE_PROVIDER_NAME;
             }
+        }
+
+
+        /// <summary>
+        /// The [Orleans.Providers.LogViewProvider] attribute is used to specify a log view provider for grains that extend LogViewGrain&lt;T&gt;.
+        /// <para>
+        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute,
+        /// otherwise we try to find a storage provider as for all other grains. 
+        /// </para>
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Class)]
+        public sealed class LogViewProviderAttribute : ProviderAttribute
+        {
+            public LogViewProviderAttribute()
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// The common superclass of storage and log view provider attributes.
+        /// </summary>
+        public class ProviderAttribute : Attribute
+        {
             /// <summary>
-            /// The name of the storage provider to ne used for persisting state for this grain.
+            /// The name of the provider to ne used for persisting state for this grain.
             /// </summary>
             public string ProviderName { get; set; }
         }

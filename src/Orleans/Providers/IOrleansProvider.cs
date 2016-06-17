@@ -12,6 +12,8 @@ namespace Orleans.Providers
     /// </summary>
     /// <seealso cref="Orleans.Providers.IBootstrapProvider"/>
     /// <seealso cref="Orleans.Storage.IStorageProvider"/>
+    /// <seealso cref="Orleans.Storage.ILogViewProvider"/>
+
     public interface IProvider
     {
         /// <summary>The name of this provider instance, as given to it in the config.</summary>

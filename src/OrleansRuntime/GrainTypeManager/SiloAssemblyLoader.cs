@@ -8,7 +8,7 @@ using System.Text;
 using Orleans.Providers;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
-
+using Orleans.LogViews;
 
 namespace Orleans.Runtime
 {
@@ -88,7 +88,7 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(LogViewGrainBase<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.GetTypeInfo().IsClass)

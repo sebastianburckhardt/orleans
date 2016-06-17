@@ -116,6 +116,7 @@
   <ItemGroup>
     <Compile Include="CollectionFixtures.cs" />
     <Compile Include="ConnectionStringFixture.cs" />
+    <Compile Include="GeoClusterTests\LogViewGrainTestsFourClusters.cs" />
     <Compile Include="HostedTestClusterBase.cs" />
     <Compile Include="OrleansRuntime\Streams\SubscriptionMarkerTests.cs" />
     <Compile Include="SqlStatisticsPublisherTests\SqlStatisticsPublisherTestsBase.cs" />
@@ -126,6 +127,7 @@
     <Compile Include="StorageTests\PersistenceGrainTests_AzureBlobStore.cs" />
     <Compile Include="StorageTests\PersistenceGrainTests_AzureTableStore.cs" />
     <Compile Include="StorageTests\RelationalStoreTests.cs" />
+    <Compile Include="GeoClusterTests\BasicLogViewGrainTests.cs" />
     <Compile Include="StreamingTests\AQStreamingTests.cs" />
     <Compile Include="AssemblyLoaderTests.cs" />
     <Compile Include="AsynchAgentRestartTest.cs" />
@@ -171,6 +173,7 @@
     <Compile Include="SqlStatisticsPublisherTests\MySqlStatisticsPublisherTests.cs" />
     <Compile Include="Serialization\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
+    <Compile Include="GeoClusterTests\LogViewGrainTestsTwoClusters.cs" />
     <Compile Include="General\InterfaceRules.cs" />
     <Compile Include="GrainReferenceCacheTests.cs" />
     <Compile Include="GrainReferenceCastTests.cs" />
