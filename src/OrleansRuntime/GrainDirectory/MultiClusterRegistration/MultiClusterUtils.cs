@@ -1,9 +1,4 @@
-﻿using Orleans.MultiCluster;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -26,12 +21,12 @@ namespace Orleans.Runtime.GrainDirectory
                 throw new OrleansException("ActivationPrecedenceFunction must be called with valid cluster identifiers.");
             }
 
-            var precLeft = grain.GetUniformHashCode() ^ clusterLeft.GetHashCode();
-            var precRight = grain.GetUniformHashCode() ^ clusterRight.GetHashCode();
-            return (precLeft < precRight) || (precLeft == precRight && (clusterLeft.CompareTo(clusterRight) < 0));
+            // use string comparison for cluster precedence, with polarity based on uniform grain hash
+            if (grain.GetUniformHashCode() % 2 == 0)
+                return string.Compare(clusterLeft, clusterRight, StringComparison.Ordinal) < 0;
+            else
+                return string.Compare(clusterRight, clusterLeft, StringComparison.Ordinal) < 0;
         }
-
-     
 
     }
 }
