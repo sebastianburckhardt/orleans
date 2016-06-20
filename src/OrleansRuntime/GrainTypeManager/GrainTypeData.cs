@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Orleans.Core;
 using Orleans.Concurrency;
+using Orleans.GrainDirectory;
 using Orleans.MultiCluster;
 using Orleans.Placement;
 
@@ -20,10 +21,10 @@ namespace Orleans.Runtime
         internal Type StateObjectType { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
-        internal StorageInterface StorageInterface { get; private set; }
-
-
-        public GrainTypeData(Type type, Type stateObjectType, StorageInterface storageInterface)
+        internal MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
+   
+     
+        public GrainTypeData(Type type, Type stateObjectType)
         {
             Type = type;
             IsReentrant = Type.GetCustomAttributes(typeof (ReentrantAttribute), true).Length > 0;
@@ -31,7 +32,6 @@ namespace Orleans.Runtime
             GrainClass = TypeUtils.GetFullName(type);
             RemoteInterfaceTypes = GetRemoteInterfaces(type); ;
             StateObjectType = stateObjectType;
-            StorageInterface = storageInterface;
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Orleans.Runtime
                 {
                     if (t == typeof(IAddressable)) continue;
 
-                    if (CodeGeneration.GrainInterfaceData.IsGrainInterface(t) && !interfaceTypes.Contains(t))
+                    if (CodeGeneration.GrainInterfaceUtils.IsGrainInterface(t) && !interfaceTypes.Contains(t))
                         interfaceTypes.Add(t);
                 }
 
@@ -109,6 +109,25 @@ namespace Orleans.Runtime
             }
 
             return PlacementStrategy.GetDefault();
+        }
+
+        internal static MultiClusterRegistrationStrategy GetMultiClusterRegistrationStrategy(Type grainClass)
+        {
+            var attribs = grainClass.GetCustomAttributes(typeof(Orleans.MultiCluster.RegistrationAttribute), inherit: true);
+
+            switch (attribs.Length)
+            {
+                case 0:
+                    return ClusterLocalRegistration.Singleton;
+                case 1:
+                    return ((Orleans.MultiCluster.RegistrationAttribute)attribs[0]).RegistrationStrategy;
+                default:
+                    throw new InvalidOperationException(
+                        string.Format(
+                            "More than one {0} cannot be specified for grain interface {1}",
+                            typeof(MultiClusterRegistrationStrategy).Name,
+                            grainClass.Name));
+            }
         }
     }
 }

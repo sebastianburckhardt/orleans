@@ -177,7 +177,7 @@ namespace Orleans
 
                 if (TestOnlyThrowExceptionDuringInit)
                 {
-                    throw new Exception("TestOnlyThrowExceptionDuringInit");
+                    throw new InvalidOperationException("TestOnlyThrowExceptionDuringInit");
                 }
 
                 config.CheckGatewayProviderSettings();
@@ -444,11 +444,7 @@ namespace Orleans
                     {
                         // exceptions thrown within this scope are not considered to be thrown from user code
                         // and not from runtime code.
-                        var resultPromise = objectData.Invoker.Invoke(
-                            targetOb,
-                            request.InterfaceId,
-                            request.MethodId,
-                            request.Arguments);
+                        var resultPromise = objectData.Invoker.Invoke(targetOb, request);
                         if (resultPromise != null) // it will be null for one way messages
                         {
                             resultObject = await resultPromise;
@@ -683,7 +679,7 @@ namespace Orleans
             callbacks.TryRemove(id, out ignore);
         }
 
-        public void Reset()
+        public void Reset(bool cleanup)
         {
             Utils.SafeExecute(() =>
             {
@@ -697,7 +693,7 @@ namespace Orleans
             {
                 if (clientProviderRuntime != null)
                 {
-                    clientProviderRuntime.Reset().WaitWithThrow(resetTimeout);
+                    clientProviderRuntime.Reset(cleanup).WaitWithThrow(resetTimeout);
                 }
             }, logger, "Client.clientProviderRuntime.Reset");
             Utils.SafeExecute(() =>

@@ -18,6 +18,35 @@ namespace Orleans.Runtime.Configuration
     /// </summary>
     public static class ConfigUtilities
     {
+        internal static void ParseAdditionalAssemblyDirectories(IDictionary<string, SearchOption> directories, XmlElement root)
+        {
+            foreach(var node in root.ChildNodes)
+            {
+                var grandchild = node as XmlElement;
+                
+                if(grandchild == null)
+                {
+                    continue;
+                }
+                else
+                {
+                    if(!grandchild.HasAttribute("Path"))
+                        throw new FormatException("Missing 'Path' attribute on Directory element.");
+
+                    // default to recursive
+                    var recursive = true;
+
+                    if(grandchild.HasAttribute("IncludeSubFolders"))
+                    {
+                        if(!bool.TryParse(grandchild.Attributes["IncludeSubFolders"].Value, out recursive))
+                            throw new FormatException("Attribute 'IncludeSubFolders' has invalid value.");
+
+                        directories[grandchild.Attributes["Path"].Value] = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                    }
+                }
+            }
+        }
+
         internal static void ParseTelemetry(XmlElement root)
         {
             foreach (var node in root.ChildNodes)
@@ -84,11 +113,6 @@ namespace Orleans.Runtime.Configuration
             if (root.HasAttribute("TraceToFile"))
             {
                 config.TraceFilePattern = root.GetAttribute("TraceToFile");
-            }
-            if (root.HasAttribute("WriteMessagingTraces"))
-            {
-                config.WriteMessagingTraces = ParseBool(root.GetAttribute("WriteMessagingTraces"),
-                    "Invalid boolean value for WriteMessagingTraces attribute on Tracing element for " + nodeName);
             }
             if (root.HasAttribute("LargeMessageWarningThreshold"))
             {
@@ -403,6 +427,11 @@ namespace Orleans.Runtime.Configuration
             return TimeSpan.FromMilliseconds(rawTimeSpan * unitSize);
         }
 
+        internal static string ToParseableTimeSpan(TimeSpan input)
+        {
+            return $"{input.TotalMilliseconds.ToString(CultureInfo.InvariantCulture)}ms";
+        }
+
         internal static byte[] ParseSubnet(string input, string errorMessage)
         {
             return string.IsNullOrEmpty(input) ? null : input.Split('.').Select(s => (byte) ParseInt(s, errorMessage)).ToArray();
@@ -468,7 +497,6 @@ namespace Orleans.Runtime.Configuration
             }
             sb.Append("     Trace to Console: ").Append(config.TraceToConsole).AppendLine();
             sb.Append("     Trace File Name: ").Append(string.IsNullOrWhiteSpace(config.TraceFileName) ? "" : Path.GetFullPath(config.TraceFileName)).AppendLine();
-            sb.Append("     Write Messaging Traces: ").Append(config.WriteMessagingTraces).AppendLine();
             sb.Append("     LargeMessageWarningThreshold: ").Append(config.LargeMessageWarningThreshold).AppendLine();
             sb.Append("     PropagateActivityId: ").Append(config.PropagateActivityId).AppendLine();
             sb.Append("     BulkMessageLimit: ").Append(config.BulkMessageLimit).AppendLine();

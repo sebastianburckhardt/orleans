@@ -34,7 +34,7 @@
     <DocumentationFile>obj\Debug\Orleans.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <WarningsAsErrors>4014</WarningsAsErrors>
-    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
+    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -60,7 +60,7 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>$(SolutionDir)packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(SolutionDir)packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -70,7 +70,7 @@
   <ItemGroup>
     <Compile Include="AssemblyLoader\AssemblyProcessor.cs" />
     <Compile Include="Async\AsyncBatchedContinuationQueue.cs" />
-    <Compile Include="Async\BackgroundWorker.cs" />
+    <Compile Include="Async\BatchWorker.cs" />
     <Compile Include="Async\MultiTaskCompletionSource.cs" />
     <Compile Include="Async\AsyncSerialExecutor.cs" />
     <Compile Include="Async\AsyncExecutorWithRetries.cs" />
@@ -81,6 +81,7 @@
     <Compile Include="Async\TaskExtensions.cs" />
     <Compile Include="EventSourcing\ICustomStreamName.cs" />
     <Compile Include="EventSourcing\JournaledGrain.cs" />
+    <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />
     <Compile Include="CodeGeneration\GrainState.cs" />
@@ -95,12 +96,18 @@
     <Compile Include="CodeGeneration\SkipCodeGenerationAttribute.cs" />
     <Compile Include="CodeGeneration\IGrainState.cs" />
     <Compile Include="CodeGeneration\TypeFormattingOptions.cs" />
+    <Compile Include="Configuration\ConfigurationExtensions.cs" />
+    <Compile Include="Core\IGrainInvokeInterceptor.cs" />
+    <Compile Include="Core\InterceptedMethodInvoker.cs" />
+    <Compile Include="Core\InvocationMethodInfoMap.cs" />
     <Compile Include="Core\IStatefulGrain.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
-    <Compile Include="LogViews\ILogSubmission.cs" />
-    <Compile Include="LogViews\ILogView.cs" />
+    <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
+    <Compile Include="LogViews\ILogViewStorageInterface.cs" />
     <Compile Include="LogViews\ILogViewHost.cs" />
     <Compile Include="LogViews\LogViewGrain.cs" />
+    <Compile Include="QueuedGrains\QueuedGrainVariants.cs" />
+    <Compile Include="Runtime\RingRange.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
     <Compile Include="Configuration\LimitValue.cs" />
@@ -111,9 +118,13 @@
     <Compile Include="MultiCluster\IProtocolParticipant.cs" />
     <Compile Include="LogViews\ILogViewAdaptor.cs" />
     <Compile Include="LogViews\ILogViewStatistics.cs" />
-    <Compile Include="LogViews\ILogViewAdaptorHost.cs" />
+    <Compile Include="LogViews\ILogViewGrain.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="GrainDirectory\MultiClusterRegistrationStrategy.cs" />
+    <Compile Include="GrainDirectory\IGrainDirectory.cs" />
+    <Compile Include="GrainDirectory\IGrainRegistrar.cs" />
+    <Compile Include="GrainDirectory\ClusterLocalRegistration.cs" />
     <Compile Include="IDs\GuidId.cs" />
     <Compile Include="Messaging\GatewayManager.cs" />
     <Compile Include="Messaging\IncomingMessageBuffer.cs" />
@@ -123,7 +134,6 @@
     <Compile Include="LogViews\ILogViewProvider.cs" />
     <Compile Include="Providers\StorageProviderUtils.cs" />
     <Compile Include="LogViews\IProtocolServices.cs" />
-    <Compile Include="QueuedGrains\IUpdateOperation.cs" />
     <Compile Include="QueuedGrains\QueuedGrain.cs" />
     <Compile Include="Runtime\GrainRuntime.cs" />
     <Compile Include="Runtime\IAddressable.cs" />
@@ -137,9 +147,10 @@
     <Compile Include="Runtime\IGrainRuntime.cs" />
     <Compile Include="Serialization\OrleansJsonSerializer.cs" />
     <Compile Include="Serialization\BinaryFormatterSerializer.cs" />
+    <Compile Include="Streams\Core\StreamIdentity.cs" />
     <Compile Include="Streams\Internal\StreamHandshakeToken.cs" />
-    <Compile Include="Serialization\NonSerializableAttribute.cs" />
     <Compile Include="Streams\PersistentStreams\IDeploymentConfiguration.cs" />
+    <Compile Include="Streams\PersistentStreams\IStreamQueueCheckpointer.cs" />
     <Compile Include="Streams\PersistentStreams\NoOpStreamFailureHandler.cs" />
     <Compile Include="Streams\PersistentStreams\IStreamFailureHandler.cs" />
     <Compile Include="Streams\PersistentStreams\StreamEventDeliveryFailureException.cs" />
@@ -148,6 +159,8 @@
     <Compile Include="SystemTargetInterfaces\IProtocolGateway.cs" />
     <Compile Include="Streams\PubSub\ImplicitStreamPubSub.cs" />
     <Compile Include="Streams\PubSub\StreamPubSubImpl.cs" />
+    <Compile Include="Streams\QueueAdapters\IQueueFlowController.cs" />
+    <Compile Include="Streams\QueueAdapters\AggregatedQueueFlowController.cs" />
     <Compile Include="Telemetry\Consumers\ConsoleTelemetryConsumer.cs" />
     <Compile Include="Telemetry\Consumers\FileTelemetryConsumer.cs" />
     <Compile Include="Telemetry\Consumers\TraceTelemetryConsumer.cs" />
@@ -331,7 +344,7 @@
     <Compile Include="Messaging\ProxiedMessageCenter.cs" />
     <Compile Include="Messaging\SocketManager.cs" />
     <Compile Include="Async\ObserverSubscriptionManager.cs" />
-    <Compile Include="CodeGeneration\GrainInterfaceData.cs" />
+    <Compile Include="CodeGeneration\GrainInterfaceUtils.cs" />
     <Compile Include="IDs\ActivationAddress.cs" />
     <Compile Include="IDs\ActivationId.cs" />
     <Compile Include="Runtime\AsynchAgent.cs" />
@@ -380,14 +393,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
-    <Content Include="..\NuGet\Orleans.Grains.props">
-      <Link>Orleans.Grains.props</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\NuGet\Orleans.Interfaces.props">
-      <Link>Orleans.Interfaces.props</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Configuration\OrleansConfiguration.xsd">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -396,6 +401,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateVersionNumber" BeforeTargets="VersionInit" Condition="'$(BuildingInsideVisualStudio)' != 'true'" Outputs="$(SolutionDir)Build\Version.txt">
     <PropertyGroup Condition="'$(BuildNumber)' == ''">

@@ -7,27 +7,27 @@ using Orleans.MultiCluster;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
-    // An implementation of a gossip channel based on a  standard orleans azure table
-    // multiple gossipnetworks can use the same table, and are separated by pkey = GlobalServiceId
+    /// <summary>
+    /// An implementation of a gossip channel based on a standard Orleans Azure table.
+    /// Multiple gossip networks can use the same table, and are separated by partition key = GlobalServiceId
+    /// </summary>
     internal class AzureTableBasedGossipChannel : IGossipChannel
     {
-
         private TraceLogger logger;
         private GossipTableInstanceManager tableManager;
-        private static int seqno;
+        private static int sequenceNumber;
 
         public string Name { get; private set; }
 
-        public async Task Initialize(GlobalConfiguration globalconfig, string connectionstring)
+        public async Task Initialize(Guid serviceid, string connectionstring)
         {
-            Name = "AzureTableBasedGossipChannel-" + ++seqno;
+            Name = "AzureTableBasedGossipChannel-" + ++sequenceNumber;
             logger = TraceLogger.GetLogger(Name, TraceLogger.LoggerType.Runtime);
 
             logger.Info("Initializing Gossip Channel for ServiceId={0} using connection: {1}, SeverityLevel={2}",
-                globalconfig.GlobalServiceId, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
+                serviceid, ConfigUtilities.RedactConnectionStringInfo(connectionstring), logger.SeverityLevel);
 
-            tableManager =
-                await GossipTableInstanceManager.GetManager(globalconfig.GlobalServiceId, connectionstring, logger);
+            tableManager = await GossipTableInstanceManager.GetManager(serviceid, connectionstring, logger);
         }
 
         // used by unit tests
@@ -37,151 +37,157 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return tableManager.DeleteTableEntries();
         }
 
-        public struct Pair<L,R>
-        {
-            public L Item1;
-            public R Item2;
-        }
-        private static void UpdateDictionaryRight<T, L, R>(Dictionary<T, Pair<L, R>> d, T key, R val)
-        {
-            Pair<L, R> current;
-            d.TryGetValue(key, out current);
-            current.Item2 = val;
-            d[key] = current;
-        }
 
-        
-        // IGossipChannel
-        public async Task Push(MultiClusterData data)
-        {
-            logger.Verbose("-Push data:{0}", data);
+        #region IGossipChannel
 
-            var retrievaltasks = new List<Task<Tuple<GossipTableEntry,string>>>();
+        public async Task Publish(MultiClusterData data)
+        {
+            logger.Verbose("-Publish data:{0}", data);
+            // this is (almost) always called with just one item in data to be written back
+            // so we are o.k. with doing individual tasks for each storage read and write
+
+            var tasks = new List<Task>();
             if (data.Configuration != null)
-                retrievaltasks.Add(tableManager.ReadConfigurationEntryAsync());
-            foreach(var gateway in data.Gateways.Values)
-                retrievaltasks.Add(tableManager.ReadGatewayEntryAsync(gateway));
-
-            await Task.WhenAll(retrievaltasks);
-
-            var entriesfromstorage = retrievaltasks.Select(t => t.Result).Where(tuple => tuple != null);
-            await DiffAndWriteBack(data, entriesfromstorage); 
+            {
+                Func<Task> publishconfig = async () => {
+                    var configInStorage = await tableManager.ReadConfigurationEntryAsync();
+                    await DiffAndWriteBackConfigAsync(data.Configuration, configInStorage);
+                };
+                tasks.Add(publishconfig());    
+            }
+            foreach (var gateway in data.Gateways.Values)
+            {
+                Func<Task> publishgatewayinfo = async () => {
+                    var gatewayInfoInStorage = await tableManager.ReadGatewayEntryAsync(gateway);
+                    await DiffAndWriteBackGatewayInfoAsync(gateway, gatewayInfoInStorage);
+                };
+                tasks.Add(publishgatewayinfo());
+            }
+            await Task.WhenAll(tasks);
         }
 
-        // IGossipChannel
-        public async Task<MultiClusterData> PushAndPull(MultiClusterData pushed)
+        public async Task<MultiClusterData> Synchronize(MultiClusterData pushed)
         {
-            logger.Verbose("-PushAndPull pushed:{0}", pushed);
+            logger.Verbose("-Synchronize pushed:{0}", pushed);
 
             try
             {
+                // read the entire table from storage
+                var entriesFromStorage = await tableManager.ReadAllEntriesAsync();
+                var configInStorage = entriesFromStorage.Item1;
+                var gatewayInfoInStorage = entriesFromStorage.Item2;
 
-                var entriesfromstorage = await tableManager.FindAllGossipTableEntries();
-                var delta = await DiffAndWriteBack(pushed, entriesfromstorage);
+                // diff and write back configuration
+                var configDeltaTask = DiffAndWriteBackConfigAsync(pushed.Configuration, configInStorage);
 
-                logger.Verbose("-PushAndPull pulled delta:{0}", delta);
+                // diff and write back gateway info for each gateway appearing locally or in storage
+                var gatewayDeltaTasks = new List<Task<GatewayEntry>>();
+                var allAddresses = gatewayInfoInStorage.Keys.Union(pushed.Gateways.Keys);
+                foreach (var address in allAddresses)
+                {
+                    GatewayEntry pushedInfo = null;
+                    pushed.Gateways.TryGetValue(address, out pushedInfo);
+                    GossipTableEntry infoInStorage = null;
+                    gatewayInfoInStorage.TryGetValue(address, out infoInStorage);
+
+                    gatewayDeltaTasks.Add(DiffAndWriteBackGatewayInfoAsync(pushedInfo, infoInStorage));
+                }
+
+                // wait for all the writeback tasks to complete
+                // these are not batched because we want them to fail individually on e-tag conflicts, not all
+                await configDeltaTask;
+                await Task.WhenAll(gatewayDeltaTasks);
+
+                // assemble delta pieces
+                var gw = new Dictionary<SiloAddress, GatewayEntry>();
+                foreach (var t in gatewayDeltaTasks)
+                {
+                    var d = t.Result;
+                    if (d != null)
+                        gw.Add(d.SiloAddress, d);
+                }
+                var delta = new MultiClusterData(gw, configDeltaTask.Result);
+
+                logger.Verbose("-Synchronize pulled delta:{0}", delta);
 
                 return delta;
             }
             catch (Exception e)
             {
-                logger.Info("-PushAndPull encountered exception {0}", e);
+                logger.Info("-Synchronize encountered exception {0}", e);
 
                 throw e;
             }
-
         }
 
-        internal async Task<MultiClusterData> DiffAndWriteBack(MultiClusterData pushed, IEnumerable<Tuple<GossipTableEntry, string>> entriesfromstorage)
+        #endregion
+
+
+        // compare config with configInStorage, and
+        // - write config to storage if it is newer (or do nothing on etag conflict)
+        // - return config from store if it is newer
+        internal async Task<MultiClusterConfiguration> DiffAndWriteBackConfigAsync(MultiClusterConfiguration config, GossipTableEntry configInStorage)
         {
 
-            MultiClusterConfiguration conf1;
-            Tuple<GossipTableEntry, string> conf2 = null;
-            var gateways = new Dictionary<SiloAddress, Pair<GatewayEntry, Tuple<GossipTableEntry, string>>>();
-            MultiClusterConfiguration returnedconf = null;
+            // interpret empty admin timestamp by taking the azure table timestamp instead
+            // this allows an admin to inject a configuration by editing table directly
+            if (configInStorage != null && configInStorage.GossipTimestamp == default(DateTime))
+                configInStorage.GossipTimestamp = configInStorage.Timestamp.UtcDateTime;
 
-            // collect left-hand side data
-            conf1 = pushed.Configuration;
-            foreach (var e in pushed.Gateways)
-               if (!e.Value.Expired)
-                   gateways[e.Key] = new Pair<GatewayEntry, Tuple<GossipTableEntry, string>> { Item1 = e.Value };
-
-            foreach (var tuple in entriesfromstorage)
+            if (config != null &&
+                (configInStorage == null || configInStorage.GossipTimestamp < config.AdminTimestamp))
             {
-                var tableEntry = tuple.Item1;
-                if (tableEntry.RowKey.Equals(GossipTableEntry.CONFIGURATION_ROW))
-                {
-                    conf2 = tuple;
-                    // interpret empty admin timestamp by taking the azure table timestamp instead
-                    // this allows an admin to inject a configuration by editing table more easily
-                    if (conf2.Item1.GossipTimestamp == default(DateTime))
-                        conf2.Item1.GossipTimestamp = conf2.Item1.Timestamp.UtcDateTime;
-                }
+                // push the more recent configuration to storage
+                if (configInStorage == null)
+                    await tableManager.TryCreateConfigurationEntryAsync(config);
                 else
-                {
-                    try
-                    {
-                        tableEntry.UnpackRowKey();
-                        UpdateDictionaryRight(gateways, tableEntry.SiloAddress, tuple);
-                    }
-                    catch (Exception exc)
-                    {
-                        logger.Error(ErrorCode.AzureTable_61, String.Format(
-                            "Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.",
-                            tableEntry), exc);
-                    }
-                }
+                    await tableManager.TryUpdateConfigurationEntryAsync(config, configInStorage, configInStorage.ETag);
             }
-
-            var writeback = new List<Task>();
-            var sendback = new Dictionary<SiloAddress,GatewayEntry>();
-
-            // push configuration
-            if (conf1 != null &&
-                (conf2 == null || conf2.Item1.GossipTimestamp < conf1.AdminTimestamp))
+            else if (configInStorage != null &&
+                 (config == null || config.AdminTimestamp < configInStorage.GossipTimestamp))
             {
-                if (conf2 == null)
-                    writeback.Add(tableManager.TryCreateConfigurationEntryAsync(conf1));
-                else
-                    writeback.Add(tableManager.TryUpdateConfigurationEntryAsync(conf1, conf2.Item1, conf2.Item2));
+                // pull the more recent configuration from storage
+                return configInStorage.ToConfiguration();
             }
-           // pull configuration
-            else if (conf2 != null &&
-                 (conf1 == null || conf1.AdminTimestamp < conf2.Item1.GossipTimestamp))
-            {
-                returnedconf = conf2.Item1.ToConfiguration();
-            }
-
-            foreach (var pair in gateways)
-            {
-                var left = pair.Value.Item1;
-                var right = pair.Value.Item2;
-
-                // push gateway entry
-                if ((left != null && !left.Expired)
-                     && (right == null || right.Item1.GossipTimestamp < left.HeartbeatTimestamp))
-                {
-                    if (right == null)
-                        writeback.Add(tableManager.TryCreateGatewayEntryAsync(left));
-                    else
-                        writeback.Add(tableManager.TryUpdateGatewayEntryAsync(left, right.Item1, right.Item2));
-                }
-                // pull or remove gateway entry
-                else if (right != null &&
-                        (left == null || left.HeartbeatTimestamp < right.Item1.GossipTimestamp))
-                {
-                    var gatewayentry = right.Item1.ToGatewayEntry();
-                    if (gatewayentry.Expired)
-                        writeback.Add(tableManager.TryDeleteGatewayEntryAsync(right.Item1, right.Item2));
-                    else
-                        sendback.Add(right.Item1.SiloAddress, right.Item1.ToGatewayEntry()); // gets sent back
-                }
-
-            }
-
-            await Task.WhenAll(writeback);
-
-            return new MultiClusterData(sendback, returnedconf);
+            return null;
         }
+
+        // compare gatewayInfo with gatewayInfoInStorage, and
+        // - write gatewayInfo to storage if it is newer (or do nothing on etag conflict)
+        // - remove expired gateway info from storage
+        // - return gatewayInfoInStorage if it is newer
+        internal async Task<GatewayEntry> DiffAndWriteBackGatewayInfoAsync(GatewayEntry gatewayInfo, GossipTableEntry gatewayInfoInStorage)
+        {
+            if ((gatewayInfo != null && !gatewayInfo.Expired)
+                 && (gatewayInfoInStorage == null || gatewayInfoInStorage.GossipTimestamp < gatewayInfo.HeartbeatTimestamp))
+            {
+                // push  the more recent gateway info to storage
+                if (gatewayInfoInStorage == null)
+                {
+                    await tableManager.TryCreateGatewayEntryAsync(gatewayInfo);
+                }
+                else
+                {
+                    await tableManager.TryUpdateGatewayEntryAsync(gatewayInfo, gatewayInfoInStorage, gatewayInfoInStorage.ETag);
+                }
+            }
+            else if (gatewayInfoInStorage != null &&
+                    (gatewayInfo == null || gatewayInfo.HeartbeatTimestamp < gatewayInfoInStorage.GossipTimestamp))
+            {
+                var fromstorage = gatewayInfoInStorage.ToGatewayEntry();
+                if (fromstorage.Expired)
+                {
+                    // remove gateway info from storage
+                    await tableManager.TryDeleteGatewayEntryAsync(gatewayInfoInStorage, gatewayInfoInStorage.ETag);
+                }
+                else
+                {
+                    // pull the more recent info from storage
+                    return fromstorage;
+                }
+            }
+            return null;
+        }
+
     }
 }

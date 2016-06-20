@@ -49,7 +49,6 @@ namespace Orleans.Runtime.Messaging
             stopped = false;
         }
 
-
         public void SendMessage(Message msg)
         {
             if (msg == null) throw new ArgumentNullException("msg", "Can't send a null message.");
@@ -84,9 +83,6 @@ namespace Orleans.Runtime.Messaging
                 messageCenter.SendRejection(msg, Message.RejectionTypes.Unrecoverable, "Message to be sent does not have a target silo");
                 return;
             }
-
-            if (Message.WriteMessagingTraces)
-                msg.AddTimestamp(Message.LifecycleTag.EnqueueOutgoing);
 
             // Shortcut messages to this silo
             if (msg.TargetSilo.Equals(messageCenter.MyAddress))

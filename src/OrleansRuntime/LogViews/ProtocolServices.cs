@@ -9,13 +9,14 @@ using Orleans.LogViews;
 using Orleans.MultiCluster;
 using Orleans.Runtime;
 using Orleans.SystemTargetInterfaces;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.LogViews
 {
     /// <summary>
     /// Functionality for use by log view adaptors that run distributed protocols. 
-    /// It also stores grain-specific information like the grain reference. 
-    /// This class allows access to these runtime-internal services to log view providers.
+    /// This class allows access to these services to providers that cannot see runtime-internals.
+    /// It also stores grain-specific information like the grain reference, and caches 
     /// </summary>
     internal class ProtocolServices : IProtocolServices
     {
@@ -24,12 +25,18 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
-        private Grain grain;   // the grain that owns this service object
+        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set;  }
 
-        internal ProtocolServices(Grain gr, ILogViewProvider provider)
+        private Grain grain;   // links to the grain that owns this service object
+
+        // cached 
+
+
+        internal ProtocolServices(Grain gr, ILogViewProvider provider, MultiClusterRegistrationStrategy strategy)
         {
             this.grain = gr;
             this.Provider = provider;
+            this.RegistrationStrategy = strategy;
 
             if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
                 PseudoMultiClusterConfiguration = new MultiClusterConfiguration(DateTime.UtcNow, new string[] { PseudoReplicaId }.ToList());
@@ -84,8 +91,6 @@ namespace Orleans.Runtime.LogViews
         // pseudo-configuration to use if there is no actual multicluster network
         private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
         private static string PseudoReplicaId = "I";
-
-
 
         public string MyClusterId
         {
@@ -158,9 +163,9 @@ namespace Orleans.Runtime.LogViews
         }
      
 
-        public void CaughtTransitionException(string where, Exception e)
+        public void CaughtViewUpdateException(string where, Exception e)
         {
-            Provider.Log.Warn((int)ErrorCode.LogView_TransitionException,  
+            Provider.Log.Warn((int)ErrorCode.LogView_ViewUpdateException,  
          string.Format("{0}{1} Exception Caught at {2}",
                    grain.GrainReference,
                    PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),

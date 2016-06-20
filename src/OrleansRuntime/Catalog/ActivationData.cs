@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 using Orleans.Storage;
 using Orleans.CodeGeneration;
-using Orleans.EventSourcing;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime
 {
@@ -104,15 +104,15 @@ namespace Orleans.Runtime
             /// <param name="methodId"></param>
             /// <param name="arguments"></param>
             /// <returns></returns>
-            public Task<object> Invoke(IAddressable grain, int interfaceId, int methodId, object[] arguments)
+            public Task<object> Invoke(IAddressable grain, InvokeMethodRequest request)
             {
-                if (extensionMap == null || !extensionMap.ContainsKey(interfaceId))
+                if (extensionMap == null || !extensionMap.ContainsKey(request.InterfaceId))
                     throw new InvalidOperationException(
-                        String.Format("Extension invoker invoked with an unknown inteface ID:{0}.", interfaceId));
+                        String.Format("Extension invoker invoked with an unknown inteface ID:{0}.", request.InterfaceId));
 
-                var invoker = extensionMap[interfaceId].Item2;
-                var extension = extensionMap[interfaceId].Item1;
-                return invoker.Invoke(extension, interfaceId, methodId, arguments);
+                var invoker = extensionMap[request.InterfaceId].Item2;
+                var extension = extensionMap[request.InterfaceId].Item1;
+                return invoker.Invoke(extension, request);
             }
 
             public bool IsExtensionInstalled(int interfaceId)
@@ -144,7 +144,7 @@ namespace Orleans.Runtime
             nodeConfiguration = nodeConfig;
         }
 
-        public ActivationData(ActivationAddress addr, string genericArguments, PlacementStrategy placedUsing, IActivationCollector collector, TimeSpan ageLimit)
+        public ActivationData(ActivationAddress addr, string genericArguments, PlacementStrategy placedUsing, MultiClusterRegistrationStrategy registrationStrategy, IActivationCollector collector, TimeSpan ageLimit)
         {
             if (null == addr) throw new ArgumentNullException("addr");
             if (null == placedUsing) throw new ArgumentNullException("placedUsing");
@@ -155,7 +155,7 @@ namespace Orleans.Runtime
             Address = addr;
             State = ActivationState.Create;
             PlacedUsing = placedUsing;
-
+            RegistrationStrategy = registrationStrategy;
             if (!Grain.IsSystemTarget && !Constants.IsSystemGrain(Grain))
             {
                 this.collector = collector;
@@ -373,6 +373,8 @@ namespace Orleans.Runtime
 
         public PlacementStrategy PlacedUsing { get; private set; }
 
+        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
+
         // currently, the only supported multi-activation grain is one using the StatelessWorkerPlacement strategy.
         internal bool IsStatelessWorker { get { return PlacedUsing is StatelessWorkerPlacement; } }
 
@@ -543,7 +545,7 @@ namespace Orleans.Runtime
             if (maxEnqueuedRequestsLimit != null) return maxEnqueuedRequestsLimit;
             if (GrainInstanceType != null)
             {
-                string limitName = CodeGeneration.GrainInterfaceData.IsStatelessWorker(GrainInstanceType)
+                string limitName = CodeGeneration.GrainInterfaceUtils.IsStatelessWorker(GrainInstanceType)
                     ? LimitNames.LIMIT_MAX_ENQUEUED_REQUESTS_STATELESS_WORKER
                     : LimitNames.LIMIT_MAX_ENQUEUED_REQUESTS;
                 maxEnqueuedRequestsLimit = nodeConfiguration.LimitManager.GetLimit(limitName); // Cache for next time

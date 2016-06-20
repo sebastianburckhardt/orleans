@@ -15,15 +15,20 @@ using Orleans.Runtime;
 using Orleans.Concurrency;
 using Orleans.CodeGeneration;
 using Orleans.Runtime.Configuration;
+using Newtonsoft.Json;
+using Orleans.Providers;
+using System.Runtime.Serialization.Formatters;
 
 namespace Orleans.Serialization
 {
-
     /// <summary>
-    /// SerializationManager to oversee the Orleans syrializer system.
+    /// SerializationManager to oversee the Orleans serializer system.
     /// </summary>
     public static class SerializationManager
     {
+        internal const string UseFullAssemblyNamesProperty = "UseFullAssemblyNames";
+        internal const string IndentJsonProperty = "IndentJSON";
+
         /// <summary>
         /// Deep copier function.
         /// </summary>
@@ -65,6 +70,27 @@ namespace Orleans.Serialization
             get;
             set;
         }
+
+#if DNXCORE50
+        // Workaround for CoreCLR where FormatterServices.GetUninitializedObject is not public (but might change in RTM so we could remove this then).
+        private static readonly Func<Type, object> getUninitializedObjectDelegate =
+            (Func<Type, object>)
+                typeof(string)
+                    .GetTypeInfo()
+                    .Assembly
+                    .GetType("System.Runtime.Serialization.FormatterServices")
+                    .GetMethod("GetUninitializedObject", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
+                    .CreateDelegate(typeof(Func<Type, object>));
+
+        /// <summary>
+        /// Returns an unitialized object with FormatterServices.
+        /// </summary>
+        /// <param name="type">The type to create</param>
+        public static object GetUninitializedObjectWithFormatterServices(Type type)
+        {
+            return getUninitializedObjectDelegate.Invoke(type);
+        }
+#endif
 
         #region Privates
 
@@ -127,11 +153,18 @@ namespace Orleans.Serialization
 
         public static void InitializeForTesting(List<TypeInfo> serializationProviders = null, bool useJsonFallbackSerializer = false)
         {
-            RegisterBuiltInSerializers();
-            BufferPool.InitGlobalBufferPool(new MessagingConfiguration(false));
-            AssemblyProcessor.Initialize();
-            RegisterSerializationProviders(serializationProviders);
-            fallbackSerializer = GetFallbackSerializer(useJsonFallbackSerializer);
+            try
+            {
+                RegisterBuiltInSerializers();
+                BufferPool.InitGlobalBufferPool(new MessagingConfiguration(false));
+                RegisterSerializationProviders(serializationProviders);
+                AssemblyProcessor.Initialize();
+                fallbackSerializer = GetFallbackSerializer(useJsonFallbackSerializer);
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                throw ex.Flatten();
+            }
         }
 
         internal static void Initialize(bool useStandardSerializer, List<TypeInfo> serializationProviders, bool useJsonFallbackSerializer)
@@ -182,8 +215,8 @@ namespace Orleans.Serialization
                 FallbackCopiesTimeStatistic = CounterStatistic.FindOrCreate(StatisticNames.SERIALIZATION_BODY_FALLBACK_DEEPCOPY_MILLIS, storeFallback).AddValueConverter(Utils.TicksToMilliSeconds);
             }
 
-            AssemblyProcessor.Initialize();
             RegisterSerializationProviders(serializationProviders);
+            AssemblyProcessor.Initialize();
         }
 
         internal static void RegisterBuiltInSerializers()
@@ -301,7 +334,6 @@ namespace Orleans.Serialization
             // Enum names we need to recognize
             Register(typeof(Message.Categories));
             Register(typeof(Message.Directions));
-            Register(typeof(Message.LifecycleTag));
             Register(typeof(Message.RejectionTypes));
             Register(typeof(Message.ResponseTypes));
         }
@@ -534,6 +566,7 @@ namespace Orleans.Serialization
             bool systemAssembly = !assembly.IsDynamic
                                   && (assembly.FullName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase)
                                       || assembly.FullName.StartsWith("System.", StringComparison.Ordinal));
+            IExternalSerializer externalSerializer;
 
             if (logger.IsVerbose2) logger.Verbose2("Scanning assembly {0} for serialization info", assembly.GetLocationSafe());
 
@@ -565,6 +598,7 @@ namespace Orleans.Serialization
                             {
                                 try
                                 {
+                                    if (register.ContainsGenericParameters) throw new OrleansException("Type serializer '" + register.GetType().FullName + "' contains generic parameters and can not be registered. Did you mean to provide a split your type serializer into a combination of nongeneric RegisterSerializerAttribute and generic SerializableAttribute classes?");
                                     register.Invoke(null, Type.EmptyTypes);
                                 }
                                 catch (OrleansException ex)
@@ -666,6 +700,10 @@ namespace Orleans.Serialization
                                         type.Name,
                                         assembly.GetName().Name);
                             }
+                            else if (TryLookupExternalSerializer(type, out externalSerializer))
+                            {
+                                // the lookup registers the serializer.
+                            }
                             else if (!type.GetTypeInfo().IsSerializable)
                             {
                                 // Comparers with no fields can be safely dealt with as just a type name
@@ -690,6 +728,7 @@ namespace Orleans.Serialization
                     }
                     else
                     {
+                        // type is abstract, an interface, system-defined, or its namespace is null
                         Register(type);
                     }
                 }
@@ -1044,10 +1083,10 @@ namespace Orleans.Serialization
         /// <returns>true if <paramref name="t"/> is serializable, false otherwise.</returns>
         internal static bool HasSerializer(Type t)
         {
+            var typeInfo = t.GetTypeInfo();
             lock (serializers)
             {
                 Serializer ser;
-                var typeInfo = t.GetTypeInfo();
                 return serializers.TryGetValue(typeInfo.TypeHandle, out ser)
                        || (typeInfo.IsGenericType && serializers.TryGetValue(typeInfo.GetGenericTypeDefinition().TypeHandle, out ser));
             }
@@ -2123,7 +2162,7 @@ namespace Orleans.Serialization
                 field.Name + "Get",
                 field.FieldType,
                 parameterTypes,
-                declaringType.Module,
+                field.FieldType.Module,
                 true);
 
             // Emit IL to return the value of the Transaction property.
@@ -2182,7 +2221,7 @@ namespace Orleans.Serialization
             }
 
             // Create a method to hold the generated IL.
-            var method = new DynamicMethod(field.Name + "Set", null, parameterTypes, declaringType.Module, true);
+            var method = new DynamicMethod(field.Name + "Set", null, parameterTypes, field.FieldType.Module, true);
 
             // Emit IL to return the value of the Transaction property.
             var emitter = method.GetILGenerator();
@@ -2293,6 +2332,41 @@ namespace Orleans.Serialization
             if (UseStandardSerializer) return false;
             
             return true;
+        }
+
+        public static JsonSerializerSettings GetDefaultJsonSerializerSettings()
+        {
+            return OrleansJsonSerializer.GetDefaultSerializerSettings();
+        }
+
+        /// <summary>
+        /// Customises the given serializer settings
+        /// using provider configuration.
+        /// Can be used by any provider, allowing the users to use a standard set of configuration attributes.
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="config"></param>
+        /// <returns><see cref="JsonSerializerSettings" /></returns>
+        public static JsonSerializerSettings UpdateSerializerSettings(JsonSerializerSettings settings, IProviderConfiguration config)
+        {
+            if (config.Properties.ContainsKey(UseFullAssemblyNamesProperty))
+            {
+                bool useFullAssemblyNames;
+                if (bool.TryParse(config.Properties[UseFullAssemblyNamesProperty], out useFullAssemblyNames) && useFullAssemblyNames)
+                {
+                    settings.TypeNameAssemblyFormat = FormatterAssemblyStyle.Full;
+                }
+            }
+
+            if (config.Properties.ContainsKey(IndentJsonProperty))
+            {
+                bool indentJSON;
+                if (bool.TryParse(config.Properties[IndentJsonProperty], out indentJSON) && indentJSON)
+                {
+                    settings.Formatting = Formatting.Indented;
+                }
+            }
+            return settings;
         }
     }
 }

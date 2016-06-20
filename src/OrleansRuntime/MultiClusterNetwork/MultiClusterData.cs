@@ -12,7 +12,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
     /// Data is gossip-able.
     /// </summary>
     [Serializable]
-    public class MultiClusterData : IEquatable<MultiClusterData>, IMultiClusterGossipData
+    public class MultiClusterData : IMultiClusterGossipData
     {
         /// <summary>
         /// The dictionary of gateway entries and their current status.
@@ -36,36 +36,55 @@ namespace Orleans.Runtime.MultiClusterNetwork
             }
         }
 
-   
         private static Dictionary<SiloAddress, GatewayEntry> emptyd = new Dictionary<SiloAddress, GatewayEntry>();
 
         #region constructor overloads
 
+        /// <summary>
+        /// Construct MultiClusterData containing a collection of gateway entries and a multi-cluster configuration.
+        /// </summary>
+        /// <param name="d">The gateway entries, by SiloAddress</param>
+        /// <param name="config">The configuration</param>
         public MultiClusterData(IReadOnlyDictionary<SiloAddress, GatewayEntry> d, MultiClusterConfiguration config)
         {
             Gateways = d;
             Configuration = config;
         }
+        /// <summary>
+        /// Construct empty MultiClusterData.
+        /// </summary>
         public MultiClusterData()
         {
             Gateways = emptyd;
             Configuration = null;
         }
-        public MultiClusterData(GatewayEntry gatewayentry)
+        /// <summary>
+        /// Construct MultiClusterData containing a single gateway entry.
+        /// </summary>
+        /// <param name="gatewayEntry">The gateway entry</param>
+        public MultiClusterData(GatewayEntry gatewayEntry)
         {
             var l = new Dictionary<SiloAddress, GatewayEntry>();
-            l.Add(gatewayentry.SiloAddress, gatewayentry);
+            l.Add(gatewayEntry.SiloAddress, gatewayEntry);
             Gateways = l;
             Configuration = null;
         }
-        public MultiClusterData(IEnumerable<GatewayEntry> gatewayentries)
+        /// <summary>
+        /// Construct MultiClusterData containing a collection of gateway entries.
+        /// </summary>
+        /// <param name="gatewayEntries">The gateway entries, by SiloAddress</param>
+        public MultiClusterData(IEnumerable<GatewayEntry> gatewayEntries)
         {
             var l = new Dictionary<SiloAddress, GatewayEntry>();
-            foreach (var gatewayentry in gatewayentries)
-                l.Add(gatewayentry.SiloAddress, gatewayentry);
+            foreach (var gatewayEntry in gatewayEntries)
+                l.Add(gatewayEntry.SiloAddress, gatewayEntry);
             Gateways = l;
             Configuration = null;
         }
+        /// <summary>
+        /// Construct MultiClusterData containing a multi-cluster configuration.
+        /// </summary>
+        /// <param name="config">The configuration</param>
         public MultiClusterData(MultiClusterConfiguration config)
         {
             Gateways = emptyd;
@@ -74,14 +93,21 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         #endregion
 
+        /// <summary>
+        /// Display content of MultiCluster data as an (abbreviated) string.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             int active = Gateways.Values.Count(e => e.Status == GatewayStatus.Active);
 
-            return string.Format("Conf=[{0}] Gateways {1}/{2} Active",
+            var activegateways = Gateways.Values.Where(e => e.Status == GatewayStatus.Active).Select(e => e.SiloAddress);
+            var inactivegateways = Gateways.Values.Where(e => e.Status == GatewayStatus.Inactive).Select(e => e.SiloAddress);
+
+            return string.Format("Conf=[{0}] Active=[{1}] Inactive=[{2}]",
                 Configuration == null ? "null" : Configuration.ToString(),
-                active,
-                Gateways.Count
+                string.Join(",", activegateways),
+                string.Join(",", inactivegateways)
             );
         }
 
@@ -94,7 +120,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public bool IsActiveGatewayForCluster(SiloAddress address, string clusterid)
         {
             GatewayEntry info;
-            return  Gateways.TryGetValue(address, out info) 
+            return Gateways.TryGetValue(address, out info)
                 && info.ClusterId == clusterid && info.Status == GatewayStatus.Active;
         }
 
@@ -102,6 +128,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <summary>
         ///  merge source into this object, and return result.
         ///  Ignores expired entries in source, and removes expired entries from this.
+        /// </summary>
         /// <param name="source">The source data to apply to the data in this object</param>
         /// <returns>The updated data</returns>
         public MultiClusterData Merge(MultiClusterData source)
@@ -109,7 +136,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
             MultiClusterData ignore;
             return Merge(source, out ignore);
         }
-
 
         /// <summary>
         ///  incorporate source, producing new result, and report delta.
@@ -121,114 +147,98 @@ namespace Orleans.Runtime.MultiClusterNetwork
         public MultiClusterData Merge(MultiClusterData source, out MultiClusterData delta)
         {
             //--  configuration 
-            var sourceconf = source.Configuration;
-            var thisconf = this.Configuration;
-            MultiClusterConfiguration resultconf = null;
-            MultiClusterConfiguration deltaconf = null;
-            if (MultiClusterConfiguration.OlderThan(thisconf, sourceconf))
+            var sourceConf = source.Configuration;
+            var thisConf = this.Configuration;
+            MultiClusterConfiguration resultConf;
+            MultiClusterConfiguration deltaConf = null;
+            if (MultiClusterConfiguration.OlderThan(thisConf, sourceConf))
             {
-                resultconf = sourceconf;
-                deltaconf = sourceconf;
+                resultConf = sourceConf;
+                deltaConf = sourceConf;
             }
             else
-                resultconf = thisconf;
+            {
+                resultConf = thisConf;
+            }
 
             //--  gateways
-            var sourcelist = source.Gateways;
-            var thislist = this.Gateways;
-            var resultlist = new Dictionary<SiloAddress, GatewayEntry>();
-            var deltalist = new Dictionary<SiloAddress, GatewayEntry>();
-            foreach (var key in sourcelist.Keys.Union(thislist.Keys).Distinct())
+            var sourceList = source.Gateways;
+            var thisList = this.Gateways;
+            var resultList = new Dictionary<SiloAddress, GatewayEntry>();
+            var deltaList = new Dictionary<SiloAddress, GatewayEntry>();
+            foreach (var key in sourceList.Keys.Union(thisList.Keys).Distinct())
             {
-                GatewayEntry thisentry;
-                GatewayEntry sourceentry;
-                thislist.TryGetValue(key, out thisentry);
-                sourcelist.TryGetValue(key, out sourceentry);
+                GatewayEntry thisEntry;
+                GatewayEntry sourceEntry;
+                thisList.TryGetValue(key, out thisEntry);
+                sourceList.TryGetValue(key, out sourceEntry);
 
-                if (sourceentry != null && !sourceentry.Expired
-                     && (thisentry == null || thisentry.HeartbeatTimestamp < sourceentry.HeartbeatTimestamp))
+                if (sourceEntry != null && !sourceEntry.Expired
+                     && (thisEntry == null || thisEntry.HeartbeatTimestamp < sourceEntry.HeartbeatTimestamp))
                 {
-                    resultlist.Add(key, sourceentry);
-                    deltalist.Add(key, sourceentry);
+                    resultList.Add(key, sourceEntry);
+                    deltaList.Add(key, sourceEntry);
                 }
-                else if (thisentry != null)
+                else if (thisEntry != null)
                 {
-                    if (!thisentry.Expired)
-                        resultlist.Add(key, thisentry);
+                    if (!thisEntry.Expired)
+                        resultList.Add(key, thisEntry);
                     else
-                        deltalist.Add(key, thisentry);
+                        deltaList.Add(key, thisEntry);
                 }
             }
 
-            delta = new MultiClusterData(deltalist, deltaconf);
-            return new MultiClusterData(resultlist, resultconf);
+            delta = new MultiClusterData(deltaList, deltaConf);
+            return new MultiClusterData(resultList, resultConf);
         }
 
         /// <summary>
         /// Returns all data of this object except for what keys appear in exclude
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="exclude"></param>
         /// <returns></returns>
         public MultiClusterData Minus(MultiClusterData exclude)
         {
-
-            IReadOnlyDictionary<SiloAddress, GatewayEntry> resultlist;
+            IReadOnlyDictionary<SiloAddress, GatewayEntry> resultList;
             if (exclude.Gateways.Count == 0)
-                resultlist = this.Gateways;
-            else {
-                var list = new Dictionary<SiloAddress, GatewayEntry>();
-                foreach(var g in this.Gateways)
-                    if (!exclude.Gateways.ContainsKey(g.Key))
-                       list.Add(g.Key, g.Value);
-                resultlist = list;
-            }
-
-            MultiClusterConfiguration resultconf;
-            if (exclude.Configuration == null)
-                resultconf = this.Configuration;
-            else
-                resultconf = null;
-
-            return new MultiClusterData(resultlist, resultconf);
-        }
-
-        public bool Equals(MultiClusterData other)
-        {
-            if ((this.Configuration == null) != (other.Configuration == null))
-              return false;
-
-            if (this.Gateways.Count != other.Gateways.Count)
-              return false;
-
-            if ((this.Configuration != null) && !this.Configuration.Equals(other.Configuration))
-              return false;
-
-            foreach (var g in this.Gateways)
             {
-                GatewayEntry othergateway;
-                if (!other.Gateways.TryGetValue(g.Key, out othergateway))
-                    return false;
-                if (!g.Value.Equals(othergateway))
-                    return false;
+                resultList = this.Gateways;
+            }
+            else
+            {
+                resultList = this.Gateways
+                    .Where(g => !exclude.Gateways.ContainsKey(g.Key))
+                    .ToDictionary(g => g.Key, g => g.Value);
             }
 
-            return true;
+            var resultConf = exclude.Configuration == null ? this.Configuration : null;
+
+            return new MultiClusterData(resultList, resultConf);
         }
 
+        // Note: we are not overriding Object.Equals and Object.GetHashCode, because
+        // it is complicated and not needed: MultiClusterData is never used inside collection types that require comparisons or hashing.
     }
-
-     
 
     /// <summary>
     /// Information about gateways, as stored/transmitted in the multicluster network.
     /// </summary>
     [Serializable]
-    public class GatewayEntry : IMultiClusterGatewayInfo, IEquatable<GatewayEntry>, IComparable<GatewayEntry>
+    public class GatewayEntry : IMultiClusterGatewayInfo, IEquatable<GatewayEntry>
     {
+        /// <summary>
+        /// The cluster id.
+        /// </summary>
         public string ClusterId { get; set; }
 
+        /// <summary>
+        /// The address of the silo.
+        /// </summary>
         public SiloAddress SiloAddress { get; set; }
 
+        /// <summary>
+        /// The gateway status of the silo (indicates whether this silo is currently acting as a gateway)
+        /// </summary>
         public GatewayStatus Status { get; set; }
 
         /// <summary>
@@ -236,30 +246,43 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         public DateTime HeartbeatTimestamp { get; set; }
 
-
         /// <summary>
         /// Whether this entry has expired based on its timestamp.
         /// </summary>
         public bool Expired
         {
-            get
-            {
-                return DateTime.UtcNow - HeartbeatTimestamp > ExpiresAfter;
-            }
+            get { return DateTime.UtcNow - HeartbeatTimestamp > ExpiresAfter; }
         }
+
         /// <summary>
         /// time after which entries expire.
         /// </summary>
         public static TimeSpan ExpiresAfter = new TimeSpan(hours: 0, minutes: 30, seconds: 0);
 
+        /// <summary>
+        /// Checks equality of all fields.
+        /// </summary>
         public bool Equals(GatewayEntry other)
         {
+            if (other == null) return false;
+
             return SiloAddress.Equals(other.SiloAddress)
                 && Status.Equals(other.Status)
                 && HeartbeatTimestamp.Equals(other.HeartbeatTimestamp)
                 && ClusterId.Equals(other.ClusterId);
         }
 
+        /// <summary>
+        /// Untyped version of Equals.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as GatewayEntry);
+        }
+
+        /// <summary>
+        /// Overrides GetHashCode to conform with definition of Equals.
+        /// </summary>
         public override int GetHashCode()
         {
             unchecked
@@ -272,16 +295,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
             }
         }
 
-        public int CompareTo(GatewayEntry other)
-        {
-            var diff = ClusterId.CompareTo(other.ClusterId);
-            if (diff != 0) return diff;
-            diff = SiloAddress.ToString().CompareTo(other.SiloAddress.ToString());
-            if (diff != 0) return diff;
-            diff = HeartbeatTimestamp.CompareTo(other.HeartbeatTimestamp);
-            return diff;
-        }
-
+        /// <summary>
+        /// create a string representation of the gateway info.
+        /// </summary>
         public override string ToString()
         {
             return string.Format("[Gateway {0} {1} {2} {3}]", ClusterId, SiloAddress, Status, HeartbeatTimestamp);

@@ -1,23 +1,24 @@
-﻿using Orleans.MultiCluster;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Orleans.MultiCluster;
+
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
-    class MultiClusterOracleData : IMultiClusterGossipData
+    internal class MultiClusterOracleData 
     {
-        private volatile MultiClusterData localdata;  // immutable, can read without lock
+        private volatile MultiClusterData localData;  // immutable, can read without lock
 
         private readonly HashSet<GrainReference> confListeners;
 
         private readonly TraceLogger logger;
 
-        internal MultiClusterData Current { get { return localdata; } }
+        internal MultiClusterData Current { get { return localData; } }
 
         internal MultiClusterOracleData(TraceLogger log)
         {
             logger = log;
-            localdata = new MultiClusterData();
+            localData = new MultiClusterData();
             confListeners = new HashSet<GrainReference>();
         }
 
@@ -48,9 +49,9 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 return data;
 
             MultiClusterData delta;
-            MultiClusterData prev = localdata;
+            MultiClusterData prev = this.localData;
 
-            localdata = prev.Merge(data, out delta);
+            this.localData = prev.Merge(data, out delta);
 
             if (logger.IsVerbose2)
                 logger.Verbose2("ApplyDataAndNotify: delta {0}", delta);

@@ -191,9 +191,9 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
-Test/
 
 # Temporary working files
 **/pingme.txt
 .vs/
 **/project.lock.json
+src/SetupTestScriptOutput.txt

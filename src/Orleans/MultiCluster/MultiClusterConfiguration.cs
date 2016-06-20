@@ -49,10 +49,6 @@ namespace Orleans.MultiCluster
             else
                 return b != null && a.AdminTimestamp < b.AdminTimestamp;
         }
-        public static bool SameAs(MultiClusterConfiguration a, MultiClusterConfiguration b)
-        {
-            return (a == b) || (a != null && a.Equals(b));
-        }
 
         public bool Equals(MultiClusterConfiguration other)
         {
@@ -73,5 +69,20 @@ namespace Orleans.MultiCluster
             return true;
         }
 
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as MultiClusterConfiguration);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = this.AdminTimestamp.GetHashCode();
+                hashCode = (hashCode*397) ^ (this.Clusters != null ? this.Clusters.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (this.Comment != null ? this.Comment.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
     }
 }

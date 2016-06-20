@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Orleans.Runtime.LogViews
 {
-
+    /// <summary>
+    /// Used by StorageProviderLogViewAdaptor, which allows a plain storage provider to
+    /// be wrapped by a log view provider, by adding meta data to the grain state.
+    /// </summary>
+    /// <typeparam name="TView">The view state</typeparam>
     [Serializable]
     public class GrainStateWithMetaDataAndETag<TView> : IGrainState where TView: class, new()
     {

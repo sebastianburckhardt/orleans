@@ -10,35 +10,47 @@ namespace Orleans.QueuedGrains
 {
 
     /// <summary>
-    /// Queued grain base class. 
+    /// Queued grain base class.
+    /// <typeparam name="TState">The type for the state of this grain.</typeparam>
+    /// <typeparam name="TDelta">The type for objects that represent updates to the state.</typeparam>
     /// </summary>
-    public abstract class QueuedGrain<TGrainState> : 
-        LogViewGrain<TGrainState>, IProtocolParticipant,
-        ILogViewAdaptorHost, ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>
-        where TGrainState : class,new()
+    public abstract class QueuedGrain<TState,TDelta> : 
+        LogViewGrainBase<TState>,
+        ILogViewGrain, 
+        IProtocolParticipant,
+        ILogViewHost<TState, TDelta>
+        where TState : class,new()
+        where TDelta : class
     {
         protected QueuedGrain()
         { }
 
-        
-        internal ILogViewAdaptor<TGrainState,IUpdateOperation<TGrainState>> Adaptor { get; private set; }
+        // the object encapsulating the log view provider functionality and local state
+        internal ILogViewAdaptor<TState,TDelta> Adaptor { get; private set; }
 
-        /// <summary>
-        /// Called right after grain is constructed, to install the log view adaptor.
-        /// </summary>
-        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
+
+        // Called right after grain is constructed, to install the log view adaptor
+        void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeLogViewAdaptor<TGrainState,IUpdateOperation<TGrainState>>(this, (TGrainState) initialstate, graintypename, services);            
+            Adaptor = provider.MakeLogViewAdaptor<TState,TDelta>(this, (TState) initialstate, graintypename, services);            
         }
 
-
-        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.TransitionView(TGrainState view, IUpdateOperation<TGrainState> entry)
+        void ILogViewHost<TState, TDelta>.UpdateView(TState view, TDelta entry)
         {
-                entry.Update(view);
+            ApplyDeltaToState(view, entry);
         }
 
-        string ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.IdentityString
+        /// <summary>
+        /// Subclasses must implement this method to define how deltas are applied to states.
+        /// </summary>
+        /// <param name="state">The state to mutate</param>
+        /// <param name="delta">The update object to apply</param>
+        /// <returns></returns>
+        protected abstract void ApplyDeltaToState(TState state, TDelta delta);
+  
+
+        string ILogViewHost<TState, TDelta>.IdentityString
         {
             get { return Identity.IdentityString; }
         }
@@ -59,9 +71,8 @@ namespace Orleans.QueuedGrains
             return Adaptor.Deactivate();
         }
 
-        /// <summary>
-        /// Receive a message from other clusters, pass on to log view adaptor.
-        /// </summary>
+        
+        // Receive a message from other clusters, passed on to log view adaptor.
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
         {
@@ -74,17 +85,34 @@ namespace Orleans.QueuedGrains
             return Adaptor.OnMultiClusterConfigurationChange(next);
         }
 
-
-
-
-        #region IQueuedGrain
-
-        // Delegate all methods of the public interface to the adaptor.
-        // we are also adding the XML comments here so they show up in Intellisense for users.
+        void ILogViewHost<TState, TDelta>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
+        {
+            if (TentativeStateChanged)
+                OnTentativeStateChanged();
+            if (ConfirmedStateChanged)
+                OnConfirmedStateChanged();
+        }
 
         /// <summary>
-        /// Enforces full synchronization with the global state.
-        /// This both (a) drains all updates currently in the queue, and (b) retrieves the latest global state. 
+        /// Called after the tentative state may have changed due to local or remote events.
+        /// <para>Override this to react to changes of the tentative state.</para>
+        /// </summary>
+        protected virtual void OnTentativeStateChanged()
+        {
+        }
+
+        /// <summary>
+        /// Called after the confirmed state may have changed (i.e. the confirmed version increased).
+        /// <para>Override this to react to changes of the confirmed state.</para>
+        /// </summary>
+        protected virtual void OnConfirmedStateChanged()
+        {
+        }
+
+     
+        /// <summary>
+        /// Retrieve the current, latest global version of the state, and confirm all updates currently in the queue. 
+        /// <returns>A task that can be waited on.</returns>
         /// </summary>
         public Task SynchronizeNowAsync()
         {
@@ -92,41 +120,62 @@ namespace Orleans.QueuedGrains
         }
 
         /// <summary>
-        /// Queue an update.
-        /// The update becomes visible in (TentativeState) immediately. All queued updates are written to the global state automatically in the background.
+        /// Enqueues an update.
+        /// The update becomes visible in (TentativeState) immediately,
+        /// and in (ConfirmedState) after it is confirmed, which happens automatically in the background.
         /// <param name="update">An object representing the update</param>
         /// </summary>
-        public void EnqueueUpdate(IUpdateOperation<TGrainState> update)
+        public void EnqueueUpdate(TDelta update)
         {
             Adaptor.Submit(update);
         }
 
 
         /// <summary>
-        /// Perform an update directly on the global state,
-        /// but only if the state has not been modified in the meantime already.
-        /// <param name="update">An object representing the update</param>
-        /// <returns>true if the update was successful, and false if the update failed due to conflicts.</returns>
+        /// Enqueues multiple updates, as an atomic sequence.
+        /// The updates becomes visible in (TentativeState) immediately,
+        /// and in (ConfirmedState) after they are confirmed, which happens automatically in the background.
+        /// <param name="updates">A sequence of objects representing the updates</param>
         /// </summary>
-        public Task<bool> TryConditionalUpdateAsync(IUpdateOperation<TGrainState> update)
+        public void EnqueueUpdateSequence(IEnumerable<TDelta> updates)
         {
-           return Adaptor.TryAppend(update);
+            Adaptor.SubmitRange(updates);
         }
 
 
         /// <summary>
+        /// Perform a conditional update. The update fails if other updates modify the state first.
+        /// <param name="update">An object representing the update</param>
+        /// <returns>true if the update was successful, and false if the update failed due to conflicts.</returns>
+        /// </summary>
+        public Task<bool> TryConditionalUpdateAsync(TDelta update)
+        {
+           return Adaptor.TryAppend(update);
+        }
+
+        /// <summary>
+        /// Perform a sequence of updates, conditionally and atomically. Fails if other updates modify the state first.
+        /// <param name="updates">A sequence of objects representing the updates</param>
+        /// <returns>true if the update was successful, and false if the update failed due to conflicts.</returns>
+        /// </summary>
+        public Task<bool> TryConditionalUpdateSequenceAsync(IEnumerable<TDelta> updates)
+        {
+            return Adaptor.TryAppendRange(updates);
+        }
+
+        /// <summary>
         /// Returns the current queue of unconfirmed updates.
         /// </summary>
-        public IEnumerable<IUpdateOperation<TGrainState>> UnconfirmedUpdates
+        public IEnumerable<TDelta> UnconfirmedUpdates
         { 
            get { return Adaptor.UnconfirmedSuffix; } 
         }
 
         /// <summary>
-        /// Returns a task that can be waited on to ensure all updates currently in the queue have been confirmed.
+        /// Waits until all updates currently in the queue are confirmed.
         /// </summary>
-        /// <returns></returns>
-        public Task CurrentQueueHasDrained()
+        /// <returns>A task that can be waited on.</returns>
+        public Task ConfirmUpdates()
         {
             return Adaptor.ConfirmSubmittedEntriesAsync();
         }
@@ -134,9 +183,9 @@ namespace Orleans.QueuedGrains
 
         /// <summary>
         /// The tentative state of this grain (read-only).
-        /// This is always equal to (ConfirmedState) with all the updates in (UnconfirmedUpdates) applied on top.
+        /// This state is equivalent to (ConfirmedState) with all the updates in (UnconfirmedUpdates) applied on top.
         /// </summary>
-        public TGrainState TentativeState
+        public TState TentativeState
         {
             get { return Adaptor.TentativeView; }
         }
@@ -145,7 +194,7 @@ namespace Orleans.QueuedGrains
         /// The last confirmed snapshot of the global state (read-only).
         /// Does not include the effect of the updates in (UnconfirmedUpdates).
         /// </summary>
-        public TGrainState ConfirmedState
+        public TState ConfirmedState
         {
             get { return Adaptor.ConfirmedView; }
         }
@@ -158,88 +207,43 @@ namespace Orleans.QueuedGrains
             get { return Adaptor.ConfirmedVersion; }
         }
 
-  
-        public Exception LastException 
+        /// <summary>
+        /// The last exception thrown by any internal storage or network operation,
+        /// or null if the last such operation was successful.
+        /// </summary>
+        public Exception LastException
         {
-            get { return Adaptor.LastException;  }
+            get { return Adaptor.LastException; }
         }
 
+        /// <summary>
+        /// Enable statistics collection in the log view provider.
+        /// </summary>
         public void EnableStatsCollection()
         {
             Adaptor.EnableStatsCollection();
         }
 
+        /// <summary>
+        /// Disable statistics collection in the log view provider.
+        /// </summary>
         public void DisableStatsCollection()
         {
             Adaptor.DisableStatsCollection();
         }
 
+        /// <summary>
+        /// access internal statistics about the log view provider.
+        /// </summary>
+        /// <returns>an object containing statistics.</returns>
         public LogViewStatistics GetStats()
         {
             return Adaptor.GetStats();
         }
 
-        #endregion
-
-        void ILogViewHost<TGrainState, IUpdateOperation<TGrainState>>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
-        {
-            if (ConfirmedStateChanged && listeners != null)
-                foreach (var l in listeners)
-                    l.OnConfirmedStateChanged();
-        }
-
-     
-        /// <summary>
-        /// Subscribe to notifications on changes to the confirmed state.
-        /// </summary>
-        public bool SubscribeConfirmedStateListener(IStateChangedListener listener)
-        {
-            if (listeners == null)
-                listeners = new List<IStateChangedListener>();
-
-            if (listeners.Contains(listener))
-            {
-                return false;
-            }
-            else
-            {
-                listeners.Add(listener);
-            }
-            return true;
-        }
-
-
-        /// <summary>
-        /// Unsubscribe from notifications on changes to the confirmed state.
-        /// </summary>
-        public bool UnSubscribeConfirmedStateListener(IStateChangedListener listener)
-        {
-            if (listeners == null)
-                return false;
-            return listeners.Remove(listener);
-        }
-
-
-        protected List<IStateChangedListener> listeners;
-
        
 
-       
-    
-
-
-}
-
-    /// <summary>
-    /// A listener that is notified when the confirmed view changes.
-    /// </summary>
-    public interface IStateChangedListener
-    {
-        /// <summary>
-        /// Gets called after the confirmed prefix has changed.
-        /// <param name="version">the new length of the confirmed prefix</param>
-        /// </summary>
-        /// 
-        void OnConfirmedStateChanged();
     }
+
+   
 }

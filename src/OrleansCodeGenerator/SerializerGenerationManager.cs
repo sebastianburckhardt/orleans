@@ -10,39 +10,63 @@ namespace Orleans.CodeGenerator
     using Orleans.Runtime;
     using Orleans.Serialization;
 
-    using GrainInterfaceData = Orleans.CodeGeneration.GrainInterfaceData;
+    using GrainInterfaceUtils = Orleans.CodeGeneration.GrainInterfaceUtils;
 
     /// <summary>
     /// The serializer generation manager.
     /// </summary>
-    internal static class SerializerGenerationManager
+    internal class SerializerGenerationManager
     {
         /// <summary>
         /// The logger.
         /// </summary>
-        private static readonly TraceLogger Log;
+        private readonly TraceLogger Log;
 
         /// <summary>
         /// The types to process.
         /// </summary>
-        private static readonly HashSet<Type> TypesToProcess;
+        private readonly HashSet<Type> TypesToProcess;
 
         /// <summary>
         /// The processed types.
         /// </summary>
-        private static readonly HashSet<Type> ProcessedTypes;
+        private readonly HashSet<Type> ProcessedTypes;
+        
+        /// <summary>
+        /// The generic interface types whose type arguments needs serializators generation
+        /// </summary>
+        internal readonly HashSet<Type> KnownGenericIntefaceTypes;
 
         /// <summary>
-        /// Initializes static members of the <see cref="SerializerGenerationManager"/> class.
+        /// The generic base types whose type arguments needs serializators generation
         /// </summary>
-        static SerializerGenerationManager()
+        internal readonly HashSet<Type> KnownGenericBaseTypes;
+
+        /// <summary>
+        /// Initializes members of the <see cref="SerializerGenerationManager"/> class.
+        /// </summary>
+        internal SerializerGenerationManager()
         {
             TypesToProcess = new HashSet<Type>();
             ProcessedTypes = new HashSet<Type>();
+            KnownGenericIntefaceTypes = new HashSet<Type>
+            {
+                typeof(Streams.IAsyncObserver<>),
+                typeof(Streams.IAsyncStream<>),
+                typeof(Streams.IAsyncObservable<>)
+            };
+
+            KnownGenericBaseTypes = new HashSet<Type>
+            {
+                typeof(Grain<>),
+                typeof(Streams.StreamSubscriptionHandleImpl<>),
+                typeof(Streams.StreamSubscriptionHandle<>)
+            };
+
             Log = TraceLogger.GetLogger(typeof(SerializerGenerationManager).Name);
         }
         
-        internal static bool RecordTypeToGenerate(Type t, Module module, Assembly targetAssembly)
+        internal bool RecordTypeToGenerate(Type t, Module module, Assembly targetAssembly)
         {
             if (TypeUtilities.IsTypeIsInaccessibleForSerialization(t, module, targetAssembly))
             {
@@ -52,8 +76,9 @@ namespace Orleans.CodeGenerator
             var typeInfo = t.GetTypeInfo();
 
             if (typeInfo.IsGenericParameter || ProcessedTypes.Contains(t) || TypesToProcess.Contains(t)
-                || typeof(Exception).GetTypeInfo().IsAssignableFrom(t)
-                || typeof(Delegate).GetTypeInfo().IsAssignableFrom(t)) return false;
+                || typeof (Exception).GetTypeInfo().IsAssignableFrom(t)
+                || typeof (Delegate).GetTypeInfo().IsAssignableFrom(t)
+                || typeof (Task<>).GetTypeInfo().IsAssignableFrom(t)) return false;
 
             if (typeInfo.IsArray)
             {
@@ -69,7 +94,7 @@ namespace Orleans.CodeGenerator
                     t.Name);
             }
 
-            if (typeInfo.IsGenericType)
+            if (typeInfo.IsConstructedGenericType)
             {
                 var args = t.GetGenericArguments();
                 foreach (var arg in args)
@@ -79,22 +104,11 @@ namespace Orleans.CodeGenerator
             }
 
             if (typeInfo.IsInterface || typeInfo.IsAbstract || t == typeof (object) || t == typeof (void)
-                || GrainInterfaceData.IsTaskType(t)) return false;
+                || GrainInterfaceUtils.IsTaskType(t)) return false;
 
-            if (typeInfo.IsGenericType)
+            if (typeInfo.IsConstructedGenericType)
             {
-                var def = typeInfo.GetGenericTypeDefinition();
-                if (def == typeof (Task<>) || (SerializationManager.GetSerializer(def) != null) ||
-                    ProcessedTypes.Contains(def) || typeof(IAddressable).IsAssignableFrom(def)) return false;
-
-                if (def.Namespace != null && (def.Namespace.Equals("System") || def.Namespace.StartsWith("System.")))
-                    Log.Warn(
-                        ErrorCode.CodeGenSystemTypeRequiresSerializer,
-                        "System type " + def.Name + " requires a serializer.");
-                else
-                    TypesToProcess.Add(def);
-
-                return false;
+                return RecordTypeToGenerate(typeInfo.GetGenericTypeDefinition(), module, targetAssembly);
             }
 
             if (typeInfo.IsOrleansPrimitive() || (SerializationManager.GetSerializer(t) != null) ||
@@ -103,7 +117,7 @@ namespace Orleans.CodeGenerator
             if (typeInfo.Namespace != null && (typeInfo.Namespace.Equals("System") || typeInfo.Namespace.StartsWith("System.")))
             {
                 var message = "System type " + t.Name + " may require a custom serializer for optimal performance. "
-                              + "If you use arguments of this type a lot, consider asking the Orleans team to build a custom serializer for it.";
+                              + "If you use arguments of this type a lot, consider submitting a pull request to https://github.com/dotnet/orleans/ to add a custom serializer for it.";
                 Log.Warn(ErrorCode.CodeGenSystemTypeRequiresSerializer, message);
                 return false;
             }
@@ -119,13 +133,15 @@ namespace Orleans.CodeGenerator
                             module,
                             targetAssembly));
             if (skipSerialzerGeneration)
-                return true;
+            {
+                return false;
+            }
 
             TypesToProcess.Add(t);
             return true;
         }
 
-        internal static bool GetNextTypeToProcess(out Type next)
+        internal bool GetNextTypeToProcess(out Type next)
         {
             next = null;
             if (TypesToProcess.Count == 0) return false;

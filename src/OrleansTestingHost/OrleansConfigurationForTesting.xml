@@ -17,23 +17,12 @@
   <Defaults>
     <Networking Address="localhost" Port="22222"/>
     <ProxyingGateway Address="localhost" Port="40000" />
-    <Tracing DefaultTraceLevel="Info" TraceToConsole="true" TraceToFile="{0}-{1}.log" PropagateActivityId="false" BulkMessageLimit="1000">
-      <TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />
-      <!--
+    <Tracing DefaultTraceLevel="Info" TraceToConsole="false" TraceToFile="{0}-{1}.log" PropagateActivityId="false" BulkMessageLimit="1000">
+       <TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />
+       <!--
        <TraceLevelOverride LogPrefix="Runtime.Dispatcher" TraceLevel="Verbose" />
        <TraceLevelOverride LogPrefix="AssemblyLoader.Silo" TraceLevel="Warning" />
-       <TraceLevelOverride LogPrefix="Runtime.MembershipOracle" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="Runtime.Dispatcher" TraceLevel="Verbose2" />
-       <TraceLevelOverride LogPrefix="Runtime.Message" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="Runtime.Catalog" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="GrainAssemblyLoader" TraceLevel="Warning" />
-       <TraceLevelOverride LogPrefix="Runtime.Message" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="Runtime.Catalog" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="Runtime.Orleans.GrainDirectory.LocalGrainDirectory" TraceLevel="Verbose" />
-       <TraceLevelOverride LogPrefix="Runtime.MultiClusterOracle" TraceLevel="Verbose3" />
-       <TraceLevelOverride LogPrefix="Runtime.AzureTableBasedGossipChannel" TraceLevel="Verbose3" />
-       <TraceLevelOverride LogPrefix="Runtime.GossipTableInstanceManager" TraceLevel="Verbose3" />
-      -->
+       -->
     </Tracing>
     <Statistics MetricsTableWriteInterval="30s" PerfCounterWriteInterval="30s" LogWriteInterval="300s" WriteLogStatisticsToTable="true" StatisticsCollectionLevel="Info"/>
   </Defaults>

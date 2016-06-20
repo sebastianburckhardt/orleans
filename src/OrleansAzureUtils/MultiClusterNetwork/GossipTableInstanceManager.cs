@@ -3,24 +3,22 @@ using Orleans.AzureUtils;
 using Orleans.MultiCluster;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
-    // 
-    //  low-level representation details & functionality for Azure-Table-Based Gossip Channels
-    //  to go into Azure Utils?
-
+    /// <summary>
+    /// Low level representation details and functionality for Azure-Table-Based Gossip Channels
+    /// </summary>
     internal class GossipTableEntry : TableEntity
     {
         // used for partitioning table
         internal string GlobalServiceId { get { return PartitionKey; } }
 
         public DateTime GossipTimestamp { get; set; }   // timestamp of gossip entry
-
 
         #region gateway entry
 
@@ -40,7 +38,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         #endregion
 
-
         #region configuration entry
 
         public string Clusters { get; set; }   // comma-separated list of clusters
@@ -49,47 +46,42 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         #endregion
 
-
         internal const string CONFIGURATION_ROW = "CONFIG"; // Row key for configuration row.
 
-        internal const char SEPARATOR = ','; // safe because clusterid cannot contain commas
+        private const string Separator = ","; // safe because clusterid cannot contain commas
+        private readonly static char[] SeparatorChars = Separator.ToCharArray();
+        internal const string ClustersListSeparator = ","; // safe because clusterid cannot contain commas
+        private readonly static char[] ClustersListSeparatorChars = ClustersListSeparator.ToCharArray();
+        private const string RowKeyFormat = "{0}"+ Separator + "{1}" + Separator + "{2}" + Separator + "{3}";
 
         public static string ConstructRowKey(SiloAddress silo, string clusterid)
         {
-            return String.Format("{1}{0}{2}{0}{3}{0}{4}", SEPARATOR, clusterid, silo.Endpoint.Address, silo.Endpoint.Port, silo.Generation);
+            return String.Format(RowKeyFormat, clusterid, silo.Endpoint.Address, silo.Endpoint.Port, silo.Generation);
         }
 
-
-
-        internal void UnpackRowKey()
+        internal void ParseSiloAddressFromRowKey()
         {
-            var debugInfo = "UnpackRowKey";
+            const string debugInfo = "ParseSiloAddressFromRowKey";
             try
             {
-                int idx3 = RowKey.LastIndexOf(SEPARATOR);
-                int idx2 = RowKey.LastIndexOf(SEPARATOR, idx3 - 1);
-                int idx1 = RowKey.LastIndexOf(SEPARATOR, idx2 - 1);
+                var segments = RowKey.Split(SeparatorChars, 4);
 
-                ClusterId = RowKey.Substring(0, idx1);
-                var addressstr = RowKey.Substring(idx1 + 1, idx2 - idx1 - 1);
-                var portstr = RowKey.Substring(idx2 + 1, idx3 - idx2 - 1);
-                var genstr = RowKey.Substring(idx3 + 1);
-                Address = IPAddress.Parse(addressstr);
-                Port = Int32.Parse(portstr);
-                Generation = Int32.Parse(genstr);
+                ClusterId = segments[0];
+                Address = IPAddress.Parse(segments[1]);
+                Port = Int32.Parse(segments[2]);
+                Generation = Int32.Parse(segments[3]);
 
                 this.SiloAddress = SiloAddress.New(new IPEndPoint(Address, Port), Generation);
             }
             catch (Exception exc)
             {
-                throw new AggregateException("Error from " + debugInfo, exc);
+                throw new FormatException("Error from " + debugInfo, exc);
             }
         }
 
         internal MultiClusterConfiguration ToConfiguration()
         {
-            string clusterliststring = Clusters;
-            var clusterlist = clusterliststring.Split(',');
+            var clusterlist = Clusters.Split(ClustersListSeparatorChars, StringSplitOptions.RemoveEmptyEntries);
             return new MultiClusterConfiguration(GossipTimestamp, clusterlist, Comment ?? "");
         }
 
@@ -128,24 +120,23 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
         public string GlobalServiceId { get; private set; }
 
-        private GossipTableInstanceManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
+        private GossipTableInstanceManager(Guid globalServiceId, string storageConnectionString, TraceLogger logger)
         {
-            GlobalServiceId = globalServiceId;
+            GlobalServiceId = globalServiceId.ToString();
             this.logger = logger;
             storage = new AzureTableDataManager<GossipTableEntry>(
                 INSTANCE_TABLE_NAME, storageConnectionString, logger);
         }
 
-        public static async Task<GossipTableInstanceManager> GetManager(string globalServiceId, string storageConnectionString, TraceLogger logger)
+        public static async Task<GossipTableInstanceManager> GetManager(Guid globalServiceId, string storageConnectionString, TraceLogger logger)
         {
-            if (string.IsNullOrEmpty(globalServiceId)) throw new ArgumentException("globalServiceId");
             if (logger == null) throw new ArgumentNullException("logger");
             
             var instance = new GossipTableInstanceManager(globalServiceId, storageConnectionString, logger);
             try
             {
                 await instance.storage.InitTableAsync()
-                    .WithTimeout(initTimeout);
+                    .WithTimeout(initTimeout).ConfigureAwait(false);
             }
             catch (TimeoutException te)
             {
@@ -164,24 +155,73 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return instance;
         }
 
-
-        internal async Task<List<Tuple<GossipTableEntry, string>>> FindAllGossipTableEntries()
+       
+        internal async Task<GossipTableEntry> ReadConfigurationEntryAsync()
         {
-            var queryResults = await storage.ReadAllTableEntriesForPartitionAsync(this.GlobalServiceId);
-
-            return queryResults.ToList();
+            var result = await storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.CONFIGURATION_ROW).ConfigureAwait(false);
+            return result != null ? result.Item1 : null;
         }
 
-
-        internal Task<Tuple<GossipTableEntry, string>> ReadConfigurationEntryAsync()
+        internal async Task<GossipTableEntry> ReadGatewayEntryAsync(GatewayEntry gateway)
         {
-            return storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.CONFIGURATION_ROW);
+            var result = await storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress, gateway.ClusterId)).ConfigureAwait(false);
+
+            if (result != null)
+            {
+                var tableEntry = result.Item1;
+                try
+                {
+                    tableEntry.ParseSiloAddressFromRowKey();
+                    return tableEntry;
+                }
+                catch (Exception exc)
+                {
+                    logger.Error(
+                        ErrorCode.AzureTable_61,
+                        string.Format("Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.", tableEntry),
+                        exc);
+                }
+            }
+
+            return null;
         }
 
-        internal Task<Tuple<GossipTableEntry, string>> ReadGatewayEntryAsync(GatewayEntry gateway)
+        internal async Task<Tuple<GossipTableEntry, Dictionary<SiloAddress, GossipTableEntry>>> ReadAllEntriesAsync()
         {
-            return storage.ReadSingleTableEntryAsync(this.GlobalServiceId, GossipTableEntry.ConstructRowKey(gateway.SiloAddress, gateway.ClusterId));
+            var queryResults = await storage.ReadAllTableEntriesForPartitionAsync(this.GlobalServiceId).ConfigureAwait(false);
+
+            // organize the returned storage entries by what they represent
+            GossipTableEntry configInStorage = null;
+            var gatewayInfoInStorage = new Dictionary<SiloAddress, GossipTableEntry>();
+
+            foreach (var x in queryResults)
+            {
+                var tableEntry = x.Item1;
+
+                if (tableEntry.RowKey.Equals(GossipTableEntry.CONFIGURATION_ROW))
+                {
+                    configInStorage = tableEntry;
+                }
+                else
+                {
+                    try
+                    {
+                        tableEntry.ParseSiloAddressFromRowKey();
+                        gatewayInfoInStorage.Add(tableEntry.SiloAddress, tableEntry);
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.Error(
+                            ErrorCode.AzureTable_61,
+                            string.Format("Intermediate error parsing GossipTableEntry: {0}. Ignoring this entry.", tableEntry),
+                            exc);
+                    }
+                }
+            }
+
+            return new Tuple<GossipTableEntry, Dictionary<SiloAddress, GossipTableEntry>>(configInStorage, gatewayInfoInStorage);
         }
+
 
         internal async Task<bool> TryCreateConfigurationEntryAsync(MultiClusterConfiguration configuration)
         {
@@ -192,27 +232,22 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 PartitionKey = GlobalServiceId,
                 RowKey = GossipTableEntry.CONFIGURATION_ROW,
                 GossipTimestamp = configuration.AdminTimestamp,
-                Clusters = string.Join(",", configuration.Clusters),
+                Clusters = string.Join(GossipTableEntry.ClustersListSeparator, configuration.Clusters),
                 Comment = configuration.Comment ?? ""
             };
 
-            return (await TryCreateTableEntryAsync("TryCreateConfigurationEntryAsync", entry) != null);
+            return (await TryCreateTableEntryAsync(entry).ConfigureAwait(false));
         }
-
 
         internal async Task<bool> TryUpdateConfigurationEntryAsync(MultiClusterConfiguration configuration, GossipTableEntry entry, string eTag)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
-            //Debug.Assert(entry.ETag == eTag);
-            //Debug.Assert(entry.PartitionKey == GlobalServiceId);
-            //Debug.Assert(entry.RowKey == GossipTableEntry.CONFIGURATION_ROW);
-
             entry.GossipTimestamp = configuration.AdminTimestamp;
-            entry.Clusters = string.Join(",", configuration.Clusters);
+            entry.Clusters = string.Join(GossipTableEntry.ClustersListSeparator, configuration.Clusters);
             entry.Comment = configuration.Comment ?? "";
 
-            return (await TryUpdateTableEntryAsync("TryUpdateConfigurationEntryAsync", entry, eTag) != null);
+            return (await TryUpdateTableEntryAsync(entry, eTag).ConfigureAwait(false));
         }
 
         internal async Task<bool> TryCreateGatewayEntryAsync(GatewayEntry entry)
@@ -225,39 +260,30 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 GossipTimestamp = entry.HeartbeatTimestamp
             };
 
-            return (await TryCreateTableEntryAsync("TryCreateGatewayEntryAsync", row) != null);
+            return (await TryCreateTableEntryAsync(row).ConfigureAwait(false));
         }
 
 
         internal async Task<bool> TryUpdateGatewayEntryAsync(GatewayEntry entry, GossipTableEntry row, string eTag)
-        {
-            //Debug.Assert(row.ETag == eTag);
-            //Debug.Assert(row.PartitionKey == GlobalServiceId);
-            //Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(entry.SiloAddress, entry.ClusterId));
-            
+        {            
             row.Status = entry.Status.ToString();
             row.GossipTimestamp = entry.HeartbeatTimestamp;
 
-            return (await TryUpdateTableEntryAsync("TryUpdateGatewayEntryAsync", row, eTag) != null);
+            return (await TryUpdateTableEntryAsync(row, eTag).ConfigureAwait(false));
         }
 
-        internal async Task<bool> TryDeleteGatewayEntryAsync(GossipTableEntry row, string eTag)
+        internal Task<bool> TryDeleteGatewayEntryAsync(GossipTableEntry row, string eTag)
         {
-            //Debug.Assert(row.ETag == eTag);
-            //Debug.Assert(row.PartitionKey == GlobalServiceId);
-            //Debug.Assert(row.RowKey == GossipTableEntry.ConstructRowKey(row.SiloAddress, row.ClusterId));
-
-            return await TryDeleteTableEntryAsync("TryDeleteGatewayEntryAsync", row, eTag);
+            return TryDeleteTableEntryAsync(row, eTag);
         }
 
         internal async Task<int> DeleteTableEntries()
         {
-
-            var entries = await storage.ReadAllTableEntriesForPartitionAsync(GlobalServiceId);
+            var entries = await storage.ReadAllTableEntriesForPartitionAsync(GlobalServiceId).ConfigureAwait(false);
             var entriesList = new List<Tuple<GossipTableEntry, string>>(entries);
             if (entriesList.Count <= AzureTableDefaultPolicies.MAX_BULK_UPDATE_ROWS)
             {
-                await storage.DeleteTableEntriesAsync(entriesList);
+                await storage.DeleteTableEntriesAsync(entriesList).ConfigureAwait(false);
             }
             else
             {
@@ -266,63 +292,41 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 {
                     tasks.Add(storage.DeleteTableEntriesAsync(batch));
                 }
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
             }
             return entriesList.Count;
         }
 
 
         /// <summary>
-        /// Try once to conditionally update a data entry in the Azure table. Returns null if etag does not match.
+        /// Try once to conditionally update a data entry in the Azure table. Returns false if etag does not match.
         /// </summary>
-        public async Task<string> TryUpdateTableEntryAsync(string who, GossipTableEntry data, string dataEtag)
+        private async Task<bool> TryUpdateTableEntryAsync(GossipTableEntry data, string dataEtag, [CallerMemberName]string operation = null)
         {
-            try
-            {
-                return await storage.UpdateTableEntryAsync(data, dataEtag);
-            }
-            catch (Exception exc)
-            {
-                HttpStatusCode httpStatusCode;
-                string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
-
-                if (logger.IsVerbose2) logger.Verbose2(who + " failed with httpStatusCode={0}, restStatus={1}", httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return null;
-
-                throw;
-            }
+            return await TryOperation(() => storage.UpdateTableEntryAsync(data, dataEtag), operation);
         }
 
         /// <summary>
-        /// Try once to insert a new data entry in the Azure table. Returns null if etag does not match.
-        /// </summary>
-        public async Task<string> TryCreateTableEntryAsync(string who, GossipTableEntry data)
+        /// Try once to insert a new data entry in the Azure table. Returns false if there is a conflict.
+        /// </summary>       
+        private async Task<bool> TryCreateTableEntryAsync(GossipTableEntry data, [CallerMemberName]string operation = null)
         {
-            try
-            {
-                return await storage.CreateTableEntryAsync(data);
-            }
-            catch (Exception exc)
-            {
-                HttpStatusCode httpStatusCode;
-                string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
-
-                if (logger.IsVerbose2) logger.Verbose2(who + " failed with httpStatusCode={0}, restStatus={1}", httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return null;
-
-                throw;
-            }
+            return await TryOperation(() => storage.CreateTableEntryAsync(data), operation);
         }
+
         /// <summary>
-        /// Try once to delete an existing data entry in the Azure table. Returns false if etag does not match.
-        /// </summary>
-        public async Task<bool> TryDeleteTableEntryAsync(string who, GossipTableEntry data, string etag)
+        /// Try once to delete a data entry in the Azure table. Returns false if there is a conflict.
+        /// </summary>       
+        private async Task<bool> TryDeleteTableEntryAsync(GossipTableEntry data, string etag, [CallerMemberName]string operation = null)
+        {
+            return await TryOperation(() => storage.DeleteTableEntryAsync(data, etag), operation);
+        }
+
+        private async Task<bool> TryOperation(Func<Task> func, string operation = null)
         {
             try
             {
-                await storage.DeleteTableEntryAsync(data, etag);
+                await func().ConfigureAwait(false);
                 return true;
             }
             catch (Exception exc)
@@ -331,7 +335,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 string restStatus;
                 if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
 
-                if (logger.IsVerbose2) logger.Verbose2(who + " failed with httpStatusCode={0}, restStatus={1}", httpStatusCode, restStatus);
+                if (logger.IsVerbose2) logger.Verbose2("{0} failed with httpStatusCode={1}, restStatus={2}", operation, httpStatusCode, restStatus);
                 if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
 
                 throw;

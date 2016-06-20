@@ -26,6 +26,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <Prefer32Bit>false</Prefer32Bit>
     <WarningsAsErrors>4014</WarningsAsErrors>
+    <DocumentationFile>bin\Debug\OrleansProviders.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -36,25 +37,40 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <WarningsAsErrors>4014</WarningsAsErrors>
+    <DocumentationFile>bin\Release\OrleansProviders.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuiltInProvidersConfigurationExtensions.cs" />
+    <Compile Include="LogViews\CustomStorageProvider.cs" />
+    <Compile Include="LogViews\CustomStorageAdaptor.cs" />
+    <Compile Include="LogViews\ICustomStorageInterface.cs" />
+    <Compile Include="Streams\Common\PooledCache\CachedMessageBlock.cs" />
+    <Compile Include="Streams\Common\PooledCache\FixedSizeObjectPool.cs" />
+    <Compile Include="Streams\Common\PooledCache\FixedSizeBuffer.cs" />
+    <Compile Include="Streams\Common\PooledCache\ICacheDataAdapter.cs" />
+    <Compile Include="Streams\Common\PooledCache\IObjectPool.cs" />
+    <Compile Include="Streams\Common\PooledCache\PooledQueueCache.cs" />
+    <Compile Include="Streams\Common\PooledCache\CachedMessagePool.cs" />
+    <Compile Include="Streams\Common\PooledCache\ObjectPool.cs" />
+    <Compile Include="Streams\Common\PooledCache\StreamPosition.cs" />
+    <Compile Include="Streams\Common\SimpleCache\SimpleQueueCache.cs" />
+    <Compile Include="Streams\Common\SimpleCache\SimpleQueueCacheCursor.cs" />
+    <Compile Include="Streams\Common\SimpleCache\SimpleQueueAdapterCache.cs" />
+    <Compile Include="Streams\Common\EventSequenceToken.cs" />
     <Compile Include="EventStores\EventStoreProviderBase.cs" />
     <Compile Include="EventStores\EventStream.cs" />
     <Compile Include="EventStores\IEventStore.cs" />
     <Compile Include="EventStores\MemoryEventStore.cs" />
     <Compile Include="EventStores\OptimisticConcurrencyException.cs" />
     <Compile Include="EventStores\EventStoreLogViewAdaptor.cs" />
-    <Compile Include="LogViews\LocalMemoryProvider.cs" />
-    <Compile Include="LogViews\SharedStorageProvider.cs" />
     <Compile Include="EventStores\TaggedEvent.cs" />
-    <Compile Include="Streams\Common\SimpleQueueCache.cs" />
-    <Compile Include="Streams\Common\SimpleQueueCacheCursor.cs" />
-    <Compile Include="Streams\Common\SimpleQueueAdapterCache.cs" />
-    <Compile Include="Streams\Common\EventSequenceToken.cs" />
+    <Compile Include="LogViews\LocalMemoryProvider.cs" />
+	<Compile Include="LogViews\SharedStorageProvider.cs" />
+
     <Compile Include="ProviderErrorCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
@@ -65,6 +81,15 @@
     <Compile Include="Storage\MemoryStorage.cs" />
     <Compile Include="Storage\MemoryStorageWithLatency.cs" />
     <Compile Include="Storage\ShardedStorageProvider.cs" />
+    <Compile Include="Streams\Generator\GeneratorAdapterConfig.cs" />
+    <Compile Include="Streams\Generator\GeneratorAdapterFactory.cs" />
+    <Compile Include="Streams\Generator\GeneratorPooledCache.cs" />
+    <Compile Include="Streams\Generator\GeneratorStreamProvider.cs" />
+    <Compile Include="Streams\Generator\Generators\GeneratedBatchContainer.cs" />
+    <Compile Include="Streams\Generator\Generators\GeneratedEvent.cs" />
+    <Compile Include="Streams\Generator\Generators\SimpleGenerator.cs" />
+    <Compile Include="Streams\Generator\Generators\SimpleGeneratorConfig.cs" />
+    <Compile Include="Streams\Generator\IStreamGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OrleansRuntime\OrleansRuntime.csproj">

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.MultiCluster;
 
-
 namespace Orleans.Runtime
 {
     /// <summary>
@@ -69,27 +68,34 @@ namespace Orleans.Runtime
         /// <param name="hostsIds">List of silos this command is to be sent to.</param>
         /// <returns>Completion promise for this operation.</returns>
         Task<SiloRuntimeStatistics[]> GetRuntimeStatistics(SiloAddress[] hostsIds);
+
         /// <summary>
         /// Return the most recent grain statistics information, amalgomated across silos.
         /// </summary>
         /// <param name="hostsIds">List of silos this command is to be sent to.</param>
         /// <returns>Completion promise for this operation.</returns>
         Task<SimpleGrainStatistic[]> GetSimpleGrainStatistics(SiloAddress[] hostsIds);
+
         /// <summary>
         /// Return the most recent grain statistics information, amalgomated across all silos.
         /// </summary>
         /// <returns>Completion promise for this operation.</returns>
         Task<SimpleGrainStatistic[]> GetSimpleGrainStatistics();
+
         /// <summary>
-        /// Return the most recent activation count for a specific grain across all silos.
+        /// Returns the most recent detailed grain statistics information, amalgomated across silos for the specified types.
         /// </summary>
-        /// <param name="grainReference">Reference to the grain to be queried.</param>
-        /// <returns>Completion promise for this operation.</returns>
+        /// <param name="hostsIds">List of silos this command is to be sent to.</param>
+        /// <param name="types">Array of grain types to filter the results with</param>
+        /// <returns></returns>
+        Task<DetailedGrainStatistic[]> GetDetailedGrainStatistics(string[] types = null,SiloAddress[] hostsIds=null);
+
         Task<int> GetGrainActivationCount(GrainReference grainReference);
         /// <summary>
         /// Return the total count of all current grain activations across all silos.
         /// </summary>
         /// <returns>Completion promise for this operation.</returns>
+        /// 
         Task<int> GetTotalActivationCount();
 
         /// <summary>
@@ -136,6 +142,13 @@ namespace Orleans.Runtime
         /// <returns></returns>
         Task UpdateConfiguration(SiloAddress[] hostIds, Dictionary<string, string> configuration, Dictionary<string, string> tracing);
 
+        /// <summary>
+        /// Returns an array of all the active grain types in the system
+        /// </summary>
+        /// <param name="hostsIds">List of silos this command is to be sent to.</param>
+        /// <returns></returns>
+        Task<string[]> GetActiveGrainTypes(SiloAddress[] hostsIds=null);
+
 
 #region MultiCluster Management
 
@@ -152,23 +165,21 @@ namespace Orleans.Runtime
         Task<MultiClusterConfiguration> GetMultiClusterConfiguration();
 
         /// <summary>
-        /// Contact all silos in all clusters and return silos that do not have the latest configuration. 
+        /// Contact all silos in all clusters and return silos that do not have the latest multi-cluster configuration. 
         /// If some clusters and/or silos cannot be reached, an exception is thrown.
         /// </summary>
-        /// <returns>A dictionary containing silo addresses and the corresponding configuration for all non-matching configurations</returns>
-        Task<Dictionary<SiloAddress, MultiClusterConfiguration>> StabilityCheck();
+        /// <returns>A list of silo addresses of silos that do not have the latest configuration</returns>
+        Task<List<SiloAddress>> FindLaggingSilos();
  
         /// <summary>
         /// Configure the active multi-cluster, by injecting a multicluster configuration.
         /// </summary>
         /// <param name="clusters">the clusters that should be part of the active configuration</param>
         /// <param name="comment">a comment to store alongside the configuration</param>
-        /// <param name="checkstabilityfirst">if true, checks that all clusters are reachable and up-to-date before injecting the new configuration</param>
+        /// <param name="checkForLaggingSilosFirst">if true, checks that all clusters are reachable and up-to-date before injecting the new configuration</param>
         /// <returns> The task completes once information has propagated to the gossip channels</returns>
-        Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkstabilityfirst = true);
+        Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkForLaggingSilosFirst = true);
 
 #endregion
-
-
     }
 }

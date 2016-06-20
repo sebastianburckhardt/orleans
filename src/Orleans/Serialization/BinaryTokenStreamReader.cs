@@ -10,6 +10,7 @@ using System.Text;
 
 using Orleans.Runtime;
 using Orleans.CodeGeneration;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Serialization
 {
@@ -51,6 +52,15 @@ namespace Orleans.Serialization
             currentOffset = currentSegment.Offset;
             totalLength = buffs.Sum(b => b.Count);
             Trace("Starting new stream reader");
+        }
+
+        /// <summary>
+        /// Create a new BinaryTokenStreamReader to read from the specified input buffer.
+        /// </summary>
+        /// <param name="buff">ArraySegment to use for the data.</param>
+        public BinaryTokenStreamReader(ArraySegment<byte> buff)
+            : this(new[] { buff })
+        {
         }
 
         /// <summary> Current read position in the stream. </summary>
@@ -413,6 +423,12 @@ namespace Orleans.Serialization
             return new Guid(bytes);
         }
 
+        internal MultiClusterStatus ReadMultiClusterStatus()
+        {
+            byte val = ReadByte();
+            return (MultiClusterStatus) val;
+        }
+
         /// <summary> Read an <c>ActivationAddress</c> value from the stream. </summary>
         /// <returns>Data from current position in stream, converted to the appropriate output type.</returns>
         internal ActivationAddress ReadActivationAddress()
@@ -420,6 +436,7 @@ namespace Orleans.Serialization
             var silo = ReadSiloAddress();
             var grain = ReadGrainId();
             var act = ReadActivationId();
+            var mcstatus = ReadMultiClusterStatus();
 
             if (silo.Equals(SiloAddress.Zero))
                 silo = null;
@@ -427,7 +444,7 @@ namespace Orleans.Serialization
             if (act.Equals(ActivationId.Zero))
                 act = null;
 
-            return ActivationAddress.GetAddress(silo, grain, act);
+            return ActivationAddress.GetAddress(silo, grain, act, mcstatus);
         }
 
         /// <summary>

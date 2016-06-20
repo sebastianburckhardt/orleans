@@ -178,7 +178,7 @@ namespace Orleans.Streams
             catch (Exception exc)
             {
                 logger.Warn((int)ErrorCode.PersistentStreamPullingAgent_08,
-                    "Failed to unregister myself as stream producer to some streams taht used to be in my responsibility.", exc);
+                    "Failed to unregister myself as stream producer to some streams that used to be in my responsibility.", exc);
             }
             pubSubCache.Clear();
             IntValueStatistic.Delete(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_PUBSUB_CACHE_SIZE, StatisticUniquePostfix));          
@@ -242,19 +242,19 @@ namespace Orleans.Streams
                     requestedHandshakeToken = await AsyncExecutorWithRetries.ExecuteWithRetries(
                          i => consumerData.StreamConsumer.GetSequenceToken(consumerData.SubscriptionId),
                          AsyncExecutorWithRetries.INFINITE_RETRIES,
-                         (exception, i) => true,
+                         (exception, i) => !(exception is ClientNotAvailableException),
                          config.MaxEventDeliveryTime,
                          DefaultBackoffProvider);
 
                     if (requestedHandshakeToken != null)
                     {
                         consumerData.SafeDisposeCursor(logger);
-                        consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId.Guid, consumerData.StreamId.Namespace, requestedHandshakeToken.Token);
+                        consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId, requestedHandshakeToken.Token);
                     }
                     else
                     {
                         if (consumerData.Cursor == null) // if the consumer did not ask for a specific token and we already have a cursor, jsut keep using it.
-                            consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId.Guid, consumerData.StreamId.Namespace, cacheToken);
+                            consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId, cacheToken);
                     }
                 }
                 catch (Exception exception)
@@ -273,11 +273,11 @@ namespace Orleans.Streams
             {
                 try
                 {
-                    consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId.Guid, consumerData.StreamId.Namespace, cacheToken);
+                    consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId, cacheToken);
                 }
                 catch (Exception)
                 {
-                    consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId.Guid, consumerData.StreamId.Namespace, null); // just in case last GetCacheCursor failed.
+                    consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId, null); // just in case last GetCacheCursor failed.
                 }
             }
             return true;
@@ -312,7 +312,7 @@ namespace Orleans.Streams
                 if (IsShutdown) return; // timer was already removed, last tick
                 
                 IQueueAdapterReceiver rcvr = receiver;
-                int maxCacheAddCount = queueCache != null ? queueCache.MaxAddCount : QueueAdapterConstants.UNLIMITED_GET_QUEUE_MSG;
+                int maxCacheAddCount = queueCache != null ? queueCache.GetMaxAddCount() : QueueAdapterConstants.UNLIMITED_GET_QUEUE_MSG;
 
                 // loop through the queue until it is empty.
                 while (!IsShutdown) // timer will be set to null when we are asked to shudown. 
@@ -408,7 +408,7 @@ namespace Orleans.Streams
             // That way we will not purge the event from the cache, until we talk to pub sub.
             // This will help ensure the "casual consistency" between pre-existing subscripton (of a potentially new already subscribed consumer) 
             // and later production.
-            var pinCursor = queueCache.GetCacheCursor(streamId.Guid, streamId.Namespace, firstToken);
+            var pinCursor = queueCache.GetCacheCursor(streamId, firstToken);
 
             try
             {
@@ -465,7 +465,7 @@ namespace Orleans.Streams
                     {
                         exceptionOccured = exc;
                         consumerData.SafeDisposeCursor(logger);
-                        consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId.Guid, consumerData.StreamId.Namespace, null);
+                        consumerData.Cursor = queueCache.GetCacheCursor(consumerData.StreamId, null);
                     }
 
                     // Apply filtering to this batch, if applicable
@@ -494,14 +494,13 @@ namespace Orleans.Streams
                             StreamHandshakeToken newToken = await AsyncExecutorWithRetries.ExecuteWithRetries(
                                 i => DeliverBatchToConsumer(consumerData, batch),
                                 AsyncExecutorWithRetries.INFINITE_RETRIES,
-                                (exception, i) => true,
+                                (exception, i) => !(exception is ClientNotAvailableException),
                                 config.MaxEventDeliveryTime,
                                 DefaultBackoffProvider);
                             if (newToken != null)
                             {
                                 consumerData.LastToken = newToken;
-                                IQueueCacheCursor newCursor = queueCache.GetCacheCursor(consumerData.StreamId.Guid,
-                                    consumerData.StreamId.Namespace, newToken.Token);
+                                IQueueCacheCursor newCursor = queueCache.GetCacheCursor(consumerData.StreamId, newToken.Token);
                                 consumerData.SafeDisposeCursor(logger);
                                 consumerData.Cursor = newCursor;
                             }
@@ -509,9 +508,15 @@ namespace Orleans.Streams
                     }
                     catch (Exception exc)
                     {
+                        if (consumerData.Cursor != null)
+                        {
+                            consumerData.Cursor.RecordDeliveryFailure();
+                        }
                         var message = string.Format("Exception while trying to deliver msgs to stream {0} in PersistentStreamPullingAgentGrain.RunConsumerCursor", consumerData.StreamId);
                         logger.Error((int)ErrorCode.PersistentStreamPullingAgent_14, message, exc);
-                        exceptionOccured = new StreamEventDeliveryFailureException(consumerData.StreamId);
+                        exceptionOccured = exc is ClientNotAvailableException
+                            ? exc
+                            : new StreamEventDeliveryFailureException(consumerData.StreamId);
                     }
                     // if we failed to deliver a batch
                     if (exceptionOccured != null)
@@ -574,6 +579,15 @@ namespace Orleans.Streams
 
         private async Task<bool> ErrorProtocol(StreamConsumerData consumerData, Exception exceptionOccured, bool isDeliveryError, IBatchContainer batch, StreamSequenceToken token)
         {
+            // for loss of client, we just remove the subscription
+            if (exceptionOccured is ClientNotAvailableException)
+            {
+                logger.Warn((int)ErrorCode.Stream_ConsumerIsDead,
+                    "Consumer {0} on stream {1} is no longer active - permanently removing Consumer.", consumerData.StreamConsumer, consumerData.StreamId);
+                pubSub.UnregisterConsumer(consumerData.SubscriptionId, consumerData.StreamId, consumerData.StreamId.ProviderName).Ignore();
+                return true;
+            }
+
             // notify consumer about the error or that the data is not available.
             await OrleansTaskExtentions.ExecuteAndIgnoreException(
                 () => DeliverErrorToConsumer(

@@ -101,6 +101,10 @@ namespace Orleans.Runtime
                 }
                 else // Request or OneWay
                 {
+                    if (target.State == ActivationState.Valid)
+                    {
+                        catalog.ActivationCollector.TryRescheduleCollection(target);
+                    }
                     // Silo is always capable to accept a new request. It's up to the activation to handle its internal state.
                     // If activation is shutting down, it will queue and later forward this request.
                     ReceiveRequest(message, target);
@@ -190,7 +194,7 @@ namespace Orleans.Runtime
             {
                 var str = String.Format("{0} {1}", rejectInfo ?? "", exc == null ? "" : exc.ToString());
                 MessagingStatisticsGroup.OnRejectedMessage(message);
-                Message rejection = message.CreateRejectionResponse(rejectType, str);
+                Message rejection = message.CreateRejectionResponse(rejectType, str, exc as OrleansException);
                 SendRejectionMessage(rejection);
             }
             else
@@ -339,8 +343,7 @@ namespace Orleans.Runtime
                 newChain.AddRange(prevChain.Cast<RequestInvocationHistory>());
                 newChain.Add(new RequestInvocationHistory(message));
                 
-                throw new DeadlockException(newChain.Select(req =>
-                    new Tuple<GrainId, int, int>(req.GrainId, req.InterfaceId, req.MethodId)).ToList());
+                throw new DeadlockException(newChain);
             }
         }
 
@@ -362,8 +365,6 @@ namespace Orleans.Runtime
                 // Now we can actually scheduler processing of this request
                 targetActivation.RecordRunning(message);
                 var context = new SchedulingContext(targetActivation);
-                if (Message.WriteMessagingTraces) 
-                    message.AddTimestamp(Message.LifecycleTag.EnqueueWorkItem);
 
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
                 Scheduler.QueueWorkItem(new InvokeWorkItem(targetActivation, message, context), context);
@@ -384,8 +385,6 @@ namespace Orleans.Runtime
                 RejectMessage(message, Message.RejectionTypes.Overloaded, overloadException, "Target activation is overloaded " + targetActivation);
                 return;
             }
-            if (Message.WriteMessagingTraces) 
-                message.AddTimestamp(Message.LifecycleTag.EnqueueWaiting);
             
             bool enqueuedOk = targetActivation.EnqueueMessage(message);
             if (!enqueuedOk)
@@ -502,7 +501,7 @@ namespace Orleans.Runtime
             }
             catch (Exception ex)
             {
-                if (!(ex.GetBaseException() is KeyNotFoundException))
+                if (ShouldLogError(ex))
                 {
                     logger.Error(ErrorCode.Dispatcher_SelectTarget_Failed,
                         String.Format("SelectTarget failed with {0}", ex.Message),
@@ -511,6 +510,12 @@ namespace Orleans.Runtime
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedError(message, "SelectTarget failed");
                 RejectMessage(message, Message.RejectionTypes.Unrecoverable, ex);
             }
+        }
+
+        private bool ShouldLogError(Exception ex)
+        {
+            return !(ex.GetBaseException() is KeyNotFoundException) &&
+                   !(ex.GetBaseException() is ClientNotAvailableException);
         }
 
         // this is a compatibility method for portions of the code base that don't use

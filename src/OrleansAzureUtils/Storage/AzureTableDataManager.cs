@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -343,10 +342,7 @@ namespace Orleans.AzureUtils
             {
                 try
                 {
-                    string queryString = TableQuery.CombineFilters(
-                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey),
-                        TableOperators.And,
-                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, rowKey));
+                    string queryString = TableQueryFilterBuilder.MatchPartitionKeyAndRowKeyFilter(partitionKey, rowKey);
                     var query = new TableQuery<T>().Where(queryString);
                     TableQuerySegment<T> segment = await Task.Factory
                         .FromAsync<TableQuery<T>, TableContinuationToken, TableQuerySegment<T>>(
@@ -751,5 +747,3 @@ namespace Orleans.AzureUtils
         #endregion
     }
 }
-
-

@@ -32,8 +32,8 @@ namespace Orleans.Storage
     [DebuggerDisplay("MemoryStore:{Name}")]
     public class MemoryStorage : IStorageProvider
     {
-        private const int DEFAULT_NUM_STORAGE_GRAINS = 10;
-        private const string NUM_STORAGE_GRAINS = "NumStorageGrains";
+        internal const int NumStorageGrainsDefaultValue = 10;
+        internal const string NumStorageGrainsPropertyName = "NumStorageGrains";
         private int numStorageGrains;
         private static int counter;
         private readonly int id;
@@ -41,15 +41,15 @@ namespace Orleans.Storage
         private Lazy<IMemoryStorageGrain>[] storageGrains;
 
         /// <summary> Name of this storage provider instance. </summary>
-        /// <see cref="IProvider#Name"/>
+        /// <see cref="IProvider.Name"/>
         public string Name { get; private set; }
 
         /// <summary> Logger used by this storage provider instance. </summary>
-        /// <see cref="IStorageProvider#Log"/>
+        /// <see cref="IStorageProvider.Log"/>
         public Logger Log { get; private set; }
 
         public MemoryStorage()
-            : this(DEFAULT_NUM_STORAGE_GRAINS)
+            : this(NumStorageGrainsDefaultValue)
         {
         }
 
@@ -67,14 +67,14 @@ namespace Orleans.Storage
         #region IStorageProvider methods
 
         /// <summary> Initialization function for this storage provider. </summary>
-        /// <see cref="IProvider#Init"/>
+        /// <see cref="IProvider.Init"/>
         public virtual Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
         {
             Name = name;
             Log = providerRuntime.GetLogger(GetLoggerName());
 
             string numStorageGrainsStr;
-            if (config.Properties.TryGetValue(NUM_STORAGE_GRAINS, out numStorageGrainsStr))
+            if (config.Properties.TryGetValue(NumStorageGrainsPropertyName, out numStorageGrainsStr))
                 numStorageGrains = Int32.Parse(numStorageGrainsStr);
             
             Log.Info("Init: Name={0} NumStorageGrains={1}", Name, numStorageGrains);
@@ -89,7 +89,7 @@ namespace Orleans.Storage
         }
 
         /// <summary> Shutdown function for this storage provider. </summary>
-        /// <see cref="IStorageProvider#Close"/>
+        /// <see cref="IStorageProvider.Close"/>
         public virtual Task Close()
         {
             for (int i = 0; i < numStorageGrains; i++)
@@ -99,7 +99,7 @@ namespace Orleans.Storage
         }
 
         /// <summary> Read state data function for this storage provider. </summary>
-        /// <see cref="IStorageProvider#ReadStateAsync"/>
+        /// <see cref="IStorageProvider.ReadStateAsync"/>
         public virtual async Task ReadStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             var keys = MakeKeys(grainType, grainReference);
@@ -117,7 +117,7 @@ namespace Orleans.Storage
         }
 
         /// <summary> Write state data function for this storage provider. </summary>
-        /// <see cref="IStorageProvider#WriteStateAsync"/>
+        /// <see cref="IStorageProvider.WriteStateAsync"/>
         public virtual async Task WriteStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             var keys = MakeKeys(grainType, grainReference);
@@ -128,7 +128,7 @@ namespace Orleans.Storage
         }
 
         /// <summary> Delete / Clear state data function for this storage provider. </summary>
-        /// <see cref="IStorageProvider#ClearStateAsync"/>
+        /// <see cref="IStorageProvider.ClearStateAsync"/>
         public virtual async Task ClearStateAsync(string grainType, GrainReference grainReference, IGrainState grainState)
         {
             var keys = MakeKeys(grainType, grainReference);
