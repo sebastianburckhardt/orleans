@@ -1053,7 +1053,7 @@ namespace Orleans
         PersistentStreamPullingManager_AlreadyStarted   = PersistentStreamPullingManagerBase + 21,
         PersistentStreamPullingManager_AlreadyStopped   = PersistentStreamPullingManagerBase + 22,
         PersistentStreamPullingManager_PeriodicPrint    = PersistentStreamPullingManagerBase + 23,
-
+        
         AzureServiceRuntimeWrapper          = Runtime + 3700,
         AzureServiceRuntime_NotLoaded       = AzureServiceRuntimeWrapper +1,
         AzureServiceRuntime_FailedToLoad    = AzureServiceRuntimeWrapper + 2,
@@ -1080,7 +1080,7 @@ namespace Orleans
        
 
         LogViewBase = Runtime + 4100,
-        LogView_TransitionException = LogViewBase + 1,
+        LogView_ViewUpdateException = LogViewBase + 1,
         LogView_CaughtException = LogViewBase + 2,
         LogView_ProtocolError = LogViewBase + 3,
         LogView_ProtocolFatalError = LogViewBase + 4,

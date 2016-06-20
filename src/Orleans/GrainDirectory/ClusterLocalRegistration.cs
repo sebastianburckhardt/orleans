@@ -7,7 +7,7 @@ namespace Orleans.GrainDirectory
     /// its own independent directory. This is the default.
     /// </summary>
     [Serializable]
-    public class ClusterLocalRegistration : MultiClusterRegistrationStrategy
+    internal class ClusterLocalRegistration : MultiClusterRegistrationStrategy
     {
         private static readonly Lazy<ClusterLocalRegistration> singleton = new Lazy<ClusterLocalRegistration>(() => new ClusterLocalRegistration());
 

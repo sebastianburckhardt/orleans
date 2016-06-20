@@ -8,11 +8,12 @@ using Xunit;
 using Assert = Xunit.Assert;
 using System.Collections.Generic;
 
-namespace Tests.GeoClusterTests
+namespace UnitTests.GeoClusterTests
 {
     /// <summary>
     /// Test selection algorithm for multi-cluster gateways
     /// </summary>
+    [TestClass]
     public class GatewaySelectionTests
     {
         [Fact, TestCategory("GeoCluster"), TestCategory("Functional")]

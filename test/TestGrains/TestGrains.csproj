@@ -42,6 +42,7 @@
     <WarningsAsErrors>4014</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\src\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -117,11 +118,11 @@
     <Compile Include="SimpleGrain.cs" />
     <Compile Include="Properties\orleans.codegen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SimpleQueuedGrain.cs" />
+    <Compile Include="SimpleLogViewGrain.cs" />
     <Compile Include="SimplePersistentGrain.cs" />
     <Compile Include="GrainInterfaceHierarchyGrains.cs" />
     <Compile Include="LivenessTestGrain.cs" />
-    <Compile Include="SimpleQueuedGrainImplementations.cs" />
+    <Compile Include="SimpleLogViewGrainImplementations.cs" />
     <Compile Include="SpecializedSimpleGenericGrain.cs" />
     <Compile Include="StreamCheckpoint.cs" />
     <Compile Include="ValueTypeTestGrain.cs" />

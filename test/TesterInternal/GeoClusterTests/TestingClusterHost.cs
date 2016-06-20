@@ -55,7 +55,7 @@ namespace Tests.GeoClusterTests
         {
             TimeSpan stabilizationTime = account_for_lost_messages ? gossipStabilizationTime : TimeSpan.FromSeconds(1);
             WriteLog(Environment.NewLine + Environment.NewLine + "WaitForMultiClusterGossipToStabilizeAsync is about to sleep for {0}", stabilizationTime);
-                await Task.Delay(stabilizationTime);
+            await Task.Delay(stabilizationTime);
             WriteLog("WaitForMultiClusterGossipToStabilizeAsync is done sleeping");
         }
 

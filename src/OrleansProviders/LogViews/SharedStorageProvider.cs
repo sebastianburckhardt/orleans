@@ -25,7 +25,7 @@ namespace Orleans.Providers.LogViews
     {
         public string Name { get; private set; }
 
-        public const string GLOBAL_STORAGE_PARAMETER = "GlobalStorageProvider";
+        public const string GLOBAL_STORAGE_PROVIDER_PARAMETER = "GlobalStorageProvider";
 
         public Logger Log { get; private set; }
 
@@ -45,10 +45,11 @@ namespace Orleans.Providers.LogViews
             Log = providerRuntime.GetLogger(GetLoggerName());
             Log.Info("Init (Severity={0})", Log.SeverityLevel);
 
-            // get global storage provider 
-            if (!config.Properties.TryGetValue(GLOBAL_STORAGE_PARAMETER, out globalstorageprovidername))
-                throw new Orleans.Storage.BadProviderConfigException("PrimaryViewStoreProvider is missing configuration parameter " + GLOBAL_STORAGE_PARAMETER);
+            // get global storage provider (mandatory parameter)
+            if (!config.Properties.TryGetValue(GLOBAL_STORAGE_PROVIDER_PARAMETER, out globalstorageprovidername))
+                throw new Orleans.Storage.BadProviderConfigException("SharedStorageProvider is missing configuration parameter " + GLOBAL_STORAGE_PROVIDER_PARAMETER);
 
+   
             if (!((ILogViewProviderRuntime)providerRuntime).TryGetStorageProvider(globalstorageprovidername, out globalstorageprovider, true))
             {
                  throw new Orleans.Storage.BadProviderConfigException("Could not find storage provider " + name);

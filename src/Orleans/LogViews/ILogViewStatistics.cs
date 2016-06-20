@@ -14,11 +14,11 @@ namespace Orleans.LogViews
         /// <summary>
         /// A map from event names to a count
         /// </summary>
-        public Dictionary<String, long> eventCounters;
+        public Dictionary<String, long> EventCounters;
         /// <summary>
         /// A list of all measured stabilization latencies
         /// </summary>
-        public List<int> stabilizationLatenciesInMsecs;
+        public List<int> StabilizationLatenciesInMsecs;
     }
 
 }

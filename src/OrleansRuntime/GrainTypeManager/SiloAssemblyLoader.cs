@@ -5,11 +5,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-using Orleans.Core;
 using Orleans.Providers;
 using Orleans.CodeGeneration;
-using Orleans.LogViews;
 using Orleans.Serialization;
+using Orleans.LogViews;
 
 namespace Orleans.Runtime
 {
@@ -79,7 +78,6 @@ namespace Orleans.Runtime
                     throw new InvalidOperationException(
                         string.Format("Precondition violated: GetLoadedGrainTypes should not return a duplicate type ({0})", className));
 
-                StorageInterface storageInterface = StorageInterface.None; 
                 Type grainStateType = null;
 
                 // check if grainType derives from Grain<T> where T is a concrete class
@@ -90,14 +88,12 @@ namespace Orleans.Runtime
                     if (parentType.GetTypeInfo().IsGenericType)
                     {
                         var definition = parentType.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>) || definition == typeof(LogViewGrain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(LogViewGrainBase<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
-                            if (stateArg.IsClass)
+                            if (stateArg.GetTypeInfo().IsClass)
                             {
                                 grainStateType = stateArg;
-                                storageInterface = (definition == typeof(Grain<>)) ? 
-                                    StorageInterface.StorageBridge : StorageInterface.LogViewAdaptor;
                                 break;
                             }
                         }
@@ -106,7 +102,7 @@ namespace Orleans.Runtime
                     parentType = parentType.BaseType;
                 }
 
-                GrainTypeData typeData = GetTypeData(grainType, grainStateType, storageInterface);
+                GrainTypeData typeData = GetTypeData(grainType, grainStateType);
                 result.Add(className, typeData);
             }
 
@@ -137,11 +133,11 @@ namespace Orleans.Runtime
         /// <summary>
         /// Get type data for the given grain type
         /// </summary>
-        private static GrainTypeData GetTypeData(Type grainType, Type stateObjectType, StorageInterface storageInterface)
+        private static GrainTypeData GetTypeData(Type grainType, Type stateObjectType)
         {
             return grainType.GetTypeInfo().IsGenericTypeDefinition ?
-                new GenericGrainTypeData(grainType, stateObjectType, storageInterface) :
-                new GrainTypeData(grainType, stateObjectType, storageInterface);
+                new GenericGrainTypeData(grainType, stateObjectType) :
+                new GrainTypeData(grainType, stateObjectType);
         }
 
         private static void LogGrainTypesFound(TraceLogger logger, Dictionary<string, GrainTypeData> grainTypeData)

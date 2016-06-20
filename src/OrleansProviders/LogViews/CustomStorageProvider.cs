@@ -16,7 +16,6 @@ namespace Orleans.Providers.LogViews
     /// <summary>
     /// A log view provider that relies on a user-supplied storage interface
     /// (for grains that implement ICustomPrimaryStorage)
-    /// </para>
     /// </summary>
     public class CustomStorageProvider : ILogViewProvider
     {

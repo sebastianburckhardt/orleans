@@ -11,9 +11,9 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
 
-    // use the explictly specified "SharedStorage" replication provider
+    // use the explictly specified "SharedStorage" log view provider
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class SimpleQueuedGrainSharedStorage : SimpleQueuedGrain
+    public class SimpleLogViewGrainSharedStorage : SimpleLogViewGrain
     {
     }
 
@@ -24,7 +24,7 @@ namespace UnitTests.Grains
     }
 
     // use the default storage provider as the shared storage
-    public class SimpleQueuedGrainDefaultStorage : SimpleQueuedGrain
+    public class SimpleLogViewGrainDefaultStorage : SimpleLogViewGrain
     {
     }
 
@@ -37,29 +37,24 @@ namespace UnitTests.Grains
     }
 
     // use an explicitly specified storage provider
+    // use MemoryStore as the log view provider (uses GSI grain for memory store)
     [StorageProvider(ProviderName = "MemoryStore")]
-    public class SimpleQueuedGrainMemoryStorage : SimpleQueuedGrain
+    public class SimpleLogViewGrainMemoryStorage : SimpleLogViewGrain
     {
     }
 
-    // use an explicitly specified replication provider
-    [LogViewProvider(ProviderName = "LocalMemory")]
-    public class SimpleQueuedGrainLocalMemoryStorage : SimpleQueuedGrain
-    {
-    }
-
-    // use the explictly specified "CustomStorage" replication provider
+    // use the explictly specified "CustomStorage" log view provider
     [LogViewProvider(ProviderName = "CustomStorage")]
-    public class SimpleQueuedGrainCustomStorage : SimpleQueuedGrain,
-        Orleans.LogViews.ICustomStorageInterface<MyGrainState, object>
+    public class SimpleLogViewGrainCustomStorage : SimpleLogViewGrain,
+        Orleans.Providers.LogViews.ICustomStorageInterface<MyGrainState, object>
     {
 
       // we use another impl of this grain as the primary.
-        ISimpleQueuedGrain storagegrain;
+        ISimpleLogViewGrain storagegrain;
 
         public override Task OnActivateAsync()
         {
-            storagegrain = GrainFactory.GetGrain<ISimpleQueuedGrain>(this.GetPrimaryKeyLong(), "UnitTests.Grains.SimpleQueuedGrainSharedStorage");
+            storagegrain = GrainFactory.GetGrain<ISimpleLogViewGrain>(this.GetPrimaryKeyLong(), "UnitTests.Grains.SimpleLogViewGrainSharedStorage");
             return TaskDone.Done;
         }
 

@@ -14,10 +14,7 @@ namespace Orleans.LogViews
     ///</para>
     /// </summary>
     /// <typeparam name="TView"></typeparam>
-    public interface ILogViewAdaptor<TLogView, TLogEntry> 
-        : ILogView<TLogView, TLogEntry> 
-        , ILogSubmission<TLogEntry>
-
+    public interface ILogViewAdaptor<TLogView, TLogEntry> : ILogViewStorageInterface<TLogView, TLogEntry>
         where TLogView: new()
     {
 
