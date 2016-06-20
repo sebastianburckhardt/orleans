@@ -242,7 +242,7 @@ namespace Orleans
             {
                 ProviderName = Runtime.Constants.DEFAULT_STORAGE_PROVIDER_NAME;
             }
-         }
+        }
 
 
         /// <summary>

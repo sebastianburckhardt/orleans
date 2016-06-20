@@ -9,7 +9,7 @@
     <ProjectGuid>{09610024-F5B9-4065-9557-BD9E36A32421}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Tests</RootNamespace>
+    <RootNamespace>UnitTests</RootNamespace>
     <AssemblyName>TesterInternal</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -116,6 +116,7 @@
   <ItemGroup>
     <Compile Include="CollectionFixtures.cs" />
     <Compile Include="ConnectionStringFixture.cs" />
+    <Compile Include="GeoClusterTests\LogViewGrainTestsFourClusters.cs" />
     <Compile Include="HostedTestClusterBase.cs" />
     <Compile Include="OrleansRuntime\Streams\SubscriptionMarkerTests.cs" />
     <Compile Include="SqlStatisticsPublisherTests\SqlStatisticsPublisherTestsBase.cs" />
@@ -126,7 +127,7 @@
     <Compile Include="StorageTests\PersistenceGrainTests_AzureBlobStore.cs" />
     <Compile Include="StorageTests\PersistenceGrainTests_AzureTableStore.cs" />
     <Compile Include="StorageTests\RelationalStoreTests.cs" />
-    <Compile Include="GeoClusterTests\BasicQueuedGrainTests.cs" />
+    <Compile Include="GeoClusterTests\BasicLogViewGrainTests.cs" />
     <Compile Include="StreamingTests\AQStreamingTests.cs" />
     <Compile Include="AssemblyLoaderTests.cs" />
     <Compile Include="AsynchAgentRestartTest.cs" />
@@ -172,7 +173,7 @@
     <Compile Include="SqlStatisticsPublisherTests\MySqlStatisticsPublisherTests.cs" />
     <Compile Include="Serialization\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
-    <Compile Include="GeoClusterTests\QueuedGrainTests.cs" />
+    <Compile Include="GeoClusterTests\LogViewGrainTestsTwoClusters.cs" />
     <Compile Include="General\InterfaceRules.cs" />
     <Compile Include="GrainReferenceCacheTests.cs" />
     <Compile Include="GrainReferenceCastTests.cs" />
@@ -367,7 +368,6 @@
     <Content Include="..\..\src\OrleansTestingHost\ClientConfigurationForTesting.xml">
       <Link>ClientConfigurationForTesting.xml</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
     </Content>
     <Content Include="..\..\src\OrleansTestingHost\OrleansConfigurationForTesting.xml">
       <Link>OrleansConfigurationForTesting.xml</Link>

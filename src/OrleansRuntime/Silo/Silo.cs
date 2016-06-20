@@ -961,7 +961,7 @@ namespace Orleans.Runtime
             {
                 ExecuteFastKillInProcessExit = false;
             }
-
+ 
             internal void InjectMultiClusterConfiguration(MultiClusterConfiguration config)
             {
                 silo.LocalMultiClusterOracle.InjectMultiClusterConfiguration(config).Wait();

@@ -15,8 +15,10 @@ namespace Orleans.QueuedGrains
     /// <typeparam name="TDelta">The type for objects that represent updates to the state.</typeparam>
     /// </summary>
     public abstract class QueuedGrain<TState,TDelta> : 
-        LogViewGrain<TState>, IProtocolParticipant,
-        ILogViewAdaptorHost, ILogViewHost<TState, TDelta>
+        LogViewGrainBase<TState>,
+        ILogViewGrain, 
+        IProtocolParticipant,
+        ILogViewHost<TState, TDelta>
         where TState : class,new()
         where TDelta : class
     {
@@ -28,13 +30,13 @@ namespace Orleans.QueuedGrains
 
 
         // Called right after grain is constructed, to install the log view adaptor
-        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
+        void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
             Adaptor = provider.MakeLogViewAdaptor<TState,TDelta>(this, (TState) initialstate, graintypename, services);            
         }
 
-        void ILogViewHost<TState, TDelta>.TransitionView(TState view, TDelta entry)
+        void ILogViewHost<TState, TDelta>.UpdateView(TState view, TDelta entry)
         {
             ApplyDeltaToState(view, entry);
         }

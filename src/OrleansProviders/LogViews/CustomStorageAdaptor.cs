@@ -21,30 +21,34 @@ namespace Orleans.Providers.LogViews
         where T : class,new()
         where E : class
     {
-        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate, ILogViewProvider repprovider, IProtocolServices services)
+        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate, 
+            ILogViewProvider repprovider, IProtocolServices services)
             : base(host, repprovider, initialstate, services)
         {
             if (! (host is ICustomStorageInterface<T,E>))
                 throw new BadProviderConfigException("Must implement ICustomStorageInterface<T,E> for CustomStorageLogView provider");
         }
 
-        private T Cached;
-        private int Version;
+        private const int max_entries_in_notifications = 1000;
+        private const int slowpollinterval = 10000;
+
+        private T cached;
+        private int version;
 
         protected override T LastConfirmedView()
         {
-            return Cached;
+            return cached;
         }
 
         protected override int GetConfirmedVersion()
         {
-           return Version;
+           return version;
         }
 
         protected override void InitializeConfirmedView(T initialstate)
         {
-            Cached = initialstate;
-            Version = 0;
+            cached = initialstate;
+            version = 0;
         }
 
         // no special tagging is required, thus we create a plain submission entry
@@ -68,21 +72,21 @@ namespace Orleans.Providers.LogViews
                 try
                 {
                    var result = await ((ICustomStorageInterface<T,E>) Host).ReadStateFromStorageAsync();
-                   Version = result.Key;
-                   Cached = result.Value;
+                   version = result.Key;
+                   cached = result.Value;
 
-                   LastExceptionInternal = null;
+                   LastPrimaryException = null; // successful, so we clear stored prior exceptions
                     
-                   Services.Verbose("read success v{0}", Version);
+                   Services.Verbose("read success v{0}", version);
 
                    break; // successful
                 }
                 catch (Exception e)
                 {
-                    LastExceptionInternal = e;
+                    LastPrimaryException = e; // store last exception for inspection by user code
                 }
 
-                Services.Verbose("read failed {0}", LastExceptionInternal != null ? (LastExceptionInternal.GetType().Name + LastExceptionInternal.Message) : "");
+                Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
 
                 increasebackoff(ref backoff_msec);
             }
@@ -91,7 +95,6 @@ namespace Orleans.Providers.LogViews
         }
 
 
-        public const int slowpollinterval = 10000;
 
         Random random = null;
 
@@ -127,13 +130,13 @@ namespace Orleans.Providers.LogViews
 
             try
             {
-                writesuccessful = await ((ICustomStorageInterface<T,E>) Host).ApplyUpdatesToStorageAsync(updates, Version);
+                writesuccessful = await ((ICustomStorageInterface<T,E>) Host).ApplyUpdatesToStorageAsync(updates, version);
 
-                LastExceptionInternal = null; // successful
+                LastPrimaryException = null; // successful, so we clear stored exception
 
                 if (writesuccessful)
                 {
-                    Services.Verbose("write ({0} updates) success v{1}", updates.Count, Version + updates.Count);
+                    Services.Verbose("write ({0} updates) success v{1}", updates.Count, version + updates.Count);
 
                     // now we update the cached state by applying the same updates
                     // in case we encounter any exceptions we will re-read the whole state from storage
@@ -141,25 +144,25 @@ namespace Orleans.Providers.LogViews
                     {
                         foreach (var u in updates)
                         {
-                            Version++;
-                            Host.TransitionView(this.Cached, u);
+                            version++;
+                            Host.UpdateView(this.cached, u);
                         }
 
                         transitionssuccessful = true;
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtTransitionException("CustomStorageLogViewAdaptor.WriteAsync", e);
+                        Services.CaughtViewUpdateException("CustomStorageLogViewAdaptor.WriteAsync", e);
                     }
                 }
             }
             catch (Exception e)
             {
-                LastExceptionInternal = e;
+                LastPrimaryException = e; // store exception for inspection by user code
             }
 
             if (!writesuccessful || !transitionssuccessful)    {
-                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastExceptionInternal != null ? (LastExceptionInternal.GetType().Name + LastExceptionInternal.Message) : "");
+                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
 
                 increasebackoff(ref backoff_msec);
 
@@ -175,21 +178,21 @@ namespace Orleans.Providers.LogViews
                     try
                     {
                         var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
-                        Version = result.Key;
-                        Cached = result.Value;
+                        version = result.Key;
+                        cached = result.Value;
 
-                        LastExceptionInternal = null; // successful
+                        LastPrimaryException = null; // successful
 
-                        Services.Verbose("read success v{0}", Version);
+                        Services.Verbose("read success v{0}", version);
 
                         break;
                     }
                     catch (Exception e)
                     {
-                        LastExceptionInternal = e;
+                        LastPrimaryException = e;
                     }
 
-                    Services.Verbose("read failed {0}", LastExceptionInternal != null ? (LastExceptionInternal.GetType().Name + LastExceptionInternal.Message) : "");
+                    Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
 
                     increasebackoff(ref backoff_msec);
                 }
@@ -200,7 +203,7 @@ namespace Orleans.Providers.LogViews
             if (writesuccessful)
                 BroadcastNotification(new UpdateNotificationMessage()
                    {
-                       Version = Version,
+                       Version = version,
                        Updates = updates,
                        Origin = Services.MyClusterId,
                    });
@@ -209,8 +212,8 @@ namespace Orleans.Providers.LogViews
 
             return writesuccessful ? updates.Count : 0;
         }
-    
-        
+
+
         [Serializable]
         protected class UpdateNotificationMessage : NotificationMessage 
         {
@@ -222,14 +225,40 @@ namespace Orleans.Providers.LogViews
             {
                 return string.Format("v{0} ({1} updates by {2})", Version, Updates.Count, Origin);
             }
-         }
+        }
+
+        protected override NotificationMessage Merge(NotificationMessage earliermessage, NotificationMessage latermessage)
+        {
+            var earlier = earliermessage as UpdateNotificationMessage;
+            var later = latermessage as UpdateNotificationMessage;
+
+            if (earlier != null
+                && later != null
+                && earlier.Origin == later.Origin
+                && earlier.Version + later.Updates.Count == version
+                && earlier.Updates.Count + later.Updates.Count < max_entries_in_notifications)
+
+                return new UpdateNotificationMessage()
+                {
+                    Version = later.Version,
+                    Origin = later.Origin,
+                    Updates = earlier.Updates.Concat(later.Updates).ToList(),
+                };
+
+            else
+                return base.Merge(earliermessage, latermessage); // keep only the version number
+        }
+
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
         protected override void OnNotificationReceived(NotificationMessage payload)
         {
            var um = (UpdateNotificationMessage) payload;
-           notifications.Add(um.Version - um.Updates.Count, um);
+            if (um != null)
+                notifications.Add(um.Version - um.Updates.Count, um);
+            else
+                base.OnNotificationReceived(payload);
         }
 
         protected override void ProcessNotifications()
@@ -237,14 +266,14 @@ namespace Orleans.Providers.LogViews
             enter_operation("ProcessNotifications");
 
             // discard notifications that are behind our already confirmed state
-            while (notifications.Count > 0 && notifications.ElementAt(0).Key < Version)
+            while (notifications.Count > 0 && notifications.ElementAt(0).Key < version)
             {
                 Services.Verbose("discarding notification {0}", notifications.ElementAt(0).Value);
                 notifications.RemoveAt(0);
             }
 
             // process notifications that reflect next global version
-            while (notifications.Count > 0 && notifications.ElementAt(0).Key == Version)
+            while (notifications.Count > 0 && notifications.ElementAt(0).Key == version)
             {
                 var updatenotification = notifications.ElementAt(0).Value;
                 notifications.RemoveAt(0);
@@ -253,20 +282,22 @@ namespace Orleans.Providers.LogViews
                 foreach (var u in updatenotification.Updates)
                     try
                     {
-                        Host.TransitionView(Cached, u);
+                        Host.UpdateView(cached, u);
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtTransitionException("ProcessNotifications", e);
+                        Services.CaughtViewUpdateException("ProcessNotifications", e);
                     }
 
-                Version = updatenotification.Version;
+                version = updatenotification.Version;
 
-                Services.Verbose("notification success ({0} updates) v{1}", updatenotification.Updates.Count, Version);
+                Services.Verbose("notification success ({0} updates) v{1}", updatenotification.Updates.Count, version);
             }
 
             Services.Verbose2("unprocessed notifications in queue: {0}", notifications.Count);
-         
+
+            base.ProcessNotifications();
+        
             exit_operation("ProcessNotifications");
         }
 

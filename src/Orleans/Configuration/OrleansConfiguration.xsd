@@ -23,7 +23,7 @@
       <xs:enumeration value="None" />
       <xs:enumeration value="SqlServer" />
       <xs:enumeration value="AzureTable" />
-	  <xs:enumeration value="ZooKeeper" />
+      <xs:enumeration value="ZooKeeper" />
       <xs:enumeration value="Custom" />
     </xs:restriction>
   </xs:simpleType>

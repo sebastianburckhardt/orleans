@@ -1,33 +1,10 @@
-﻿/*
-Project Orleans Cloud Service SDK ver. 1.0
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the ""Software""), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
-OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Providers;
-using Orleans.QueuedGrains;
+using Orleans.LogViews;
 using UnitTests.GrainInterfaces;
 
 namespace UnitTests.Grains
@@ -51,13 +28,16 @@ namespace UnitTests.Grains
             return string.Format("A={0} B={1} R={{{2}}}", A, B, string.Join(", ", Reservations.Select(kvp => string.Format("{0}:{1}", kvp.Key, kvp.Value))));
         }
 
+        // dynamic dispatch to the cases listed below
+        public void Apply(dynamic o) { Apply(o); }
+
+        // all the update operations are listed here
         public void Apply(UpdateA x) { A = x.Val; }
         public void Apply(UpdateB x) { B = x.Val; }
         public void Apply(IncrementA x) { A++; }
 
         public void Apply(AddReservation x) { Reservations[x.Val.ToString()] = x.Val; }
         public void Apply(RemoveReservation x) { Reservations.Remove(x.Val.ToString()); }
-
     }
  
 
@@ -78,47 +58,52 @@ namespace UnitTests.Grains
     /// A simple grain with two fields A, B that can be updated or incremented
     /// We subclass this to create variations for all storage providers
     /// </summary>
-    public abstract class SimpleQueuedGrain : QueuedGrainWithDynamicApply<MyGrainState>, ISimpleQueuedGrain
+    public abstract class SimpleLogViewGrain : LogViewGrain<MyGrainState,object>, ISimpleLogViewGrain
     {
+        protected override void UpdateView(MyGrainState state, object delta)
+        {
+            state.Apply(delta);
+        }
+
         public async Task SetAGlobal(int x)
         {
-            EnqueueUpdate(new UpdateA() { Val = x });
-            await ConfirmUpdates();
+            Submit(new UpdateA() { Val = x });
+            await ConfirmSubmittedEntriesAsync();
         }
 
         public async Task<Tuple<int, bool>> SetAConditional(int x)
         {
             int version = this.ConfirmedVersion;
-            bool success = await TryConditionalUpdateAsync(new UpdateA() { Val = x });
+            bool success = await TryAppend(new UpdateA() { Val = x });
             return new Tuple<int, bool>(version, success);
         }
 
         public Task SetALocal(int x)
         {
-            EnqueueUpdate(new UpdateA() { Val = x });
+            Submit(new UpdateA() { Val = x });
             return TaskDone.Done;
         }
         public async Task SetBGlobal(int x)
         {
-            EnqueueUpdate(new UpdateB() { Val = x });
-            await ConfirmUpdates();
+            Submit(new UpdateB() { Val = x });
+            await ConfirmSubmittedEntriesAsync();
         }
 
         public Task SetBLocal(int x)
         {
-            EnqueueUpdate(new UpdateB() { Val = x });
+            Submit(new UpdateB() { Val = x });
             return TaskDone.Done;
         }
 
         public async Task IncrementAGlobal()
         {
-            EnqueueUpdate(new IncrementA());
-            await ConfirmUpdates();
+            Submit(new IncrementA());
+            await ConfirmSubmittedEntriesAsync();
         }
 
         public Task IncrementALocal()
         {
-            EnqueueUpdate(new IncrementA());
+            Submit(new IncrementA());
             return TaskDone.Done;
 
         }
@@ -126,42 +111,42 @@ namespace UnitTests.Grains
         public async Task<int> GetAGlobal()
         {
             await SynchronizeNowAsync();
-            return ConfirmedState.A;
+            return ConfirmedView.A;
         }
 
         public Task<int> GetALocal()
         {
-            return Task.FromResult(TentativeState.A);
+            return Task.FromResult(TentativeView.A);
         }
 
         public async Task<AB> GetBothGlobal()
         {
             await SynchronizeNowAsync();
-            return new AB() { A = ConfirmedState.A, B = ConfirmedState.B };
+            return new AB() { A = ConfirmedView.A, B = ConfirmedView.B };
         }
 
         public Task<AB> GetBothLocal()
         {
-            var state = TentativeState;
+            var state = TentativeView;
             return Task.FromResult(new AB() { A = state.A, B = state.B });
         }
 
         public Task AddReservationLocal(int val)
         {
-            EnqueueUpdate(new AddReservation() { Val = val });
+            Submit(new AddReservation() { Val = val });
             return TaskDone.Done;
 
         }
         public Task RemoveReservationLocal(int val)
         {
-            EnqueueUpdate(new RemoveReservation() { Val = val });
+            Submit(new RemoveReservation() { Val = val });
             return TaskDone.Done;
 
         }
         public async Task<int[]> GetReservationsGlobal()
         {
             await SynchronizeNowAsync();
-            return ConfirmedState.Reservations.Values.ToArray();
+            return ConfirmedView.Reservations.Values.ToArray();
         }
 
         public Task SynchronizeGlobalState()
@@ -174,10 +159,15 @@ namespace UnitTests.Grains
             return Task.FromResult(this.ConfirmedVersion);
         }
 
+        public Task<Exception> GetLastException()
+        {
+            return Task.FromResult(LastException);
+        }
+
         public async Task<KeyValuePair<int, object>> Read()
         {
             await SynchronizeNowAsync();
-            return new KeyValuePair<int, object>(ConfirmedVersion, ConfirmedState);
+            return new KeyValuePair<int, object>(ConfirmedVersion, ConfirmedView);
         }
         public async Task<bool> Update(IReadOnlyList<object> updates, int expectedversion)
         {
@@ -185,7 +175,7 @@ namespace UnitTests.Grains
                 await SynchronizeNowAsync();
             if (expectedversion != ConfirmedVersion)
                 return false;
-            return await TryConditionalUpdateSequenceAsync(updates);
+            return await TryAppendRange(updates);
         }
 
         public Task Deactivate()

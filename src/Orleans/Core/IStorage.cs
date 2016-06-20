@@ -23,11 +23,4 @@ namespace Orleans.Core
         /// </summary>
         Task ReadStateAsync();
     }
-
-    public enum StorageInterface
-    {
-        None,
-        StorageBridge,
-        LogViewAdaptor,
-    }
 }

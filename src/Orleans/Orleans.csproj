@@ -79,7 +79,7 @@
     <Compile Include="Async\TaskUtility.cs" />
     <Compile Include="Async\UnobservedExceptionsHandlerClass.cs" />
     <Compile Include="Async\TaskExtensions.cs" />
-    <Compile Include="LogViews\ICustomStorageInterface.cs" />
+    <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />
     <Compile Include="CodeGeneration\GrainState.cs" />
@@ -101,10 +101,8 @@
     <Compile Include="Core\IStatefulGrain.cs" />
     <Compile Include="Providers\DefaultServiceProvider.cs" />
     <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
-    <Compile Include="LogViews\ILogSubmission.cs" />
-    <Compile Include="LogViews\ILogView.cs" />
+    <Compile Include="LogViews\ILogViewStorageInterface.cs" />
     <Compile Include="LogViews\ILogViewHost.cs" />
-    <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="QueuedGrains\QueuedGrainVariants.cs" />
     <Compile Include="Runtime\RingRange.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
@@ -117,7 +115,7 @@
     <Compile Include="MultiCluster\IProtocolParticipant.cs" />
     <Compile Include="LogViews\ILogViewAdaptor.cs" />
     <Compile Include="LogViews\ILogViewStatistics.cs" />
-    <Compile Include="LogViews\ILogViewAdaptorHost.cs" />
+    <Compile Include="LogViews\ILogViewGrain.cs" />
     <Compile Include="Core\IStorage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GrainDirectory\MultiClusterRegistrationStrategy.cs" />

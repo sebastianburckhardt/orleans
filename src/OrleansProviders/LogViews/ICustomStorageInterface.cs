@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Orleans.LogViews
+namespace Orleans.Providers.LogViews
 {
     /// <summary>
     /// An interface for grains using the CustomStorageLogViewProvider

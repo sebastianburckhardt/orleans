@@ -28,6 +28,11 @@ namespace Orleans.Runtime.LogViews
             this.graintypename = graintypename;
         }
 
+
+        private const int max_entries_in_notifications = 200;
+        private const int slowpollinterval = 10000;
+
+
         IStorageProvider globalstorageprovider;
         string graintypename;        // stores the confirmed state including metadata
         GrainStateWithMetaDataAndETag<T> GlobalStateCache;
@@ -67,13 +72,12 @@ namespace Orleans.Runtime.LogViews
 
                 try
                 {
-
                     // for manual testing
                     //await Task.Delay(5000);
 
                     await globalstorageprovider.ReadStateAsync(graintypename, Services.GrainReference, GlobalStateCache);
 
-                    LastExceptionInternal = null;
+                    LastPrimaryException = null; // successful, so we clear stored exception
                     
                     Services.Verbose("read success {0}", GlobalStateCache);
 
@@ -81,7 +85,7 @@ namespace Orleans.Runtime.LogViews
                 }
                 catch (Exception e)
                 {
-                    LastExceptionInternal = e;
+                    LastPrimaryException = e;
                 }
 
                 Services.Verbose("read failed");
@@ -93,7 +97,6 @@ namespace Orleans.Runtime.LogViews
         }
 
 
-        public const int slowpollinterval = 10000;
 
         Random random = null;
 
@@ -141,7 +144,7 @@ namespace Orleans.Runtime.LogViews
 
                 await globalstorageprovider.WriteStateAsync(graintypename, Services.GrainReference, nextglobalstate);
 
-                LastExceptionInternal = null; // successful
+                LastPrimaryException = null; // successful
 
                 batchsuccessfullywritten = true;
 
@@ -152,7 +155,7 @@ namespace Orleans.Runtime.LogViews
             }
             catch (Exception e)
             {
-                LastExceptionInternal = e;
+                LastPrimaryException = e;
             }
 
             if (!batchsuccessfullywritten)
@@ -175,7 +178,7 @@ namespace Orleans.Runtime.LogViews
                     {
                         await globalstorageprovider.ReadStateAsync(graintypename, Services.GrainReference, GlobalStateCache);
 
-                        LastExceptionInternal = null; // successful
+                        LastPrimaryException = null; // successful, so we clear stored exception
 
                         Services.Verbose("read success {0}", GlobalStateCache);
 
@@ -183,7 +186,7 @@ namespace Orleans.Runtime.LogViews
                     }
                     catch (Exception e)
                     {
-                        LastExceptionInternal = e;
+                        LastPrimaryException = e;
                     }
 
                     Services.Verbose("read failed");
@@ -208,7 +211,7 @@ namespace Orleans.Runtime.LogViews
             if (batchsuccessfullywritten)
                 BroadcastNotification(new UpdateNotificationMessage()
                    {
-                       GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion,
+                       Version = GlobalStateCache.StateAndMetaData.GlobalVersion,
                        Updates = updates.Select(se => se.Entry).ToList(),
                        Origin = Services.MyClusterId,
                        ETag = GlobalStateCache.ETag
@@ -226,8 +229,6 @@ namespace Orleans.Runtime.LogViews
         [Serializable]
         protected class UpdateNotificationMessage : NotificationMessage 
         {
-            public long GlobalVersion { get; set; }
-
             public string Origin { get; set; }
 
             public List<E> Updates { get; set; }
@@ -236,16 +237,42 @@ namespace Orleans.Runtime.LogViews
 
             public override string ToString()
             {
-                return string.Format("v{0} ({1} updates by {2}) etag={2}", GlobalVersion, Updates.Count, Origin, ETag);
+                return string.Format("v{0} ({1} updates by {2}) etag={2}", Version, Updates.Count, Origin, ETag);
             }
          }
+
+        protected override NotificationMessage Merge(NotificationMessage earliermessage, NotificationMessage latermessage)
+        {
+            var earlier = earliermessage as UpdateNotificationMessage;
+            var later = latermessage as UpdateNotificationMessage;
+
+            if (earlier != null
+                && later != null
+                && earlier.Origin == later.Origin
+                && earlier.Version + later.Updates.Count == later.Version
+                && earlier.Updates.Count + later.Updates.Count < max_entries_in_notifications)
+
+                return new UpdateNotificationMessage()
+                {
+                    Version = later.Version,
+                    Origin = later.Origin,
+                    Updates = earlier.Updates.Concat(later.Updates).ToList(),
+                    ETag = later.ETag
+                };
+
+            else
+                return base.Merge(earliermessage, latermessage); // keep only the version number
+        }
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
         protected override void OnNotificationReceived(NotificationMessage payload)
         {
-           var um = (UpdateNotificationMessage) payload;
-           notifications.Add(um.GlobalVersion - um.Updates.Count, um);
+            var um = (UpdateNotificationMessage)payload;
+            if (um != null)
+                notifications.Add(um.Version - um.Updates.Count, um);
+            else
+                base.OnNotificationReceived(payload);
         }
 
         protected override void ProcessNotifications()
@@ -269,11 +296,11 @@ namespace Orleans.Runtime.LogViews
                 foreach (var u in updatenotification.Updates)
                     try
                     {
-                        Host.TransitionView(GlobalStateCache.StateAndMetaData.State, u);
+                        Host.UpdateView(GlobalStateCache.StateAndMetaData.State, u);
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtTransitionException("ProcessNotifications", e);
+                        Services.CaughtViewUpdateException("ProcessNotifications", e);
                     }
 
                 GlobalStateCache.StateAndMetaData.GlobalVersion++;
@@ -286,6 +313,8 @@ namespace Orleans.Runtime.LogViews
             }
 
             Services.Verbose2("unprocessed notifications in queue: {0}", notifications.Count);
+
+            base.ProcessNotifications();
          
             exit_operation("ProcessNotifications");
         }

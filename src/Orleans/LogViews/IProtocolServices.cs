@@ -13,6 +13,7 @@ namespace Orleans.LogViews
 {
     /// <summary>
     /// Functionality for use by log view adaptors that use custom consistency or replication protocols.
+    /// Abstracts communication between replicas of the log view grain in different clusters.
     /// </summary>
     public interface IProtocolServices
     {
@@ -44,7 +45,8 @@ namespace Orleans.LogViews
 
     
         /// <summary>
-        /// The current multicluster configuration (as injected by the administrator) or null if none.
+        /// The current multicluster configuration of this silo 
+        /// (as injected by the administrator) or null if none.
         /// </summary>
         MultiClusterConfiguration MultiClusterConfiguration { get; }
 
@@ -70,10 +72,10 @@ namespace Orleans.LogViews
         void CaughtException(string where, Exception e);
 
         /// <summary>
-        /// Log a transition exception that occurred.
+        /// Log an exception that occurred when trying to update a view.
         /// </summary>
         /// <param name="e"></param>
-        void CaughtTransitionException(string where, Exception e);
+        void CaughtViewUpdateException(string where, Exception e);
 
         /// <summary> Output the specified message at <c>Info</c> log level. </summary>
         void Info(string format, params object[] args);        

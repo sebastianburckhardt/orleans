@@ -22,10 +22,9 @@ namespace Orleans.Runtime
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
         internal MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
-        internal StorageInterface StorageInterface { get; private set; }
    
      
-        public GrainTypeData(Type type, Type stateObjectType, StorageInterface storageInterface)
+        public GrainTypeData(Type type, Type stateObjectType)
         {
             Type = type;
             IsReentrant = Type.GetCustomAttributes(typeof (ReentrantAttribute), true).Length > 0;
@@ -33,7 +32,6 @@ namespace Orleans.Runtime
             GrainClass = TypeUtils.GetFullName(type);
             RemoteInterfaceTypes = GetRemoteInterfaces(type); ;
             StateObjectType = stateObjectType;
-            StorageInterface = storageInterface;
         }
 
         /// <summary>

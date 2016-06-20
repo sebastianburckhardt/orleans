@@ -92,8 +92,6 @@ namespace Orleans.Runtime.LogViews
         private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
         private static string PseudoReplicaId = "I";
 
-
-
         public string MyClusterId
         {
             get
@@ -155,9 +153,9 @@ namespace Orleans.Runtime.LogViews
         }
      
 
-        public void CaughtTransitionException(string where, Exception e)
+        public void CaughtViewUpdateException(string where, Exception e)
         {
-            Provider.Log.Warn((int)ErrorCode.LogView_TransitionException,  
+            Provider.Log.Warn((int)ErrorCode.LogView_ViewUpdateException,  
          string.Format("{0}{1} Exception Caught at {2}",
                    grain.GrainReference,
                    PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
