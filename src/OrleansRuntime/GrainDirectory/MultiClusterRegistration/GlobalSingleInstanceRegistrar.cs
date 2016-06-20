@@ -23,17 +23,17 @@ namespace Orleans.Runtime.GrainDirectory
 
         public bool IsSynchronous { get { return false; } }
 
-        public virtual AddressAndTag Register(ActivationAddress address, bool singleActivation)
+        public AddressAndTag Register(ActivationAddress address, bool singleActivation)
         {
             throw new InvalidOperationException();
         }
 
-        public virtual void Unregister(ActivationAddress address, bool force)
+        public void Unregister(ActivationAddress address, bool force)
         {
             throw new InvalidOperationException();
         }
 
-        public virtual void Delete(GrainId gid)
+        public void Delete(GrainId gid)
         {
             throw new InvalidOperationException();
         }
@@ -151,39 +151,9 @@ namespace Orleans.Runtime.GrainDirectory
         {
             directoryPartition.RemoveActivation(address.Grain, address.Activation, force);
             return TaskDone.Done;
-
-            /*
-            if (address.Status == MultiClusterStatus.Owned)
-            {
-
-                var RemoteClusters = MultiClusterUtils.GetRemoteClusters();
-
-                List<Task> responseTasks = new List<Task>();
-
-                //send the request to each of the cluster's gateways and wait for response. 
-                foreach (var remotecluster in RemoteClusters)
-                {
-
-                    // find gateway
-                    var clusterGatewayAddress = Silo.CurrentSilo.LocalGossipOracle.GetRandomClusterGateway(remotecluster);
-                    var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
-
-                    responseTasks.Add(clusterGrainDir.InvalidateCache(address.Grain));
-                }
-
-                try
-                {
-                    await Task.WhenAll(responseTasks);
-                }
-                catch (Exception ex)
-                {
-                    //nothing to do. further invalidation will be handled by the periodic timer.
-                }
-            }
-            */
         }
 
-        public virtual Task DeleteAsync(GrainId gid)
+        public Task DeleteAsync(GrainId gid)
         {
             directoryPartition.RemoveGrain(gid);
             return TaskDone.Done;
@@ -222,7 +192,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // try to send request
                 responses[index] = await clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.ClusterId, true);
 
-                responseprocessor.Notify();
+                responseprocessor.CheckIfDone();
 
             }
             catch (Exception ex)
@@ -232,7 +202,7 @@ namespace Orleans.Runtime.GrainDirectory
                     ResponseException = ex
                 };
 
-                responseprocessor.Notify();
+                responseprocessor.CheckIfDone();
             }
         }
     }
