@@ -12,8 +12,10 @@ namespace Orleans.EventSourcing
     /// The base class for all grain classes that have event-sourced state.
     /// </summary>
     public abstract class JournaledGrain<TGrainState> :
-        LogViewGrain<TGrainState>, IProtocolParticipant,
-        ILogViewAdaptorHost, ILogViewHost<TGrainState, object>
+        LogViewGrainBase<TGrainState>,
+        ILogViewGrain,
+        IProtocolParticipant,
+        ILogViewHost<TGrainState, object>
         where TGrainState : class,new()
     {
         protected JournaledGrain() { }
@@ -175,13 +177,13 @@ namespace Orleans.EventSourcing
         /// <summary>
         /// Called right after grain is constructed, to install the adaptor.
         /// </summary>
-        void ILogViewAdaptorHost.InstallAdaptor(ILogViewProvider provider, object initialState, string graintypename, IProtocolServices services)
+        void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialState, string graintypename, IProtocolServices services)
         {
             // call the replication provider to construct the adaptor, passing the type argument
             LogView = provider.MakeLogViewAdaptor<TGrainState, object>(this, (TGrainState)initialState, graintypename, services);
         }
 
-        void ILogViewHost<TGrainState, object>.TransitionView(TGrainState view, object entry)
+        void ILogViewHost<TGrainState, object>.UpdateView(TGrainState view, object entry)
         {
             TransitionState(view, entry);
         }

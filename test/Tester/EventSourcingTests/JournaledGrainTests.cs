@@ -9,18 +9,15 @@ using Orleans.Providers.EventStores;
 using Orleans.TestingHost;
 using System.IO;
 using Orleans.Runtime;
+using Xunit;
+using Assert = Xunit.Assert;
 
 namespace UnitTests.EventSourcingTests
 {
-    [TestClass]
-    [DeploymentItem("OrleansGetEventStore.dll")]
-    [DeploymentItem("EventStore.ClientAPI.dll")]
-    public class JournaledGrainTests : HostedTestClusterPerFixture
+    public class JournaledGrainTests : TestingSiloHost
     {
-        public static TestingSiloHost CreateSiloHost()
-        {
-            return new TestingSiloHost(
-                new TestingSiloOptions
+        public JournaledGrainTests()
+        : base(new TestingSiloOptions
                 {
                     StartFreshOrleans = true,
                     StartPrimary = true,
@@ -33,18 +30,18 @@ namespace UnitTests.EventSourcingTests
                             o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));
                     }
                 }
-            );
-        }
+            )
+        { }
       
-        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
+        [Fact, TestCategory("EventSourcing"), TestCategory("Functional")]
         public async Task JournaledGrainTests_Activate()
         {
             var grainWithState = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.Empty);
 
-            Assert.IsNotNull(await grainWithState.GetPersonalAttributes());
+            Assert.NotNull(await grainWithState.GetPersonalAttributes());
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
+        [Fact, TestCategory("EventSourcing"), TestCategory("Functional")]
         public async Task JournaledGrainTests_Persist()
         {
             var grainWithState = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.Empty);
@@ -53,11 +50,11 @@ namespace UnitTests.EventSourcingTests
 
             var attributes = await grainWithState.GetPersonalAttributes();
 
-            Assert.IsNotNull(attributes);
-            Assert.AreEqual("Luke", attributes.FirstName);
+            Assert.NotNull(attributes);
+            Assert.Equal("Luke", attributes.FirstName);
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
+        [Fact, TestCategory("EventSourcing"), TestCategory("Functional")]
         public async Task JournaledGrainTests_AppendMoreEvents()
         {
             var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
@@ -69,48 +66,48 @@ namespace UnitTests.EventSourcingTests
             await leia.Marry(han);
 
             var attributes = await leia.GetPersonalAttributes();
-            Assert.IsNotNull(attributes);
-            Assert.AreEqual("Leia", attributes.FirstName);
-            Assert.AreEqual("Solo", attributes.LastName);
+            Assert.NotNull(attributes);
+            Assert.Equal("Leia", attributes.FirstName);
+            Assert.Equal("Solo", attributes.LastName);
         }
 
-        [TestMethod, TestCategory("Functional"), TestCategory("EventSourcing")]
+        [Fact, TestCategory("EventSourcing"), TestCategory("Functional")]
         public async Task JournaledGrainTests_TentativeConfirmedState()
         {
             var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
 
-            Assert.AreEqual(0, await leia.GetConfirmedVersion());
-            Assert.AreEqual(0, await leia.GetVersion());
-            Assert.AreEqual(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.AreEqual(null, (await leia.GetPersonalAttributes()).LastName);
+            Assert.Equal(0, await leia.GetConfirmedVersion());
+            Assert.Equal(0, await leia.GetVersion());
+            Assert.Equal(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.Equal(null, (await leia.GetPersonalAttributes()).LastName);
 
             await leia.ChangeLastName("Organa");
 
-            Assert.AreEqual(0, await leia.GetConfirmedVersion());
-            Assert.AreEqual(1, await leia.GetVersion());
-            Assert.AreEqual(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.AreEqual("Organa", (await leia.GetPersonalAttributes()).LastName);
+            Assert.Equal(0, await leia.GetConfirmedVersion());
+            Assert.Equal(1, await leia.GetVersion());
+            Assert.Equal(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.Equal("Organa", (await leia.GetPersonalAttributes()).LastName);
 
             await leia.SaveChanges();
 
-            Assert.AreEqual(1, await leia.GetConfirmedVersion());
-            Assert.AreEqual(1, await leia.GetVersion());
-            Assert.AreEqual("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.AreEqual("Organa", (await leia.GetPersonalAttributes()).LastName);
+            Assert.Equal(1, await leia.GetConfirmedVersion());
+            Assert.Equal(1, await leia.GetVersion());
+            Assert.Equal("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.Equal("Organa", (await leia.GetPersonalAttributes()).LastName);
 
             await leia.ChangeLastName("Solo");
 
-            Assert.AreEqual(1, await leia.GetConfirmedVersion());
-            Assert.AreEqual(2, await leia.GetVersion());
-            Assert.AreEqual("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.AreEqual("Solo", (await leia.GetPersonalAttributes()).LastName);
+            Assert.Equal(1, await leia.GetConfirmedVersion());
+            Assert.Equal(2, await leia.GetVersion());
+            Assert.Equal("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.Equal("Solo", (await leia.GetPersonalAttributes()).LastName);
 
             await leia.SaveChanges();
 
-            Assert.AreEqual(2, await leia.GetConfirmedVersion());
-            Assert.AreEqual(2, await leia.GetVersion());
-            Assert.AreEqual("Solo", (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.AreEqual("Solo", (await leia.GetPersonalAttributes()).LastName);
+            Assert.Equal(2, await leia.GetConfirmedVersion());
+            Assert.Equal(2, await leia.GetVersion());
+            Assert.Equal("Solo", (await leia.GetConfirmedPersonalAttributes()).LastName);
+            Assert.Equal("Solo", (await leia.GetPersonalAttributes()).LastName);
         }
     }
 }

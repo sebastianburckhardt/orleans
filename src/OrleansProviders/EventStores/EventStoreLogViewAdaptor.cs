@@ -78,7 +78,7 @@ namespace Orleans.Providers.EventStores
 
                     var eventstream = await EventStore.LoadStreamFromVersion(streamname, ConfirmedVersionInternal);
 
-                    LastExceptionInternal = null;
+                    LastPrimaryException = null;
 
                     Services.Verbose("Read success version={0}", eventstream.Version);
 
@@ -104,11 +104,11 @@ namespace Orleans.Providers.EventStores
 
                         try
                         {
-                            Host.TransitionView(ConfirmedStateInternal, @event);
+                            Host.UpdateView(ConfirmedStateInternal, @event);
                         }
                         catch (Exception e)
                         {
-                            Services.CaughtTransitionException("ReadAsync", e); // logged by log view provider
+                            Services.CaughtViewUpdateException("ReadAsync", e); // logged by log view provider
                         }
 
                         ConfirmedVersionInternal++;
@@ -119,7 +119,7 @@ namespace Orleans.Providers.EventStores
                 catch (Exception e)
                 {
                     Services.CaughtException("ReadAsync", e); // logged by log view provider
-                    LastExceptionInternal = e;
+                    LastPrimaryException = e;
                 }
             }
         }
@@ -153,7 +153,7 @@ namespace Orleans.Providers.EventStores
                        TagLast(updates, guid)
                     );
 
-                LastExceptionInternal = null;
+                LastPrimaryException = null;
                 success = true;
 
                 Services.Verbose("Write successful");
@@ -163,11 +163,11 @@ namespace Orleans.Providers.EventStores
                 {
                     try
                     {
-                        Host.TransitionView(ConfirmedStateInternal, item.Entry);
+                        Host.UpdateView(ConfirmedStateInternal, item.Entry);
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtTransitionException("WriteAsync", e); // logged by log view provider
+                        Services.CaughtViewUpdateException("WriteAsync", e); // logged by log view provider
                     }
 
                     ConfirmedVersionInternal++;
@@ -176,13 +176,13 @@ namespace Orleans.Providers.EventStores
             catch (OptimisticConcurrencyException e)
             {
                 success = false;
-                LastExceptionInternal = e;
+                LastPrimaryException = e;
                 Services.Verbose("Write failed due to conflict");
             }
             catch (Exception e)
             {
                 Services.CaughtException("WriteAsync", e); // logged by log view provider
-                LastExceptionInternal = e;
+                LastPrimaryException = e;
                 success = false;
             }
 
@@ -200,7 +200,7 @@ namespace Orleans.Providers.EventStores
             // let other clusters know that they should fetch the new events
             // we may optimize this in the future by sending the events directly
             if (success)
-                BroadcastNotification(new NotificationMessage());
+                BroadcastNotification(new VersionNotificationMessage() { Version = this.ConfirmedVersionInternal });
 
             return success ? updates.Length : 0;
         }
