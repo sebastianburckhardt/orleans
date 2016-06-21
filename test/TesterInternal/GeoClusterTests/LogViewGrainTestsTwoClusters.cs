@@ -179,14 +179,14 @@ namespace Tests.GeoClusterTests
             await DoReplicationTests("UnitTests.Grains.SimpleLogViewGrainSharedStorage");
         }
         [Fact, TestCategory("GeoCluster")]
-        public async Task ReplicationTestBattery_SingleInstanceSharedStorage()
+        public async Task TestBattery_SingleInstanceSharedStorage()
         {
-            await DoReplicationTests("UnitTests.Grains.SimpleQueuedGrainSingleInstance");
+            await DoReplicationTests("UnitTests.Grains.SimpleLogViewGrainSingleInstance");
         }
         [Fact, TestCategory("GeoCluster")]
-        public async Task ReplicationTestBattery_SharedMemoryProvider()
+        public async Task TestBattery_SharedMemoryProvider()
         {
-            await DoReplicationTests("UnitTests.Grains.SimpleQueuedGrainSharedMemory");
+            await DoReplicationTests("UnitTests.Grains.SimpleLogViewGrainSharedMemory");
         }
     
         [Fact, TestCategory("GeoCluster")]

@@ -303,7 +303,7 @@ namespace Orleans.Runtime.LogViews
                         Services.CaughtViewUpdateException("ProcessNotifications", e);
                     }
 
-                GlobalStateCache.StateAndMetaData.GlobalVersion = updatenotification.GlobalVersion;
+                GlobalStateCache.StateAndMetaData.GlobalVersion = updatenotification.Version;
 
                 GlobalStateCache.StateAndMetaData.ToggleBit(updatenotification.Origin);
 

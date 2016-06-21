@@ -53,7 +53,7 @@ namespace Tests.GeoClusterTests
         [Fact, TestCategory("GeoCluster")]
         public async Task BasicLogViewGrainTest_SingleInstance()
         {
-            await DoBasicQueuedGrainTest("UnitTests.Grains.SimpleLogViewGrainSingleInstance");
+            await DoBasicLogViewGrainTest("UnitTests.Grains.SimpleLogViewGrainSingleInstance");
         }
 
         private int GetRandom()

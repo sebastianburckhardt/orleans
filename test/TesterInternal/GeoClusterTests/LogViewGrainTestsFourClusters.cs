@@ -181,6 +181,17 @@ namespace Tests.GeoClusterTests
         }
 
         [Fact, TestCategory("GeoCluster")]
+        public async Task TestBattery_SingleInstanceSharedStorage()
+        {
+            await DoReplicationTests("UnitTests.Grains.SimpleLogViewGrainSingleInstance");
+        }
+        [Fact, TestCategory("GeoCluster")]
+        public async Task TestBattery_SharedMemoryProvider()
+        {
+            await DoReplicationTests("UnitTests.Grains.SimpleLogViewGrainSharedMemory");
+        }
+
+        [Fact, TestCategory("GeoCluster")]
         public async Task TestBattery_CustomStorageProvider()
         {
             await DoReplicationTests("UnitTests.Grains.SimpleLogViewGrainCustomStorage");

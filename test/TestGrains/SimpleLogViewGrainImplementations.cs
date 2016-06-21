@@ -19,7 +19,7 @@ namespace UnitTests.Grains
 
     // use the explictly specified "SharedMemory" replication provider
     [LogViewProvider(ProviderName = "SharedMemory")]
-    public class SimpleQueuedGrainSharedMemory : SimpleQueuedGrain
+    public class SimpleLogViewGrainSharedMemory : SimpleLogViewGrain
     {
     }
 
@@ -32,7 +32,7 @@ namespace UnitTests.Grains
     // use  singleinstance and the explictly specified "SharedStorage" provider
     [GlobalSingleInstance]
     [LogViewProvider(ProviderName = "SharedStorage")]
-    public class SimpleQueuedGrainSingleInstance : SimpleQueuedGrain
+    public class SimpleLogViewGrainSingleInstance : SimpleLogViewGrain
     {
     }
 
