@@ -205,11 +205,11 @@ namespace Orleans.Runtime.GrainDirectory
             return router.UnregisterManyAsync(addresses, 0);
         }
 
-        public Task ProcessDeletion(GrainId gid)
+        public Task ProcessDeletion(GrainId grainId)
         {
             // standard grain directory mechanisms for this cluster can take care of this request
             // (forwards to owning silo in this cluster as needed)
-            return router.DeleteGrainAsync(gid, 0);
+            return router.DeleteGrainAsync(grainId, 0);
         }
     }
 }
