@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans.Concurrency;
+using Orleans.Core;
 using Orleans.Runtime;
 
 namespace Orleans.LogViews
@@ -27,5 +28,18 @@ namespace Orleans.LogViews
     /// <typeparam name="TView">The type of the view</typeparam>
     public class LogViewGrainBase<TView> : Grain
     {
+        public LogViewGrainBase()
+        { }
+
+        /// <summary>
+        /// Grain implementers do NOT have to expose this constructor but can choose to do so.
+        /// This constructor is particularly useful for unit testing where test code can create a Grain and replace
+        /// the IGrainIdentity and IGrainRuntime with test doubles (mocks/stubs).
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <param name="runtime"></param>
+        public LogViewGrainBase(IGrainIdentity identity, IGrainRuntime runtime) : base(identity, runtime)
+        { }
     }
+
 }
