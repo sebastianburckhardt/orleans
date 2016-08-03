@@ -3,16 +3,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security.Principal;
-
 using Orleans.Runtime;
-using Orleans.Runtime.Counters;
 using Orleans.Runtime.Configuration;
+using Orleans.Runtime.Counters;
 
 
 namespace Orleans.Counter.Control
 {
-    using Orleans.Serialization;
     using System.Collections.Generic;
+    using Orleans.Serialization;
     /// <summary>
     /// Control Orleans Counters - Register or Unregister the Orleans counter set
     /// </summary>
@@ -143,11 +142,11 @@ namespace Orleans.Counter.Control
         {
             Trace.Listeners.Clear();
             var cfg = new NodeConfiguration { TraceFilePattern = null, TraceToConsole = false };
-            TraceLogger.Initialize(cfg);
+            LogManager.Initialize(cfg);
 
             //TODO: Move it to use the APM APIs
             //var logWriter = new LogWriterToConsole(true, true); // Use compact console output & no timestamps / log message metadata
-            //TraceLogger.LogConsumers.Add(logWriter);
+            //LogManager.LogConsumers.Add(logWriter);
         }
 
         /// <summary>

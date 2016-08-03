@@ -2,9 +2,8 @@ namespace Orleans.Runtime
 {
     using System;
     using System.Collections.Generic;
-    using System.Reflection;
     using System.Linq;
-
+    using System.Reflection;
     using Orleans.CodeGeneration;
     using Orleans.Serialization;
 
@@ -21,7 +20,7 @@ namespace Orleans.Runtime
         /// <summary>
         /// The logger.
         /// </summary>
-        private static readonly TraceLogger Logger;
+        private static readonly Logger Logger;
         
         /// <summary>
         /// The initialization lock.
@@ -38,7 +37,7 @@ namespace Orleans.Runtime
         /// </summary>
         static AssemblyProcessor()
         {
-            Logger = TraceLogger.GetLogger("AssemblyProcessor");
+            Logger = LogManager.GetLogger("AssemblyProcessor");
         }
 
         /// <summary>
@@ -125,11 +124,12 @@ namespace Orleans.Runtime
             var assemblyTypes = TypeUtils.GetDefinedTypes(assembly, Logger).ToArray();
 
             // Process each type in the assembly.
-            foreach (TypeInfo type in assemblyTypes)
+            foreach (TypeInfo typeInfo in assemblyTypes)
             {
                 try
                 {
-                    string typeName = type.FullName;
+                    var type = typeInfo.AsType();
+                    string typeName = typeInfo.FullName;
                     if (Logger.IsVerbose3)
                     {
                         Logger.Verbose3("Processing type {0}", typeName);
@@ -143,7 +143,7 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exception)
                 {
-                    Logger.Error(ErrorCode.SerMgr_TypeRegistrationFailure, "Failed to load type " + type.FullName + " in assembly " + assembly.FullName + ".", exception);
+                    Logger.Error(ErrorCode.SerMgr_TypeRegistrationFailure, "Failed to load type " + typeInfo.FullName + " in assembly " + assembly.FullName + ".", exception);
                 }
             }
         }

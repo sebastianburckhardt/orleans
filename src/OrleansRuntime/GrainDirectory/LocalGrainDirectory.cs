@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using Orleans.GrainDirectory;
 using Orleans.Runtime.Scheduler;
 
@@ -17,8 +16,7 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly List<SiloAddress> membershipRingList;
         private readonly HashSet<SiloAddress> membershipCache;
         private readonly AsynchAgent maintainer;
-        private readonly AsynchAgent globalSingleInstanceActivationMaintainer;
-        private readonly TraceLogger log;
+        private readonly Logger log;
         private readonly SiloAddress seed;
         internal ISiloStatusOracle Membership;
 
@@ -49,6 +47,8 @@ namespace Orleans.Runtime.GrainDirectory
         internal GrainDirectoryHandoffManager HandoffManager { get; private set; }
 
         internal ISiloStatusListener CatalogSiloStatusListener { get; set; }
+
+        internal GlobalSingleInstanceActivationMaintainer GsiActivationMaintainer { get; private set; }
 
         private readonly CounterStatistic localLookups;
         private readonly CounterStatistic localSuccesses;
@@ -82,7 +82,7 @@ namespace Orleans.Runtime.GrainDirectory
         
         public LocalGrainDirectory(Silo silo)
         {
-            log = TraceLogger.GetLogger("Orleans.GrainDirectory.LocalGrainDirectory");
+            log = LogManager.GetLogger("Orleans.GrainDirectory.LocalGrainDirectory");
 
             MyAddress = silo.LocalMessageCenter.MyAddress;
             Scheduler = silo.LocalScheduler;
@@ -97,7 +97,7 @@ namespace Orleans.Runtime.GrainDirectory
                 }
             });
             maintainer = GrainDirectoryCacheFactory<IReadOnlyList<Tuple<SiloAddress, ActivationId>>>.CreateGrainDirectoryCacheMaintainer(this, DirectoryCache);
-            globalSingleInstanceActivationMaintainer = new GlobalSingleInstanceActivationMaintainer(this, this.Logger, silo.GlobalConfig);
+            GsiActivationMaintainer = new GlobalSingleInstanceActivationMaintainer(this, this.Logger, silo.GlobalConfig);
 
             if (silo.GlobalConfig.SeedNodes.Count > 0)
             {
@@ -183,9 +183,9 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 maintainer.Start();
             }
-            if (globalSingleInstanceActivationMaintainer != null)
+            if (GsiActivationMaintainer != null)
             {
-                globalSingleInstanceActivationMaintainer.Start();
+                GsiActivationMaintainer.Start();
             }
         }
 
@@ -652,7 +652,7 @@ namespace Orleans.Runtime.GrainDirectory
         private void UnregisterOrPutInForwardList(IEnumerable<ActivationAddress> addresses, int hopCount,
             ref Dictionary<SiloAddress, List<ActivationAddress>> forward, List<Task> tasks, string context)
         {
-            Dictionary<IGrainRegistrar, List<ActivationAddress>> unregister_batches = null;
+            Dictionary<IGrainRegistrar, List<ActivationAddress>> unregisterBatches = new Dictionary<IGrainRegistrar, List<ActivationAddress>>();
 
             foreach (var address in addresses)
             {
@@ -660,8 +660,9 @@ namespace Orleans.Runtime.GrainDirectory
                 var forwardAddress = this.CheckIfShouldForward(address.Grain, hopCount, context);
 
                 if (forwardAddress != null)
+                {
                     AddToDictionary(ref forward, forwardAddress, address);
-
+                }
                 else
                 {
                     // we are the owner
@@ -669,21 +670,21 @@ namespace Orleans.Runtime.GrainDirectory
                     var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
 
                     if (registrar.IsSynchronous)
+                    {
                         registrar.Unregister(address, true);
+                    }
                     else
                     {
-                        if (unregister_batches == null)
-                            unregister_batches = new Dictionary<IGrainRegistrar, List<ActivationAddress>>();
                         List<ActivationAddress> list;
-                        if (!unregister_batches.TryGetValue(registrar, out list))
-                            unregister_batches.Add(registrar, list = new List<ActivationAddress>());
+                        if (!unregisterBatches.TryGetValue(registrar, out list))
+                            unregisterBatches.Add(registrar, list = new List<ActivationAddress>());
                         list.Add(address);
                     }
                 }
             }
 
             // batch-unregister for each asynchronous registrar
-            foreach(var kvp in unregister_batches)
+            foreach (var kvp in unregisterBatches)
             {
                 tasks.Add(kvp.Key.UnregisterAsync(kvp.Value, true));
             }
@@ -767,7 +768,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         public AddressesAndTag GetLocalDirectoryData(GrainId grain)
         {
-            var result = DirectoryPartition.LookUpGrain(grain);
+            var result = DirectoryPartition.LookUpActivations(grain);
             if (result.Addresses != null)
                 result.Addresses = result.Addresses.Where(addr => IsValidSilo(addr.Silo)).ToList();
             return result;
@@ -799,7 +800,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 // we are the owner
                 LocalDirectoryLookups.Increment();
-                var localResult = DirectoryPartition.LookUpGrain(grainId);
+                var localResult = DirectoryPartition.LookUpActivations(grainId);
                 if (localResult.Addresses == null)
                 {
                     // it can happen that we cannot find the grain in our partition if there were 

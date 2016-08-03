@@ -1,11 +1,9 @@
 ﻿using System;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
-using Xunit;
-
-using Orleans.Serialization;
-using Orleans.Runtime;
-using System.Reflection;
 using System.Collections.Generic;
+using System.Reflection;
+using Orleans.Runtime;
+using Orleans.Serialization;
+using Xunit;
 
 namespace UnitTests.Serialization
 {
@@ -19,7 +17,7 @@ namespace UnitTests.Serialization
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization")]
         public void SerializationTests_CustomSerializerInitialized()
         {
-            Assert.IsTrue(FakeSerializer.Initialized, "The fake serializer wasn't discovered");
+            Assert.True(FakeSerializer.Initialized, "The fake serializer wasn't discovered");
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization")]
@@ -28,7 +26,7 @@ namespace UnitTests.Serialization
             var data = new FakeSerialized { SomeData = "some data" };
             SerializationManager.RoundTripSerializationForTesting(data);
 
-            Assert.IsTrue(FakeSerializer.IsSupportedTypeCalled, "type discovery failed");
+            Assert.True(FakeSerializer.IsSupportedTypeCalled, "type discovery failed");
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization")]
@@ -36,8 +34,8 @@ namespace UnitTests.Serialization
         {
             var data = new FakeSerialized { SomeData = "some data" };
             SerializationManager.RoundTripSerializationForTesting(data);
-            Assert.IsTrue(FakeSerializer.SerializeCalled);
-            Assert.IsTrue(FakeSerializer.DeserializeCalled);
+            Assert.True(FakeSerializer.SerializeCalled);
+            Assert.True(FakeSerializer.DeserializeCalled);
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization")]
@@ -45,7 +43,7 @@ namespace UnitTests.Serialization
         {
             var data = new FakeSerialized { SomeData = "some data" };
             SerializationManager.DeepCopy(data);
-            Assert.IsTrue(FakeSerializer.DeepCopyCalled);
+            Assert.True(FakeSerializer.DeepCopyCalled);
         }
     }
 
@@ -66,7 +64,7 @@ namespace UnitTests.Serialization
 
         public static bool DeepCopyCalled { get; set; }
 
-        public void Initialize(TraceLogger logger)
+        public void Initialize(Logger logger)
         {
             Initialized = true;
         }

@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-
 using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime.Counters
@@ -11,7 +10,7 @@ namespace Orleans.Runtime.Counters
         private RuntimeStatisticsGroup runtimeStats;
         private PerfCountersStatistics perfCountersPublisher;
         internal SiloPerformanceMetrics MetricsTable;
-        private readonly TraceLogger logger = TraceLogger.GetLogger("SiloStatisticsManager");
+        private readonly Logger logger = LogManager.GetLogger("SiloStatisticsManager");
 
         internal SiloStatisticsManager(GlobalConfiguration globalConfig, NodeConfiguration nodeConfig)
         {

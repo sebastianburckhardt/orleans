@@ -1,5 +1,5 @@
-using Orleans.Runtime.Configuration;
 using System.Threading.Tasks;
+using Orleans.Runtime.Configuration;
 using Orleans.SqlUtils;
 
 
@@ -10,7 +10,7 @@ namespace Orleans.Runtime.ReminderService
         private string serviceId;
         private RelationalOrleansQueries orleansQueries;
 
-        public async Task Init(GlobalConfiguration config, TraceLogger logger)
+        public async Task Init(GlobalConfiguration config, Logger logger)
         {
             serviceId = config.ServiceId.ToString();
             orleansQueries = await RelationalOrleansQueries.CreateInstance(config.AdoInvariantForReminders, config.DataConnectionStringForReminders);

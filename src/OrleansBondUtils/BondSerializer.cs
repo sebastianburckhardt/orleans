@@ -5,14 +5,12 @@ namespace Orleans.Serialization
     using System.Collections.Generic;
     using System.Linq.Expressions;
     using System.Reflection;
-
     using Bond;
     using Runtime;
-
-    using BondBinaryWriter = Bond.Protocols.SimpleBinaryWriter<Orleans.Serialization.OutputStream>;
-    using BondTypeSerializer = Bond.Serializer<Bond.Protocols.SimpleBinaryWriter<Orleans.Serialization.OutputStream>>;
     using BondBinaryReader = Bond.Protocols.SimpleBinaryReader<Orleans.Serialization.InputStream>;
+    using BondBinaryWriter = Bond.Protocols.SimpleBinaryWriter<Orleans.Serialization.OutputStream>;
     using BondTypeDeserializer = Bond.Deserializer<Bond.Protocols.SimpleBinaryReader<Orleans.Serialization.InputStream>>;
+    using BondTypeSerializer = Bond.Serializer<Bond.Protocols.SimpleBinaryWriter<Orleans.Serialization.OutputStream>>;
 
     /// <summary>
     /// An implementation of IExternalSerializer for usage with Bond types.
@@ -23,7 +21,7 @@ namespace Orleans.Serialization
         private static ConcurrentDictionary<RuntimeTypeHandle, BondTypeSerializer> SerializerDictionary;
         private static ConcurrentDictionary<RuntimeTypeHandle, BondTypeDeserializer> DeserializerDictionary;
 
-        private TraceLogger logger;
+        private Logger logger;
 
         /// <summary>
         /// Determines whether this serializer has the ability to serialize a particular type.
@@ -108,7 +106,7 @@ namespace Orleans.Serialization
         /// Initializes the external serializer
         /// </summary>
         /// <param name="logger">The logger to use to capture any serialization events</param>
-        public void Initialize(TraceLogger logger)
+        public void Initialize(Logger logger)
         {
             ClonerInfoDictionary = new ConcurrentDictionary<RuntimeTypeHandle, ClonerInfo>();
             SerializerDictionary = new ConcurrentDictionary<RuntimeTypeHandle, BondTypeSerializer>();

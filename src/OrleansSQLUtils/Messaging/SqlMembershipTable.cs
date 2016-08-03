@@ -1,8 +1,8 @@
-using Orleans.Messaging;
-using Orleans.Runtime.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.Messaging;
+using Orleans.Runtime.Configuration;
 using Orleans.SqlUtils;
 
 
@@ -12,10 +12,10 @@ namespace Orleans.Runtime.MembershipService
     {
         private string deploymentId;        
         private TimeSpan maxStaleness;
-        private TraceLogger logger;
+        private Logger logger;
         private RelationalOrleansQueries orleansQueries;
 
-        public async Task InitializeMembershipTable(GlobalConfiguration config, bool tryInitTableVersion, TraceLogger traceLogger)
+        public async Task InitializeMembershipTable(GlobalConfiguration config, bool tryInitTableVersion, Logger traceLogger)
         {
             logger = traceLogger;
             deploymentId = config.DeploymentId;
@@ -40,7 +40,7 @@ namespace Orleans.Runtime.MembershipService
         }
 
 
-        public async Task InitializeGatewayListProvider(ClientConfiguration config, TraceLogger traceLogger)
+        public async Task InitializeGatewayListProvider(ClientConfiguration config, Logger traceLogger)
         {
             logger = traceLogger;
             if (logger.IsVerbose3) logger.Verbose3("SqlMembershipTable.InitializeGatewayListProvider called.");

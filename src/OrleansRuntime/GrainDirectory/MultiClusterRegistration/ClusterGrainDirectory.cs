@@ -13,9 +13,6 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly string clusterId;
         private readonly Logger logger;
 
-        // given that this is the most likely return value, pre-cache it
-        private readonly Task<RemoteClusterActivationResponse> cachedPassTask = Task.FromResult(RemoteClusterActivationResponse.Pass);
-
         public ClusterGrainDirectory(LocalGrainDirectory r, GrainId grainId, string clusterId) : base(grainId, r.MyAddress)
         {
             this.router = r;
@@ -39,8 +36,8 @@ namespace Orleans.Runtime.GrainDirectory
             var multiClusterConfiguration = Runtime.Silo.CurrentSilo.LocalMultiClusterOracle?.GetMultiClusterConfiguration();
             if (multiClusterConfiguration == null || !multiClusterConfiguration.Clusters.Contains(requestClusterId))       
             {
-                if (logger.IsVerbose)
-                    logger.Verbose("GSIP:D {0} From={1} Result={2}", grain.ToString(), requestClusterId, "FAILED not in config");
+                logger.Warn(ErrorCode.GlobalSingleInstance_WarningInvalidOrigin, 
+                    "GSIP:Rsp {0} Origin={1} GSI request rejected because origin is not in MC configuration", grain.ToString(), requestClusterId);
 
                 return new RemoteClusterActivationResponse(ActivationResponseStatus.Failed);
             }
@@ -56,15 +53,12 @@ namespace Orleans.Runtime.GrainDirectory
 
             if (forwardAddress == null)
             {
-                var response = ProcessRequestLocal(grain, requestClusterId);
-                return response == RemoteClusterActivationResponse.Pass 
-                    ? await cachedPassTask
-                    : ProcessRequestLocal(grain, requestClusterId);
+                return ProcessRequestLocal(grain, requestClusterId);
             }
             else
             {
-                if (logger.IsVerbose)
-                    logger.Verbose("GSIP:D {0} Origin={1} forward to {2}", grain.ToString(), requestClusterId, forwardAddress);
+                if (logger.IsVerbose2)
+                    logger.Verbose("GSIP:Rsp {0} Origin={1} forward to {2}", grain.ToString(), requestClusterId, forwardAddress);
 
                 var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, forwardAddress);
                 return await clusterGrainDir.ProcessActivationRequest(grain, requestClusterId, hopCount + 1);
@@ -76,7 +70,7 @@ namespace Orleans.Runtime.GrainDirectory
             RemoteClusterActivationResponse response;
 
             //This function will be called only on the Owner silo.
-    
+
             //Optimize? Look in the cache first?
             //NOTE: THIS COMMENT IS FROM LOOKUP. HAS IMPLICATIONS ON "OWNED" INVARIANCE.
             //// It can happen that we cannot find the grain in our partition if there were 
@@ -86,79 +80,70 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 //var activations = await LookUp(grain, LocalGrainDirectory.NUM_RETRIES);
                 //since we are the owner, we can look directly into the partition. No need to lookinto the cache.
-                var localResult = router.DirectoryPartition.LookUpGrain(grain);
+                ActivationAddress address;
+                int version;
+                MultiClusterStatus existingActivationStatus = router.DirectoryPartition.TryGetActivation(grain, out address, out version);
 
-                if (localResult.Addresses == null)
+
+                //Return appropriate protocol response, given current mc status   
+                switch (existingActivationStatus)
                 {
-                    //If no activation found in the cluster, return response as PASS.
-                    response = RemoteClusterActivationResponse.Pass;
-                }
-                else
-                {
-                    //Find the Activation Status for the entry and return appropriate value.
-
-                    //addresses should contain only one item since there should be only one valid instance per cluster. Hence FirstOrDefault() should work fine.
-                    var addressAndTag = new AddressAndTag()
-                    {
-                        Address = localResult.Addresses.FirstOrDefault(),
-                        VersionTag = localResult.VersionTag
-                    };
-
-                    if (addressAndTag.Address == null)
-                    {
+                    case MultiClusterStatus.Invalid:
                         response = RemoteClusterActivationResponse.Pass;
-                    }
-                    else
-                    {
-                        var existingActivationStatus = addressAndTag.Address.Status;
+                        break;
 
-                        switch (existingActivationStatus)
+                    case MultiClusterStatus.Owned:
+                        response = new RemoteClusterActivationResponse(ActivationResponseStatus.Failed)
                         {
-                            case MultiClusterStatus.Owned:
-                                response = new RemoteClusterActivationResponse(ActivationResponseStatus.Failed)
-                                {
-                                    ExistingActivationAddress = addressAndTag,
-                                    ClusterId = clusterId,
-                                    Owned = true
-                                };
-                                break;
+                            ExistingActivationAddress = new AddressAndTag()
+                            {
+                                Address = address,
+                                VersionTag = version
+                            },
+                            ClusterId = clusterId,
+                            Owned = true
+                        };
+                        break;
 
-                            case MultiClusterStatus.Cached:
-                            case MultiClusterStatus.RaceLoser:
-                                response = RemoteClusterActivationResponse.Pass;
-                                break;
+                    case MultiClusterStatus.Cached:
+                    case MultiClusterStatus.RaceLoser:
+                        response = RemoteClusterActivationResponse.Pass;
+                        break;
 
-                            case MultiClusterStatus.RequestedOwnership:
-                            case MultiClusterStatus.Doubtful:
-                                var iWin = MultiClusterUtils.ActivationPrecedenceFunc(grain, clusterId, requestClusterId);
-                                if (iWin)
+                    case MultiClusterStatus.RequestedOwnership:
+                    case MultiClusterStatus.Doubtful:
+                        var iWin = MultiClusterUtils.ActivationPrecedenceFunc(grain, clusterId, requestClusterId);
+                        if (iWin)
+                        {
+                            response = new RemoteClusterActivationResponse(ActivationResponseStatus.Failed)
+                            {
+                                ExistingActivationAddress = new AddressAndTag()
                                 {
-                                    response = new RemoteClusterActivationResponse(ActivationResponseStatus.Failed)
-                                    {
-                                        ExistingActivationAddress = addressAndTag,
-                                        ClusterId = clusterId,
-                                        Owned = false
-                                    };
-                                }
-                                else
-                                {
-                                    response = RemoteClusterActivationResponse.Pass;
-                                    //update own activation status to race loser.
-                                    if (existingActivationStatus == MultiClusterStatus.RequestedOwnership)
-                                    {
-                                        var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, addressAndTag.Address.Activation, MultiClusterStatus.RaceLoser, MultiClusterStatus.RequestedOwnership);
-                                        if (!success)
-                                        {
-                                            // there was a race. retry.
-                                            return ProcessRequestLocal(grain, requestClusterId);
-                                        }
-                                    }
-                                }
-                                break;
-                            default:
-                                throw new InvalidOperationException("Invalid MultiClusterStatus value");
+                                    Address = address,
+                                    VersionTag = version
+                                },
+                                ClusterId = clusterId,
+                                Owned = false
+                            };
                         }
-                    }
+                        else
+                        {
+                            response = RemoteClusterActivationResponse.Pass;
+                            //update own activation status to race loser.
+                            if (existingActivationStatus == MultiClusterStatus.RequestedOwnership)
+                            {
+                                var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, address.Activation, MultiClusterStatus.RaceLoser, MultiClusterStatus.RequestedOwnership);
+                                if (!success)
+                                {
+                                    // there was a race. retry.
+                                    return ProcessRequestLocal(grain, requestClusterId);
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        throw new InvalidOperationException("Invalid MultiClusterStatus value");
+
                 }
             }
             catch (Exception ex)
@@ -171,7 +156,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
 
             if (logger.IsVerbose)
-                logger.Verbose("GSIP:D {0} Origin={1} Result={2}", grain.ToString(), requestClusterId, response);
+                logger.Verbose("GSIP:Rsp {0} Origin={1} Result={2}", grain.ToString(), requestClusterId, response);
 
             return response;
         }
@@ -205,11 +190,11 @@ namespace Orleans.Runtime.GrainDirectory
             return router.UnregisterManyAsync(addresses, 0);
         }
 
-        public Task ProcessDeletion(GrainId gid)
+        public Task ProcessDeletion(GrainId grainId)
         {
             // standard grain directory mechanisms for this cluster can take care of this request
             // (forwards to owning silo in this cluster as needed)
-            return router.DeleteGrainAsync(gid, 0);
+            return router.DeleteGrainAsync(grainId, 0);
         }
     }
 }
