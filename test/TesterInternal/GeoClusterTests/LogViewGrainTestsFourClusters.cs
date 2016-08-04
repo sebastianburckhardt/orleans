@@ -23,7 +23,7 @@ namespace Tests.GeoClusterTests
         private static ClientWrapper Client2;
         private static ClientWrapper Client3;
 
-        public LogViewGrainTestsFourClusters(ITestOutputHelper output) : base()
+        public LogViewGrainTestsFourClusters(ITestOutputHelper output) : base(output)
         {
             TimeSpan waitTimeout = TimeSpan.FromSeconds(60);
 

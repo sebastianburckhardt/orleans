@@ -19,7 +19,7 @@ namespace Tests.GeoClusterTests
         private static ClientWrapper Client0;
         private static ClientWrapper Client1;
 
-        public LogViewGrainTestsTwoClusters(ITestOutputHelper output) : base()
+        public LogViewGrainTestsTwoClusters(ITestOutputHelper output) : base(output)
         {
             TimeSpan waitTimeout = TimeSpan.FromSeconds(60);
 
