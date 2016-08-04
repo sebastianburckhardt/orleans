@@ -7,13 +7,12 @@ using UnitTests.GrainInterfaces;
 using Orleans.Runtime;
 using Tests.GeoClusterTests;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Tests.GeoClusterTests
 {
-    public class LogViewGrainTestsFourClusters : TestingClusterHost, IDisposable
+    public class LogViewGrainTestsFourClusters : TestingClusterHost
     {
-        private static TestingClusterHost host;
-
         private const string Cluster0 = "A";
         private const string Cluster1 = "B";
         private const string Cluster2 = "C";
@@ -24,44 +23,29 @@ namespace Tests.GeoClusterTests
         private static ClientWrapper Client2;
         private static ClientWrapper Client3;
 
-        public LogViewGrainTestsFourClusters ()
+        public LogViewGrainTestsFourClusters(ITestOutputHelper output) : base()
         {
             TimeSpan waitTimeout = TimeSpan.FromSeconds(60);
 
             // use a random global service id for testing purposes
             var globalserviceid = Guid.NewGuid();
 
-            host = new TestingClusterHost();
-
             // Create two clusters, each with 2 silos. 
-            host.NewGeoCluster(globalserviceid, Cluster0, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
-            host.NewGeoCluster(globalserviceid, Cluster1, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
-            host.NewGeoCluster(globalserviceid, Cluster2, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
-            host.NewGeoCluster(globalserviceid, Cluster3, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
+            NewGeoCluster(globalserviceid, Cluster0, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
+            NewGeoCluster(globalserviceid, Cluster1, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
+            NewGeoCluster(globalserviceid, Cluster2, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
+            NewGeoCluster(globalserviceid, Cluster3, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
 
-            host.WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
+            WaitForLivenessToStabilizeAsync().WaitWithThrow(waitTimeout);
 
             // Create clients.
-            Client0 = host.NewClient<ClientWrapper>(Cluster0, 0);
-            Client1 = host.NewClient<ClientWrapper>(Cluster1, 0);
-            Client2 = host.NewClient<ClientWrapper>(Cluster2, 0);
-            Client3 = host.NewClient<ClientWrapper>(Cluster3, 0);
+            Client0 = NewClient<ClientWrapper>(Cluster0, 0);
+            Client1 = NewClient<ClientWrapper>(Cluster1, 0);
+            Client2 = NewClient<ClientWrapper>(Cluster2, 0);
+            Client3 = NewClient<ClientWrapper>(Cluster3, 0);
 
             Client1.InjectClusterConfiguration(Cluster0, Cluster1, Cluster2, Cluster3);
-            host.WaitForMultiClusterGossipToStabilizeAsync(false).WaitWithThrow(waitTimeout);
-        }
-
-        public void Dispose()
-        {
-            try
-            {
-                host.StopAllClientsAndClusters();
-                host = null;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception caught in test cleanup function: {0}", e);
-            }
+            WaitForMultiClusterGossipToStabilizeAsync(false).WaitWithThrow(waitTimeout);
         }
 
         #region client wrappers
@@ -464,12 +448,12 @@ namespace Tests.GeoClusterTests
             await checker7(7);
 
             // run tests under blocked notification to force race one way
-            host.BlockNotificationMessages(Cluster0);
+            BlockNotificationMessages(Cluster0);
             await checker7(0);
             await checker7(1);
             await checker7(2);
             await checker7(3);
-            host.UnblockNotificationMessages(Cluster0);
+            UnblockNotificationMessages(Cluster0);
 
 
             // then, run slightly longer tests
