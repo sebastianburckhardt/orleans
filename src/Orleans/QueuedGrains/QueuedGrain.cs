@@ -4,6 +4,7 @@ using Orleans.Runtime;
 using Orleans.MultiCluster;
 using System;
 using System.Collections.Generic;
+using Orleans.Core;
 using Orleans.LogViews;
 
 namespace Orleans.QueuedGrains
@@ -23,6 +24,16 @@ namespace Orleans.QueuedGrains
         where TDelta : class
     {
         protected QueuedGrain()
+        { }
+
+        /// <summary>
+        /// Grain implementers do NOT have to expose this constructor but can choose to do so.
+        /// This constructor is particularly useful for unit testing where test code can create a Grain and replace
+        /// the IGrainIdentity and IGrainRuntime with test doubles (mocks/stubs).
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <param name="runtime"></param>
+        protected QueuedGrain(IGrainIdentity identity, IGrainRuntime runtime) : base(identity, runtime)
         { }
 
         // the object encapsulating the log view provider functionality and local state
