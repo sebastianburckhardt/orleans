@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
-using Orleans.Storage;
 using Orleans.TestingHost;
+using Tester;
 using UnitTests.GrainInterfaces;
 using UnitTests.Tester;
-using Tester;
 using Xunit;
 
 namespace UnitTests.General
@@ -23,15 +21,14 @@ namespace UnitTests.General
             }
         }
 
-        [Fact(Skip = "Ignored"), TestCategory("Azure"), TestCategory("Functional"), TestCategory("Generics")]
-        //This test currently fails, because the name of the interface is too long
+        [Fact, TestCategory("Azure"), TestCategory("Functional"), TestCategory("Generics")]
         public async Task Generic_OnAzureTableStorage_LongNamedGrain_EchoValue()
         {
             var grain = GrainFactory.GetGrain<ISimpleGenericGrainUsingAzureTableStorage<int>>(Guid.NewGuid());
             await grain.EchoAsync(42);
 
             //ClearState() also exhibits the error, even with the shorter named grain
-            //await grain.ClearState();
+            await grain.ClearState();
         }
 
         [Fact, TestCategory("Azure"), TestCategory("Functional"), TestCategory("Generics")]

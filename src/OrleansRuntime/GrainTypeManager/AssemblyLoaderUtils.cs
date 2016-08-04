@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Orleans.Runtime
 {
@@ -10,7 +9,7 @@ namespace Orleans.Runtime
     {
         private static bool TraceLoadRequests { get; set; }
         private static readonly List<AssemblyLoadLogEntry> assemblyLoadLogEntries = new List<AssemblyLoadLogEntry>();
-        private static readonly TraceLogger logger = TraceLogger.GetLogger("AssemblyLoadTracer");
+        private static readonly Logger logger = LogManager.GetLogger("AssemblyLoadTracer");
 
         public static void EnableAssemblyLoadTracing()
         {

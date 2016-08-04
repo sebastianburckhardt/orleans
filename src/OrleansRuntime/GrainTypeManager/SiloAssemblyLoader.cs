@@ -4,17 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-
-using Orleans.Providers;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
 using Orleans.LogViews;
+using Orleans.Providers;
 
 namespace Orleans.Runtime
 {
     internal class SiloAssemblyLoader
     {
-        private readonly TraceLogger logger = TraceLogger.GetLogger("AssemblyLoader.Silo");
+        private readonly LoggerImpl logger = LogManager.GetLogger("AssemblyLoader.Silo");
         private List<string> discoveredAssemblyLocations;
         private Dictionary<string, SearchOption> directories;
 
@@ -82,12 +81,13 @@ namespace Orleans.Runtime
 
                 // check if grainType derives from Grain<T> where T is a concrete class
 
-                var parentType = grainType.BaseType;
+                var parentType = grainType.GetTypeInfo().BaseType;
                 while (parentType != typeof(Grain) && parentType != typeof(object))
                 {
-                    if (parentType.GetTypeInfo().IsGenericType)
+                    TypeInfo parentTypeInfo = parentType.GetTypeInfo();
+                    if (parentTypeInfo.IsGenericType)
                     {
-                        var definition = parentType.GetGenericTypeDefinition();
+                        var definition = parentTypeInfo.GetGenericTypeDefinition();
                         if (definition == typeof(Grain<>) || definition == typeof(LogViewGrainBase<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
@@ -99,7 +99,7 @@ namespace Orleans.Runtime
                         }
                     }
 
-                    parentType = parentType.BaseType;
+                    parentType = parentTypeInfo.BaseType;
                 }
 
                 GrainTypeData typeData = GetTypeData(grainType, grainStateType);
@@ -119,7 +119,7 @@ namespace Orleans.Runtime
 
             foreach (var type in types)
             {
-                var attrib = (MethodInvokerAttribute)type.GetCustomAttributes(typeof(MethodInvokerAttribute), true).Single();
+                var attrib = type.GetTypeInfo().GetCustomAttribute<MethodInvokerAttribute>(true);
                 int ifaceId = attrib.InterfaceId;
 
                 if (result.ContainsKey(ifaceId))
@@ -140,7 +140,7 @@ namespace Orleans.Runtime
                 new GrainTypeData(grainType, stateObjectType);
         }
 
-        private static void LogGrainTypesFound(TraceLogger logger, Dictionary<string, GrainTypeData> grainTypeData)
+        private static void LogGrainTypesFound(LoggerImpl logger, Dictionary<string, GrainTypeData> grainTypeData)
         {
             var sb = new StringBuilder();
             sb.AppendLine(String.Format("Loaded grain type summary for {0} types: ", grainTypeData.Count));
@@ -148,7 +148,7 @@ namespace Orleans.Runtime
             foreach (var grainType in grainTypeData.Values.OrderBy(gtd => gtd.Type.FullName))
             {
                 // Skip system targets and Orleans grains
-                var assemblyName = grainType.Type.Assembly.FullName.Split(',')[0];
+                var assemblyName = grainType.Type.GetTypeInfo().Assembly.FullName.Split(',')[0];
                 if (!typeof(ISystemTarget).IsAssignableFrom(grainType.Type))
                 {
                     int grainClassTypeCode = CodeGeneration.GrainInterfaceUtils.GetGrainClassTypeCode(grainType.Type);

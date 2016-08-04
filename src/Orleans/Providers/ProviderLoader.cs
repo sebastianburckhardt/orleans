@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Xml;
-
 using System.Threading.Tasks;
+using System.Xml;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 
@@ -34,11 +33,11 @@ namespace Orleans.Providers
     {
         private readonly Dictionary<string, TProvider> providers;
         private IDictionary<string, IProviderConfiguration> providerConfigs;
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
 
         public ProviderLoader()
         {
-            logger = TraceLogger.GetLogger("ProviderLoader/" + typeof(TProvider).Name, TraceLogger.LoggerType.Runtime);
+            logger = LogManager.GetLogger("ProviderLoader/" + typeof(TProvider).Name, LoggerType.Runtime);
             providers = new Dictionary<string, TProvider>();
         }
 

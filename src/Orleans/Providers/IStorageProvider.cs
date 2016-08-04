@@ -2,8 +2,8 @@ using System;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using Orleans.Runtime;
 using Orleans.Providers;
+using Orleans.Runtime;
 
 namespace Orleans.Storage
 {
@@ -12,8 +12,8 @@ namespace Orleans.Storage
     /// </summary>
     public interface IStorageProvider : IProvider
     {
-        /// <summary>TraceLogger used by this storage provider instance.</summary>
-        /// <returns>Reference to the TraceLogger object used by this provider.</returns>
+        /// <summary>Logger used by this storage provider instance.</summary>
+        /// <returns>Reference to the Logger object used by this provider.</returns>
         /// <seealso cref="Logger"/>
         Logger Log { get; }
 

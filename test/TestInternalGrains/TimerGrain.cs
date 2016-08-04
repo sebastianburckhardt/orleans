@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans;
@@ -22,11 +20,11 @@ namespace UnitTestGrains
         string DefaultTimerName = "DEFAULT TIMER";
         ISchedulingContext context;
 
-        private TraceLogger logger;
+        private Logger logger;
 
         public override Task OnActivateAsync()
         {
-            logger = (TraceLogger)this.GetLogger("TimerGrain_" + base.Data.Address.ToString());
+            logger = (Logger)this.GetLogger("TimerGrain_" + base.Data.Address.ToString());
             context = RuntimeContext.Current.ActivationContext;
             defaultTimer = this.RegisterTimer(Tick, DefaultTimerName, TimeSpan.Zero, period);
             allTimers = new Dictionary<string, IDisposable>();
