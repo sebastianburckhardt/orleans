@@ -1,19 +1,18 @@
 using System;
-using System.Linq;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Orleans.Runtime;
+using Orleans.CodeGeneration;
 using Orleans.Messaging;
 using Orleans.Providers;
-using Orleans.CodeGeneration;
+using Orleans.Runtime;
+using Orleans.Runtime.Configuration;
 using Orleans.Serialization;
 using Orleans.Storage;
-using Orleans.Runtime.Configuration;
-using System.Collections.Concurrent;
 using Orleans.Streams;
 
 namespace Orleans
@@ -23,8 +22,8 @@ namespace Orleans
 
         internal static bool TestOnlyThrowExceptionDuringInit { get; set; }
 
-        private readonly TraceLogger logger;
-        private readonly TraceLogger appLogger;
+        private readonly Logger logger;
+        private readonly Logger appLogger;
 
         private readonly ClientConfiguration config;
 
@@ -40,7 +39,7 @@ namespace Orleans
 
         internal ClientStatisticsManager ClientStatistics;
         private readonly GrainId clientId;
-        private GrainInterfaceMap grainInterfaceMap;
+        private IGrainTypeResolver grainInterfaceMap;
         private readonly ThreadTrackingStatistic incomingMessagesThreadTimeTracking;
 
         // initTimeout used to be AzureTableDefaultPolicies.TableCreationTimeout, which was 3 min
@@ -129,11 +128,11 @@ namespace Orleans
 
             this.config = cfg;
 
-            if (!TraceLogger.IsInitialized) TraceLogger.Initialize(config);
+            if (!LogManager.IsInitialized) LogManager.Initialize(config);
             StatisticsCollector.Initialize(config);
             SerializationManager.Initialize(config.UseStandardSerializer, cfg.SerializationProviders, config.UseJsonFallbackSerializer);
-            logger = TraceLogger.GetLogger("OutsideRuntimeClient", TraceLogger.LoggerType.Runtime);
-            appLogger = TraceLogger.GetLogger("Application", TraceLogger.LoggerType.Application);
+            logger = LogManager.GetLogger("OutsideRuntimeClient", LoggerType.Runtime);
+            appLogger = LogManager.GetLogger("Application", LoggerType.Application);
 
             try
             {
@@ -153,7 +152,7 @@ namespace Orleans
                 // Ensure SerializationManager static constructor is called before AssemblyLoad event is invoked
                 SerializationManager.GetDeserializer(typeof(String));
 
-                clientProviderRuntime = new ClientProviderRuntime(grainFactory, new DefaultServiceProvider());
+                clientProviderRuntime = new ClientProviderRuntime(grainFactory, null);
                 statisticsProviderManager = new StatisticsProviderManager("Statistics", clientProviderRuntime);
                 var statsProviderName = statisticsProviderManager.LoadProvider(config.ProviderConfigurations)
                     .WaitForResultWithThrow(initTimeout);
@@ -186,7 +185,7 @@ namespace Orleans
                 var gatewayListProvider = GatewayProviderFactory.CreateGatewayListProvider(config)
                     .WithTimeout(initTimeout).Result;
                 transport = new ProxiedMessageCenter(config, localAddress, generation, clientId, gatewayListProvider);
-                
+
                 if (StatisticsCollector.CollectThreadTimeTrackingStats)
                 {
                     incomingMessagesThreadTimeTracking = new ThreadTrackingStatistic("ClientReceiver");
@@ -215,7 +214,7 @@ namespace Orleans
 
         private static void LoadAdditionalAssemblies()
         {
-            var logger = TraceLogger.GetLogger("AssemblyLoader.Client", TraceLogger.LoggerType.Runtime);
+            var logger = LogManager.GetLogger("AssemblyLoader.Client", LoggerType.Runtime);
 
             var directories =
                 new Dictionary<string, SearchOption>
@@ -264,7 +263,7 @@ namespace Orleans
         internal void StartInternal()
         {
             transport.Start();
-            TraceLogger.MyIPEndPoint = transport.MyAddress.Endpoint; // transport.MyAddress is only set after transport is Started.
+            LogManager.MyIPEndPoint = transport.MyAddress.Endpoint; // transport.MyAddress is only set after transport is Started.
             CurrentActivationAddress = ActivationAddress.NewActivationAddress(transport.MyAddress, clientId);
 
             ClientStatistics = new ClientStatisticsManager(config);
@@ -766,7 +765,7 @@ namespace Orleans
             catch (Exception) { }
             try
             {
-                TraceLogger.UnInitialize();
+                LogManager.UnInitialize();
             }
             catch (Exception) { }
         }
@@ -847,7 +846,7 @@ namespace Orleans
             {
                 logger.Warn(ErrorCode.ProxyClient_AppDomain_Unload, 
                     String.Format("Current AppDomain={0} is unloading.", PrintAppDomainDetails()));
-                TraceLogger.Flush();
+                LogManager.Flush();
             }
             catch(Exception)
             {

@@ -12,7 +12,8 @@ using Orleans.Storage;
 namespace Orleans.Runtime.LogViews
 {
     /// <summary>
-    /// A log view adaptor that wraps around a traditional storage adaptor
+    /// A log view adaptor that wraps around a traditional storage adaptor, and uses batching and e-tags
+    /// to append entries.
     ///<para>
     /// The log itself is transient, i.e. not actually saved to storage - only the latest view and some 
     /// metadata (the log position, and write flags) are stored. 

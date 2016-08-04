@@ -2,18 +2,18 @@ using System;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using Orleans.Runtime;
 using Orleans.Providers;
+using Orleans.Runtime;
 
 namespace Orleans.Storage
 {
     /// <summary>
     /// Interface to be implemented for a storage provider able to read and write Orleans grain state data.
     /// </summary>
-    public interface IStorageProvider : IProvider
+    public interface IStorageProvider : IPersistenceProvider
     {
-        /// <summary>TraceLogger used by this storage provider instance.</summary>
-        /// <returns>Reference to the TraceLogger object used by this provider.</returns>
+        /// <summary>Logger used by this storage provider instance.</summary>
+        /// <returns>Reference to the Logger object used by this provider.</returns>
         /// <seealso cref="Logger"/>
         Logger Log { get; }
 
@@ -37,6 +37,12 @@ namespace Orleans.Storage
         /// <param name="grainState">Copy of last-known state data object for this grain.</param>
         /// <returns>Completion promise for the Delete operation on the specified grain.</returns>
         Task ClearStateAsync(string grainType, GrainReference grainReference, IGrainState grainState);
+    }
+
+    /// <summary>
+    /// Marker interface for providers that implement a grain persistence mechanisms
+    /// </summary>
+    public interface IPersistenceProvider : IProvider {
     }
 
     /// <summary>

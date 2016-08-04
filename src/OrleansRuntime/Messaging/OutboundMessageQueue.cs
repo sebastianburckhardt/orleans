@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading;
-
 using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime.Messaging
@@ -13,7 +12,7 @@ namespace Orleans.Runtime.Messaging
         private readonly SiloMessageSender pingSender;
         private readonly SiloMessageSender systemSender;
         private readonly MessageCenter messageCenter;
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
         private bool stopped;
 
         public int Count
@@ -45,7 +44,7 @@ namespace Orleans.Runtime.Messaging
                     return sender;
                 }, LazyThreadSafetyMode.ExecutionAndPublication);
             }
-            logger = TraceLogger.GetLogger("Messaging.OutboundMessageQueue");
+            logger = LogManager.GetLogger("Messaging.OutboundMessageQueue");
             stopped = false;
         }
 

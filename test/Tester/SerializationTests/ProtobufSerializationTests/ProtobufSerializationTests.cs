@@ -1,12 +1,10 @@
-﻿using System.IO;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
-
 using Google.Protobuf;
 using Orleans.Serialization;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Xunit;
-using System;
 
 namespace UnitTests.Serialization
 {
@@ -29,10 +27,10 @@ namespace UnitTests.Serialization
             }
             AddressBook restored = AddressBook.Parser.ParseFrom(bytes);
 
-            Assert.AreNotSame(book, restored, "The serializer returned an instance of the same object");
-            Assert.AreEqual(1, restored.People.Count, "The serialization didn't preserve the same number of inner values");
-            Assert.AreEqual(book.People[0], restored.People[0], "The serialization didn't preserve the proper inner value");
-            Assert.AreEqual(book, restored, "The serialization didn't preserve the proper value");            
+            Assert.NotSame(book, restored); //The serializer returned an instance of the same object
+            Assert.Equal(1, restored.People.Count); //The serialization didn't preserve the same number of inner values
+            Assert.Equal(book.People[0], restored.People[0]); //The serialization didn't preserve the proper inner value
+            Assert.Equal(book, restored); //The serialization didn't preserve the proper value
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization"), TestCategory("Protobuf")]
@@ -40,8 +38,8 @@ namespace UnitTests.Serialization
         {
             var input = new OrleansType();
             var output = SerializationManager.RoundTripSerializationForTesting(input);
-            Assert.AreNotSame(input, output, "The serializer returned an instance of the same object");
-            Assert.AreEqual(input, output, "The serialization didn't preserve the proper value");
+            Assert.NotSame(input, output); //The serializer returned an instance of the same object
+            Assert.Equal(input, output); //The serialization didn't preserve the proper value
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization"), TestCategory("Protobuf")]
@@ -49,8 +47,8 @@ namespace UnitTests.Serialization
         {
             var input = CreateAddressBook();
             var output = SerializationManager.RoundTripSerializationForTesting(input);
-            Assert.AreNotSame(input, output, "The serializer returned an instance of the same object");
-            Assert.AreEqual(input, output, "The serialization didn't preserve the proper value");
+            Assert.NotSame(input, output); //The serializer returned an instance of the same object
+            Assert.Equal(input, output); //The serialization didn't preserve the proper value
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization"), TestCategory("Protobuf")]
@@ -58,8 +56,8 @@ namespace UnitTests.Serialization
         {
             var input = CreateCounter();
             var output = SerializationManager.RoundTripSerializationForTesting(input);
-            Assert.AreNotSame(input, output, "The serializer returned an instance of the same object");
-            Assert.AreEqual(input, output, "The serialization didn't preserve the proper value");
+            Assert.NotSame(input, output); //The serializer returned an instance of the same object
+            Assert.Equal(input, output); //The serialization didn't preserve the proper value
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Serialization"), TestCategory("Protobuf")]
@@ -67,8 +65,8 @@ namespace UnitTests.Serialization
         {
             var input = CreateAddressBook();
             var output = SerializationManager.DeepCopy(input);
-            Assert.AreNotSame(input, output, "The serializer returned an instance of the same object");
-            Assert.AreEqual(input, output, "The serialization didn't preserve the proper value");
+            Assert.NotSame(input, output); //The serializer returned an instance of the same object
+            Assert.Equal(input, output); //The serialization didn't preserve the proper value
         }
 
         private Counter CreateCounter()

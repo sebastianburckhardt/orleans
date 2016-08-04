@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Orleans.Core;
 using Orleans.Concurrency;
 using Orleans.GrainDirectory;
 using Orleans.MultiCluster;
 using Orleans.Placement;
-
 
 namespace Orleans.Runtime
 {
@@ -26,10 +27,12 @@ namespace Orleans.Runtime
      
         public GrainTypeData(Type type, Type stateObjectType)
         {
+            var typeInfo = type.GetTypeInfo();
             Type = type;
-            IsReentrant = Type.GetCustomAttributes(typeof (ReentrantAttribute), true).Length > 0;
-            IsStatelessWorker = Type.GetCustomAttributes(typeof(StatelessWorkerAttribute), true).Length > 0;
-            GrainClass = TypeUtils.GetFullName(type);
+            IsReentrant = typeInfo.GetCustomAttributes(typeof (ReentrantAttribute), true).Any();
+            // TODO: shouldn't this use GrainInterfaceUtils.IsStatelessWorker?
+            IsStatelessWorker = typeInfo.GetCustomAttributes(typeof(StatelessWorkerAttribute), true).Any();
+            GrainClass = TypeUtils.GetFullName(typeInfo);
             RemoteInterfaceTypes = GetRemoteInterfaces(type); ;
             StateObjectType = stateObjectType;
         }
@@ -54,7 +57,7 @@ namespace Orleans.Runtime
                 }
 
                 // Traverse the class hierarchy
-                grainType = grainType.BaseType;
+                grainType = grainType.GetTypeInfo().BaseType;
             }
 
             return interfaceTypes;
@@ -62,9 +65,9 @@ namespace Orleans.Runtime
 
         private static bool GetPlacementStrategy<T>(
             Type grainInterface, Func<T, PlacementStrategy> extract, out PlacementStrategy placement)
-                where T : class
+                where T : Attribute
         {
-            var attribs = grainInterface.GetCustomAttributes(typeof(T), inherit: true);
+            var attribs = grainInterface.GetTypeInfo().GetCustomAttributes<T>(inherit: true).ToArray();
             switch (attribs.Length)
             {
                 case 0:
@@ -72,7 +75,7 @@ namespace Orleans.Runtime
                     return false;
 
                 case 1:
-                    placement = extract((T)attribs[0]);
+                    placement = extract(attribs[0]);
                     return placement != null;
 
                 default:
@@ -91,10 +94,7 @@ namespace Orleans.Runtime
 
             if (GetPlacementStrategy<StatelessWorkerAttribute>(
                 grainClass,
-                (StatelessWorkerAttribute attr) =>
-                {
-                    return new StatelessWorkerPlacement(attr.MaxLocalWorkers);
-                },
+                attr => new StatelessWorkerPlacement(attr.MaxLocalWorkers),
                 out placement))
             {
                 return placement;
@@ -113,14 +113,14 @@ namespace Orleans.Runtime
 
         internal static MultiClusterRegistrationStrategy GetMultiClusterRegistrationStrategy(Type grainClass)
         {
-            var attribs = grainClass.GetCustomAttributes(typeof(Orleans.MultiCluster.RegistrationAttribute), inherit: true);
+            var attribs = grainClass.GetTypeInfo().GetCustomAttributes<Orleans.MultiCluster.RegistrationAttribute>(inherit: true).ToArray();
 
             switch (attribs.Length)
             {
                 case 0:
                     return ClusterLocalRegistration.Singleton;
                 case 1:
-                    return ((Orleans.MultiCluster.RegistrationAttribute)attribs[0]).RegistrationStrategy;
+                    return attribs[0].RegistrationStrategy;
                 default:
                     throw new InvalidOperationException(
                         string.Format(

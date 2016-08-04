@@ -1,16 +1,16 @@
-﻿using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Orleans.TestingHost;
-using System.Reflection;
 using System.Globalization;
-using Orleans.Runtime.Configuration;
+using System.Linq;
 using System.Net;
+using System.Reflection;
+using System.Threading.Tasks;
 using Orleans;
-using Assert = Xunit.Assert;
+using Orleans.Runtime;
+using Orleans.Runtime.Configuration;
+using Orleans.TestingHost;
 using Tester;
+using Xunit;
 
 namespace Tests.GeoClusterTests
 {
@@ -46,6 +46,43 @@ namespace Tests.GeoClusterTests
         public static void WriteLog(string format, params object[] args)
         {
             Console.WriteLine(format, args);
+        }
+
+        public void AssertEqual<T>(T expected, T actual, string comment)
+        {
+            try
+            {
+                Assert.Equal(expected, actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("Equality assertion failed; expected={0}, actual={1} comment={2}", expected, actual, comment);
+                throw e;
+            }
+        }
+        public void AssertNull<T>(T actual, string comment)
+        {
+            try
+            {
+                Assert.Null(actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("null assertion failed; actual={0} comment={1}", actual, comment);
+                throw e;
+            }
+        }
+        public void AssertTrue(bool actual, string comment)
+        {
+            try
+            {
+                Assert.True(actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("true assertion failed; actual={0} comment={1}", actual, comment);
+                throw e;
+            }
         }
 
         /// <summary>

@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using Orleans.Runtime;
 using Orleans.Concurrency;
+using Orleans.Runtime;
 
 namespace Orleans.Serialization
 {
@@ -15,10 +14,10 @@ namespace Orleans.Serialization
 
     internal static class TypeUtilities
     {
-        internal static bool IsOrleansPrimitive(this Type t)
+        internal static bool IsOrleansPrimitive(this TypeInfo typeInfo)
         {
-            var typeInfo = t.GetTypeInfo();
-            return typeInfo.IsPrimitive || typeInfo.IsEnum || t == typeof(string) || t == typeof(DateTime) || t == typeof(Decimal) || (typeInfo.IsArray && typeInfo.GetElementType().IsOrleansPrimitive());
+            var t = typeInfo.AsType();
+            return typeInfo.IsPrimitive || typeInfo.IsEnum || t == typeof(string) || t == typeof(DateTime) || t == typeof(Decimal) || (typeInfo.IsArray && typeInfo.GetElementType().GetTypeInfo().IsOrleansPrimitive());
         }
 
         static readonly ConcurrentDictionary<Type, bool> shallowCopyableTypes = new ConcurrentDictionary<Type, bool>();
@@ -58,7 +57,7 @@ namespace Orleans.Serialization
                 return true;
             }
 
-            if (typeInfo.GetCustomAttributes(typeof(ImmutableAttribute), false).Length > 0)
+            if (typeInfo.GetCustomAttributes(typeof(ImmutableAttribute), false).Any())
             {
                 shallowCopyableTypes[t] = true;
                 return true;
@@ -72,13 +71,18 @@ namespace Orleans.Serialization
 
             if (typeInfo.IsValueType && !typeInfo.IsGenericType && !typeInfo.IsGenericTypeDefinition)
             {
-                result = typeInfo.GetFields().All(f => !(f.FieldType == t) && IsOrleansShallowCopyable(f.FieldType));
+                result = IsValueTypeFieldsShallowCopyable(typeInfo);
                 shallowCopyableTypes[t] = result;
                 return result;
             }
 
             shallowCopyableTypes[t] = false;
             return false;
+        }
+
+        private static bool IsValueTypeFieldsShallowCopyable(TypeInfo typeInfo)
+        {
+            return typeInfo.GetFields().All(f => f.FieldType != typeInfo.AsType() && IsOrleansShallowCopyable(f.FieldType));
         }
 
         internal static bool IsSpecializationOf(this Type t, Type match)
@@ -205,14 +209,14 @@ namespace Orleans.Serialization
                 // Guard against invalid type constraints, which appear when generating code for some languages.
                 foreach (var parameter in typeInfo.GenericTypeParameters)
                 {
-                    if (parameter.GetGenericParameterConstraints().Any(IsSpecialClass))
+                    if (parameter.GetTypeInfo().GetGenericParameterConstraints().Any(IsSpecialClass))
                     {
                         return true;
                     }
                 }
             }
 
-            if (!typeInfo.IsVisible && typeInfo.IsConstructedGenericType)
+            if (!typeInfo.IsVisible && type.IsConstructedGenericType)
             {
                 foreach (var inner in typeInfo.GetGenericArguments())
                 {
@@ -288,8 +292,8 @@ namespace Orleans.Serialization
 
         private static bool IsSpecialClass(Type type)
         {
-            return type == typeof (object) || type == typeof (Array) || type == typeof (Delegate) ||
-                   type == typeof (Enum) || type == typeof (ValueType);
+            return type == typeof(object) || type == typeof(Array) || type == typeof(Delegate) ||
+                   type == typeof(Enum) || type == typeof(ValueType);
         }
     }
 }

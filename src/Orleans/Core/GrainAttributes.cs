@@ -1,6 +1,7 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using Orleans.GrainDirectory;
-
 namespace Orleans
 {
     namespace Concurrency
@@ -236,7 +237,7 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class StorageProviderAttribute : ProviderAttribute
+        public sealed class StorageProviderAttribute : PersistenceProviderAttribute
         {
             public StorageProviderAttribute()
             {
@@ -253,7 +254,7 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class LogViewProviderAttribute : ProviderAttribute
+        public sealed class LogViewProviderAttribute : PersistenceProviderAttribute
         {
             public LogViewProviderAttribute()
             {
@@ -264,7 +265,7 @@ namespace Orleans
         /// <summary>
         /// The common superclass of storage and log view provider attributes.
         /// </summary>
-        public class ProviderAttribute : Attribute
+        public class PersistenceProviderAttribute : Attribute
         {
             /// <summary>
             /// The name of the provider to ne used for persisting state for this grain.
@@ -292,7 +293,7 @@ namespace Orleans
 
         internal static FactoryTypes CollectFactoryTypesSpecified(Type type)
         {
-            var attribs = type.GetCustomAttributes(typeof(FactoryAttribute), inherit: true);
+            var attribs = type.GetTypeInfo().GetCustomAttributes(typeof(FactoryAttribute), inherit: true).ToArray();
 
             // if no attributes are specified, we default to FactoryTypes.Grain.
             if (0 == attribs.Length)

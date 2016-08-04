@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Orleans.Core;
 using Orleans.Runtime;
-using Orleans.Storage;
 using Orleans.Streams;
 
 namespace Orleans
@@ -226,7 +225,7 @@ namespace Orleans
         [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic")]
         protected virtual Logger GetLogger(string loggerName)
         {
-            return Runtime.GetLogger(loggerName, TraceLogger.LoggerType.Grain);
+            return Runtime.GetLogger(loggerName);
         }
 
         /// <summary>
