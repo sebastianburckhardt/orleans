@@ -68,7 +68,7 @@ namespace Orleans.Runtime.LogViews
 
         public Logger GetLogger(string loggerName)
         {
-            return TraceLogger.GetLogger(loggerName, TraceLogger.LoggerType.Provider);
+            return LogManager.GetLogger(loggerName, LoggerType.Provider);
         }
 
         public Guid ServiceId
@@ -104,11 +104,6 @@ namespace Orleans.Runtime.LogViews
             return logViewProviderLoader.GetProvider(name, true);
         }
 
-        public ILogViewProvider WrapStorageProvider(IStorageProvider storageprovider)
-        {
-            // create a wrapping provider.
-            return new WrappedStorageProvider() { globalstorageprovider = storageprovider };
-        }
 
         public bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false)
         {
@@ -117,8 +112,12 @@ namespace Orleans.Runtime.LogViews
 
 
         // A log view provider that is really just a wrapper around the storage provider
-        private class WrappedStorageProvider : ILogViewProvider
+        internal class WrappedStorageProvider : ILogViewProvider
         {
+            public WrappedStorageProvider(IStorageProvider storageProvider)
+            {
+                globalstorageprovider = storageProvider;
+            }
             internal IStorageProvider globalstorageprovider;
 
             public ILogViewAdaptor<T, E> MakeLogViewAdaptor<T, E>(ILogViewHost<T, E> hostgrain, T initialstate, string graintypename, IProtocolServices services) 

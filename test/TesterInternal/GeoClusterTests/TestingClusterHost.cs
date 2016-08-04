@@ -48,6 +48,43 @@ namespace Tests.GeoClusterTests
             Console.WriteLine(format, args);
         }
 
+        public void AssertEqual<T>(T expected, T actual, string comment)
+        {
+            try
+            {
+                Assert.Equal(expected, actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("Equality assertion failed; expected={0}, actual={1} comment={2}", expected, actual, comment);
+                throw e;
+            }
+        }
+        public void AssertNull<T>(T actual, string comment)
+        {
+            try
+            {
+                Assert.Null(actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("null assertion failed; actual={0} comment={1}", actual, comment);
+                throw e;
+            }
+        }
+        public void AssertTrue(bool actual, string comment)
+        {
+            try
+            {
+                Assert.True(actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("true assertion failed; actual={0} comment={1}", actual, comment);
+                throw e;
+            }
+        }
+
         /// <summary>
         /// Wait for the multicluster-gossip sub-system to stabilize.
         /// </summary>

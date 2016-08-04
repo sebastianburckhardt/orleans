@@ -154,7 +154,6 @@ namespace Orleans.Runtime.LogViews
             this.Provider = provider;
             InitializeConfirmedView(initialstate);
             worker = new BatchWorkerFromDelegate(() => Work());
-            Services.Verbose2("Constructed {0}", Host.IdentityString);
         }
 
         public virtual async Task Activate()

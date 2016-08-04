@@ -1083,7 +1083,7 @@ namespace Orleans
 
         CancellationTokenManagerBase        = Runtime + 4000,
         CancellationTokenCancelFailed       = CancellationTokenManagerBase + 1,
-        CancellationExtensionCreationFailed = CancellationTokenManagerBase + 2
+        CancellationExtensionCreationFailed = CancellationTokenManagerBase + 2,
 
         LogViewBase = Runtime + 5000,
         LogView_ViewUpdateException = LogViewBase + 1,
