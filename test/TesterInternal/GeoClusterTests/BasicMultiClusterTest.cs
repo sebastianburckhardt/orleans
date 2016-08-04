@@ -3,24 +3,17 @@ using System.Collections.Generic;
 using Orleans;
 using Orleans.Runtime;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Tests.GeoClusterTests
 {
-    public class BasicMultiClusterTest : TestingClusterHost, IDisposable
+    public class BasicMultiClusterTest : TestingClusterHost
     {
-        // Kill all clients and silos.
-        public void Dispose()
-        {
-            try
-            {
-                StopAllClientsAndClusters();
-            }
-            catch (Exception e)
-            {
-                WriteLog("Exception caught in test cleanup function: {0}", e);
-            }
-        }
 
+        public BasicMultiClusterTest(ITestOutputHelper output) : base(output)
+        { }
+
+     
         // We use ClientWrapper to load a client object in a new app domain. 
         // This allows us to create multiple clients that are connected to different silos.
         // this client is used to call into the management grain.
@@ -58,8 +51,6 @@ namespace Tests.GeoClusterTests
 
             Assert.Equal(1, silos_in_A);
             Assert.Equal(5, silos_in_B);
-
-            StopAllClientsAndClusters(); // don't rely on VS to clean up in a timely way... do it explicitly
         }
     }
 }

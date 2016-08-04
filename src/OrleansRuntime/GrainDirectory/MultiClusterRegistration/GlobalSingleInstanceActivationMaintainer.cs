@@ -26,6 +26,45 @@ namespace Orleans.Runtime.GrainDirectory
 
         }
 
+        // scanning the entire directory for doubtful activations is too slow.
+        // therefore, we maintain a list of potentially doubtful activations on the side.
+        // maintainer periodically takes and processes this list.
+        private List<GrainId> doubtfulGrains = new List<GrainId>();
+        private object lockable = new object();
+
+        public void TrackDoubtfulGrain(GrainId grain)
+        {
+            lock (lockable)
+                doubtfulGrains.Add(grain);
+        }
+
+        public void TrackDoubtfulGrains(Dictionary<GrainId, IGrainInfo> newstuff)
+        {
+            var newdoubtful = FilterByMultiClusterStatus(newstuff, MultiClusterStatus.Doubtful)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            lock (lockable)
+            {
+                doubtfulGrains.AddRange(newdoubtful);
+            }
+        }
+
+        public static IEnumerable<KeyValuePair<GrainId, IGrainInfo>> FilterByMultiClusterStatus(Dictionary<GrainId, IGrainInfo> collection, MultiClusterStatus status)
+        {
+            foreach (var kvp in collection)
+            {
+                if (!kvp.Value.SingleInstance)
+                    continue;
+                var act = kvp.Value.Instances.FirstOrDefault();
+                if (act.Key == null)
+                    continue;
+                if (act.Value.RegistrationStatus == status)
+                    yield return kvp;
+            }
+        }
+
+        // the following method runs for the whole lifetime of the silo, doing the periodic maintenance
         protected override async void Run()
         {
             var globalConfig = Silo.CurrentSilo.OrleansConfig.Globals;
@@ -39,6 +78,7 @@ namespace Orleans.Runtime.GrainDirectory
                 try
                 {
                     await Task.Delay(period);
+                    if (!router.Running) break;
 
                     logger.Verbose("GSIP:M running periodic check (having waited {0})", period);
 
@@ -49,17 +89,16 @@ namespace Orleans.Runtime.GrainDirectory
                     {
                         // we are not joined to the cluster yet/anymore. 
                         // go through all owned entries and make them doubtful
+                        // this will not happen under normal operation
+                        // (because nodes are supposed to shut down before being removed from the multi cluster)
+                        // but if it happens anyway, this is the correct thing to do
 
-                        var ownedEntries = router.DirectoryPartition.GetItems().Where(kp =>
-                        {
-                            if (!kp.Value.SingleInstance) return false;
-                            var act = kp.Value.Instances.FirstOrDefault();
-                            if (act.Key == null) return false;
-                            if (act.Value.RegistrationStatus == MultiClusterStatus.Owned) return false;
-                            return true;
-                        }).Select(kp => Tuple.Create(kp.Key, kp.Value.Instances.FirstOrDefault())).ToList();
+                        var allEntries = router.DirectoryPartition.GetItems();
+                        var ownedEntries = FilterByMultiClusterStatus(allEntries, MultiClusterStatus.Owned)
+                            .Select(kp => Tuple.Create(kp.Key, kp.Value.Instances.FirstOrDefault()))
+                            .ToList();
 
-                        logger.Verbose("GSIP:M make {0} owned entries doubtful", ownedEntries.Count);
+                        logger.Verbose("GSIP:M Not joined to multicluster. Make {0} owned entries doubtful {1}", ownedEntries.Count, logger.IsVerbose2 ? string.Join(",", ownedEntries.Select(s => s.Item1)) : "");
 
                         await router.Scheduler.QueueTask(
                             () => RunBatchedDemotion(ownedEntries),
@@ -71,20 +110,20 @@ namespace Orleans.Runtime.GrainDirectory
                         // we are joined to the multicluster.
                         // go through all doubtful entries and broadcast ownership requests for each
 
-                        var doubtfulEntries = router.DirectoryPartition.GetItems().Where(kp =>
+                        // take them all out of the list for processing.
+                        List<GrainId> grains;
+                        lock (lockable)
                         {
-                            if (!kp.Value.SingleInstance) return false;
-                            var act = kp.Value.Instances.FirstOrDefault();
-                            if (act.Key == null) return false;
-                            if (act.Value.RegistrationStatus != MultiClusterStatus.Doubtful) return false;
-                            return true;
-                        }).Select(kp => Tuple.Create(kp.Key, kp.Value.Instances.FirstOrDefault())).ToList();
+                            grains = doubtfulGrains;
+                            doubtfulGrains = new List<GrainId>();
+                        }
 
-                        logger.Verbose("GSIP:M retry {0} doubtful entries", doubtfulEntries.Count);
-                        
+                        // filter
+                        logger.Verbose("GSIP:M retry {0} doubtful entries {1}", grains.Count, logger.IsVerbose2 ? string.Join(",", grains) : "");
+
                         var remoteClusters = config.Clusters.Where(id => id != myClusterId).ToList();
                         await router.Scheduler.QueueTask(
-                            () => RunBatchedActivationRequests(remoteClusters, doubtfulEntries),
+                            () => RunBatchedActivationRequests(remoteClusters, grains),
                             router.CacheValidator.SchedulingContext
                         );
                     }
@@ -137,33 +176,41 @@ namespace Orleans.Runtime.GrainDirectory
                 }
                 catch (Exception e)
                 {
-                    System.Diagnostics.Debug.WriteLine("Caught exception: {0}", e);
+                    logger.Error(ErrorCode.GlobalSingleInstance_MaintainerException,
+                            "GSIP:M caught exception", e);
                 }
             }
         }
         private Task RunBatchedDemotion(List<Tuple<GrainId, KeyValuePair<ActivationId, IActivationInfo>>> entries)
         {
-            var addresses = new List<ActivationAddress>();
-
             foreach (var entry in entries)
+            {
                 router.DirectoryPartition.UpdateClusterRegistrationStatus(entry.Item1, entry.Item2.Key, MultiClusterStatus.Doubtful, MultiClusterStatus.Owned);
+                TrackDoubtfulGrain(entry.Item1);
+            }
 
             return TaskDone.Done;
         }
 
-        private async Task RunBatchedActivationRequests(List<string> remoteClusters, List<Tuple<GrainId, KeyValuePair<ActivationId,IActivationInfo>>> entries)
+        private async Task RunBatchedActivationRequests(List<string> remoteClusters, List<GrainId> grains)
         {
             var addresses = new List<ActivationAddress>();
 
-            foreach (var entry in entries)
+            foreach (var grain in grains)
             {
-                // transition to requesting state
-                if (router.DirectoryPartition.UpdateClusterRegistrationStatus(entry.Item1, entry.Item2.Key, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.Doubtful))
+                // retrieve activation
+                ActivationAddress address;
+                int version;
+                var mcstate = router.DirectoryPartition.TryGetActivation(grain, out address, out version);
+
+                // work on the doubtful ones only
+                if (mcstate == MultiClusterStatus.Doubtful)
                 {
-                    var currentActivations = router.DirectoryPartition.LookUpGrain(entry.Item1).Addresses;
-                    var address = currentActivations.FirstOrDefault();
-                    Debug.Assert(address != null && address.Status == MultiClusterStatus.RequestedOwnership);
-                    addresses.Add(address); // TODO simplify the above code?
+                    // try to start retry by moving into requested_ownership state
+                    if (router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, address.Activation, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.Doubtful))
+                    {
+                        addresses.Add(address);
+                    }
                 }
             }
 
@@ -234,7 +281,6 @@ namespace Orleans.Runtime.GrainDirectory
                 }
             }
 
-
             // process each address
 
             var loser_activations_per_silo = new Dictionary<SiloAddress, List<ActivationAddress>>();
@@ -252,13 +298,11 @@ namespace Orleans.Runtime.GrainDirectory
                 // response processor
                 var tracker = new GlobalSingleInstanceResponseTracker(responses, address.Grain);
 
-                tracker.CheckIfDone();
-
                 Debug.Assert(tracker.Task.IsCompleted);
 
                 var outcome = tracker.Task.Result;
 
-                if (logger.IsVerbose)
+                if (logger.IsVerbose2)
                     logger.Verbose("GSIP:M {0} Result={1}", address.Grain.ToString(), outcome.ToString());
 
                 switch (outcome)
@@ -290,18 +334,17 @@ namespace Orleans.Runtime.GrainDirectory
                 }
 
                 // we were not successful, reread state to determine what is going on
-                var currentActivations = router.DirectoryPartition.LookUpGrain(address.Grain).Addresses;
-                address = currentActivations.FirstOrDefault();
-                Debug.Assert(address != null);
+                int version;
+                var mcstatus = router.DirectoryPartition.TryGetActivation(address.Grain, out address, out version);
 
                 // in each case, go back to DOUBTFUL
-                if (address.Status == MultiClusterStatus.RequestedOwnership)
+                if (mcstatus == MultiClusterStatus.RequestedOwnership)
                 {
                     // we failed because of inconclusive answers
                     var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Doubtful, MultiClusterStatus.RequestedOwnership);
                     if (!success) ProtocolError(address, "unable to transition from REQUESTED_OWNERSHIP to DOUBTFUL");
                 }
-                else if (address.Status == MultiClusterStatus.RaceLoser)
+                else if (mcstatus == MultiClusterStatus.RaceLoser)
                 {
                     // we failed because an external request moved us to RACE_LOSER
                     var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Doubtful, MultiClusterStatus.RaceLoser);
@@ -311,6 +354,8 @@ namespace Orleans.Runtime.GrainDirectory
                 {
                     ProtocolError(address, "unhandled protocol state");
                 }
+
+                TrackDoubtfulGrain(address.Grain);
             }
 
             // remove loser activations

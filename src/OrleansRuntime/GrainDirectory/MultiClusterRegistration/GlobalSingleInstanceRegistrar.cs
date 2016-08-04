@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
 using Orleans.SystemTargetInterfaces;
+using Orleans.Runtime;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -13,12 +14,14 @@ namespace Orleans.Runtime.GrainDirectory
         private static int NUM_RETRIES = 3;
         private readonly Logger logger;
         private readonly GrainDirectoryPartition directoryPartition;
+        private readonly GlobalSingleInstanceActivationMaintainer gsiActivationMaintainer;
 
-        public GlobalSingleInstanceRegistrar(GrainDirectoryPartition partition, Logger logger)
+        public GlobalSingleInstanceRegistrar(GrainDirectoryPartition partition, Logger logger, GlobalSingleInstanceActivationMaintainer gsiActivationMaintainer)
              
         {
             this.directoryPartition = partition;
             this.logger = logger;
+            this.gsiActivationMaintainer = gsiActivationMaintainer;
         }
 
         public bool IsSynchronous { get { return false; } }
@@ -40,18 +43,16 @@ namespace Orleans.Runtime.GrainDirectory
 
         public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, bool singleActivation)
         {
-            var globalConfig = Silo.CurrentSilo.OrleansConfig.Globals;
-
             if (!singleActivation)
                 throw new OrleansException("global single instance protocol is incompatible with using multiple activations");
 
-            if (!globalConfig.HasMultiClusterNetwork)
+            var myClusterId = Silo.CurrentSilo.ClusterId;
+
+            if (myClusterId == null)
             {
                 // no multicluster network. Go to owned state directly.
                 return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.Owned);
             }
-
-            var myClusterId = globalConfig.ClusterId;
 
             // examine the multicluster configuration
             var config = Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration();
@@ -59,6 +60,7 @@ namespace Orleans.Runtime.GrainDirectory
             if (config == null || !config.Clusters.Contains(myClusterId))
             {
                 // we are not joined to the cluster yet/anymore. Go to doubtful state directly.
+                gsiActivationMaintainer.TrackDoubtfulGrain(address.Grain);
                 return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.Doubtful);
             }
 
@@ -80,14 +82,14 @@ namespace Orleans.Runtime.GrainDirectory
             while (retries-- > 0)
             {
                 if (logger.IsVerbose)
-                    logger.Verbose("GSIP:R {0} Round={1} Act={2}", address.Grain.ToString(), NUM_RETRIES - retries, myActivation.Address.ToString());
+                    logger.Verbose("GSIP:Req {0} Round={1} Act={2}", address.Grain.ToString(), NUM_RETRIES - retries, myActivation.Address.ToString());
 
                 var responses = SendRequestRound(address, remoteClusters);
 
                 var outcome = await responses.Task;
 
                 if (logger.IsVerbose)
-                    logger.Verbose("GSIP:R {0} Round={1} Result={2}", address.Grain.ToString(), NUM_RETRIES - retries, outcome.ToString());
+                    logger.Verbose("GSIP:Req {0} Round={1} Outcome={2}", address.Grain.ToString(), NUM_RETRIES - retries, outcome.ToString());
 
                 switch (outcome)
                 {
@@ -111,15 +113,14 @@ namespace Orleans.Runtime.GrainDirectory
                 }
 
                 // we were not successful, reread state to determine what is going on
-                var currentActivations = directoryPartition.LookUpGrain(address.Grain).Addresses;
-                address = currentActivations.FirstOrDefault();
-                Debug.Assert(address != null && address.Equals(myActivation.Address));
+                int version;
+                var mcstatus = directoryPartition.TryGetActivation(address.Grain, out address, out version);
 
-                if (address.Status == MultiClusterStatus.RequestedOwnership)
+                if (mcstatus == MultiClusterStatus.RequestedOwnership)
                 {
                     // we failed because of inconclusive answers. Stay in this state for retry.
                 }
-                else  if (address.Status == MultiClusterStatus.RaceLoser)
+                else  if (mcstatus == MultiClusterStatus.RaceLoser)
                 {
                     // we failed because an external request moved us to RACE_LOSER. Go back to REQUESTED_OWNERSHIP for retry
                     var success = directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.RaceLoser);
@@ -138,25 +139,90 @@ namespace Orleans.Runtime.GrainDirectory
            
             if (!ok) ProtocolError(address, "unable to transition into doubtful");
 
+            this.gsiActivationMaintainer.TrackDoubtfulGrain(address.Grain);
+
             return myActivation;
         }
 
         private void ProtocolError(ActivationAddress address, string msg)
         {
-            logger.Error((int)ErrorCode.GlobalSingleInstance_ProtocolError, string.Format("GSIP:R {0} {1}", address.Grain.ToString(), msg));
+            logger.Error((int)ErrorCode.GlobalSingleInstance_ProtocolError, string.Format("GSIP:Req {0} PROTOCOL ERROR {1}", address.Grain.ToString(), msg));
             Debugger.Break();
         }
 
-        public Task UnregisterAsync(ActivationAddress address, bool force)
+        public Task UnregisterAsync(List<ActivationAddress> addresses, bool force)
         {
-            directoryPartition.RemoveActivation(address.Grain, address.Activation, force);
-            return TaskDone.Done;
+            List<ActivationAddress> formerActivationsInThisCluster = null;
+
+            foreach (var address in addresses)
+            {
+                var existingAct = directoryPartition.LookupAndRemoveActivation(address, force);
+                if (existingAct != null
+                    && (existingAct.RegistrationStatus == MultiClusterStatus.Owned 
+                        || existingAct.RegistrationStatus == MultiClusterStatus.Doubtful))
+                {
+                    if (formerActivationsInThisCluster == null)
+                        formerActivationsInThisCluster = new List<ActivationAddress>();
+                    formerActivationsInThisCluster.Add(address);
+                }
+            }
+
+            if (formerActivationsInThisCluster == null)
+                return TaskDone.Done;
+
+            // we must also remove cached references to former activations in this cluster
+            // from remote clusters; thus, we broadcast the unregistration
+
+            var myClusterId = Silo.CurrentSilo.ClusterId;
+
+            if (myClusterId == null)
+                return TaskDone.Done; // single cluster - no broadcast required
+
+            // target clusters in current configuration, other than this one
+            var remoteClusters = Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration().Clusters
+                .Where(id => id != myClusterId).ToList();
+
+            var tasks = new List<Task>();
+            foreach (var remoteCluster in remoteClusters)
+            {
+                // find gateway
+                var gossipOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+                var clusterGatewayAddress = gossipOracle.GetRandomClusterGateway(remoteCluster);
+                var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+
+                // try to send request
+                tasks.Add(clusterGrainDir.ProcessDeactivations(formerActivationsInThisCluster));
+            }
+            return Task.WhenAll(tasks);
         }
 
+     
         public Task DeleteAsync(GrainId gid)
-        {
+        {   
             directoryPartition.RemoveGrain(gid);
-            return TaskDone.Done;
+
+            // broadcast deletion to all other clusters
+            var myClusterId = Silo.CurrentSilo.ClusterId;
+
+            if (myClusterId == null)
+                return TaskDone.Done; // single cluster - no broadcast required
+
+            // target ALL clusters, not just clusters in current configuration
+            var remoteClusters = Silo.CurrentSilo.LocalMultiClusterOracle.GetActiveClusters()
+                .Where(id => id != myClusterId).ToList();
+
+            var tasks = new List<Task>();
+            foreach (var remoteCluster in remoteClusters)
+            {
+                // find gateway
+                var gossipOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+                var clusterGatewayAddress = gossipOracle.GetRandomClusterGateway(remoteCluster);
+                var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+
+                // try to send request
+                tasks.Add(clusterGrainDir.ProcessDeletion(gid));
+            }
+            return Task.WhenAll(tasks);
         }
 
         public GlobalSingleInstanceResponseTracker SendRequestRound(ActivationAddress address, List<string> remoteClusters)
@@ -190,7 +256,7 @@ namespace Orleans.Runtime.GrainDirectory
                 var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
 
                 // try to send request
-                responses[index] = await clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.ClusterId, true);
+                responses[index] = await clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.ClusterId, 0);
 
                 responseprocessor.CheckIfDone();
 
