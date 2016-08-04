@@ -1,16 +1,16 @@
-﻿using Orleans.Runtime.Configuration;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
     internal class MultiClusterOracleFactory
     {
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
 
         internal MultiClusterOracleFactory()
         {
-            logger = TraceLogger.GetLogger("MultiClusterOracleFactory", TraceLogger.LoggerType.Runtime);
+            logger = LogManager.GetLogger("MultiClusterOracleFactory", LoggerType.Runtime);
         }
 
         internal async Task<IMultiClusterOracle> CreateGossipOracle(Silo silo)

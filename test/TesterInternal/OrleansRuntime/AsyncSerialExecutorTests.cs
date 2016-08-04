@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
@@ -11,14 +10,14 @@ namespace UnitTests.OrleansRuntime
 {
     public class AsyncSerialExecutorTests
     {
-        public TraceLogger logger;
+        public Logger logger;
         private SafeRandom random;
         public int operationsInProgress;
 
         public AsyncSerialExecutorTests()
         {
-            TraceLogger.Initialize(new NodeConfiguration());
-            logger = TraceLogger.GetLogger("AsyncSerialExecutorTests", TraceLogger.LoggerType.Application);
+            LogManager.Initialize(new NodeConfiguration());
+            logger = LogManager.GetLogger("AsyncSerialExecutorTests", LoggerType.Application);
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Async")]
@@ -74,17 +73,17 @@ namespace UnitTests.OrleansRuntime
 
         private async Task Operation(int opNumber)
         {
-            if (operationsInProgress > 0) Assert.Fail("1: Operation {0} found {1} operationsInProgress.", opNumber, operationsInProgress);
+            if (operationsInProgress > 0) Assert.True(false, $"1: Operation {opNumber} found {operationsInProgress} operationsInProgress.");
             operationsInProgress++;
             var delay = random.NextTimeSpan(TimeSpan.FromSeconds(2));
 
             logger.Info("Task {0} Staring", opNumber);
             await Task.Delay(delay);
-            if (operationsInProgress != 1) Assert.Fail("2: Operation {0} found {1} operationsInProgress.", opNumber, operationsInProgress);
+            if (operationsInProgress != 1) Assert.True(false, $"2: Operation {opNumber} found {operationsInProgress} operationsInProgress.");
 
             logger.Info("Task {0} after first delay", opNumber);
             await Task.Delay(delay);
-            if (operationsInProgress != 1) Assert.Fail("3: Operation {0} found {1} operationsInProgress.", opNumber, operationsInProgress);
+            if (operationsInProgress != 1) Assert.True(false, $"3: Operation {opNumber} found {operationsInProgress} operationsInProgress.");
 
             operationsInProgress--;
             logger.Info("Task {0} Done", opNumber);

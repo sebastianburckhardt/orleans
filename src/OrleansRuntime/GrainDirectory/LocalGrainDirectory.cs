@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using Orleans.GrainDirectory;
 using Orleans.Runtime.Scheduler;
 
@@ -18,7 +17,7 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly HashSet<SiloAddress> membershipCache;
         private readonly AsynchAgent maintainer;
         private readonly AsynchAgent globalSingleInstanceActivationMaintainer;
-        private readonly TraceLogger log;
+        private readonly Logger log;
         private readonly SiloAddress seed;
         internal ISiloStatusOracle Membership;
 
@@ -82,7 +81,7 @@ namespace Orleans.Runtime.GrainDirectory
         
         public LocalGrainDirectory(Silo silo)
         {
-            log = TraceLogger.GetLogger("Orleans.GrainDirectory.LocalGrainDirectory");
+            log = LogManager.GetLogger("Orleans.GrainDirectory.LocalGrainDirectory");
 
             MyAddress = silo.LocalMessageCenter.MyAddress;
             Scheduler = silo.LocalScheduler;

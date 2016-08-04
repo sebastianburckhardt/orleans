@@ -7,13 +7,14 @@ using System.Collections.Generic;
 using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.Core;
+using Orleans.Storage;
 
 namespace Orleans.LogViews
 {
     /// <summary>
     /// Interface to be implemented for a log view provider.
     /// </summary>
-    public interface ILogViewProvider : IProvider
+    public interface ILogViewProvider : IPersistenceProvider
     {
         /// <summary>TraceLogger used by this log view provider.</summary>
         Logger Log { get; }

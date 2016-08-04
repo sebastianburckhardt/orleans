@@ -334,10 +334,10 @@ namespace Orleans.Runtime.Configuration
 
             if (child.HasChildNodes)
             {
-                var serializerNode = child.ChildNodes.Cast<XmlElement>().FirstOrDefault(n => n.Name == "SerializationProviders");
+                var serializerNode = child.ChildNodes.OfType<XmlElement>().FirstOrDefault(n => n.Name == "SerializationProviders");
                 if (serializerNode != null && serializerNode.HasChildNodes)
                 {
-                    var typeNames = serializerNode.ChildNodes.Cast<XmlElement>()
+                    var typeNames = serializerNode.ChildNodes.OfType<XmlElement>()
                         .Where(n => n.Name == "Provider")
                         .Select(e => e.Attributes["type"])
                         .Where(a => a != null)
@@ -345,8 +345,8 @@ namespace Orleans.Runtime.Configuration
                     var types = typeNames.Select(t => ConfigUtilities.ParseFullyQualifiedType(t, "The type specification for the 'type' attribute of the Provider element could not be loaded"));
                     foreach (var type in types)
                     {
-                        ConfigUtilities.ValidateSerializationProvider(type);
                         var typeinfo = type.GetTypeInfo();
+                        ConfigUtilities.ValidateSerializationProvider(typeinfo);
                         if (SerializationProviders.Contains(typeinfo) == false)
                         {
                             SerializationProviders.Add(typeinfo);

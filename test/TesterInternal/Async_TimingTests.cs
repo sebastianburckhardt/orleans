@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
@@ -14,12 +13,12 @@ namespace UnitTests
 {
     public class Async_TimingTests
     {
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
 
         public Async_TimingTests()
         {
-            TraceLogger.Initialize(ClientConfiguration.StandardLoad());
-            logger = TraceLogger.GetLogger("AC_TimingTests", TraceLogger.LoggerType.Application);
+            LogManager.Initialize(ClientConfiguration.StandardLoad());
+            logger = LogManager.GetLogger("AC_TimingTests", LoggerType.Application);
             logger.Info("----------------------------- STARTING AC_TimingTests -------------------------------------");
         }
 
@@ -46,14 +45,14 @@ namespace UnitTests
             catch (Exception exc)
             {
                 hasThrown = true;
-                Assert.IsTrue(exc.GetBaseException().GetType().Equals(typeof(TimeoutException)), exc.ToString());
+                Assert.True(exc.GetBaseException().GetType().Equals(typeof(TimeoutException)), exc.ToString());
             }
             watch.Stop();
 
-            Assert.IsTrue(hasThrown);
-            Assert.IsTrue(watch.Elapsed >= timeout - delta, watch.Elapsed.ToString());
-            Assert.IsTrue(watch.Elapsed <= timeout + delta, watch.Elapsed.ToString());
-            Assert.IsTrue(watch.Elapsed < sleepTime, watch.Elapsed.ToString());
+            Assert.True(hasThrown);
+            Assert.True(watch.Elapsed >= timeout - delta, watch.Elapsed.ToString());
+            Assert.True(watch.Elapsed <= timeout + delta, watch.Elapsed.ToString());
+            Assert.True(watch.Elapsed < sleepTime, watch.Elapsed.ToString());
         }
 
         [Fact, TestCategory("Functional"), TestCategory("AsynchronyPrimitives")]
@@ -79,14 +78,14 @@ namespace UnitTests
             catch (Exception exc)
             {
                 hasThrown = true;
-                Assert.IsTrue(exc.GetBaseException().GetType().Equals(typeof(TimeoutException)), exc.ToString());
+                Assert.True(exc.GetBaseException().GetType().Equals(typeof(TimeoutException)), exc.ToString());
             }
             watch.Stop();
 
-            Assert.IsTrue(hasThrown);
-            Assert.IsTrue(watch.Elapsed >= timeout - delta, watch.Elapsed.ToString());
-            Assert.IsTrue(watch.Elapsed <= timeout + delta, watch.Elapsed.ToString());
-            Assert.IsTrue(watch.Elapsed < sleepTime, watch.Elapsed.ToString());
+            Assert.True(hasThrown);
+            Assert.True(watch.Elapsed >= timeout - delta, watch.Elapsed.ToString());
+            Assert.True(watch.Elapsed <= timeout + delta, watch.Elapsed.ToString());
+            Assert.True(watch.Elapsed < sleepTime, watch.Elapsed.ToString());
         }
     }
 }

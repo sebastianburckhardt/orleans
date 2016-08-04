@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-
 using Orleans.Concurrency;
 using Orleans.Runtime;
 using Orleans.Streams;
@@ -227,7 +225,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
                     if (consumers.TryRemove(subscriptionId, out discard))
                     {
                         streamPubSub.UnregisterConsumer(subscriptionId, streamId, streamId.ProviderName).Ignore();
-                        logger.Warn((int)ErrorCode.Stream_ConsumerIsDead,
+                        logger.Warn(ErrorCode.Stream_ConsumerIsDead,
                             "Consumer {0} on stream {1} is no longer active - permanently removing Consumer.", remoteConsumer, streamId);
                     }
                 }

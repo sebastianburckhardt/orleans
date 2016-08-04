@@ -3,9 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
-using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.Configuration;
+using Orleans.Runtime.Scheduler;
 
 
 namespace Orleans.Runtime
@@ -19,7 +18,7 @@ namespace Orleans.Runtime
         private readonly ConcurrentDictionary<SiloAddress, SiloRuntimeStatistics> periodicStats;
         private readonly TimeSpan statisticsRefreshTime;
         private readonly IList<ISiloStatisticsChangeListener> siloStatisticsChangeListeners;
-        private readonly TraceLogger logger = TraceLogger.GetLogger("DeploymentLoadPublisher", TraceLogger.LoggerType.Runtime);
+        private readonly Logger logger = LogManager.GetLogger("DeploymentLoadPublisher", LoggerType.Runtime);
 
         public static DeploymentLoadPublisher Instance { get; private set; }
 

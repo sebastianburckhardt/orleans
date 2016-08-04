@@ -6,16 +6,13 @@ namespace Orleans.CodeGenerator
     using System.IO;
     using System.Linq;
     using System.Reflection;
-
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
-
     using Orleans;
     using Orleans.CodeGeneration;
     using Orleans.CodeGenerator.Utilities;
     using Orleans.Runtime;
-
     using GrainInterfaceUtils = Orleans.CodeGeneration.GrainInterfaceUtils;
     using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -66,7 +63,7 @@ namespace Orleans.CodeGenerator
                     .Select(asm => MetadataReference.CreateFromFile(asm.Location))
                     .Cast<MetadataReference>()
                     .ToArray();
-            var logger = TraceLogger.GetLogger("CodeGenerator");
+            var logger = LogManager.GetLogger("CodeGenerator");
 
             // Generate the code.
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);

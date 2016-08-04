@@ -2,13 +2,12 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-
 using Orleans.CodeGeneration;
 using Orleans.Concurrency;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
-using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.ConsistentRing;
+using Orleans.Runtime.Scheduler;
 using Orleans.Streams;
 
 namespace Orleans.Runtime.Providers
@@ -88,7 +87,7 @@ namespace Orleans.Runtime.Providers
 
         public Logger GetLogger(string loggerName)
         {
-            return TraceLogger.GetLogger(loggerName, TraceLogger.LoggerType.Provider);
+            return LogManager.GetLogger(loggerName, LoggerType.Provider);
         }
 
         public string ExecutingEntityIdentity()

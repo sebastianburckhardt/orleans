@@ -5,9 +5,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-
-using Orleans.Runtime.Configuration;
 using Orleans.Messaging;
+using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime.Messaging
 {
@@ -29,7 +28,7 @@ namespace Orleans.Runtime.Messaging
         private readonly ClientsReplyRoutingCache clientsReplyRoutingCache;
         private ClientObserverRegistrar clientRegistrar;
         private readonly object lockable;
-        private static readonly TraceLogger logger = TraceLogger.GetLogger("Orleans.Messaging.Gateway");
+        private static readonly Logger logger = LogManager.GetLogger("Orleans.Messaging.Gateway");
         
         private IMessagingConfiguration MessagingConfiguration { get { return messageCenter.MessagingConfiguration; } }
         

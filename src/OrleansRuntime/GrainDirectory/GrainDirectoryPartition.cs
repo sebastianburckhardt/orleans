@@ -1,8 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using System.Text;
-using System;
 using Orleans.GrainDirectory;
 
 
@@ -196,7 +195,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         private Dictionary<GrainId, IGrainInfo> partitionData;
         private readonly object lockable;
-        private readonly TraceLogger log;
+        private readonly Logger log;
         private ISiloStatusOracle membership;
 
         internal int Count { get { return partitionData.Count; } }
@@ -205,7 +204,7 @@ namespace Orleans.Runtime.GrainDirectory
         {
             partitionData = new Dictionary<GrainId, IGrainInfo>();
             lockable = new object();
-            log = TraceLogger.GetLogger("DirectoryPartition");
+            log = LogManager.GetLogger("DirectoryPartition");
             membership = Silo.CurrentSilo.LocalSiloStatusOracle;
         }
 
