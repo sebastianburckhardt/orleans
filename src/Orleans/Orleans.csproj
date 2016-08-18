@@ -103,6 +103,7 @@
     <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
     <Compile Include="LogViews\ILogViewStorageInterface.cs" />
     <Compile Include="LogViews\ILogViewHost.cs" />
+    <Compile Include="Providers\ProviderStateManager.cs" />
     <Compile Include="QueuedGrains\QueuedGrainVariants.cs" />
     <Compile Include="Runtime\RingRange.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
@@ -158,6 +159,7 @@
     <Compile Include="Streams\PubSub\StreamPubSubImpl.cs" />
     <Compile Include="Streams\QueueAdapters\IQueueFlowController.cs" />
     <Compile Include="Streams\QueueAdapters\AggregatedQueueFlowController.cs" />
+    <Compile Include="SystemTargetInterfaces\IStreamProviderManagerAgent.cs" />
     <Compile Include="Telemetry\Consumers\ConsoleTelemetryConsumer.cs" />
     <Compile Include="Telemetry\Consumers\FileTelemetryConsumer.cs" />
     <Compile Include="Telemetry\Consumers\TraceTelemetryConsumer.cs" />
