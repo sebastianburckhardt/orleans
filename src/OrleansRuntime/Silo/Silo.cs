@@ -99,7 +99,7 @@ namespace Orleans.Runtime
 
         internal readonly string Name;
         internal readonly string SiloIdentity;
-        internal ClusterConfiguration OrleansConfig { get; private set; }
+        internal ClusterConfiguration OrleansConfig { get; set; }
         internal GlobalConfiguration GlobalConfig { get { return globalConfig; } }
         internal NodeConfiguration LocalConfig { get { return nodeConfig; } }
         internal ISiloMessageCenter LocalMessageCenter { get { return messageCenter; } }
@@ -112,6 +112,7 @@ namespace Orleans.Runtime
         internal ILogViewProviderManager LogViewProviderManager { get { return logViewProviderManager; } }
         internal IStorageProviderManager StorageProviderManager { get { return storageProviderManager; } }
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
+        internal IStreamProviderManager StreamProviderManager { get { return grainRuntime.StreamProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
         internal ISiloPerformanceMetrics Metrics { get { return siloStatistics.MetricsTable; } }
         internal static Silo CurrentSilo { get; private set; }
@@ -342,6 +343,9 @@ namespace Orleans.Runtime
             logger.Verbose("Creating {0} System Target", "SiloControl");
             RegisterSystemTarget(new SiloControl(this));
 
+            logger.Verbose("Creating {0} System Target", "StreamProviderUpdateAgent");
+            RegisterSystemTarget(new StreamProviderManagerAgent(this, allSiloProviders));
+
             logger.Verbose("Creating {0} System Target", "ProtocolGateway");
             RegisterSystemTarget(new ProtocolGateway(this.SiloAddress));
 
@@ -503,7 +507,7 @@ namespace Orleans.Runtime
             if (logger.IsVerbose) { logger.Verbose("Log view provider manager created successfully."); }
 
             // Load and init stream providers before silo becomes active
-            var siloStreamProviderManager = (StreamProviderManager) grainRuntime.StreamProviderManager;
+            var siloStreamProviderManager = (StreamProviderManager)grainRuntime.StreamProviderManager;
             scheduler.QueueTask(
                 () => siloStreamProviderManager.LoadStreamProviders(GlobalConfig.ProviderConfigurations, SiloProviderRuntime.Instance),
                     providerManagerSystemTarget.SchedulingContext)
@@ -601,6 +605,18 @@ namespace Orleans.Runtime
                 throw;
             }
             if (logger.IsVerbose) { logger.Verbose("Silo.Start complete: System status = {0}", SystemStatus.Current); }
+        }
+
+        /// <summary>
+        /// Load and initialize newly added stream providers. Remove providers that are not on the list that's being passed in.
+        /// </summary>
+        public async Task UpdateStreamProviders(IDictionary<string, ProviderCategoryConfiguration> streamProviderConfigurations)
+        {
+            IStreamProviderManagerAgent streamProviderUpdateAgent = 
+                InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IStreamProviderManagerAgent>(Constants.StreamProviderManagerAgentSystemTargetId, this.SiloAddress);
+
+            await scheduler.QueueTask(() => streamProviderUpdateAgent.UpdateStreamProviders(streamProviderConfigurations), providerManagerSystemTarget.SchedulingContext)
+                    .WithTimeout(initTimeout);
         }
 
         private void ConfigureThreadPoolAndServicePointSettings()
@@ -943,6 +959,17 @@ namespace Orleans.Runtime
             {
                 IBootstrapProvider provider = silo.BootstrapProviders.First(p => p.Name.Equals(name));
                 return CheckReturnBoundaryReference("bootstrap provider", provider);
+            }
+
+            internal IEnumerable<string> GetStreamProviderNames()
+            {
+                return silo.StreamProviderManager.GetStreamProviders().Select(p => ((IProvider)p).Name).ToList();
+            }
+
+            internal IEnumerable<string> GetAllSiloProviderNames()
+            {
+                var providers = silo.AllSiloProviders;
+                return providers.Select(p => ((IProvider)p).Name).ToList();
             }
 
             internal void SuppressFastKillInHandleProcessExit()
