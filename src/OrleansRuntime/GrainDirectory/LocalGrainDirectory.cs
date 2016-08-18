@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
 using Orleans.Runtime.Scheduler;
+using Orleans.SystemTargetInterfaces;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -46,6 +47,8 @@ namespace Orleans.Runtime.GrainDirectory
         internal OrleansTaskScheduler Scheduler { get; private set; }
 
         internal GrainDirectoryHandoffManager HandoffManager { get; private set; }
+
+        public string ClusterId { get; }
 
         internal ISiloStatusListener CatalogSiloStatusListener { get; set; }
 
@@ -89,6 +92,7 @@ namespace Orleans.Runtime.GrainDirectory
             Scheduler = silo.LocalScheduler;
             membershipRingList = new List<SiloAddress>();
             membershipCache = new HashSet<SiloAddress>();
+            ClusterId = silo.ClusterId;
 
             silo.OrleansConfig.OnConfigChange("Globals/Caching", () =>
             {
@@ -305,7 +309,7 @@ namespace Orleans.Runtime.GrainDirectory
             // drop all records of activations located on the removed silo
             foreach (var activation in activationsToRemove)
             {
-                DirectoryPartition.RemoveActivation(activation.Item1, activation.Item2, true);
+                DirectoryPartition.RemoveActivation(activation.Item1, activation.Item2);
             }
         }
 
@@ -382,7 +386,7 @@ namespace Orleans.Runtime.GrainDirectory
             // This silo's status has changed
             if (Equals(updatedSilo, MyAddress))
             {
-                if (status == SiloStatus.Stopping || status.Equals(SiloStatus.ShuttingDown))
+                if (status == SiloStatus.Stopping || status == SiloStatus.ShuttingDown)
                 {
                     // QueueAction up the "Stop" to run on a system turn
                     Scheduler.QueueAction(() => Stop(true), CacheValidator.SchedulingContext).Ignore();
@@ -400,7 +404,7 @@ namespace Orleans.Runtime.GrainDirectory
                     // QueueAction up the "Remove" to run on a system turn
                     Scheduler.QueueAction(() => RemoveServer(updatedSilo, status), CacheValidator.SchedulingContext).Ignore();
                 }
-                else if (status.Equals(SiloStatus.Active))      // do not do anything with SiloStatus.Starting -- wait until it actually becomes active
+                else if (status == SiloStatus.Active)      // do not do anything with SiloStatus.Starting -- wait until it actually becomes active
                 {
                     // QueueAction up the "Remove" to run on a system turn
                     Scheduler.QueueAction(() => AddServer(updatedSilo), CacheValidator.SchedulingContext).Ignore();
@@ -595,14 +599,24 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public Task UnregisterConditionallyAsync(ActivationAddress addr)
+        public Task UnregisterAfterNonexistingActivation(ActivationAddress addr, SiloAddress origin)
         {
-            // This is a no-op if the lazy registration delay is zero or negative
-            return Silo.CurrentSilo.OrleansConfig.Globals.DirectoryLazyDeregistrationDelay <= TimeSpan.Zero ? 
-                TaskDone.Done : UnregisterAsync(addr, false, 0);
+            log.Verbose2("UnregisterAfterNonexistingActivation addr={0} origin={1}", addr, origin);
+
+            if (origin == null || membershipCache.Contains(origin))
+            {
+                // the request originated in this cluster, call unregister here
+                return UnregisterAsync(addr, UnregistrationCause.NonexistentActivation, 0);
+            }
+            else
+            {
+                // the request originated in another cluster, call unregister there
+                var remoteDirectory = GetDirectoryReference(origin);
+                return remoteDirectory.UnregisterAsync(addr, UnregistrationCause.NonexistentActivation);
+            }
         }
 
-        public async Task UnregisterAsync(ActivationAddress address, bool force, int hopCount)
+        public async Task UnregisterAsync(ActivationAddress address, UnregistrationCause cause, int hopCount)
         {
             (hopCount > 0 ? UnregistrationsRemoteReceived : unregistrationsIssued).Increment();
 
@@ -623,18 +637,19 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 // we are the owner
                 UnregistrationsLocal.Increment();
+
                 var registrar = RegistrarManager.Instance.GetRegistrarForGrain(address.Grain);
 
                 if (registrar.IsSynchronous)
-                    registrar.Unregister(address, force);
+                    registrar.Unregister(address, cause);
                 else
-                    await registrar.UnregisterAsync(new List<ActivationAddress>() { address }, force);
+                    await registrar.UnregisterAsync(new List<ActivationAddress>() { address }, cause);
             }
             else
             {
                 UnregistrationsRemoteSent.Increment();
                 // otherwise, notify the owner
-                await GetDirectoryReference(forwardaddress).UnregisterAsync(address, force, hopCount + 1);
+                await GetDirectoryReference(forwardaddress).UnregisterAsync(address, cause, hopCount + 1);
             }
         }
 
@@ -650,7 +665,7 @@ namespace Orleans.Runtime.GrainDirectory
 
 
         // helper method to avoid code duplication inside UnregisterManyAsync
-        private void UnregisterOrPutInForwardList(IEnumerable<ActivationAddress> addresses, int hopCount,
+        private void UnregisterOrPutInForwardList(IEnumerable<ActivationAddress> addresses, UnregistrationCause cause, int hopCount,
             ref Dictionary<SiloAddress, List<ActivationAddress>> forward, List<Task> tasks, string context)
         {
             Dictionary<IGrainRegistrar, List<ActivationAddress>> unregisterBatches = new Dictionary<IGrainRegistrar, List<ActivationAddress>>();
@@ -672,7 +687,7 @@ namespace Orleans.Runtime.GrainDirectory
 
                     if (registrar.IsSynchronous)
                     {
-                        registrar.Unregister(address, true);
+                        registrar.Unregister(address, cause);
                     }
                     else
                     {
@@ -687,26 +702,26 @@ namespace Orleans.Runtime.GrainDirectory
             // batch-unregister for each asynchronous registrar
             foreach (var kvp in unregisterBatches)
             {
-                tasks.Add(kvp.Key.UnregisterAsync(kvp.Value, true));
+                tasks.Add(kvp.Key.UnregisterAsync(kvp.Value, cause));
             }
         }
 
 
-        public async Task UnregisterManyAsync(List<ActivationAddress> addresses, int hopCount)
+        public async Task UnregisterManyAsync(List<ActivationAddress> addresses, UnregistrationCause cause, int hopCount)
         {
             (hopCount > 0 ? UnregistrationsManyRemoteReceived : unregistrationsManyIssued).Increment();
 
             Dictionary<SiloAddress, List<ActivationAddress>> forwardlist = null;
             var tasks = new List<Task>();
 
-            UnregisterOrPutInForwardList(addresses, hopCount, ref forwardlist, tasks, "UnregisterManyAsync");
+            UnregisterOrPutInForwardList(addresses, cause, hopCount, ref forwardlist, tasks, "UnregisterManyAsync");
 
             // before forwarding to other silos, we insert a retry delay and re-check destination
             if (hopCount > 0 && forwardlist != null)
             {
                 await Task.Delay(RETRY_DELAY);
                 Dictionary<SiloAddress, List<ActivationAddress>> forwardlist2 = null;
-                UnregisterOrPutInForwardList(forwardlist.SelectMany(kvp => kvp.Value), hopCount, ref forwardlist2, tasks, "UnregisterManyAsync(recheck)");
+                UnregisterOrPutInForwardList(forwardlist.SelectMany(kvp => kvp.Value), cause, hopCount, ref forwardlist2, tasks, "UnregisterManyAsync(recheck)");
                 forwardlist = forwardlist2;
             }
 
@@ -716,7 +731,7 @@ namespace Orleans.Runtime.GrainDirectory
                 foreach (var kvp in forwardlist)
                 {
                     UnregistrationsManyRemoteSent.Increment();
-                    tasks.Add(GetDirectoryReference(kvp.Key).UnregisterManyAsync(kvp.Value, hopCount + 1));
+                    tasks.Add(GetDirectoryReference(kvp.Key).UnregisterManyAsync(kvp.Value, cause, hopCount + 1));
                 }
             }
 
@@ -769,10 +784,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         public AddressesAndTag GetLocalDirectoryData(GrainId grain)
         {
-            var result = DirectoryPartition.LookUpActivations(grain);
-            if (result.Addresses != null)
-                result.Addresses = result.Addresses.Where(addr => IsValidSilo(addr.Silo)).ToList();
-            return result;
+            return DirectoryPartition.LookUpActivations(grain);
         }
 
         public List<ActivationAddress> GetLocalCacheData(GrainId grain)
@@ -781,6 +793,33 @@ namespace Orleans.Runtime.GrainDirectory
             return DirectoryCache.LookUp(grain, out cached) ? 
                 cached.Select(elem => ActivationAddress.GetAddress(elem.Item1, grain, elem.Item2)).Where(addr => IsValidSilo(addr.Silo)).ToList() : 
                 null;
+        }
+
+        public Task<AddressesAndTag> LookupInCluster(GrainId grainId, string clusterId)
+        {
+            if (clusterId == null)
+                throw new ArgumentNullException("clusterId");
+
+            if (clusterId == ClusterId)
+            {
+                return LookupAsync(grainId);
+            }
+            else
+            {
+                // find gateway
+                var gossipOracle = Silo.CurrentSilo.LocalMultiClusterOracle;
+                var clusterGatewayAddress = gossipOracle.GetRandomClusterGateway(clusterId);
+                if (clusterGatewayAddress != null)
+                {
+                    // call remote grain directory
+                    var remotedirectory = GetDirectoryReference(clusterGatewayAddress);
+                    return remotedirectory.LookupAsync(grainId);
+                }
+                else
+                {
+                    return Task.FromResult(default(AddressesAndTag));
+                }
+            }
         }
 
         public async Task<AddressesAndTag> LookupAsync(GrainId grainId, int hopCount = 0)
@@ -811,7 +850,6 @@ namespace Orleans.Runtime.GrainDirectory
                     localResult.VersionTag = GrainInfo.NO_ETAG;
                     return localResult;
                 }
-                localResult.Addresses = localResult.Addresses.Where(addr => IsValidSilo(addr.Silo)).ToList();
 
                 if (log.IsVerbose2) log.Verbose2("FullLookup mine {0}={1}", grainId, localResult.Addresses.ToStrings());
                 LocalDirectorySuccesses.Increment();
@@ -871,7 +909,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public void InvalidateCacheEntry(ActivationAddress activationAddress)
+        public void InvalidateCacheEntry(ActivationAddress activationAddress, bool invalidateDirectoryAlso = false)
         {
             int version;
             IReadOnlyList<Tuple<SiloAddress, ActivationId>> list;
@@ -882,6 +920,15 @@ namespace Orleans.Runtime.GrainDirectory
             if (DirectoryCache.LookUp(grainId, out list, out version))
             {
                 RemoveActivations(DirectoryCache, grainId, list, version, t => t.Item2.Equals(activationId));
+            }
+
+            // for multi-cluster registration, the local directory may cache remote activations
+            // and we need to remove them here, on the fast path, to avoid forwarding the message
+            // to the wrong destination again
+            if (invalidateDirectoryAlso && CalculateTargetSilo(grainId).Equals(MyAddress))
+            {
+                var registrar = RegistrarManager.Instance.GetRegistrarForGrain(grainId);
+                registrar.InvalidateCache(activationAddress);
             }
         }
 
@@ -1057,5 +1104,14 @@ namespace Orleans.Runtime.GrainDirectory
                 directoryCache.Remove(key);
             }
         }
+
+        public bool IsSiloInCluster(SiloAddress silo)
+        {
+            lock (membershipCache)
+            {
+                return membershipCache.Contains(silo);
+            }
+        }
+
     }
 }

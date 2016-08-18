@@ -687,6 +687,7 @@ namespace Orleans
         Messaging_Dispatcher_TryForwardFailed   = MessagingBase + 32,
         Messaging_Dispatcher_ForwardingRequests = MessagingBase + 33,
         Messaging_SimulatedMessageLoss          = MessagingBase + 34,
+        Messaging_Dispatcher_ReturnToOriginCluster    = MessagingBase + 35,
 
         DirectoryBase                           = Runtime + 1100,
         DirectoryBothPrimaryAndBackupForGrain   = DirectoryBase + 1,
@@ -748,6 +749,7 @@ namespace Orleans
         ClientRegistrarFailedToRegister_2       = GatewayBase + 17,
         ClientRegistrarFailedToUnregister       = GatewayBase + 18,
         ClientRegistrarTimerFailed              = GatewayBase + 19,
+        GatewayAcceptor_WrongClusterId          = GatewayBase + 20,
 
         TimerBase                               = Runtime + 1400,
         TimerChangeError                        = PerfCounterTimerError, // Backward compatability

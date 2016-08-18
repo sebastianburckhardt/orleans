@@ -186,8 +186,7 @@ namespace Tests.GeoClusterTests
                               ConnectionString = StorageTestConstants.DataConnectionString
                           }};
 
-                    if (customizer != null)
-                        customizer(config);
+                    customizer?.Invoke(config);
                 };
 
             NewCluster(clusterId, numSilos, extendedcustomizer);
@@ -313,7 +312,7 @@ namespace Tests.GeoClusterTests
 
             static Lazy<ClientConfiguration> clientconfiguration = new Lazy<ClientConfiguration>(() => ClientConfiguration.LoadFromFile("ClientConfigurationForTesting.xml"));
 
-            public ClientWrapperBase(string name, int gatewayport)
+            public ClientWrapperBase(string name, int gatewayport, string clusterId, Action<ClientConfiguration> clientconfig_customizer)
             {
                 this.Name = name;
 
@@ -334,13 +333,17 @@ namespace Tests.GeoClusterTests
                 config.Gateways.Clear();
                 config.Gateways.Add(new IPEndPoint(IPAddress.Loopback, gatewayport));
 
+                clientconfig_customizer?.Invoke(config);
+
+                config.ClusterId = clusterId;
+
                 GrainClient.Initialize(config);
             }
 
         }
 
         // Create a client, loaded in a new app domain.
-        public T NewClient<T>(string ClusterId, int ClientNumber) where T : ClientWrapperBase
+        public T NewClient<T>(string ClusterId, int ClientNumber, Action<ClientConfiguration> customizer = null) where T : ClientWrapperBase
         {
             var ci = Clusters[ClusterId];
             var name = string.Format("Client-{0}-{1}", ClusterId, ClientNumber);
@@ -350,7 +353,7 @@ namespace Tests.GeoClusterTests
 
             WriteLog("Starting {0} connected to {1}", name, gatewayport);
 
-            var clientArgs = new object[] { name, gatewayport.Value };
+            var clientArgs = new object[] { name, gatewayport.Value, ClusterId, customizer };
             var setup = new AppDomainSetup { ApplicationBase = Environment.CurrentDirectory };
             var clientDomain = AppDomain.CreateDomain(name, null, setup);
 
