@@ -29,7 +29,6 @@ namespace Orleans.Providers.LogViews
                 throw new BadProviderConfigException("Must implement ICustomStorageInterface<T,E> for CustomStorageLogView provider");
         }
 
-        private const int max_entries_in_notifications = 1000;
         private const int slowpollinterval = 10000;
 
         private T cached;
@@ -205,7 +204,6 @@ namespace Orleans.Providers.LogViews
                    {
                        Version = version,
                        Updates = updates,
-                       Origin = Services.MyClusterId,
                    });
 
             exit_operation("WriteAsync");
@@ -215,46 +213,23 @@ namespace Orleans.Providers.LogViews
 
 
         [Serializable]
-        protected class UpdateNotificationMessage : NotificationMessage 
+        protected class UpdateNotificationMessage : INotificationMessage
         {
-            public string Origin { get; set; }
-
+            public int Version { get; set; }
             public List<E> Updates { get; set; }
 
             public override string ToString()
             {
-                return string.Format("v{0} ({1} updates by {2})", Version, Updates.Count, Origin);
+                return string.Format("v{0} ({1} updates)", Version, Updates.Count);
             }
         }
 
-        protected override NotificationMessage Merge(NotificationMessage earliermessage, NotificationMessage latermessage)
-        {
-            var earlier = earliermessage as UpdateNotificationMessage;
-            var later = latermessage as UpdateNotificationMessage;
-
-            if (earlier != null
-                && later != null
-                && earlier.Origin == later.Origin
-                && earlier.Version + later.Updates.Count == version
-                && earlier.Updates.Count + later.Updates.Count < max_entries_in_notifications)
-
-                return new UpdateNotificationMessage()
-                {
-                    Version = later.Version,
-                    Origin = later.Origin,
-                    Updates = earlier.Updates.Concat(later.Updates).ToList(),
-                };
-
-            else
-                return base.Merge(earliermessage, latermessage); // keep only the version number
-        }
-
-
+   
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
-        protected override void OnNotificationReceived(NotificationMessage payload)
+        protected override void OnNotificationReceived(INotificationMessage payload)
         {
-           var um = (UpdateNotificationMessage) payload;
+           var um = payload as UpdateNotificationMessage;
             if (um != null)
                 notifications.Add(um.Version - um.Updates.Count, um);
             else
