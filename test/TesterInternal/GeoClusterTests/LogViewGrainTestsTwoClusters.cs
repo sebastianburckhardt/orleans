@@ -8,6 +8,7 @@ using Orleans.Runtime;
 using Tests.GeoClusterTests;
 using Xunit;
 using Xunit.Abstractions;
+using Orleans.Runtime.Configuration;
 
 namespace Tests.GeoClusterTests
 {
@@ -45,10 +46,10 @@ namespace Tests.GeoClusterTests
 
         public class ClientWrapper : Tests.GeoClusterTests.TestingClusterHost.ClientWrapperBase
         {
-            public ClientWrapper(string name, int gatewayport)
-               : base(name, gatewayport)
+            public ClientWrapper(string name, int gatewayport, string clusterId, Action<ClientConfiguration> customizer)
+               : base(name, gatewayport, clusterId, customizer)
             {
-                 systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
+                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
             }
 
             public string GetGrainRef(string grainclass, int i)
