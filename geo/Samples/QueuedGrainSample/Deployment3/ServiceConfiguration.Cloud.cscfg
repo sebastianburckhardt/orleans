@@ -4,7 +4,7 @@
     <Instances count="2" />
     <ConfigurationSettings>
       <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME3;AccountKey=MYACCOUNTKEY3" />
-      <Setting name="MessagePrefix" value="Charlie"/>
+      <Setting name="MessagePrefix" value="Charlie" />
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">
@@ -12,7 +12,6 @@
     <ConfigurationSettings>
       <Setting name="ClusterId" value="Deployment3" />
       <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME3;AccountKey=MYACCOUNTKEY3" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME3;AccountKey=MYACCOUNTKEY3" />
     </ConfigurationSettings>
   </Role>
   <!--<NetworkConfiguration>

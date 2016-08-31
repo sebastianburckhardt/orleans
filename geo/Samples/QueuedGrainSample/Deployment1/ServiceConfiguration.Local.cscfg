@@ -4,7 +4,7 @@
     <Instances count="1" />
     <ConfigurationSettings>
       <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
-      <Setting name="MessagePrefix" value="Alice"/>
+      <Setting name="MessagePrefix" value="Alice" />
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">
@@ -12,7 +12,6 @@
     <ConfigurationSettings>
       <Setting name="ClusterId" value="Deployment1" />
       <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

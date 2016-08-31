@@ -30,7 +30,6 @@
     <ConfigurationSettings>
       <Setting name="ClusterId" />
       <Setting name="DataConnectionString" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
     </ConfigurationSettings>
     <Endpoints>
       <InternalEndpoint name="OrleansSiloEndpoint" protocol="tcp" port="11113" />
