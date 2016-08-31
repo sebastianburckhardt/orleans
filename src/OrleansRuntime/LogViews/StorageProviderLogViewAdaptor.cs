@@ -228,8 +228,10 @@ namespace Orleans.Runtime.LogViews
     
         
         [Serializable]
-        protected class UpdateNotificationMessage : NotificationMessage 
+        protected class UpdateNotificationMessage : INotificationMessage 
         {
+            public int Version { get; set; }
+
             public string Origin { get; set; }
 
             public List<E> Updates { get; set; }
@@ -242,7 +244,7 @@ namespace Orleans.Runtime.LogViews
             }
          }
 
-        protected override NotificationMessage Merge(NotificationMessage earliermessage, NotificationMessage latermessage)
+        protected override INotificationMessage Merge(INotificationMessage earliermessage, INotificationMessage latermessage)
         {
             var earlier = earliermessage as UpdateNotificationMessage;
             var later = latermessage as UpdateNotificationMessage;
@@ -267,9 +269,9 @@ namespace Orleans.Runtime.LogViews
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
-        protected override void OnNotificationReceived(NotificationMessage payload)
+        protected override void OnNotificationReceived(INotificationMessage payload)
         {
-            var um = (UpdateNotificationMessage)payload;
+            var um = payload as UpdateNotificationMessage;
             if (um != null)
                 notifications.Add(um.Version - um.Updates.Count, um);
             else
@@ -304,7 +306,7 @@ namespace Orleans.Runtime.LogViews
                         Services.CaughtViewUpdateException("ProcessNotifications", e);
                     }
 
-                GlobalStateCache.StateAndMetaData.GlobalVersion++;
+                GlobalStateCache.StateAndMetaData.GlobalVersion = updatenotification.Version;
 
                 GlobalStateCache.StateAndMetaData.ToggleBit(updatenotification.Origin);
 
