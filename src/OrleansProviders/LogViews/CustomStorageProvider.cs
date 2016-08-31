@@ -26,6 +26,8 @@ namespace Orleans.Providers.LogViews
         private static int counter;
         private int id;
 
+        public string PrimaryCluster { get; private set; }
+
         protected virtual string GetLoggerName()
         {
             return string.Format("LogViews.{0}.{1}", GetType().Name, id);
@@ -35,9 +37,13 @@ namespace Orleans.Providers.LogViews
         {
             Name = name;
             id = Interlocked.Increment(ref counter);
+            PrimaryCluster = config.GetProperty("PrimaryCluster", "");
+
+            if (string.IsNullOrEmpty(PrimaryCluster))
+                throw new BadProviderConfigException("Missing attribute in CustomStorageLogView provider: PrimaryCluster");
 
             Log = providerRuntime.GetLogger(GetLoggerName());
-            Log.Info("Init (Severity={0})", Log.SeverityLevel);
+            Log.Info("Init (Severity={0}) PrimaryCluster={1}", Log.SeverityLevel, PrimaryCluster);
 
             return TaskDone.Done;
         }
@@ -51,7 +57,7 @@ namespace Orleans.Providers.LogViews
             where TView : class, new()
             where TEntry : class
         {
-            return new CustomStorageAdaptor<TView, TEntry>(hostgrain, initialstate, this, services);
+            return new CustomStorageAdaptor<TView, TEntry>(hostgrain, initialstate, this, services, PrimaryCluster);
         }
     }
 
