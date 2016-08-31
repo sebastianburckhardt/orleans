@@ -17,28 +17,26 @@ namespace Tests.GeoClusterTests
 {
     /// <summary>
     /// A utility class for tests that include multiple clusters.
-    /// It calls static methods on TestingSiloHost for starting and stopping silos.
     /// </summary>
     public class TestingClusterHost : IDisposable
     {
-        ITestOutputHelper output;
 
         protected readonly Dictionary<string, ClusterInfo> Clusters;
         private TestingSiloHost siloHost;
-        private TestingSiloOptions siloOptions;
+
+
+        public TestingSiloOptions siloOptions { get; set; }
+        protected ITestOutputHelper output;
 
         private TimeSpan gossipStabilizationTime;
 
-        public TestingClusterHost(ITestOutputHelper output)
+        public TestingClusterHost(ITestOutputHelper output = null)
         {
-            Clusters = new Dictionary<string, ClusterInfo>();
             this.output = output;
+            Clusters = new Dictionary<string, ClusterInfo>();
             TestUtils.CheckForAzureStorage();
         }
-        public TestingClusterHost(TestingSiloOptions options)  : base()
-        {
-            siloOptions = options;
-        }
+      
 
         protected struct ClusterInfo
         {
@@ -48,7 +46,8 @@ namespace Tests.GeoClusterTests
 
         public void WriteLog(string format, params object[] args)
         {
-            output.WriteLine("{0} {1}", DateTime.UtcNow, string.Format(format, args));
+            if (output != null)
+                output.WriteLine("{0} {1}", DateTime.UtcNow, string.Format(format, args));
         }
 
         public async Task RunWithTimeout(string name, int msec, Func<Task> test)
@@ -252,7 +251,6 @@ namespace Tests.GeoClusterTests
         {
             StopAllClientsAndClusters();
         }
-
 
         public void StopAllClientsAndClusters()
         {

@@ -25,7 +25,7 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
-        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set;  }
+        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
 
         private Grain grain;   // links to the grain that owns this service object
 
@@ -75,7 +75,7 @@ namespace Orleans.Runtime.LogViews
             var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
 
             if (silo.TestHook.DropNotificationMessages && payload is INotificationMessage)
-               return null;
+                return null;
 
             try
             {
@@ -92,6 +92,15 @@ namespace Orleans.Runtime.LogViews
         private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
         private static string PseudoReplicaId = "I";
 
+
+        public bool MultiClusterEnabled
+        {
+            get
+            {
+                return (PseudoMultiClusterConfiguration == null);
+            }
+        }
+    
         public string MyClusterId
         {
             get

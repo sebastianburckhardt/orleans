@@ -57,6 +57,7 @@
     <Compile Include="Deployment\AzureSiloTests.cs" />
     <Compile Include="GeoClusterTests\MultiClusterRegistrationTests.cs" />
     <Compile Include="GeoClusterTests\LogViewGrainTestsFourClusters.cs" />
+    <Compile Include="GeoClusterTests\LogViewProviderTestBattery.cs" />
     <Compile Include="HostedTestClusterBase.cs" />
     <Compile Include="MembershipTests\DynamoDBMembershipTableTest.cs" />
     <Compile Include="OrleansRuntime\Streams\SubscriptionMarkerTests.cs" />

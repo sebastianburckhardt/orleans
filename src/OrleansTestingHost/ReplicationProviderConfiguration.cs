@@ -36,9 +36,11 @@ namespace Orleans.TestingHost
                 props.Add("GlobalStorageProvider", "MemoryStore");
                 config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.SharedStorageProvider", "SharedMemory", props);
             }
-
-            config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage");
-
+            {
+                var props = new Dictionary<string, string>();
+                props.Add("PrimaryCluster", "A");
+                config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage", props);
+            }
             // logging  
             foreach (var o in config.Overrides)
                 o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));

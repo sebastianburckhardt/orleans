@@ -37,8 +37,16 @@ namespace Orleans.LogViews
         /// </summary>
         MultiClusterRegistrationStrategy RegistrationStrategy { get; }
 
+
         /// <summary>
-        /// The id of this cluster.
+        /// Whether this cluster is running in a multi-cluster network.
+        /// </summary>
+        /// <returns></returns>
+        bool MultiClusterEnabled { get; }
+
+
+        /// <summary>
+        /// The id of this cluster. Returns "I" if no multi-cluster network is present.
         /// </summary>
         /// <returns></returns>
         string MyClusterId { get; }
@@ -54,6 +62,7 @@ namespace Orleans.LogViews
         /// List of all clusters that currently appear to have at least one active
         /// gateway reporting to the multi-cluster network. 
         /// There are no guarantees that this membership view is complete or consistent.
+        /// If there is no multi-cluster network, returns a list containing the single element "I".
         /// </summary>
         /// <returns></returns>
         IEnumerable<string>  ActiveClusters { get; }

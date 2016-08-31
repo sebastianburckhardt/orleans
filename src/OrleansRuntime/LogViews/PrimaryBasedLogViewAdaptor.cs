@@ -74,13 +74,19 @@ namespace Orleans.Runtime.LogViews
         protected abstract TSubmissionEntry MakeSubmissionEntry(TLogEntry entry);
 
         /// <summary>
+        /// Whether this cluster supports submitting updates
+        /// </summary>
+        protected virtual bool SupportSubmissions {  get { return true;  } }
+
+        /// <summary>
         /// Handle protocol messages.
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
         protected virtual Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
         {
-            return Task.FromResult<IProtocolMessage>(null);
+            // subclasses that define custom protocol messages must override this
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -313,6 +319,9 @@ namespace Orleans.Runtime.LogViews
 
         public void Submit(TLogEntry logentry)
         {
+            if (!SupportSubmissions)
+                throw new InvalidOperationException("provider does not support submissions on cluster " + Services.MyClusterId);
+
             if (stats != null) stats.EventCounters["SubmitCalled"]++;
 
             Services.Verbose2("Submit");
@@ -324,6 +333,9 @@ namespace Orleans.Runtime.LogViews
 
         public void SubmitRange(IEnumerable<TLogEntry> logentries)
         {
+            if (!SupportSubmissions)
+                throw new InvalidOperationException("Provider does not support submissions on cluster " + Services.MyClusterId);
+
             if (stats != null) stats.EventCounters["SubmitRangeCalled"]++;
 
             Services.Verbose2("SubmitRange");
@@ -338,6 +350,9 @@ namespace Orleans.Runtime.LogViews
 
         public Task<bool> TryAppend(TLogEntry logentry)
         {
+            if (!SupportSubmissions)
+                throw new InvalidOperationException("Provider does not support submissions on cluster " + Services.MyClusterId);
+
             if (stats != null) stats.EventCounters["TryAppendCalled"]++;
 
             Services.Verbose2("TryAppend");
@@ -353,6 +368,9 @@ namespace Orleans.Runtime.LogViews
 
         public Task<bool> TryAppendRange(IEnumerable<TLogEntry> logentries)
         {
+            if (!SupportSubmissions)
+                throw new InvalidOperationException("Provider does not support submissions on cluster " + Services.MyClusterId);
+
             if (stats != null) stats.EventCounters["TryAppendRangeCalled"]++;
 
             Services.Verbose2("TryAppendRange");

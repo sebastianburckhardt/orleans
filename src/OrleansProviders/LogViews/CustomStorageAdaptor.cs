@@ -9,6 +9,7 @@ using Orleans.LogViews;
 using Orleans.Runtime;
 using Orleans.Storage;
 using Orleans.Runtime.LogViews;
+using Orleans.MultiCluster;
 
 namespace Orleans.Providers.LogViews
 {
@@ -18,16 +19,19 @@ namespace Orleans.Providers.LogViews
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class CustomStorageAdaptor<T, E> : PrimaryBasedLogViewAdaptor<T, E, SubmissionEntry<E>>
-        where T : class,new()
+        where T : class, new()
         where E : class
     {
-        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate, 
-            ILogViewProvider repprovider, IProtocolServices services)
+        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate,
+            ILogViewProvider repprovider, IProtocolServices services, string primaryCluster)
             : base(host, repprovider, initialstate, services)
         {
-            if (! (host is ICustomStorageInterface<T,E>))
+            if (!(host is ICustomStorageInterface<T, E>))
                 throw new BadProviderConfigException("Must implement ICustomStorageInterface<T,E> for CustomStorageLogView provider");
+            this.primaryCluster = primaryCluster;
         }
+
+        private string primaryCluster;
 
         private const int slowpollinterval = 10000;
 
@@ -41,7 +45,7 @@ namespace Orleans.Providers.LogViews
 
         protected override int GetConfirmedVersion()
         {
-           return version;
+            return version;
         }
 
         protected override void InitializeConfirmedView(T initialstate)
@@ -50,12 +54,54 @@ namespace Orleans.Providers.LogViews
             version = 0;
         }
 
+        protected override bool SupportSubmissions
+        {
+            get
+            {
+                return IsPrimary();
+            }
+        }
+
+        private bool IsPrimary()
+        {
+            return (!Services.MultiClusterEnabled)
+                   || primaryCluster == Services.MyClusterId;
+        }
+
         // no special tagging is required, thus we create a plain submission entry
         protected override SubmissionEntry<E> MakeSubmissionEntry(E entry)
         {
-            return new SubmissionEntry<E>() { Entry = entry } ;
+            return new SubmissionEntry<E>() { Entry = entry };
         }
-      
+
+        [Serializable]
+        private class ReadRequest : IProtocolMessage
+        {
+            public int KnownVersion { get; set; }
+        }
+        [Serializable]
+        private class ReadResponse<T> : IProtocolMessage
+        {
+            public int Version { get; set; }
+
+            public T Value { get; set; }
+        }
+
+        protected override Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
+        {
+            var request = (ReadRequest) payload;
+
+            if (! IsPrimary())
+                throw new ProtocolTransportException("message destined for primary cluster ended up elsewhere (inconsistent configurations?)");
+
+            var response = new ReadResponse<T>() { Version = version };
+
+            // optimization: include value only if version is newer
+            if (version > request.KnownVersion)
+                response.Value = cached;
+
+            return Task.FromResult<IProtocolMessage>(response);
+        }
 
         protected override async Task ReadAsync()
         {
@@ -70,15 +116,33 @@ namespace Orleans.Providers.LogViews
 
                 try
                 {
-                   var result = await ((ICustomStorageInterface<T,E>) Host).ReadStateFromStorageAsync();
-                   version = result.Key;
-                   cached = result.Value;
 
-                   LastPrimaryException = null; // successful, so we clear stored prior exceptions
-                    
-                   Services.Verbose("read success v{0}", version);
+                    if (IsPrimary())
+                    {
+                        // read from storage
+                        var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
+                        version = result.Key;
+                        cached = result.Value;
+                    }
+                    else
+                    {
+                        // read from primary cluster
+                        var request = new ReadRequest() { KnownVersion = version };
+                        if (!Services.MultiClusterConfiguration.Clusters.Contains(primaryCluster))
+                            throw new ProtocolTransportException("the specified primary cluster is not in the multicluster configuration");
+                        var response =(ReadResponse<T>) await Services.SendMessage(request, primaryCluster);
+                        if (response.Version > request.KnownVersion)
+                        {
+                            version = response.Version;
+                            cached = response.Value;
+                        }              
+                    }
 
-                   break; // successful
+                    LastPrimaryException = null; // successful, so we clear stored prior exceptions
+
+                    Services.Verbose("read success v{0}", version);
+
+                    break; // successful
                 }
                 catch (Exception e)
                 {
