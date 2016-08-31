@@ -69,6 +69,14 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection">
+      <HintPath>..\..\..\packages\Microsoft.Extensions.DependencyInjection.1.0.0\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
+      <HintPath>..\..\..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.1.0.0\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Microsoft.WindowsAzure.Configuration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -82,23 +90,27 @@
       <HintPath>..\..\..\..\..\..\Program Files\Microsoft SDKs\Azure\.NET SDK\v2.5\bin\runtimes\base\Microsoft.WindowsAzure.ServiceRuntime.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=5.0.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.WindowsAzure.Storage, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\WindowsAzure.Storage.5.0.2\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+      <HintPath>..\..\..\packages\WindowsAzure.Storage.7.0.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Orleans">
+    <Reference Include="Orleans, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.Orleans.Core.1.3.0\lib\net451\Orleans.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OrleansAzureUtils">
+    <Reference Include="OrleansAzureUtils, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.Orleans.OrleansAzureUtils.1.3.0\lib\net451\OrleansAzureUtils.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OrleansCodeGenerator">
+    <Reference Include="OrleansCodeGenerator, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.Orleans.OrleansCodeGenerator.1.3.0\lib\net451\OrleansCodeGenerator.dll</HintPath>
       <Private>True</Private>
     </Reference>
@@ -106,11 +118,13 @@
       <HintPath>..\..\..\packages\Microsoft.Orleans.OrleansRuntime.1.3.0\lib\net451\OrleansDependencyInjection.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OrleansProviders">
+    <Reference Include="OrleansProviders, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.Orleans.OrleansProviders.1.3.0\lib\net451\OrleansProviders.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OrleansRuntime">
+    <Reference Include="OrleansRuntime, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Microsoft.Orleans.OrleansRuntime.1.3.0\lib\net451\OrleansRuntime.dll</HintPath>
       <Private>True</Private>
     </Reference>

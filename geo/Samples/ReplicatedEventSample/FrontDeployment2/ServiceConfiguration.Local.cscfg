@@ -4,7 +4,6 @@
     <Instances count="1" />
     <ConfigurationSettings>
       <Setting name="DataConnectionString" value="UseDevelopmentStorage=true" />
-      <Setting name="MessagePrefix" value="Bob" />
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">

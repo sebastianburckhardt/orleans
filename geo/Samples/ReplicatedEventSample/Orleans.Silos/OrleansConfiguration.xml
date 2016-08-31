@@ -5,7 +5,7 @@
      
     <!--Use a logview provider with custom storage interface-->
     <LogViewProviders>
-      <Provider Type="Orleans.Providers.LogViews.CustomStorageProvider" Name="CustomStorage" />
+      <Provider Type="Orleans.Providers.LogViews.CustomStorageProvider" Name="CustomStorage" PrimaryCluster="Back" />
     </LogViewProviders>
 
     <!--Use a unique GUID for this service-->

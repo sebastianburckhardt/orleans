@@ -5,7 +5,6 @@
     </Imports>
     <ConfigurationSettings>
       <Setting name="DataConnectionString" />
-      <Setting name="MessagePrefix" />
     </ConfigurationSettings>
     <Sites>
       <Site name="Web">

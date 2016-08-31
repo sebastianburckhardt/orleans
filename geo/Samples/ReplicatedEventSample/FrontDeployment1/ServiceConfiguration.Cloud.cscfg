@@ -4,7 +4,6 @@
     <Instances count="2" />
     <ConfigurationSettings>
       <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME1;AccountKey=MYACCOUNTKEY1" />
-      <Setting name="MessagePrefix" value="Alice"/>
     </ConfigurationSettings>
   </Role>
   <Role name="Orleans.Silos">

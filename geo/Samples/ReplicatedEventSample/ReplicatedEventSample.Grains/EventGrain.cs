@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using ReplicatedEventSample.Interfaces;
 using Orleans;
-using Orleans.Providers;
-using Orleans.QueuedGrains;
+using Orleans.Providers.LogViews;
 using Orleans.LogViews;
 using Orleans.Concurrency;
 using Orleans.Core;
 using Microsoft.WindowsAzure.Storage.Table;
+using Orleans.Providers;
+using Orleans.QueuedGrains;
+using Orleans.Runtime;
 
 namespace ReplicatedEventSample.Grains
 {
