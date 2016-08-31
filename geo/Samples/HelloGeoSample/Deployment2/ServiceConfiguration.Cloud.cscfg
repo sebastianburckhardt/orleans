@@ -11,7 +11,6 @@
     <ConfigurationSettings>
       <Setting name="ClusterId" value="Deployment2" />
       <Setting name="DataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME2;AccountKey=MYACCOUNTKEY2" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=MYACCOUNTNAME2;AccountKey=MYACCOUNTKEY2" />
     </ConfigurationSettings>
   </Role>
   <!--<NetworkConfiguration>

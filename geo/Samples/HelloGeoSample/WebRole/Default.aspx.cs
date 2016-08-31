@@ -83,13 +83,15 @@ namespace Orleans.Azure.Samples.Web
         protected async void ButtonSayHelloSingleInstance_Click(object sender, EventArgs e)
         {
             var targetgrain = GsiGrain.Text;
-            IHelloGrain grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrain>(targetgrain, "HelloGeoGrains.GlobalSingleInstanceGrain");
 
             if (string.IsNullOrEmpty(targetgrain))
             {
                 this.ReplyText.Text = "Please enter a key";
                 return;
             }
+
+            IHelloGrain grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrain>(targetgrain, "HelloGeoGrains.GlobalSingleInstanceGrain");
+
             try
             {
                 string reply = await grainRef.Ping();
