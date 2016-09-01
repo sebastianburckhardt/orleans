@@ -14,24 +14,11 @@ namespace Tests.GeoClusterTests
     public class MultiClusterNetworkTests : TestingClusterHost, IDisposable
     {
 
-        // Kill all clients and silos.
-        public void Dispose()
-        {
-            try
-            {
-                StopAllClientsAndClusters();
-            }
-            catch (Exception e)
-            {
-                WriteLog("Exception caught in test cleanup function: {0}", e);
-            }
-        }
-
         // We need use ClientWrapper to load a client object in a new app domain. 
         // This allows us to create multiple clients that are connected to different silos.
         public class ClientWrapper : ClientWrapperBase
         {
-            public ClientWrapper(string name, int gatewayport) : base(name, gatewayport, name, null)
+            public ClientWrapper(string name, int gatewayport, string clusterid, Action<ClientConfiguration> cc) : base(name, gatewayport, clusterid, null)
             {
                 systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
             }

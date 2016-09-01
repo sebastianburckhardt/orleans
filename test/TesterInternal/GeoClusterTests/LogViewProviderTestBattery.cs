@@ -420,7 +420,9 @@ namespace Tests.GeoClusterTests
             await checker3(4);
             await checker3(20);
             await checker4();
-            await checker5();
+
+            if (may_update_in_all_clusters)
+                await checker5();
 
             await checker6(0);
             await checker6(1);
@@ -461,11 +463,15 @@ namespace Tests.GeoClusterTests
                 tasks.Add(checker2b());
                 tasks.Add(checker3(4));
                 tasks.Add(checker4());
-                tasks.Add(checker5());
+
+                if (may_update_in_all_clusters)
+                    tasks.Add(checker5());
+
                 tasks.Add(checker6(0));
                 tasks.Add(checker6(1));
                 tasks.Add(checker6(2));
                 tasks.Add(checker6(3));
+
                 if (may_update_in_all_clusters)
                 {
                     tasks.Add(checker7(0));
