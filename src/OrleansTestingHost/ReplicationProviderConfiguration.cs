@@ -38,8 +38,12 @@ namespace Orleans.TestingHost
             }
             {
                 var props = new Dictionary<string, string>();
-                props.Add("PrimaryCluster", "A");
                 config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStorage", props);
+            }
+            {
+                var props = new Dictionary<string, string>();
+                props.Add("PrimaryCluster", "A");
+                config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStoragePrimaryCluster", props);
             }
             // logging  
             foreach (var o in config.Overrides)

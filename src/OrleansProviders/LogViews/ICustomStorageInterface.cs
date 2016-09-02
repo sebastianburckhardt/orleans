@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Orleans.Concurrency;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,10 +15,11 @@ namespace Orleans.Providers.LogViews
     public interface ICustomStorageInterface<TState, TDelta>
     {
         /// <summary>
-        /// Reads the current state and version from storage.
+        /// Reads the current state and version from storage
+        /// (note that the state object may be mutated by the provider, so it must not be shared).
         /// </summary>
-        /// <returns>the version number and the state</returns>
-        Task<KeyValuePair<int, TState>> ReadStateFromStorageAsync();
+        /// <returns>the version number and a  state object.</returns>
+        Task<KeyValuePair<int,TState>> ReadStateFromStorageAsync();
 
         /// <summary>
         /// Applies the given array of deltas to storage, if the version in storage matches the expected version. 

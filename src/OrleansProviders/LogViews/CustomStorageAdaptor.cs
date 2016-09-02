@@ -58,13 +58,14 @@ namespace Orleans.Providers.LogViews
         {
             get
             {
-                return IsPrimary();
+                return MayAccessStorage();
             }
         }
 
-        private bool IsPrimary()
+        private bool MayAccessStorage()
         {
             return (!Services.MultiClusterEnabled)
+                   || string.IsNullOrEmpty(primaryCluster)
                    || primaryCluster == Services.MyClusterId;
         }
 
@@ -91,7 +92,7 @@ namespace Orleans.Providers.LogViews
         {
             var request = (ReadRequest) payload;
 
-            if (! IsPrimary())
+            if (! MayAccessStorage())
                 throw new ProtocolTransportException("message destined for primary cluster ended up elsewhere (inconsistent configurations?)");
 
             var response = new ReadResponse<T>() { Version = version };
@@ -117,7 +118,7 @@ namespace Orleans.Providers.LogViews
                 try
                 {
 
-                    if (IsPrimary())
+                    if (MayAccessStorage())
                     {
                         // read from storage
                         var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
@@ -302,7 +303,6 @@ namespace Orleans.Providers.LogViews
 
         protected override void ProcessNotifications()
         {
-            enter_operation("ProcessNotifications");
 
             // discard notifications that are behind our already confirmed state
             while (notifications.Count > 0 && notifications.ElementAt(0).Key < version)
@@ -337,7 +337,6 @@ namespace Orleans.Providers.LogViews
 
             base.ProcessNotifications();
         
-            exit_operation("ProcessNotifications");
         }
 
         [Conditional("DEBUG")]
