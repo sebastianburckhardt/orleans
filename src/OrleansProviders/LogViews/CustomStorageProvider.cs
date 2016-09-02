@@ -14,8 +14,12 @@ using System.Threading;
 namespace Orleans.Providers.LogViews
 {
     /// <summary>
-    /// A log view provider that relies on a user-supplied storage interface
-    /// (for grains that implement ICustomPrimaryStorage)
+    /// A log view provider that relies on grain-specific custom code for 
+    /// loading states from storage, and writing deltas to storage.
+    /// Grains that wish to use this provider must implement the <see cref="ICustomStorageInterface{TState, TDelta}"/>
+    /// interface, to define how state is read and how deltas are written.
+    /// If the provider attribute "PrimaryCluster" is supplied in the provider configuration, then only the specified cluster
+    /// accesses storage, and other clusters may not issue updates. 
     /// </summary>
     public class CustomStorageProvider : ILogViewProvider
     {
@@ -37,13 +41,11 @@ namespace Orleans.Providers.LogViews
         {
             Name = name;
             id = Interlocked.Increment(ref counter);
-            PrimaryCluster = config.GetProperty("PrimaryCluster", "");
-
-            if (string.IsNullOrEmpty(PrimaryCluster))
-                throw new BadProviderConfigException("Missing attribute in CustomStorageLogView provider: PrimaryCluster");
+            PrimaryCluster = config.GetProperty("PrimaryCluster", null);
 
             Log = providerRuntime.GetLogger(GetLoggerName());
-            Log.Info("Init (Severity={0}) PrimaryCluster={1}", Log.SeverityLevel, PrimaryCluster);
+            Log.Info("Init (Severity={0}) PrimaryCluster={1}", Log.SeverityLevel, 
+                string.IsNullOrEmpty(PrimaryCluster) ? "(none specified)" : PrimaryCluster);
 
             return TaskDone.Done;
         }
