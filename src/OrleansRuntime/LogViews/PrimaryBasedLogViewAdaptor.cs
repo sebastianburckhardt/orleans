@@ -583,9 +583,13 @@ namespace Orleans.Runtime.LogViews
         /// </summary>
         internal async Task Work()
         {
+            Services.Verbose("<1 ProcessNotifications");
+
             var version = GetConfirmedVersion();
 
             ProcessNotifications();
+
+            Services.Verbose("<2 NotifyViewChanges");
 
             NotifyViewChanges(ref version);
 
@@ -593,27 +597,38 @@ namespace Orleans.Runtime.LogViews
 
             bool have_to_read = need_initial_read || (need_refresh && !have_to_write);
 
-            Services.Verbose("WorkerCycle Start htr={0} htw={1}", have_to_read, have_to_write);
+            Services.Verbose("<3 Storage htr={0} htw={1}", have_to_read, have_to_write);
 
-            if (have_to_read)
+            try
             {
-                need_refresh = need_initial_read = false; // retrieving fresh version
+                if (have_to_read)
+                {
+                    need_refresh = need_initial_read = false; // retrieving fresh version
 
-                await ReadAsync();
+                    await ReadAsync();
 
-                NotifyViewChanges(ref version);
+                    NotifyViewChanges(ref version);
+                }
+
+                if (have_to_write)
+                {
+                    need_refresh = need_initial_read = false; // retrieving fresh version
+
+                    await UpdatePrimary();
+
+                    if (stats != null) stats.EventCounters["WritebackEvents"]++;
+                }
+
+            }
+            catch (Exception e)
+            {
+                // this should never happen - we are supposed to catch and store exceptions 
+                // in the correct place (LastPrimaryException or notification trackers)
+                Services.ProtocolError("WorkerCycle threw exception " + e, true);
+
             }
 
-            if (have_to_write)
-            {
-                need_refresh = need_initial_read = false; // retrieving fresh version
-
-                await UpdatePrimary();
-
-                if (stats != null) stats.EventCounters["WritebackEvents"]++;
-            }
-
-            Services.Verbose("WorkerCycle Done");
+            Services.Verbose("<4 Done");
         }
 
 

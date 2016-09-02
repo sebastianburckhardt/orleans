@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using Orleans.MultiCluster;
 using Orleans.Providers;
+using Orleans.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace UnitTests.Grains
     {
     }
 
-    // use the explictly specified "CustomStorage" log view provider
+    // use the explictly specified "CustomStorage" log view provider with symmetric access from all clusters
     [LogViewProvider(ProviderName = "CustomStorage")]
     public class SimpleLogViewGrainCustomStorage : SimpleLogViewGrain,
         Orleans.Providers.LogViews.ICustomStorageInterface<MyGrainState, object>
@@ -67,6 +68,47 @@ namespace UnitTests.Grains
         {
             var kvp = await storagegrain.Read();
             return new KeyValuePair<int, MyGrainState>(kvp.Key, (MyGrainState)kvp.Value);
+        }
+    }
+
+    // use the explictly specified "CustomStorage" log view provider with access from primary cluster only
+    [LogViewProvider(ProviderName = "CustomStoragePrimaryCluster")]
+    public class SimpleLogViewGrainCustomStoragePrimaryCluster : SimpleLogViewGrain,
+        Orleans.Providers.LogViews.ICustomStorageInterface<MyGrainState, object>
+    {
+
+        // we use fake in-memory state as the storage
+        MyGrainState state;
+        int version;
+
+        public Task<bool> ApplyUpdatesToStorageAsync(IReadOnlyList<object> updates, int expectedversion)
+        {
+            if (state == null)
+            {
+                state = new MyGrainState();
+                version = 0;
+            }
+
+            if (expectedversion != version)
+                return Task.FromResult(false);
+
+            foreach (var u in updates)
+            {
+                state.Apply(u);
+                version++;
+            }
+
+            return Task.FromResult(true);
+        }
+
+        public Task<KeyValuePair<int, MyGrainState>> ReadStateFromStorageAsync()
+        {
+            if (state == null)
+            {
+                state = new MyGrainState();
+                version = 0;
+            }
+            return Task.FromResult(new KeyValuePair<int, MyGrainState>(version, (MyGrainState)SerializationManager.DeepCopy(state)));
         }
     }
 

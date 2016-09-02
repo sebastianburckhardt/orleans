@@ -280,8 +280,6 @@ namespace Orleans.Runtime.LogViews
 
         protected override void ProcessNotifications()
         {
-            enter_operation("ProcessNotifications");
-
             // discard notifications that are behind our already confirmed state
             while (notifications.Count > 0 && notifications.ElementAt(0).Key < GlobalStateCache.StateAndMetaData.GlobalVersion)
             {
@@ -319,7 +317,6 @@ namespace Orleans.Runtime.LogViews
 
             base.ProcessNotifications();
          
-            exit_operation("ProcessNotifications");
         }
 
 

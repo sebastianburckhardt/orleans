@@ -49,10 +49,15 @@ namespace Tests.GeoClusterTests
         [Fact, TestCategory("GeoCluster")]
         public async Task TestBattery_CustomStorageProvider()
         {
-            await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleLogViewGrainCustomStorage", false, phases);
+            await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleLogViewGrainCustomStorage", true, phases);
         }
 
-     
+        [Fact, TestCategory("GeoCluster")]
+        public async Task TestBattery_CustomStorageProvider_PrimaryCluster()
+        {
+            await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleLogViewGrainCustomStoragePrimaryCluster", false, phases);
+        }
+
 
     }
 }
