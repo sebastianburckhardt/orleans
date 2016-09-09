@@ -12,9 +12,9 @@ namespace Orleans.Runtime.GrainDirectory
     {
         public SiloAddress SiloAddress { get; private set; }
         public DateTime TimeCreated { get; private set; }
-        public MultiClusterStatus RegistrationStatus { get; set; }
+        public GrainDirectoryEntryStatus RegistrationStatus { get; set; }
 
-        public ActivationInfo(SiloAddress siloAddress, MultiClusterStatus registrationStatus)
+        public ActivationInfo(SiloAddress siloAddress, GrainDirectoryEntryStatus registrationStatus)
         {
             SiloAddress = siloAddress;
             TimeCreated = DateTime.UtcNow;
@@ -37,11 +37,11 @@ namespace Orleans.Runtime.GrainDirectory
                     return true;
 
                 case UnregistrationCause.CacheInvalidation:
-                    return RegistrationStatus == MultiClusterStatus.Cached;
+                    return RegistrationStatus == GrainDirectoryEntryStatus.Cached;
 
                 case UnregistrationCause.NonexistentActivation:
                     {
-                        if (RegistrationStatus == MultiClusterStatus.Cached)
+                        if (RegistrationStatus == GrainDirectoryEntryStatus.Cached)
                             return true; // cache entries are always removed
 
                         var delayparameter = Silo.CurrentSilo.OrleansConfig.Globals.DirectoryLazyDeregistrationDelay;
@@ -100,12 +100,12 @@ namespace Orleans.Runtime.GrainDirectory
                     return false;
                 }
             }
-            Instances[act] = new ActivationInfo(silo, MultiClusterStatus.ClusterLocal);
+            Instances[act] = new ActivationInfo(silo, GrainDirectoryEntryStatus.ClusterLocal);
             VersionTag = rand.Next();
             return true;
         }
 
-        public ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, MultiClusterStatus registrationStatus)
+        public ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo, GrainDirectoryEntryStatus registrationStatus)
         {
             SingleInstance = true;
             if (Instances.Count > 0)
@@ -121,14 +121,14 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public bool RemoveActivation(ActivationId act, UnregistrationCause cause, out IActivationInfo info, out bool was_removed)
+        public bool RemoveActivation(ActivationId act, UnregistrationCause cause, out IActivationInfo info, out bool wasRemoved)
         {
             info = null;
-            was_removed = false;
+            wasRemoved = false;
             if (Instances.TryGetValue(act, out info) && info.OkToRemove(cause))
             {
                 Instances.Remove(act);
-                was_removed = true;
+                wasRemoved = true;
                 VersionTag = rand.Next();
             }
             return Instances.Count == 0;
@@ -181,10 +181,10 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 Instances.Remove(oldActivation);
             }
-            Instances.Add(activation, new ActivationInfo(silo, MultiClusterStatus.Cached));
+            Instances.Add(activation, new ActivationInfo(silo, GrainDirectoryEntryStatus.Cached));
         }
 
-        public bool UpdateClusterRegistrationStatus(ActivationId activationId, MultiClusterStatus status, MultiClusterStatus? compareWith = null)
+        public bool UpdateClusterRegistrationStatus(ActivationId activationId, GrainDirectoryEntryStatus status, GrainDirectoryEntryStatus? compareWith = null)
         {
             IActivationInfo activationInfo;
             if (!Instances.TryGetValue(activationId, out activationInfo))
@@ -281,7 +281,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// <param name="silo"></param>
         /// <param name="registrationStatus"></param>
         /// <returns>The registered ActivationAddress and version associated with this directory mapping</returns>
-        internal virtual AddressAndTag AddSingleActivation(GrainId grain, ActivationId activation, SiloAddress silo, MultiClusterStatus registrationStatus)
+        internal virtual AddressAndTag AddSingleActivation(GrainId grain, ActivationId activation, SiloAddress silo, GrainDirectoryEntryStatus registrationStatus)
         {
             if (log.IsVerbose3) log.Verbose3("Adding single activation for grain {0}{1}{2}", silo, grain, activation);
 
@@ -325,20 +325,20 @@ namespace Orleans.Runtime.GrainDirectory
         /// <param name="activation">the id of the activation</param>
         /// <param name="cause">reason for removing the activation</param>
         /// <param name="entry">returns the entry, if found </param>
-        /// <param name="was_removed">returns whether the entry was actually removed</param>
-        internal void RemoveActivation(GrainId grain, ActivationId activation, UnregistrationCause cause, out IActivationInfo entry, out bool was_removed)
+        /// <param name="wasRemoved">returns whether the entry was actually removed</param>
+        internal void RemoveActivation(GrainId grain, ActivationId activation, UnregistrationCause cause, out IActivationInfo entry, out bool wasRemoved)
         {
-            was_removed = false;
+            wasRemoved = false;
             entry = null;
             lock (lockable)
             {
-                if (partitionData.ContainsKey(grain) && partitionData[grain].RemoveActivation(activation, cause, out entry, out was_removed))
+                if (partitionData.ContainsKey(grain) && partitionData[grain].RemoveActivation(activation, cause, out entry, out wasRemoved))
                     // if the last activation for the grain was removed, we remove the entire grain info 
                     partitionData.Remove(grain);
 
             }
             if (log.IsVerbose3)
-                log.Verbose3("Removing activation for grain {0} cause={1} was_removed={2}", grain.ToString(), cause, was_removed);
+                log.Verbose3("Removing activation for grain {0} cause={1} was_removed={2}", grain.ToString(), cause, wasRemoved);
         }
 
    
@@ -386,7 +386,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// <summary>
         /// Returns the activation of a single-activation grain, if present.
         /// </summary>
-        internal MultiClusterStatus TryGetActivation(GrainId grain, out ActivationAddress address, out int version)
+        internal GrainDirectoryEntryStatus TryGetActivation(GrainId grain, out ActivationAddress address, out int version)
         {
             lock (lockable)
             {
@@ -405,7 +405,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
             address = null;
             version = 0;
-            return MultiClusterStatus.Invalid;
+            return GrainDirectoryEntryStatus.Invalid;
         }
 
 
@@ -585,12 +585,12 @@ namespace Orleans.Runtime.GrainDirectory
                 else
                 {
                     AddSingleActivation(grain, otherClusterAddress.Activation, otherClusterAddress.Silo,
-                        MultiClusterStatus.Cached);
+                        GrainDirectoryEntryStatus.Cached);
                 }
             }
         }
 
-        public bool UpdateClusterRegistrationStatus(GrainId grain, ActivationId activationId, MultiClusterStatus registrationStatus, MultiClusterStatus? compareWith = null)
+        public bool UpdateClusterRegistrationStatus(GrainId grain, ActivationId activationId, GrainDirectoryEntryStatus registrationStatus, GrainDirectoryEntryStatus? compareWith = null)
         {
             lock (lockable)
             {

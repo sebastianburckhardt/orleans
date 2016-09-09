@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using Orleans.Core;
 using Orleans.Serialization;
@@ -35,7 +34,12 @@ namespace Orleans.Runtime
 
         public static GrainId NewClientId(string clusterId = null)
         {
-            return FindOrCreateGrainId(UniqueKey.NewKey(Guid.NewGuid(), 
+            return NewClientId(Guid.NewGuid(), clusterId);
+        }
+
+        internal static GrainId NewClientId(Guid id, string clusterId = null)
+        {
+            return FindOrCreateGrainId(UniqueKey.NewKey(id,
                 clusterId == null ? UniqueKey.Category.Client : UniqueKey.Category.GeoClient, 0, clusterId));
         }
 
@@ -116,7 +120,6 @@ namespace Orleans.Runtime
             return Key.PrimaryKeyToLong(out keyExt);
         }
 
-        [Pure]
         internal long GetPrimaryKeyLong()
         {
             return Key.PrimaryKeyToLong();
@@ -237,8 +240,10 @@ namespace Orleans.Runtime
                     fullString = String.Format("*grn/{0}/{1}", typeString, idString);
                     break;
                 case UniqueKey.Category.Client:
-                case UniqueKey.Category.GeoClient:
                     fullString = "*cli/" + idString;
+                    break;
+                case UniqueKey.Category.GeoClient:
+                    fullString = string.Format("*gcl/{0}/{1}", Key.KeyExt, idString);
                     break;
                 case UniqueKey.Category.SystemTarget:
                     string explicitName = Constants.SystemTargetName(this);

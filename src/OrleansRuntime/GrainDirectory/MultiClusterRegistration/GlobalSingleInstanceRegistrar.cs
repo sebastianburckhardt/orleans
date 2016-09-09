@@ -5,23 +5,34 @@ using System.Linq;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
 using Orleans.SystemTargetInterfaces;
-using Orleans.Runtime;
+using OutcomeState = Orleans.Runtime.GrainDirectory.GlobalSingleInstanceResponseOutcome.OutcomeState;
 
 namespace Orleans.Runtime.GrainDirectory
 {
+    /// <summary>
+    /// A grain registrar that coordinates the directory entries for a grain between
+    /// all the clusters in the current multi-cluster configuration.
+    /// It uses the global-single-instance protocol to ensure that there is eventually
+    /// only a single owner for each grain. When a new grain is registered, all other clusters are
+    /// contacted to see if an activation already exists. If so, a pointer to that activation is 
+    /// stored in the directory and returned. Otherwise, the new activation is registered.
+    /// The protocol uses special states to track the status of directory entries, as listed in 
+    /// <see cref="GrainDirectoryEntryStatus"/>.
+    /// </summary>
     internal class GlobalSingleInstanceRegistrar : IGrainRegistrar
     {
-        private static int NUM_RETRIES = 3;
+        private readonly int numRetries;
         private readonly Logger logger;
         private readonly GrainDirectoryPartition directoryPartition;
         private readonly GlobalSingleInstanceActivationMaintainer gsiActivationMaintainer;
 
-        public GlobalSingleInstanceRegistrar(GrainDirectoryPartition partition, Logger logger, GlobalSingleInstanceActivationMaintainer gsiActivationMaintainer)
+        public GlobalSingleInstanceRegistrar(GrainDirectoryPartition partition, Logger logger, GlobalSingleInstanceActivationMaintainer gsiActivationMaintainer, int numRetries)
              
         {
             this.directoryPartition = partition;
             this.logger = logger;
             this.gsiActivationMaintainer = gsiActivationMaintainer;
+            this.numRetries = numRetries;
         }
 
         public bool IsSynchronous { get { return false; } }
@@ -51,7 +62,7 @@ namespace Orleans.Runtime.GrainDirectory
             if (myClusterId == null)
             {
                 // no multicluster network. Go to owned state directly.
-                return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.Owned);
+                return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, GrainDirectoryEntryStatus.Owned);
             }
 
             // examine the multicluster configuration
@@ -61,13 +72,13 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 // we are not joined to the cluster yet/anymore. Go to doubtful state directly.
                 gsiActivationMaintainer.TrackDoubtfulGrain(address.Grain);
-                return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.Doubtful);
+                return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, GrainDirectoryEntryStatus.Doubtful);
             }
 
             var remoteClusters = config.Clusters.Where(id => id != myClusterId).ToList();
 
             // Try to go into REQUESTED_OWNERSHIP state
-            var myActivation = directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, MultiClusterStatus.RequestedOwnership);
+            var myActivation = directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, GrainDirectoryEntryStatus.RequestedOwnership);
 
             if (!myActivation.Address.Equals(address)) 
             {
@@ -77,36 +88,34 @@ namespace Orleans.Runtime.GrainDirectory
 
             // Do request rounds until successful or we run out of retries
 
-            int retries = NUM_RETRIES;
+            int retries = numRetries;
 
             while (retries-- > 0)
             {
                 if (logger.IsVerbose)
-                    logger.Verbose("GSIP:Req {0} Round={1} Act={2}", address.Grain.ToString(), NUM_RETRIES - retries, myActivation.Address.ToString());
+                    logger.Verbose("GSIP:Req {0} Round={1} Act={2}", address.Grain.ToString(), numRetries - retries, myActivation.Address.ToString());
 
-                var responses = SendRequestRound(address, remoteClusters);
-
-                var outcome = await responses.Task;
+                var outcome = await SendRequestRound(address, remoteClusters);
 
                 if (logger.IsVerbose)
-                    logger.Verbose("GSIP:End {0} Round={1} Outcome={2}", address.Grain.ToString(), NUM_RETRIES - retries, responses);
+                    logger.Verbose("GSIP:End {0} Round={1} Outcome={2}", address.Grain.ToString(), numRetries - retries, outcome);
 
-                switch (outcome)
+                switch (outcome.State)
                 {
-                    case GlobalSingleInstanceResponseTracker.Outcome.RemoteOwner:
-                    case GlobalSingleInstanceResponseTracker.Outcome.RemoteOwnerLikely:
+                    case OutcomeState.RemoteOwner:
+                    case OutcomeState.RemoteOwnerLikely:
                         {
-                            directoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, responses.RemoteOwner.Address);
-                            return responses.RemoteOwner;
+                            directoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, outcome.RemoteOwnerAddress.Address);
+                            return outcome.RemoteOwnerAddress;
                         }
-                    case GlobalSingleInstanceResponseTracker.Outcome.Succeed:
+                    case OutcomeState.Succeed:
                         {
-                            if (directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Owned, MultiClusterStatus.RequestedOwnership))
+                            if (directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, GrainDirectoryEntryStatus.Owned, GrainDirectoryEntryStatus.RequestedOwnership))
                                 return myActivation;
                             else
                                 break; // concurrently moved to RACE_LOSER
                         }
-                    case GlobalSingleInstanceResponseTracker.Outcome.Inconclusive:
+                    case OutcomeState.Inconclusive:
                         {
                             break;
                         }
@@ -116,14 +125,14 @@ namespace Orleans.Runtime.GrainDirectory
                 int version;
                 var mcstatus = directoryPartition.TryGetActivation(address.Grain, out address, out version);
 
-                if (mcstatus == MultiClusterStatus.RequestedOwnership)
+                if (mcstatus == GrainDirectoryEntryStatus.RequestedOwnership)
                 {
                     // we failed because of inconclusive answers. Stay in this state for retry.
                 }
-                else  if (mcstatus == MultiClusterStatus.RaceLoser)
+                else  if (mcstatus == GrainDirectoryEntryStatus.RaceLoser)
                 {
                     // we failed because an external request moved us to RACE_LOSER. Go back to REQUESTED_OWNERSHIP for retry
-                    var success = directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.RaceLoser);
+                    var success = directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, GrainDirectoryEntryStatus.RequestedOwnership, GrainDirectoryEntryStatus.RaceLoser);
                     if (!success) ProtocolError(address, "unable to transition from RACE_LOSER to REQUESTED_OWNERSHIP");
                     // do not wait before retrying because there is a dominant remote request active so we can probably complete quickly
                 }
@@ -135,7 +144,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             // we are done with the quick retries. Now we go into doubtful state, which means slower retries.
 
-            var ok = directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Doubtful, MultiClusterStatus.RequestedOwnership);
+            var ok = directoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, GrainDirectoryEntryStatus.Doubtful, GrainDirectoryEntryStatus.RequestedOwnership);
            
             if (!ok) ProtocolError(address, "unable to transition into doubtful");
 
@@ -147,7 +156,6 @@ namespace Orleans.Runtime.GrainDirectory
         private void ProtocolError(ActivationAddress address, string msg)
         {
             logger.Error((int)ErrorCode.GlobalSingleInstance_ProtocolError, string.Format("GSIP:Req {0} PROTOCOL ERROR {1}", address.Grain.ToString(), msg));
-            Debugger.Break();
         }
 
         public Task UnregisterAsync(List<ActivationAddress> addresses, UnregistrationCause cause)
@@ -157,18 +165,18 @@ namespace Orleans.Runtime.GrainDirectory
             foreach (var address in addresses)
             {
                 IActivationInfo existingAct;
-                bool was_removed;
-                directoryPartition.RemoveActivation(address.Grain, address.Activation, cause, out existingAct, out was_removed);
+                bool wasRemoved;
+                directoryPartition.RemoveActivation(address.Grain, address.Activation, cause, out existingAct, out wasRemoved);
                 if (existingAct == null)
                 {
                     logger.Verbose2("GSIP:Unr {0} {1} ignored", cause, address);
                 }
-                else if (!was_removed)
+                else if (!wasRemoved)
                 {
                     logger.Verbose2("GSIP:Unr {0} {1} too fresh", cause, address);
                 }
-                else if (existingAct.RegistrationStatus == MultiClusterStatus.Owned
-                        || existingAct.RegistrationStatus == MultiClusterStatus.Doubtful)
+                else if (existingAct.RegistrationStatus == GrainDirectoryEntryStatus.Owned
+                        || existingAct.RegistrationStatus == GrainDirectoryEntryStatus.Doubtful)
                 {
                     logger.Verbose2("GSIP:Unr {0} {1} broadcast ({2})", cause, address, existingAct.RegistrationStatus);
                     if (formerActivationsInThisCluster == null)
@@ -216,9 +224,9 @@ namespace Orleans.Runtime.GrainDirectory
         public void InvalidateCache(ActivationAddress address)
         {
             IActivationInfo existingAct;
-            bool was_removed;
-            directoryPartition.RemoveActivation(address.Grain, address.Activation, UnregistrationCause.CacheInvalidation, out existingAct, out was_removed);
-            if (!was_removed)
+            bool wasRemoved;
+            directoryPartition.RemoveActivation(address.Grain, address.Activation, UnregistrationCause.CacheInvalidation, out existingAct, out wasRemoved);
+            if (!wasRemoved)
             {
                 logger.Verbose2("GSIP:Inv {0} ignored", address);
             }
@@ -260,28 +268,24 @@ namespace Orleans.Runtime.GrainDirectory
             return Task.WhenAll(tasks);
         }
 
-        public GlobalSingleInstanceResponseTracker SendRequestRound(ActivationAddress address, List<string> remoteClusters)
+        public Task<GlobalSingleInstanceResponseOutcome> SendRequestRound(ActivationAddress address, List<string> remoteClusters)
         {
             // array that holds the responses
-            var responses = new RemoteClusterActivationResponse[remoteClusters.Count];
-
-            // response processor
-            var promise = new GlobalSingleInstanceResponseTracker(responses, address.Grain);
+            var responses = new Task<RemoteClusterActivationResponse>[remoteClusters.Count];
 
             // send all requests
             for (int i = 0; i < responses.Length; i++)
-                SendRequest(address.Grain, remoteClusters[i], responses, i, promise).Ignore(); // exceptions are tracked by the promise
+                responses[i] = SendRequest(address.Grain, remoteClusters[i]);
 
-            return promise;
+            // response processor
+            return GlobalSingleInstanceResponseTracker.GetOutcomeAsync(responses, address.Grain, logger);
         }
 
         /// <summary>
         /// Send GSI protocol request to the given remote cluster
         /// </summary>
         /// <param name="remotecluster"></param>
-        /// <param name="responses"></param>
-        /// <param name="index"></param>
-        public async Task SendRequest(GrainId grain, string remotecluster, RemoteClusterActivationResponse[] responses, int index, GlobalSingleInstanceResponseTracker responseprocessor)
+        public async Task<RemoteClusterActivationResponse> SendRequest(GrainId grain, string remotecluster)
         {
             try
             {
@@ -291,19 +295,15 @@ namespace Orleans.Runtime.GrainDirectory
                 var clusterGrainDir = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
 
                 // try to send request
-                responses[index] = await clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.ClusterId, 0);
-
-                responseprocessor.CheckIfDone();
+                return await clusterGrainDir.ProcessActivationRequest(grain, Silo.CurrentSilo.ClusterId, 0);
 
             }
             catch (Exception ex)
             {
-                responses[index] = new RemoteClusterActivationResponse(ActivationResponseStatus.Faulted)
+                return new RemoteClusterActivationResponse(ActivationResponseStatus.Faulted)
                 {
                     ResponseException = ex
                 };
-
-                responseprocessor.CheckIfDone();
             }
         }
     }

@@ -333,11 +333,8 @@ namespace Tests.GeoClusterTests
 
                 clientconfig_customizer?.Invoke(config);
 
-                config.ClusterId = clusterId;
-
                 GrainClient.Initialize(config);
             }
-
         }
 
         // Create a client, loaded in a new app domain.

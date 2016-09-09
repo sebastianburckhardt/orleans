@@ -1020,6 +1020,7 @@ namespace Orleans
         PersistentStreamPullingAgent_25 = PersistentStreamPullingAgentBase + 25,
         PersistentStreamPullingAgent_26 = PersistentStreamPullingAgentBase + 26,
         PersistentStreamPullingAgent_27 = PersistentStreamPullingAgentBase + 27,
+        PersistentStreamPullingAgent_28 = PersistentStreamPullingAgentBase + 28,
 
         StreamProviderManagerBase = Runtime +3400,
         StreamProvider_FailedToDispose              = StreamProviderManagerBase + 1,
@@ -1091,6 +1092,7 @@ namespace Orleans
         GlobalSingleInstance_ProtocolError = GlobalSingleInstanceBase + 1,
         GlobalSingleInstance_WarningInvalidOrigin = GlobalSingleInstanceBase + 2,
         GlobalSingleInstance_MaintainerException = GlobalSingleInstanceBase + 3,
+        GlobalSingleInstance_MultipleOwners = GlobalSingleInstanceBase + 4,
 
         LogViewBase = Runtime + 4200,
         LogView_ViewUpdateException = LogViewBase + 1,
