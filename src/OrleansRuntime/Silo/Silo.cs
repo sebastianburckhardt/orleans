@@ -272,7 +272,7 @@ namespace Orleans.Runtime
             // This has to come after the message center //; note that it then gets injected back into the message center.;
             localGrainDirectory = new LocalGrainDirectory(this); 
 
-            RegistrarManager.InitializeGrainDirectoryManager(localGrainDirectory);
+            RegistrarManager.InitializeGrainDirectoryManager(localGrainDirectory, globalConfig.GlobalSingleInstanceNumberRetries);
 
             // Now the activation directory.
             // This needs to know which router to use so that it can keep the global directory in synch with the local one.
@@ -344,12 +344,12 @@ namespace Orleans.Runtime
             logger.Verbose("Creating {0} System Target", "DeploymentLoadPublisher");
             RegisterSystemTarget(DeploymentLoadPublisher.Instance);
 
-            logger.Verbose("Creating {0} System Target", "RemGrainDirectory + CacheValidator");
-            RegisterSystemTarget(LocalGrainDirectory.RemGrainDirectory);
+            logger.Verbose("Creating {0} System Target", "RemoteGrainDirectory + CacheValidator");
+            RegisterSystemTarget(LocalGrainDirectory.RemoteGrainDirectory);
             RegisterSystemTarget(LocalGrainDirectory.CacheValidator);
 
-            logger.Verbose("Creating {0} System Target", "RemClusterGrainDirectory");
-            RegisterSystemTarget(LocalGrainDirectory.RemClusterGrainDirectory);
+            logger.Verbose("Creating {0} System Target", "RemoteClusterGrainDirectory");
+            RegisterSystemTarget(LocalGrainDirectory.RemoteClusterGrainDirectory);
 
             logger.Verbose("Creating {0} System Target", "ClientObserverRegistrar + TypeManager");
             clientRegistrar = new ClientObserverRegistrar(SiloAddress, LocalGrainDirectory, LocalScheduler, OrleansConfig);
@@ -468,7 +468,7 @@ namespace Orleans.Runtime
             IMembershipTable membershipTable = membershipFactory.GetMembershipTable(GlobalConfig.LivenessType, GlobalConfig.MembershipTableAssembly);
             membershipOracle = membershipFactory.CreateMembershipOracle(this, membershipTable);
             multiClusterOracle = multiClusterFactory.CreateGossipOracle(this).WaitForResultWithThrow(initTimeout);
-            
+
             // This has to follow the above steps that start the runtime components
             CreateSystemTargets();
 
@@ -963,6 +963,7 @@ namespace Orleans.Runtime
                 ExecuteFastKillInProcessExit = false;
             }
           
+            // used for testing only: returns directory entries whose type name contains the given string
             internal IDictionary<GrainId, IGrainInfo> GetDirectoryForTypeNamesContaining(string expr)
             {
                 var x = new Dictionary<GrainId, IGrainInfo>();

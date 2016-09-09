@@ -65,6 +65,7 @@ namespace Orleans.SystemTargetInterfaces
         /// </summary>
         /// <param name="grain">the grain to process</param>
         /// <param name="requestClusterId">the id of the origin cluster</param>
+        /// <param name="hopCount">how many times this request has been forwarded within the cluster</param>
         /// <returns></returns>
         Task<RemoteClusterActivationResponse> ProcessActivationRequest(
             GrainId grain,
@@ -87,14 +88,6 @@ namespace Orleans.SystemTargetInterfaces
         /// </summary>
         /// <param name="addresses">the list of activations</param>
         Task ProcessDeactivations(List<ActivationAddress> addresses);
-
-        /// <summary>
-        /// Called when nonexistent activations are targeted, to remove stale directory 
-        /// entries for activations in different clusters. 
-        /// </summary>
-        /// <param name="address"></param>
-        /// <returns></returns>
-        Task UnregisterAfterNonexistingActivation(ActivationAddress address);
 
         /// <summary>
         /// Called on remote clusters when deletion of all grain registrations is asked for.

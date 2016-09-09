@@ -7,6 +7,13 @@ using System.Collections.Generic;
 
 namespace Orleans.Runtime.GrainDirectory
 {
+    /// <summary>
+    /// This system target provides an entry point for remote clusters to call directory functions.
+    /// Since remote clusters do not have ring information about this cluster, they cannot send 
+    /// requests directly to the silo with the right directory partition
+    /// unless they know the activation address already. Therefore,
+    /// This class serves as an intermediary that forwards the requests to the correct silo.
+    /// </summary>
     internal class ClusterGrainDirectory : SystemTarget, IClusterGrainDirectory
     {
         private readonly LocalGrainDirectory router;
@@ -70,29 +77,21 @@ namespace Orleans.Runtime.GrainDirectory
             RemoteClusterActivationResponse response;
 
             //This function will be called only on the Owner silo.
-
-            //Optimize? Look in the cache first?
-            //NOTE: THIS COMMENT IS FROM LOOKUP. HAS IMPLICATIONS ON "OWNED" INVARIANCE.
-            //// It can happen that we cannot find the grain in our partition if there were 
-            // some recent changes in the membership. Return empty list in such case (and not null) to avoid
-            // NullReference exceptions in the code of invokers
             try
             {
-                //var activations = await LookUp(grain, LocalGrainDirectory.NUM_RETRIES);
-                //since we are the owner, we can look directly into the partition. No need to lookinto the cache.
                 ActivationAddress address;
                 int version;
-                MultiClusterStatus existingActivationStatus = router.DirectoryPartition.TryGetActivation(grain, out address, out version);
+                GrainDirectoryEntryStatus existingActivationStatus = router.DirectoryPartition.TryGetActivation(grain, out address, out version);
 
 
                 //Return appropriate protocol response, given current mc status   
                 switch (existingActivationStatus)
                 {
-                    case MultiClusterStatus.Invalid:
+                    case GrainDirectoryEntryStatus.Invalid:
                         response = RemoteClusterActivationResponse.Pass;
                         break;
 
-                    case MultiClusterStatus.Owned:
+                    case GrainDirectoryEntryStatus.Owned:
                         response = new RemoteClusterActivationResponse(ActivationResponseStatus.Failed)
                         {
                             ExistingActivationAddress = new AddressAndTag()
@@ -105,13 +104,13 @@ namespace Orleans.Runtime.GrainDirectory
                         };
                         break;
 
-                    case MultiClusterStatus.Cached:
-                    case MultiClusterStatus.RaceLoser:
+                    case GrainDirectoryEntryStatus.Cached:
+                    case GrainDirectoryEntryStatus.RaceLoser:
                         response = RemoteClusterActivationResponse.Pass;
                         break;
 
-                    case MultiClusterStatus.RequestedOwnership:
-                    case MultiClusterStatus.Doubtful:
+                    case GrainDirectoryEntryStatus.RequestedOwnership:
+                    case GrainDirectoryEntryStatus.Doubtful:
                         var iWin = MultiClusterUtils.ActivationPrecedenceFunc(grain, clusterId, requestClusterId);
                         if (iWin)
                         {
@@ -130,10 +129,10 @@ namespace Orleans.Runtime.GrainDirectory
                         {
                             response = RemoteClusterActivationResponse.Pass;
                             //update own activation status to race loser.
-                            if (existingActivationStatus == MultiClusterStatus.RequestedOwnership)
+                            if (existingActivationStatus == GrainDirectoryEntryStatus.RequestedOwnership)
                             {
                                 logger.Verbose2("GSIP:Rsp {0} Origin={1} RaceLoser", grain.ToString(), requestClusterId);
-                                var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, address.Activation, MultiClusterStatus.RaceLoser, MultiClusterStatus.RequestedOwnership);
+                                var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, address.Activation, GrainDirectoryEntryStatus.RaceLoser, GrainDirectoryEntryStatus.RequestedOwnership);
                                 if (!success)
                                 {
                                     // there was a race. retry.
@@ -193,18 +192,6 @@ namespace Orleans.Runtime.GrainDirectory
             // standard grain directory mechanisms for this cluster can take care of this request
             // (forwards to owning silo in this cluster as needed)
             return router.UnregisterManyAsync(addresses, UnregistrationCause.Force, 0);
-        }
-
-        /// <summary>
-        /// Called by remote cluster to unregister a directory entry in this cluster that is pointing
-        /// to a non-existing activation
-        /// </summary>
-        /// <param name="address">The address of the non-existing activation</param>
-        /// <returns></returns>
-        public Task UnregisterAfterNonexistingActivation(ActivationAddress address)
-        {
-            // call local grain directory to unregister activation in this cluster
-            return router.UnregisterAsync(address, UnregistrationCause.NonexistentActivation, 0);
         }
 
         /// <summary>

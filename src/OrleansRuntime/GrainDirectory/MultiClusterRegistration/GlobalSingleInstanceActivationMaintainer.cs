@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
 using Orleans.SystemTargetInterfaces;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
+using OutcomeState = Orleans.Runtime.GrainDirectory.GlobalSingleInstanceResponseOutcome.OutcomeState;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -40,7 +40,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         public void TrackDoubtfulGrains(Dictionary<GrainId, IGrainInfo> newstuff)
         {
-            var newdoubtful = FilterByMultiClusterStatus(newstuff, MultiClusterStatus.Doubtful)
+            var newdoubtful = FilterByMultiClusterStatus(newstuff, GrainDirectoryEntryStatus.Doubtful)
                 .Select(kvp => kvp.Key)
                 .ToList();
 
@@ -50,7 +50,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public static IEnumerable<KeyValuePair<GrainId, IGrainInfo>> FilterByMultiClusterStatus(Dictionary<GrainId, IGrainInfo> collection, MultiClusterStatus status)
+        public static IEnumerable<KeyValuePair<GrainId, IGrainInfo>> FilterByMultiClusterStatus(Dictionary<GrainId, IGrainInfo> collection, GrainDirectoryEntryStatus status)
         {
             foreach (var kvp in collection)
             {
@@ -94,7 +94,7 @@ namespace Orleans.Runtime.GrainDirectory
                         // but if it happens anyway, this is the correct thing to do
 
                         var allEntries = router.DirectoryPartition.GetItems();
-                        var ownedEntries = FilterByMultiClusterStatus(allEntries, MultiClusterStatus.Owned)
+                        var ownedEntries = FilterByMultiClusterStatus(allEntries, GrainDirectoryEntryStatus.Owned)
                             .Select(kp => Tuple.Create(kp.Key, kp.Value.Instances.FirstOrDefault()))
                             .ToList();
 
@@ -127,52 +127,6 @@ namespace Orleans.Runtime.GrainDirectory
                             router.CacheValidator.SchedulingContext
                         );
                     }
-              
-                    // NOT DOING CACHE INVALIDATION for now. it is not required for correctness
-
-                    //3. For "CACHED" status:
-                    //3a. If the entry is removed from the cached cluster, remove the cached entry. On next grain call, the protocol should handle the scenario.
-
-
-                    /*
-                    //STEP 3.. (TODO: Merge step 2 and 3)?
-                    var cahcedEntries =
-                        allEntries.Where(t => t.Item2.ActivationStatus == MultiClusterStatus.Cached);
-
-                    results = await router.Scheduler.QueueTask(async () =>
-                    {
-                        return await RunAntiEntropy(cahcedEntries.ToList());
-                    }, router.CacheValidator.SchedulingContext);
-                   
-
-                    if (results != null)
-                    {
-                        foreach (var kvp in results)
-                        {
-                            var ownedbyOther = kvp.Value.FirstOrDefault(r => r.ResponseStatus == ActivationResponseStatus.FAILED &&
-                                                                        r.ExistingActivationAddress != null &&
-                                                                        r.Owned == true);
-
-                            var currentActivation =
-                                router.DirectoryPartition.LookUpGrain(kvp.Key).Item1.FirstOrDefault(); //this will be non null.
-
-                            if (ownedbyOther == null)
-                            {
-                                //remove the cached entry.
-                                //Debug.Assert(false, "Removed CACHED entry");
-                                router.DirectoryPartition.RemoveActivation(kvp.Key, currentActivation.Activation, true);
-                            }
-                            else
-                            {
-                                //update the cached entry to the new OWNED cluster.
-                                router.DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(
-                                    kvp.Key, currentActivation != null ? currentActivation.Activation : null,
-                                    ownedbyOther.ExistingActivationAddress);
-                            }
-                        }
-                    }
-                    */
-
                 }
                 catch (Exception e)
                 {
@@ -185,7 +139,7 @@ namespace Orleans.Runtime.GrainDirectory
         {
             foreach (var entry in entries)
             {
-                router.DirectoryPartition.UpdateClusterRegistrationStatus(entry.Item1, entry.Item2.Key, MultiClusterStatus.Doubtful, MultiClusterStatus.Owned);
+                router.DirectoryPartition.UpdateClusterRegistrationStatus(entry.Item1, entry.Item2.Key, GrainDirectoryEntryStatus.Doubtful, GrainDirectoryEntryStatus.Owned);
                 TrackDoubtfulGrain(entry.Item1);
             }
 
@@ -204,10 +158,10 @@ namespace Orleans.Runtime.GrainDirectory
                 var mcstate = router.DirectoryPartition.TryGetActivation(grain, out address, out version);
 
                 // work on the doubtful ones only
-                if (mcstate == MultiClusterStatus.Doubtful)
+                if (mcstate == GrainDirectoryEntryStatus.Doubtful)
                 {
                     // try to start retry by moving into requested_ownership state
-                    if (router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, address.Activation, MultiClusterStatus.RequestedOwnership, MultiClusterStatus.Doubtful))
+                    if (router.DirectoryPartition.UpdateClusterRegistrationStatus(grain, address.Activation, GrainDirectoryEntryStatus.RequestedOwnership, GrainDirectoryEntryStatus.Doubtful))
                     {
                         addresses.Add(address);
                     }
@@ -296,19 +250,16 @@ namespace Orleans.Runtime.GrainDirectory
                     responses[j] = batchResponses[j][i];
 
                 // response processor
-                var tracker = new GlobalSingleInstanceResponseTracker(responses, address.Grain);
-
-                Debug.Assert(tracker.Task.IsCompleted);
-
-                var outcome = tracker.Task.Result;
+                var outcomeDetails = GlobalSingleInstanceResponseTracker.GetOutcome(responses, address.Grain, logger);
+                var outcome = outcomeDetails.State;
 
                 if (logger.IsVerbose2)
-                    logger.Verbose("GSIP:M {0} Result={1}", address.Grain.ToString(), outcome.ToString());
+                    logger.Verbose2("GSIP:M {0} Result={1}", address.Grain, outcomeDetails);
 
                 switch (outcome)
                 {
-                    case GlobalSingleInstanceResponseTracker.Outcome.RemoteOwner:
-                    case GlobalSingleInstanceResponseTracker.Outcome.RemoteOwnerLikely:
+                    case OutcomeState.RemoteOwner:
+                    case OutcomeState.RemoteOwnerLikely:
                     {
                         // record activations that lost and need to be deactivated
                         List<ActivationAddress> losers;
@@ -316,18 +267,18 @@ namespace Orleans.Runtime.GrainDirectory
                             loser_activations_per_silo[address.Silo] = losers = new List<ActivationAddress>();
                         losers.Add(address);
 
-                        router.DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, tracker.RemoteOwner.Address);
+                        router.DirectoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, outcomeDetails.RemoteOwnerAddress.Address);
                         continue;
                     }
-                    case GlobalSingleInstanceResponseTracker.Outcome.Succeed:
+                    case OutcomeState.Succeed:
                     {
-                        var ok = (router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Owned, MultiClusterStatus.RequestedOwnership));
+                        var ok = (router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, GrainDirectoryEntryStatus.Owned, GrainDirectoryEntryStatus.RequestedOwnership));
                         if (ok)
                             continue;
                         else
                             break;
                     }
-                    case GlobalSingleInstanceResponseTracker.Outcome.Inconclusive:
+                    case OutcomeState.Inconclusive:
                     {
                         break;
                     }
@@ -338,16 +289,16 @@ namespace Orleans.Runtime.GrainDirectory
                 var mcstatus = router.DirectoryPartition.TryGetActivation(address.Grain, out address, out version);
 
                 // in each case, go back to DOUBTFUL
-                if (mcstatus == MultiClusterStatus.RequestedOwnership)
+                if (mcstatus == GrainDirectoryEntryStatus.RequestedOwnership)
                 {
                     // we failed because of inconclusive answers
-                    var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Doubtful, MultiClusterStatus.RequestedOwnership);
+                    var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, GrainDirectoryEntryStatus.Doubtful, GrainDirectoryEntryStatus.RequestedOwnership);
                     if (!success) ProtocolError(address, "unable to transition from REQUESTED_OWNERSHIP to DOUBTFUL");
                 }
-                else if (mcstatus == MultiClusterStatus.RaceLoser)
+                else if (mcstatus == GrainDirectoryEntryStatus.RaceLoser)
                 {
                     // we failed because an external request moved us to RACE_LOSER
-                    var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, MultiClusterStatus.Doubtful, MultiClusterStatus.RaceLoser);
+                    var success = router.DirectoryPartition.UpdateClusterRegistrationStatus(address.Grain, address.Activation, GrainDirectoryEntryStatus.Doubtful, GrainDirectoryEntryStatus.RaceLoser);
                     if (!success) ProtocolError(address, "unable to transition from RACE_LOSER to DOUBTFUL");
                 }
                 else
@@ -368,8 +319,8 @@ namespace Orleans.Runtime.GrainDirectory
 
         private void ProtocolError(ActivationAddress address, string msg)
         {
-            logger.Error((int) ErrorCode.GlobalSingleInstance_ProtocolError, string.Format("GSIP:R {0} {1}", address.Grain.ToString(), msg));
-            Debugger.Break();
+            logger.Error((int) ErrorCode.GlobalSingleInstance_ProtocolError, string.Format("GSIP:Req {0} {1}", address.Grain.ToString(), msg));
         }
+
     }
 }
