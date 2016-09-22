@@ -21,6 +21,8 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Serialization
 {
+    using TestGrainInterfaces;
+
     /// <summary>
     /// Test the built-in serializers
     /// </summary>
@@ -71,19 +73,17 @@ namespace UnitTests.Serialization
             InitializeSerializer(serializerToUse);
             //SerializationManager.UseStandardSerializer = false;
             var grain = GrainId.NewId();
-            var addr = ActivationAddress.GetAddress(null, grain, null, MultiClusterStatus.Doubtful);
+            var addr = ActivationAddress.GetAddress(null, grain, null);
             object deserialized = OrleansSerializationLoop(addr, false);
             Assert.IsAssignableFrom<ActivationAddress>(deserialized);
             Assert.Null(((ActivationAddress)deserialized).Activation); //Activation no longer null after copy
             Assert.Null(((ActivationAddress)deserialized).Silo); //Silo no longer null after copy
             Assert.Equal(grain, ((ActivationAddress)deserialized).Grain); //Grain different after copy
-            Assert.Equal(MultiClusterStatus.Doubtful, ((ActivationAddress)deserialized).Status); //MultiClusterStatus different after copy
             deserialized = OrleansSerializationLoop(addr);
             Assert.IsAssignableFrom<ActivationAddress>(deserialized); //ActivationAddress full serialization loop as wrong type
             Assert.Null(((ActivationAddress)deserialized).Activation); //Activation no longer null after full serialization loop
             Assert.Null(((ActivationAddress)deserialized).Silo); //Silo no longer null after full serialization loop
             Assert.Equal(grain, ((ActivationAddress)deserialized).Grain); //Grain different after copy
-            Assert.Equal(MultiClusterStatus.Doubtful, ((ActivationAddress)deserialized).Status); //MultiClusterStatus different after copy
         }
 
         [Theory, TestCategory("Functional"), TestCategory("Serialization")]
@@ -377,6 +377,14 @@ namespace UnitTests.Serialization
             var source2 = new string[] { "hello", "goodbye", "yes", "no", "", "I don't know" };
             deserialized = OrleansSerializationLoop(source2);
             ValidateArray<string>(source2, deserialized, "string");
+
+            var source3 = new sbyte[] { 1, 3, 5 };
+            deserialized = OrleansSerializationLoop(source3);
+            ValidateArray<sbyte>(source3, deserialized, "sbyte");
+
+            var source4 = new byte[] { 1, 3, 5 };
+            deserialized = OrleansSerializationLoop(source4);
+            ValidateArray<byte>(source4, deserialized, "byte");
         }
 
         [Theory, TestCategory("Functional"), TestCategory("Serialization")]
@@ -1151,21 +1159,6 @@ namespace UnitTests.Serialization
             deserialized = (CircularTest1)OrleansSerializationLoop(c1, true);
             Assert.Equal(c1.CircularTest2.CircularTest1List.Count, deserialized.CircularTest2.CircularTest1List.Count);
             Assert.Equal(deserialized, deserialized.CircularTest2.CircularTest1List[0]);
-        }
-
-        [Serializable]
-        public class CircularTest1
-        {
-            public CircularTest2 CircularTest2 { get; set; }
-        }
-        [Serializable]
-        public class CircularTest2
-        {
-            public CircularTest2()
-            {
-                CircularTest1List = new List<CircularTest1>();                   
-            }
-            public List<CircularTest1> CircularTest1List { get; set; }
         }
     }
 }

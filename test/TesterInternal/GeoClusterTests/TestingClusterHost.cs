@@ -163,10 +163,6 @@ namespace Tests.GeoClusterTests
         {
             return 22000 + (clusternumber + 2) * 100;
         }
-        private static int DetermineGatewayPort(int clusternumber, int clientnumber)
-        {
-            return GetProxyBase(clusternumber) + clientnumber % 3;
-        }
 
         #endregion
 
@@ -337,12 +333,8 @@ namespace Tests.GeoClusterTests
 
                 clientconfig_customizer?.Invoke(config);
 
-                // enable this in branch that contains feature
-                //config.ClusterId = clusterId;
-
                 GrainClient.Initialize(config);
             }
-
         }
 
         // Create a client, loaded in a new app domain.
@@ -352,11 +344,11 @@ namespace Tests.GeoClusterTests
             var name = string.Format("Client-{0}-{1}", ClusterId, ClientNumber);
 
             // clients are assigned to silos round-robin
-            var gatewayport = DetermineGatewayPort(ci.SequenceNumber, ClientNumber);
+            var gatewayport = ci.Silos[ClientNumber % ci.Silos.Count].GatewayPort;
 
             WriteLog("Starting {0} connected to {1}", name, gatewayport);
 
-            var clientArgs = new object[] { name, gatewayport, ClusterId, customizer };
+            var clientArgs = new object[] { name, gatewayport.Value, ClusterId, customizer };
             var setup = new AppDomainSetup { ApplicationBase = Environment.CurrentDirectory };
             var clientDomain = AppDomain.CreateDomain(name, null, setup);
 

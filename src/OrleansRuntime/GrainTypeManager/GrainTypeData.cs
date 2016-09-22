@@ -118,7 +118,7 @@ namespace Orleans.Runtime
             switch (attribs.Length)
             {
                 case 0:
-                    return ClusterLocalRegistration.Singleton;
+                    return MultiClusterRegistrationStrategy.GetDefault(); // no strategy is specified
                 case 1:
                     return attribs[0].RegistrationStrategy;
                 default:
