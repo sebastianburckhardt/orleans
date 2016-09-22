@@ -687,6 +687,7 @@ namespace Orleans
         Messaging_Dispatcher_TryForwardFailed   = MessagingBase + 32,
         Messaging_Dispatcher_ForwardingRequests = MessagingBase + 33,
         Messaging_SimulatedMessageLoss          = MessagingBase + 34,
+        Messaging_Dispatcher_ReturnToOriginCluster    = MessagingBase + 35,
 
         DirectoryBase                           = Runtime + 1100,
         DirectoryBothPrimaryAndBackupForGrain   = DirectoryBase + 1,
@@ -748,6 +749,7 @@ namespace Orleans
         ClientRegistrarFailedToRegister_2       = GatewayBase + 17,
         ClientRegistrarFailedToUnregister       = GatewayBase + 18,
         ClientRegistrarTimerFailed              = GatewayBase + 19,
+        GatewayAcceptor_WrongClusterId          = GatewayBase + 20,
 
         TimerBase                               = Runtime + 1400,
         TimerChangeError                        = PerfCounterTimerError, // Backward compatability
@@ -1086,7 +1088,13 @@ namespace Orleans
         CancellationTokenCancelFailed       = CancellationTokenManagerBase + 1,
         CancellationExtensionCreationFailed = CancellationTokenManagerBase + 2,
 
-        LogViewBase = Runtime + 5000,
+        GlobalSingleInstanceBase = Runtime + 4100,
+        GlobalSingleInstance_ProtocolError = GlobalSingleInstanceBase + 1,
+        GlobalSingleInstance_WarningInvalidOrigin = GlobalSingleInstanceBase + 2,
+        GlobalSingleInstance_MaintainerException = GlobalSingleInstanceBase + 3,
+        GlobalSingleInstance_MultipleOwners = GlobalSingleInstanceBase + 4,
+
+        LogViewBase = Runtime + 4200,
         LogView_ViewUpdateException = LogViewBase + 1,
         LogView_CaughtException = LogViewBase + 2,
         LogView_ProtocolError = LogViewBase + 3,
