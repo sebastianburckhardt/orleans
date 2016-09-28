@@ -57,6 +57,8 @@
     <Compile Include="ConnectionStringFixture.cs" />
     <Compile Include="GeoClusterTests\MultiClusterRegistrationTests.cs" />
     <Compile Include="Deployment\AzureSiloTests.cs" />
+    <Compile Include="GeoClusterTests\LogViewGrainTestsFourClusters.cs" />
+    <Compile Include="GeoClusterTests\LogViewProviderTestBattery.cs" />
     <Compile Include="HostedTestClusterBase.cs" />
     <Compile Include="MembershipTests\DynamoDBMembershipTableTest.cs" />
     <Compile Include="MembershipTests\PostgreSqlMembershipTableTests.cs" />
@@ -100,6 +102,7 @@
     <Compile Include="StorageTests\Relational\TestDataSets\TestState1.cs" />
     <Compile Include="StorageTests\Relational\TestDataSets\TestStateGeneric1.cs" />
     <Compile Include="StorageTests\Relational\TestEnvironmentInvariant.cs" />
+    <Compile Include="GeoClusterTests\BasicLogViewGrainTests.cs" />
     <Compile Include="StreamingTests\AQStreamingTests.cs" />
     <Compile Include="AssemblyLoaderTests.cs" />
     <Compile Include="AsynchAgentRestartTest.cs" />
@@ -146,6 +149,7 @@
     <Compile Include="SqlStatisticsPublisherTests\MySqlStatisticsPublisherTests.cs" />
     <Compile Include="Serialization\BuiltInSerializerTests.cs" />
     <Compile Include="General\Identifiertests.cs" />
+    <Compile Include="GeoClusterTests\LogViewGrainTestsTwoClusters.cs" />
     <Compile Include="General\InterfaceRules.cs" />
     <Compile Include="GrainReferenceCacheTests.cs" />
     <Compile Include="GrainReferenceCastTests.cs" />

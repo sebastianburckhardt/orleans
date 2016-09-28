@@ -3,6 +3,9 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Core;
 using Orleans.Storage;
+using Orleans.LogViews;
+using Orleans.Runtime.LogViews;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime
 {
@@ -60,25 +63,38 @@ namespace Orleans.Runtime
         /// <param name="grainType"></param>
         /// <param name="identity">Identity for the new grain</param>
         /// <param name="stateType">If the grain is a stateful grain, the type of the state it persists.</param>
-        /// <param name="storageProvider">If the grain is a stateful grain, the storage provider used to persist the state.</param>
+        /// <param name="persistenceProvider">If the grain is a stateful grain, the provider used to persist the state.</param>
         /// <returns></returns>
-        public Grain CreateGrainInstance(Type grainType, IGrainIdentity identity, Type stateType,
-            IStorageProvider storageProvider)
+        public Grain CreateGrainInstance(Type grainType, IGrainIdentity identity, Type stateType, IPersistenceProvider persistenceProvider)
         {
             //Create a new instance of the grain
             var grain = CreateGrainInstance(grainType, identity);
 
             var statefulGrain = grain as IStatefulGrain;
+            var logViewGrain = grain as ILogViewGrain;
 
-            if (statefulGrain == null)
+            if (statefulGrain != null)
+            {
+                var storage = new GrainStateStorageBridge(grainType.FullName, statefulGrain, (IStorageProvider) persistenceProvider);
+
+                //Inject state and storage data into the grain
+                statefulGrain.GrainState.State = Activator.CreateInstance(stateType);
+                statefulGrain.SetStorage(storage);
                 return grain;
+            }
+            else if (logViewGrain != null)
+            {
+                var logviewprovider = persistenceProvider as ILogViewProvider;
 
-            var storage = new GrainStateStorageBridge(grainType.FullName, statefulGrain, storageProvider);
+                // if given a plain storage provider instead of a log view provider, convert it to log view provider
+                if (logviewprovider == null)
+                    logviewprovider = new LogViewProviderManager.WrappedStorageProvider((IStorageProvider) persistenceProvider);
 
-            //Inject state and storage data into the grain
-            statefulGrain.GrainState.State = Activator.CreateInstance(stateType);
-            statefulGrain.SetStorage(storage);
-
+                // install protocol adaptor into grain
+                var svc = new ProtocolServices(grain, logviewprovider, MultiClusterRegistrationStrategy.FromAttributes(grainType));
+                logViewGrain.InstallAdaptor(logviewprovider, Activator.CreateInstance(stateType), grainType.FullName, svc);
+            }
+          
             return grain;
         }
     }

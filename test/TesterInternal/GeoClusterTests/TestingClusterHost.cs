@@ -17,23 +17,26 @@ namespace Tests.GeoClusterTests
 {
     /// <summary>
     /// A utility class for tests that include multiple clusters.
-    /// It calls static methods on TestingSiloHost for starting and stopping silos.
     /// </summary>
     public class TestingClusterHost : IDisposable
     {
-        ITestOutputHelper output;
 
         protected readonly Dictionary<string, ClusterInfo> Clusters;
         private TestingSiloHost siloHost;
 
+
+        public TestingSiloOptions siloOptions { get; set; }
+        protected ITestOutputHelper output;
+
         private TimeSpan gossipStabilizationTime;
 
-        public TestingClusterHost(ITestOutputHelper output)
+        public TestingClusterHost(ITestOutputHelper output = null)
         {
-            Clusters = new Dictionary<string, ClusterInfo>();
             this.output = output;
+            Clusters = new Dictionary<string, ClusterInfo>();
             TestUtils.CheckForAzureStorage();
         }
+      
 
         protected struct ClusterInfo
         {
@@ -43,7 +46,8 @@ namespace Tests.GeoClusterTests
 
         public void WriteLog(string format, params object[] args)
         {
-            output.WriteLine("{0} {1}", DateTime.UtcNow, string.Format(format, args));
+            if (output != null)
+                output.WriteLine("{0} {1}", DateTime.UtcNow, string.Format(format, args));
         }
 
         public async Task RunWithTimeout(string name, int msec, Func<Task> test)
@@ -80,6 +84,30 @@ namespace Tests.GeoClusterTests
             catch (Exception e)
             {
                 WriteLog("Equality assertion failed; expected={0}, actual={1} comment={2}", expected, actual, comment);
+                throw e;
+            }
+        }
+        public void AssertNull<T>(T actual, string comment)
+        {
+            try
+            {
+                Assert.Null(actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("null assertion failed; actual={0} comment={1}", actual, comment);
+                throw e;
+            }
+        }
+        public void AssertTrue(bool actual, string comment)
+        {
+            try
+            {
+                Assert.True(actual);
+            }
+            catch (Exception e)
+            {
+                WriteLog("true assertion failed; actual={0} comment={1}", actual, comment);
                 throw e;
             }
         }
@@ -223,7 +251,6 @@ namespace Tests.GeoClusterTests
         {
             StopAllClientsAndClusters();
         }
-
 
         public void StopAllClientsAndClusters()
         {
@@ -384,6 +411,21 @@ namespace Tests.GeoClusterTests
                 WriteLog("Unblocking {0}", silo);
                 silo.Silo.TestHook.UnblockSiloCommunication();
             }
+        }
+  
+        public void BlockNotificationMessages(string origincluster)
+        {
+            var silos = Clusters[origincluster].Silos;
+            foreach (var silo in silos)
+                silo.Silo.TestHook.DropNotificationMessages = true;
+
+        }
+        public void UnblockNotificationMessages(string origincluster)
+        {
+            var silos = Clusters[origincluster].Silos;
+            foreach (var silo in silos)
+                silo.Silo.TestHook.DropNotificationMessages = false;
+
         }
   
         private SiloHandle GetActiveSiloInClusterByName(string clusterId, string siloName)

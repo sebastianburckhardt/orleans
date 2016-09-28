@@ -1,5 +1,6 @@
-﻿using Orleans.MultiCluster;
+﻿using System;
 using System.Collections.Generic;
+using Orleans.MultiCluster;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
@@ -14,6 +15,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
         }
         private volatile IReadOnlyDictionary<string, List<SiloAddress>> activeGatewaysByCluster;
 
+        private readonly HashSet<GrainReference> confListeners;
+
         private readonly Logger logger;
 
         internal MultiClusterData Current { get { return localData; } }
@@ -23,6 +26,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             logger = log;
             localData = new MultiClusterData();
             activeGatewaysByCluster = new Dictionary<string, List<SiloAddress>>();
+            confListeners = new HashSet<GrainReference>();
         }
 
         private void ComputeAvailableGatewaysPerCluster()
@@ -40,6 +44,28 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             activeGatewaysByCluster = gws;
         }
+
+        internal bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer)
+        {
+            if (logger.IsVerbose2)
+                logger.Verbose2("SubscribeToMultiClusterConfigurationEvents: {0}", observer);
+
+            if (confListeners.Contains(observer))
+                return false;
+
+            confListeners.Add(observer);
+            return true;
+        }
+
+        
+        internal bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
+        {
+            if (logger.IsVerbose3)
+                logger.Verbose3("UnSubscribeFromMultiClusterConfigurationEvents: {0}", observer);
+
+            return confListeners.Remove(observer);
+        }
+
 
         public MultiClusterData ApplyDataAndNotify(MultiClusterData data)
         {
@@ -66,7 +92,24 @@ namespace Orleans.Runtime.MultiClusterNetwork
             if (delta.Configuration != null)
             {
                 // notify configuration listeners of change
-                // code will be added in separate PR
+                foreach (var listener in confListeners)
+                {
+                    try
+                    {
+                        if (logger.IsVerbose2)
+                            logger.Verbose2("-NotificationWork: notify IProtocolParticipant {0} of configuration {1}", listener, delta.Configuration);
+
+                        // enqueue conf change event as grain call
+                        var g = InsideRuntimeClient.Current.InternalGrainFactory.Cast<IProtocolParticipant>(listener);
+                        g.OnMultiClusterConfigurationChange(delta.Configuration).Ignore();
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.Error(ErrorCode.MultiClusterNetwork_LocalSubscriberException,
+                            String.Format("IProtocolParticipant {0} threw exception processing configuration {1}",
+                            listener, delta.Configuration), exc);
+                    }
+                }
             }
 
             return delta;

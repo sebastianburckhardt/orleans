@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Orleans.CodeGeneration;
+using Orleans.Serialization;
+using Orleans.LogViews;
 using Orleans.Providers;
 
 
@@ -89,7 +91,7 @@ namespace Orleans.Runtime
                     if (parentTypeInfo.IsGenericType)
                     {
                         var definition = parentTypeInfo.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(LogViewGrainBase<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.GetTypeInfo().IsClass)
