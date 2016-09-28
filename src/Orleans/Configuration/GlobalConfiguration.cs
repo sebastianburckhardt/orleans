@@ -99,8 +99,10 @@ namespace Orleans.Runtime.Configuration
         [Serializable]
         public class GossipChannelConfiguration
         {
+            /// <summary>Gets or sets the gossip channel type.</summary>
             public GossipChannelType ChannelType { get; set; }
 
+            /// <summary>Gets or sets the credential information used by the channel implementation.</summary>
             public string ConnectionString { get; set; }
         }
 
@@ -529,7 +531,7 @@ namespace Orleans.Runtime.Configuration
             GlobalSingleInstanceNumberRetries = DEFAULT_GLOBAL_SINGLE_INSTANCE_NUMBER_RETRIES;
             ExpectedClusterSizeConfigValue = new ConfigValue<int>(DEFAULT_LIVENESS_EXPECTED_CLUSTER_SIZE, true);
             ServiceId = Guid.Empty;
-            DeploymentId = Environment.UserName;
+            DeploymentId = "";
             DataConnectionString = "";
 
             // Assume the ado invariant is for sql server storage if not explicitly specified
@@ -749,7 +751,7 @@ namespace Orleans.Runtime.Configuration
                         if (child.HasAttribute("SystemStoreType"))
                         {
                             var sst = child.GetAttribute("SystemStoreType");
-                            if (!"None".Equals(sst, StringComparison.InvariantCultureIgnoreCase))
+                            if (!"None".Equals(sst, StringComparison.OrdinalIgnoreCase))
                             {
                                 LivenessType = (LivenessProviderType)Enum.Parse(typeof(LivenessProviderType), sst);
                                 ReminderServiceProviderType reminderServiceProviderType;

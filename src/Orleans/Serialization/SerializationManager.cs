@@ -11,12 +11,9 @@ using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters;
 using System.Text;
-using Newtonsoft.Json;
 using Orleans.CodeGeneration;
 using Orleans.Concurrency;
-using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 
@@ -27,9 +24,6 @@ namespace Orleans.Serialization
     /// </summary>
     public static class SerializationManager
     {
-        internal const string UseFullAssemblyNamesProperty = "UseFullAssemblyNames";
-        internal const string IndentJsonProperty = "IndentJSON";
-
         /// <summary>
         /// Deep copier function.
         /// </summary>
@@ -61,16 +55,6 @@ namespace Orleans.Serialization
         public delegate void ValueTypeSetter<TDeclaring, in TField>(ref TDeclaring instance, TField value);
 
         private static readonly string[] safeFailSerializers = { "Orleans.FSharp" };
-
-        /// <summary>
-        /// Toggles whether or not to use the .NET serializer (true) or the Orleans serializer (false).
-        /// This is usually set through config.
-        /// </summary>
-        internal static bool UseStandardSerializer
-        {
-            get;
-            set;
-        }
 
 #if NETSTANDARD
         // Workaround for CoreCLR where FormatterServices.GetUninitializedObject is not public (but might change in RTM so we could remove this then).
@@ -153,7 +137,7 @@ namespace Orleans.Serialization
 
         #region Static initialization
 
-        public static void InitializeForTesting(List<TypeInfo> serializationProviders = null, bool useJsonFallbackSerializer = false)
+        public static void InitializeForTesting(List<TypeInfo> serializationProviders = null)
         {
             try
             {
@@ -161,7 +145,7 @@ namespace Orleans.Serialization
                 BufferPool.InitGlobalBufferPool(new MessagingConfiguration(false));
                 RegisterSerializationProviders(serializationProviders);
                 AssemblyProcessor.Initialize();
-                fallbackSerializer = GetFallbackSerializer(useJsonFallbackSerializer);
+                fallbackSerializer = GetFallbackSerializer();
             }
             catch (ReflectionTypeLoadException ex)
             {
@@ -169,21 +153,14 @@ namespace Orleans.Serialization
             }
         }
 
-        internal static void Initialize(bool useStandardSerializer, List<TypeInfo> serializationProviders, bool useJsonFallbackSerializer)
+        internal static void Initialize(List<TypeInfo> serializationProviders)
         {
             RegisterBuiltInSerializers();
-            UseStandardSerializer = useStandardSerializer;
-
 #if NETSTANDARD
-            if (!useJsonFallbackSerializer)
-            {
-                logger.Warn(ErrorCode.SerMgr_UnavailableSerializer,
-                    "Cann't use binary formatter as fallback serializer while running on .Net Core, will use Json.Net instead");
-            }
-
-            useJsonFallbackSerializer = true;
+            logger.Warn(ErrorCode.SerMgr_UnavailableSerializer,
+                "Cann't use binary formatter as fallback serializer while running on .Net Core, will use Json.Net instead");
 #endif
-            fallbackSerializer = GetFallbackSerializer(useJsonFallbackSerializer);
+            fallbackSerializer = GetFallbackSerializer();
 
             if (StatisticsCollector.CollectSerializationStats)
             {
@@ -233,7 +210,9 @@ namespace Orleans.Serialization
                 IsBuiltInSerializersRegistered = true;
             }
 
+#if !NETSTANDARD_TODO
             AppDomain.CurrentDomain.AssemblyResolve += OnResolveEventHandler;
+#endif
             registeredTypes = new HashSet<Type>();
             externalSerializers = new List<IExternalSerializer>();
             typeToExternalSerializerDictionary = new ConcurrentDictionary<Type, IExternalSerializer>();
@@ -243,7 +222,6 @@ namespace Orleans.Serialization
             deserializers = new Dictionary<RuntimeTypeHandle, Deserializer>();
             grainRefConstructorDictionary = new ConcurrentDictionary<Type, Func<GrainReference, GrainReference>>();
             logger = LogManager.GetLogger("SerializationManager", LoggerType.Runtime);
-            UseStandardSerializer = false; // Default
 
             // Built-in handlers: Tuples
             Register(typeof(Tuple<>), BuiltInTypes.DeepCopyTuple, BuiltInTypes.SerializeTuple, BuiltInTypes.DeserializeTuple);
@@ -1147,7 +1125,7 @@ namespace Orleans.Serialization
         /// <summary>
         /// Encodes the object to the provided binary token stream.
         /// </summary>
-        /// <param name="raw">The input data to be serialized.</param>
+        /// <param name="obj">The input data to be serialized.</param>
         /// <param name="stream">The output stream to write to.</param>
         /// <param name="expected">Current expected Type on this stream.</param>
         [SuppressMessage("Microsoft.Usage", "CA2201:DoNotRaiseReservedExceptionTypes")]
@@ -1882,26 +1860,18 @@ namespace Orleans.Serialization
             return retVal;
         }
 
-        private static IExternalSerializer GetFallbackSerializer(bool useJsonSerializer)
+        private static IExternalSerializer GetFallbackSerializer()
         {
-            IExternalSerializer serializer;
-            if (useJsonSerializer)
-            {
-                serializer = new OrleansJsonSerializer();
-            }
-            else
-            {
 #if NETSTANDARD
-                throw new OrleansException("Can't use binary formatter as fallback serializer while running on .Net Core");
+            throw new OrleansException("Can't use binary formatter as fallback serializer while running on .Net Core");
 #else
-                serializer = new BinaryFormatterSerializer();
-#endif
-            }
-
+            var serializer = new BinaryFormatterSerializer();
             serializer.Initialize(logger);
             return serializer;
+#endif
         }
 
+#if !NETSTANDARD_TODO
         private static Assembly OnResolveEventHandler(Object sender, ResolveEventArgs arg)
         {
             // types defined in assemblies loaded by path name (e.g. Assembly.LoadFrom) aren't resolved during deserialization without some help.
@@ -1912,6 +1882,7 @@ namespace Orleans.Serialization
 
             return null;
         }
+#endif
 
         private static object FallbackSerializationDeepCopy(object obj)
         {
@@ -2174,11 +2145,11 @@ namespace Orleans.Serialization
             var report = String.Format("Registered artifacts for {0} types:" + Environment.NewLine + "{1}", count, lines);
             logger.LogWithoutBulkingAndTruncating(Severity.Verbose, ErrorCode.SerMgr_ArtifactReport, report);
         }
-        
+
         /// <summary>
         /// Loads the external srializers and places them into a hash set
         /// </summary>
-        /// <param name="type">The list of types that implement <see cref="IExternalSerializer"/></param>
+        /// <param name="providerTypes">The list of types that implement <see cref="IExternalSerializer"/></param>
         private static void RegisterSerializationProviders(List<TypeInfo> providerTypes)
         {
             if (providerTypes == null)
@@ -2217,49 +2188,6 @@ namespace Orleans.Serialization
             public DeepCopier DeepCopy { get; private set; }
             public Serializer Serialize { get; private set; }
             public Deserializer Deserialize { get; private set; }
-        }
-
-        public static bool ShouldFindSerializationInfo(Assembly assembly)
-        {
-            // If we're using the .Net serializer, then don't bother with this at all
-            if (UseStandardSerializer) return false;
-            
-            return true;
-        }
-
-        public static JsonSerializerSettings GetDefaultJsonSerializerSettings()
-        {
-            return OrleansJsonSerializer.GetDefaultSerializerSettings();
-        }
-
-        /// <summary>
-        /// Customises the given serializer settings
-        /// using provider configuration.
-        /// Can be used by any provider, allowing the users to use a standard set of configuration attributes.
-        /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="config"></param>
-        /// <returns><see cref="JsonSerializerSettings" /></returns>
-        public static JsonSerializerSettings UpdateSerializerSettings(JsonSerializerSettings settings, IProviderConfiguration config)
-        {
-            if (config.Properties.ContainsKey(UseFullAssemblyNamesProperty))
-            {
-                bool useFullAssemblyNames;
-                if (bool.TryParse(config.Properties[UseFullAssemblyNamesProperty], out useFullAssemblyNames) && useFullAssemblyNames)
-                {
-                    settings.TypeNameAssemblyFormat = FormatterAssemblyStyle.Full;
-                }
-            }
-
-            if (config.Properties.ContainsKey(IndentJsonProperty))
-            {
-                bool indentJSON;
-                if (bool.TryParse(config.Properties[IndentJsonProperty], out indentJSON) && indentJSON)
-                {
-                    settings.Formatting = Formatting.Indented;
-                }
-            }
-            return settings;
         }
     }
 }
