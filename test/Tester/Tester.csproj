@@ -53,6 +53,7 @@
     <Compile Include="BaseClusterFixture.cs" />
     <Compile Include="General\JsonGrainTests.cs" />
     <Compile Include="PSClientTests\PSClientTests.cs" />
+    <Compile Include="RelationalUtilities\PostgreSqlStorageForTesting.cs" />
     <Compile Include="SerializationTests\DeepCopyTests.cs" />
     <Compile Include="SerializationTests\ConsiderForCodeGenerationAttributeTests.cs" />
     <Compile Include="SiloInitializationTests.cs" />
@@ -134,7 +135,6 @@
     <Compile Include="StreamingTests\SubscriptionMultiplicityTestRunner.cs" />
     <Compile Include="StreamingTests\TimePurgePredicateTests.cs" />
     <Compile Include="TestStreamProviders\AzureQueue\TestAzureQueueStreamProvider.cs" />
-    <Compile Include="TestingHost\TestingSiloHostTests.cs" />
     <Compile Include="TestStreamProviders\Controllable\ControllableTestStreamProvider.cs" />
     <Compile Include="TestStreamProviders\EventHub\StreamPerPartitionEventHubStreamProvider.cs" />
     <Compile Include="TestStreamProviders\EventHub\TestEventHubStreamProvider.cs" />

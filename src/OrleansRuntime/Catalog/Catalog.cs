@@ -49,6 +49,7 @@ namespace Orleans.Runtime
                 PrimaryDirectoryForGrain = primaryDirectoryForGrain;
             }
 
+#if !NETSTANDARD
             // Implementation of exception serialization with custom properties according to:
             // http://stackoverflow.com/questions/94488/what-is-the-correct-way-to-make-a-custom-net-exception-serializable
             protected DuplicateActivationException(SerializationInfo info, StreamingContext context)
@@ -71,6 +72,7 @@ namespace Orleans.Runtime
                 // MUST call through to the base class to let it save its own state
                 base.GetObjectData(info, context);
             }
+#endif
         }
 
         [Serializable]
@@ -92,6 +94,7 @@ namespace Orleans.Runtime
                 IsStatelessWorker = isStatelessWorker;
             }
 
+#if !NETSTANDARD
             protected NonExistentActivationException(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {
@@ -112,6 +115,7 @@ namespace Orleans.Runtime
                 // MUST call through to the base class to let it save its own state
                 base.GetObjectData(info, context);
             }
+#endif
         }
 
 
@@ -332,7 +336,7 @@ namespace Orleans.Runtime
             return report;
         }
 
-        #region MessageTargets
+#region MessageTargets
 
         /// <summary>
         /// Register a new object to which messages can be delivered with the local lookup table and scheduler.
@@ -383,9 +387,9 @@ namespace Orleans.Runtime
             return numActsBefore;
         }
 
-        #endregion
+#endregion
 
-        #region Grains
+#region Grains
 
         internal bool IsReentrantGrain(ActivationId running)
         {
@@ -402,9 +406,9 @@ namespace Orleans.Runtime
             GrainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, out activationStrategy, genericArguments);
         }
 
-        #endregion
+#endregion
 
-        #region Activations
+#region Activations
 
         public int ActivationCount { get { return activations.Count; } }
 
@@ -1244,8 +1248,8 @@ namespace Orleans.Runtime
             // We currently don't have any other case for multiple activations except for StatelessWorker. 
         }
 
-        #endregion
-        #region Activations - private
+#endregion
+#region Activations - private
 
         /// <summary>
         /// Invoke the activate method on a newly created activation
@@ -1263,8 +1267,8 @@ namespace Orleans.Runtime
             return scheduler.QueueTask(() => CallGrainActivate(activation, requestContextData), new SchedulingContext(activation)); // Target grain's scheduler context);
             // ActivationData will transition out of ActivationState.Activating via Dispatcher.OnActivationCompletedRequest
         }
-        #endregion
-        #region IPlacementContext
+#endregion
+#region IPlacementContext
 
         public Logger Logger => logger;
 
@@ -1308,8 +1312,8 @@ namespace Orleans.Runtime
             }
         }
 
-        #endregion
-        #region Implementation of ICatalog
+#endregion
+#region Implementation of ICatalog
 
         public Task CreateSystemGrain(GrainId grainId, string grainType)
         {
@@ -1338,9 +1342,9 @@ namespace Orleans.Runtime
             return datas;
         }
 
-        #endregion
+#endregion
 
-        #region Implementation of ISiloStatusListener
+#region Implementation of ISiloStatusListener
 
         public void SiloStatusChangeNotification(SiloAddress updatedSilo, SiloStatus status)
         {
@@ -1399,6 +1403,6 @@ namespace Orleans.Runtime
             }
         }
 
-        #endregion
+#endregion
     }
 }
