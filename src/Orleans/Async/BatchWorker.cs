@@ -134,12 +134,12 @@ namespace Orleans
         }
 
         /// <summary>
-        /// Notify the worker that there is more work, and wait for that work to be serviced
+        /// Notify the worker that there is more work, and wait for the current work cycle, and also the next work cycle if there is currently unserviced work.
         /// </summary>
-        public async Task NotifyAndWait()
+        public async Task NotifyAndWaitForWorkToBeServiced()
         {
-            Task<Task> waitfortasktask = null;
-            Task waitfortask = null;
+            Task<Task> waitForTaskTask = null;
+            Task waitForTask = null;
 
             lock (this)
             {
@@ -148,20 +148,20 @@ namespace Orleans
                     moreWork = true;
                     if (nextWorkCyclePromise == null)
                         nextWorkCyclePromise = new TaskCompletionSource<Task>();
-                    waitfortasktask = nextWorkCyclePromise.Task;
+                    waitForTaskTask = nextWorkCyclePromise.Task;
                 }
                 else
                 {
                     Start();
-                    waitfortask = currentWorkCycle;
+                    waitForTask = currentWorkCycle;
                 }
             }
 
-            if (waitfortasktask != null)
-                await await waitfortasktask;
+            if (waitForTaskTask != null)
+                await await waitForTaskTask;
 
-            else if (waitfortask != null)
-                await waitfortask;
+            else if (waitForTask != null)
+                await waitForTask;
         }
     }
 

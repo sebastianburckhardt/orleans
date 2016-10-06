@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 namespace Orleans.LogViews
 {
     /// <summary>
-    /// Log view storage interface. For grains whose state is defined as the view of a log.
+    /// Log view storage interface. For grains whose state is defined as a log view.
     /// </summary>
     /// <typeparam name="TView">The type of the view (state of the grain)</typeparam>
-    /// <typeparam name="TLogEntry">The type of log entries.</typeparam>
+    /// <typeparam name="TLogEntry">The type of log entries </typeparam>
     public interface ILogViewStorageInterface<TView, TLogEntry>
         : ILogViewRead<TView,TLogEntry>, 
           ILogViewUpdate<TLogEntry>

@@ -734,7 +734,7 @@ namespace Orleans.Runtime
             {
                 ILogViewProvider logViewProvider;
 
-                if (logViewProviderManager == null || logViewProviderManager.GetNumLoadedProviders() == 0)
+                if (logViewProviderManager == null || logViewProviderManager.GetLoadedProvidersNum() == 0)
                 {
                     var errMsg = string.Format("No log view providers found loading grain type {0}", grainType.FullName);
                     logger.Error(ErrorCode.Provider_CatalogNoLogViewProvider, errMsg);

@@ -15,19 +15,28 @@ namespace Orleans.Providers.LogViews
 {
 
     /// <summary>
-    /// A log view adaptor that wraps around a user-provided storage interface
+    /// A log view adaptor that wraps around a user-provided log view provider
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class CustomStorageAdaptor<T, E> : PrimaryBasedLogViewAdaptor<T, E, SubmissionEntry<E>>
-        where T : class, new()
-        where E : class
+    /// <typeparam name="TLogView">log view type</typeparam>
+    /// <typeparam name="TLogEntry">log entry type</typeparam>
+    public class CustomStorageAdaptor<TLogView, TLogEntry> : PrimaryBasedLogViewAdaptor<TLogView, TLogEntry, SubmissionEntry<TLogEntry>>
+        where TLogView : class, new()
+        where TLogEntry : class
     {
-        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate,
-            ILogViewProvider repprovider, IProtocolServices services, string primaryCluster)
-            : base(host, repprovider, initialstate, services)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="host">log view host</param>
+        /// <param name="initialState">inittial state</param>
+        /// <param name="repProvider">user provided log view provider</param>
+        /// <param name="services">protocol services</param>
+        /// <param name="primaryCluster">primary cluster</param>
+        public CustomStorageAdaptor(ILogViewHost<TLogView, TLogEntry> host, TLogView initialState,
+            ILogViewProvider repProvider, IProtocolServices services, string primaryCluster)
+            : base(host, repProvider, initialState, services)
         {
-            if (!(host is ICustomStorageInterface<T, E>))
-                throw new BadProviderConfigException("Must implement ICustomStorageInterface<T,E> for CustomStorageLogView provider");
+            if (!(host is ICustomStorageInterface<TLogView, TLogEntry>))
+                throw new BadProviderConfigException("Must implement ICustomStorageInterface<TLogView,TLogEntry> for CustomStorageLogView provider");
             this.primaryCluster = primaryCluster;
         }
 
@@ -35,10 +44,10 @@ namespace Orleans.Providers.LogViews
 
         private const int slowpollinterval = 10000;
 
-        private T cached;
+        private TLogView cached;
         private int version;
 
-        protected override T LastConfirmedView()
+        protected override TLogView LastConfirmedView()
         {
             return cached;
         }
@@ -48,7 +57,7 @@ namespace Orleans.Providers.LogViews
             return version;
         }
 
-        protected override void InitializeConfirmedView(T initialstate)
+        protected override void InitializeConfirmedView(TLogView initialstate)
         {
             cached = initialstate;
             version = 0;
@@ -70,9 +79,9 @@ namespace Orleans.Providers.LogViews
         }
 
         // no special tagging is required, thus we create a plain submission entry
-        protected override SubmissionEntry<E> MakeSubmissionEntry(E entry)
+        protected override SubmissionEntry<TLogEntry> MakeSubmissionEntry(TLogEntry entry)
         {
-            return new SubmissionEntry<E>() { Entry = entry };
+            return new SubmissionEntry<TLogEntry>() { Entry = entry };
         }
 
         [Serializable]
@@ -81,11 +90,11 @@ namespace Orleans.Providers.LogViews
             public int KnownVersion { get; set; }
         }
         [Serializable]
-        private class ReadResponse<T> : IProtocolMessage
+        private class ReadResponse<TLogView> : IProtocolMessage
         {
             public int Version { get; set; }
 
-            public T Value { get; set; }
+            public TLogView Value { get; set; }
         }
 
         protected override Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
@@ -95,7 +104,7 @@ namespace Orleans.Providers.LogViews
             if (! MayAccessStorage())
                 throw new ProtocolTransportException("message destined for primary cluster ended up elsewhere (inconsistent configurations?)");
 
-            var response = new ReadResponse<T>() { Version = version };
+            var response = new ReadResponse<TLogView>() { Version = version };
 
             // optimization: include value only if version is newer
             if (version > request.KnownVersion)
@@ -121,7 +130,7 @@ namespace Orleans.Providers.LogViews
                     if (MayAccessStorage())
                     {
                         // read from storage
-                        var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
+                        var result = await ((ICustomStorageInterface<TLogView, TLogEntry>)Host).ReadStateFromStorageAsync();
                         version = result.Key;
                         cached = result.Value;
                     }
@@ -131,7 +140,7 @@ namespace Orleans.Providers.LogViews
                         var request = new ReadRequest() { KnownVersion = version };
                         if (!Services.MultiClusterConfiguration.Clusters.Contains(primaryCluster))
                             throw new ProtocolTransportException("the specified primary cluster is not in the multicluster configuration");
-                        var response =(ReadResponse<T>) await Services.SendMessage(request, primaryCluster);
+                        var response =(ReadResponse<TLogView>) await Services.SendMessage(request, primaryCluster);
                         if (response.Version > request.KnownVersion)
                         {
                             version = response.Version;
@@ -152,7 +161,7 @@ namespace Orleans.Providers.LogViews
 
                 Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
 
-                increasebackoff(ref backoff_msec);
+                Increasebackoff(ref backoff_msec);
             }
 
             exit_operation("ReadAsync");
@@ -162,7 +171,11 @@ namespace Orleans.Providers.LogViews
 
         Random random = null;
 
-        public void increasebackoff(ref int backoff)
+        /// <summary>
+        /// Increase backoff
+        /// </summary>
+        /// <param name="backoff"></param>
+        public void Increasebackoff(ref int backoff)
         {
             // after first fail do not backoff yet... keep it at zero
             if (backoff == -1) {  
@@ -194,7 +207,7 @@ namespace Orleans.Providers.LogViews
 
             try
             {
-                writesuccessful = await ((ICustomStorageInterface<T,E>) Host).ApplyUpdatesToStorageAsync(updates, version);
+                writesuccessful = await ((ICustomStorageInterface<TLogView,TLogEntry>) Host).ApplyUpdatesToStorageAsync(updates, version);
 
                 LastPrimaryException = null; // successful, so we clear stored exception
 
@@ -228,7 +241,7 @@ namespace Orleans.Providers.LogViews
             if (!writesuccessful || !transitionssuccessful)    {
                 Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
 
-                increasebackoff(ref backoff_msec);
+                Increasebackoff(ref backoff_msec);
 
                 while (true) // be stubborn until we can re-read the state from storage
                 {
@@ -241,7 +254,7 @@ namespace Orleans.Providers.LogViews
 
                     try
                     {
-                        var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
+                        var result = await ((ICustomStorageInterface<TLogView, TLogEntry>)Host).ReadStateFromStorageAsync();
                         version = result.Key;
                         cached = result.Value;
 
@@ -258,7 +271,7 @@ namespace Orleans.Providers.LogViews
 
                     Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
 
-                    increasebackoff(ref backoff_msec);
+                    Increasebackoff(ref backoff_msec);
                 }
             }
 
@@ -281,7 +294,7 @@ namespace Orleans.Providers.LogViews
         protected class UpdateNotificationMessage : INotificationMessage
         {
             public int Version { get; set; }
-            public List<E> Updates { get; set; }
+            public List<TLogEntry> Updates { get; set; }
 
             public override string ToString()
             {

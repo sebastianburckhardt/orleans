@@ -84,15 +84,15 @@ namespace Orleans.Runtime
             }
             else if (logViewGrain != null)
             {
-                var logviewprovider = persistenceProvider as ILogViewProvider;
+                var logViewProvider = persistenceProvider as ILogViewProvider;
 
                 // if given a plain storage provider instead of a log view provider, convert it to log view provider
-                if (logviewprovider == null)
-                    logviewprovider = new LogViewProviderManager.WrappedStorageProvider((IStorageProvider) persistenceProvider);
+                if (logViewProvider == null)
+                    logViewProvider = new LogViewProviderManager.WrappedStorageProvider((IStorageProvider) persistenceProvider);
 
                 // install protocol adaptor into grain
-                var svc = new ProtocolServices(grain, logviewprovider, MultiClusterRegistrationStrategy.FromAttributes(grainType));
-                logViewGrain.InstallAdaptor(logviewprovider, Activator.CreateInstance(stateType), grainType.FullName, svc);
+                var svc = new ProtocolServices(grain, logViewProvider, MultiClusterRegistrationStrategy.FromGrainType(grainType));
+                logViewGrain.InstallAdaptor(logViewProvider, Activator.CreateInstance(stateType), grainType.FullName, svc);
             }
           
             return grain;

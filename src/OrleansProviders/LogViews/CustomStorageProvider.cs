@@ -30,6 +30,7 @@ namespace Orleans.Providers.LogViews
         private static int counter;
         private int id;
 
+        /// <summary>Primary cluster</summary>
         public string PrimaryCluster { get; private set; }
 
         protected virtual string GetLoggerName()
@@ -37,6 +38,13 @@ namespace Orleans.Providers.LogViews
             return string.Format("LogViews.{0}.{1}", GetType().Name, id);
         }
 
+        /// <summary>
+        /// Init function
+        /// </summary>
+        /// <param name="name">provider name</param>
+        /// <param name="providerRuntime">provider runtime, see <see cref="IProviderRuntime"/></param>
+        /// <param name="config">provider configuration</param>
+        /// <returns></returns>
         public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
         {
             Name = name;

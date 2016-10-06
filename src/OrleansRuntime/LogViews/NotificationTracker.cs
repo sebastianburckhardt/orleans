@@ -15,26 +15,26 @@ namespace Orleans.Runtime.LogViews
     internal class NotificationTracker
     {
         private IProtocolServices services;
-        private Dictionary<string, NotificationWorker> sendworkers;
-        private int maxnotificationbatchsize;
+        private Dictionary<string, NotificationWorker> sendWorkers;
+        private int maxNotificationBatchSize;
 
-        public NotificationTracker(IProtocolServices services, MultiClusterConfiguration configuration, int maxnotificationbatchsize)
+        public NotificationTracker(IProtocolServices services, MultiClusterConfiguration configuration, int maxNotificationBatchSize)
         {
             this.services = services;
-            sendworkers = new Dictionary<string, NotificationWorker>();
-            this.maxnotificationbatchsize = maxnotificationbatchsize;
+            sendWorkers = new Dictionary<string, NotificationWorker>();
+            this.maxNotificationBatchSize = maxNotificationBatchSize;
 
             foreach (var x in configuration.Clusters)
                 if (x != services.MyClusterId)
                 {
                     services.Verbose("Now sending notifications to {0}", x);
-                    sendworkers.Add(x, new NotificationWorker(services, x, maxnotificationbatchsize));
+                    sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
                 }
         }
 
         public void BroadcastNotification(INotificationMessage msg, string exclude = null)
         {
-            foreach (var kvp in sendworkers)
+            foreach (var kvp in sendWorkers)
                 if (kvp.Key != exclude)
                 {
                     var w = kvp.Value;
@@ -49,29 +49,29 @@ namespace Orleans.Runtime.LogViews
         {
             get
             {
-                return sendworkers.Values.OrderBy(ns => ns.LastFailure).Select(ns => ns.LastException).LastOrDefault();
+                return sendWorkers.Values.OrderBy(ns => ns.LastFailure).Select(ns => ns.LastException).LastOrDefault();
             }
         }
 
         /// <summary>
         /// Update the multicluster configuration (change who to send notifications to)
         /// </summary>
-        public void ProcessConfigurationChange(MultiClusterConfiguration oldconf, MultiClusterConfiguration newconf)
+        public void ProcessConfigurationChange(MultiClusterConfiguration oldConfig, MultiClusterConfiguration newConfig)
         {
-            var removed = sendworkers.Keys.Except(newconf.Clusters);
+            var removed = sendWorkers.Keys.Except(newConfig.Clusters);
             foreach (var x in removed)
             {
                 services.Verbose("No longer sending notifications to {0}", x);
-                sendworkers[x].Done = true;
-                sendworkers.Remove(x);
+                sendWorkers[x].Done = true;
+                sendWorkers.Remove(x);
             }
 
-            var added = oldconf == null ? newconf.Clusters : newconf.Clusters.Except(oldconf.Clusters);
+            var added = oldConfig == null ? newConfig.Clusters : newConfig.Clusters.Except(oldConfig.Clusters);
             foreach (var x in added)
                 if (x != services.MyClusterId)
                 {
                     services.Verbose("Now sending notifications to {0}", x);
-                    sendworkers.Add(x, new NotificationWorker(services, x, maxnotificationbatchsize));
+                    sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
                 }
         }
 
@@ -91,30 +91,58 @@ namespace Orleans.Runtime.LogViews
         {
             private IProtocolServices services;
             private string clusterId;
+            private int maxNotificationBatchSize;
 
-            public NotificationWorker(IProtocolServices services, string clusterId, int maxnotificationbatchsize)
+            /// <summary>
+            /// Queue messages
+            /// </summary>
+            public INotificationMessage QueuedMessage = null;
+            /// <summary>
+            /// Queue state
+            /// </summary>
+            public NotificationQueueState QueueState = NotificationQueueState.Empty;
+            /// <summary>
+            /// Last exception
+            /// </summary>
+            public Exception LastException;
+            /// <summary>
+            /// Time of last failure
+            /// </summary>
+            public DateTime LastFailure;
+            /// <summary>
+            /// Number of consecutive failures
+            /// </summary>
+            public int NumConsecutiveFailures;
+            /// <summary>
+            /// Is current task done or not
+            /// </summary>
+            public bool Done;
+
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="services"></param>
+            /// <param name="clusterId"></param>
+            /// <param name="maxNotificationBatchSize"></param>
+            public NotificationWorker(IProtocolServices services, string clusterId, int maxNotificationBatchSize)
             {
                 this.services = services;
                 this.clusterId = clusterId;
-                this.maxnotificationbatchsize = maxnotificationbatchsize;
+                this.maxNotificationBatchSize = maxNotificationBatchSize;
             }
 
-            public INotificationMessage QueuedMessage = null;
-            public NotificationQueueState queuestate = NotificationQueueState.Empty;
-            public Exception LastException;
-            public DateTime LastFailure;
-            public int NumConsecutiveFailures;
-            public bool Done;
-            private int maxnotificationbatchsize;
-
+            /// <summary>
+            /// Enqueue method
+            /// </summary>
+            /// <param name="msg">The message to enqueue</param>
             public void Enqueue(INotificationMessage msg)
             {
-                switch (queuestate)
+                switch (QueueState)
                 {
                     case (NotificationQueueState.Empty):
                         {
                             QueuedMessage = msg;
-                            queuestate = NotificationQueueState.Single;
+                            QueueState = NotificationQueueState.Single;
                             break;
                         }
                     case (NotificationQueueState.Single):
@@ -123,13 +151,13 @@ namespace Orleans.Runtime.LogViews
                             m.Add(QueuedMessage);
                             m.Add(msg);
                             QueuedMessage = new BatchedNotificationMessage() { Notifications = m };
-                            queuestate = NotificationQueueState.Batch;
+                            QueueState = NotificationQueueState.Batch;
                             break;
                         }
                     case (NotificationQueueState.Batch):
                         {
                             var batchmsg = (BatchedNotificationMessage)QueuedMessage;
-                            if (batchmsg.Notifications.Count < maxnotificationbatchsize)
+                            if (batchmsg.Notifications.Count < maxNotificationBatchSize)
                             {
                                 batchmsg.Notifications.Add(msg);
                                 break;
@@ -138,14 +166,14 @@ namespace Orleans.Runtime.LogViews
                             {
                                 // keep only a version notification
                                 QueuedMessage = new VersionNotificationMessage() { Version = msg.Version };
-                                queuestate = NotificationQueueState.VersionOnly;
+                                QueueState = NotificationQueueState.VersionOnly;
                                 break;
                             }
                         }
                     case (NotificationQueueState.VersionOnly):
                         {
                             ((VersionNotificationMessage)QueuedMessage).Version = msg.Version;
-                            queuestate = NotificationQueueState.VersionOnly;
+                            QueueState = NotificationQueueState.VersionOnly;
                             break;
                         }
                 }
@@ -158,14 +186,14 @@ namespace Orleans.Runtime.LogViews
 
                 // take all of current queue
                 var msg = QueuedMessage;
-                var state = queuestate;
+                var state = QueueState;
 
                 if (state == NotificationQueueState.Empty)
                     return;
 
                 // queue is now empty (and may grow while this worker is doing awaits)
                 QueuedMessage = null;
-                queuestate = NotificationQueueState.Empty;
+                QueueState = NotificationQueueState.Empty;
 
                 // try to send it
                 try
@@ -182,7 +210,7 @@ namespace Orleans.Runtime.LogViews
                     // next time, send only version (this is an optimization that 
                     // avoids the queueing and sending of lots of data when there are errors observed)
                     QueuedMessage = new VersionNotificationMessage() { Version = msg.Version };
-                    queuestate = NotificationQueueState.VersionOnly;
+                    QueueState = NotificationQueueState.VersionOnly;
                     Notify();
 
                     LastException = e;

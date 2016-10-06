@@ -24,37 +24,50 @@ namespace Orleans
         protected LogViewGrain()
         { }
 
-        /// the object encapsulating the log view provider functionality and local state
+        /// <summary>
+        /// The object encapsulating the log view provider functionality and local state
         /// (similar to <see cref="StorageBridge"> for storage providers)
+        /// </summary>
         internal ILogViewAdaptor<TView, TLogEntry> Adaptor { get; private set; }
 
-
+        /// <summary>
         /// Called right after grain is constructed, to install the log view adaptor.
         /// The log view provider contains a factory method that constructs the adaptor with chosen types for this grain
+        /// </summary>
         void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
             Adaptor = provider.MakeLogViewAdaptor<TView, TLogEntry>(this, (TView)initialstate, graintypename, services);
         }
 
-        // called by adaptor to update the view when entries are appended.
+        /// <summary>
+        /// called by adaptor to update the view when entries are appended.
+        /// </summary>
+        /// <param name="view">log view</param>
+        /// <param name="entry">log entry</param>
         void ILogViewHost<TView, TLogEntry>.UpdateView(TView view, TLogEntry entry)
         {
             UpdateView(view, entry);
         }
 
-        // called by adaptor to retrieve the identity of this grain, for tracing purposes.
+        /// <summary>
+        /// called by adaptor to retrieve the identity of this grain, for tracing purposes.
+        /// </summary>
         string ILogViewHost<TView, TLogEntry>.IdentityString
         {
             get { return Identity.IdentityString; }
         }
 
-        // called by adaptor on state change. 
-        void ILogViewHost<TView, TLogEntry>.OnViewChanged(bool TentativeViewChanged, bool ConfirmedViewChanged)
+        /// <summary>
+        /// called by adaptor on state change. 
+        /// </summary>
+        /// <param name="TentativeViewChanged">Tentative view changed or not</param>
+        /// <param name="ConfirmedViewChanged">Confirmed view changed or not</param>
+        void ILogViewHost<TView, TLogEntry>.OnViewChanged(bool tentativeViewChanged, bool confirmedViewChanged)
         {
-            if (TentativeViewChanged)
+            if (tentativeViewChanged)
                 OnTentativeViewChanged();
-            if (ConfirmedViewChanged)
+            if (confirmedViewChanged)
                 OnConfirmedViewChanged();
         }
 
@@ -74,14 +87,22 @@ namespace Orleans
             return Adaptor.Deactivate();
         }
 
-        // Receive a protocol message from other clusters, passed on to log view adaptor.
+        /// <summary>
+        /// Receive a protocol message from other clusters, passed on to log view adaptor.
+        /// </summary>
+        /// <param name="payload"> pay load</param>
+        /// <returns></returns>
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
         {
             return Adaptor.OnProtocolMessageReceived(payload);
         }
 
-        // Receive a configuration change, pass on to log view adaptor.
+        /// <summary>
+        /// Receive a configuration change, pass on to log view adaptor.
+        /// </summary>
+        /// <param name="next"></param>
+        /// <returns></returns>
         [AlwaysInterleave]
         Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
         {

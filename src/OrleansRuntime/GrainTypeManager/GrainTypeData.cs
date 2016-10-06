@@ -22,7 +22,7 @@ namespace Orleans.Runtime
         internal Type StateObjectType { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
-        internal MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
+        internal MultiClusterRegistrationStrategy MultiClusterRegistrationStrategy { get; private set; }
    
      
         public GrainTypeData(Type type, Type stateObjectType)
