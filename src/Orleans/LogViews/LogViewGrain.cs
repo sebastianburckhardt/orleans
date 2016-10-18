@@ -61,8 +61,6 @@ namespace Orleans
         /// <summary>
         /// called by adaptor on state change. 
         /// </summary>
-        /// <param name="TentativeViewChanged">Tentative view changed or not</param>
-        /// <param name="ConfirmedViewChanged">Confirmed view changed or not</param>
         void ILogViewHost<TView, TLogEntry>.OnViewChanged(bool tentativeViewChanged, bool confirmedViewChanged)
         {
             if (tentativeViewChanged)
@@ -90,8 +88,6 @@ namespace Orleans
         /// <summary>
         /// Receive a protocol message from other clusters, passed on to log view adaptor.
         /// </summary>
-        /// <param name="payload"> pay load</param>
-        /// <returns></returns>
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
         {
@@ -101,8 +97,6 @@ namespace Orleans
         /// <summary>
         /// Receive a configuration change, pass on to log view adaptor.
         /// </summary>
-        /// <param name="next"></param>
-        /// <returns></returns>
         [AlwaysInterleave]
         Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
         {

@@ -15,7 +15,8 @@ namespace Orleans.Providers.LogViews
 {
 
     /// <summary>
-    /// A log view adaptor that wraps around a user-provided log view provider
+    /// A log view adaptor that uses the user-provided storage interface <see cref="ICustomStorageInterface{T,E}"/>. 
+    /// This interface must be implemented by any grain that uses this log view adaptor.
     /// </summary>
     /// <typeparam name="TLogView">log view type</typeparam>
     /// <typeparam name="TLogEntry">log entry type</typeparam>
@@ -24,13 +25,8 @@ namespace Orleans.Providers.LogViews
         where TLogEntry : class
     {
         /// <summary>
-        /// Constructor
+        /// Initialize a new instance of CustomStorageAdaptor class
         /// </summary>
-        /// <param name="host">log view host</param>
-        /// <param name="initialState">inittial state</param>
-        /// <param name="repProvider">user provided log view provider</param>
-        /// <param name="services">protocol services</param>
-        /// <param name="primaryCluster">primary cluster</param>
         public CustomStorageAdaptor(ILogViewHost<TLogView, TLogEntry> host, TLogView initialState,
             ILogViewProvider repProvider, IProtocolServices services, string primaryCluster)
             : base(host, repProvider, initialState, services)
@@ -174,7 +170,6 @@ namespace Orleans.Providers.LogViews
         /// <summary>
         /// Increase backoff
         /// </summary>
-        /// <param name="backoff"></param>
         public void Increasebackoff(ref int backoff)
         {
             // after first fail do not backoff yet... keep it at zero

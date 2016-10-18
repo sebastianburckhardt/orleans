@@ -258,7 +258,7 @@ namespace Orleans
 
 
         /// <summary>
-        /// The [Orleans.Providers.LogViewProvider] attribute is used to define which log view provider to use for persistating state for grain which extend LogViewGrain;.
+        /// The [Orleans.Providers.LogViewProvider] attribute is used to define which log view provider to use for persisting state for grain which extend LogViewGrain;.
         /// <para>
         /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute for that grain, 
         /// Otherwise system will try to find a [Orleans.Providers.StorageProvider] for the grain, depends on its  [Orleans.Providers.StorageProviderAttributes] set up,

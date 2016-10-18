@@ -119,11 +119,8 @@ namespace Orleans.Runtime.LogViews
             public bool Done;
 
             /// <summary>
-            /// Constructor
+            /// Initialize a new instance of NotificationWorker class
             /// </summary>
-            /// <param name="services"></param>
-            /// <param name="clusterId"></param>
-            /// <param name="maxNotificationBatchSize"></param>
             public NotificationWorker(IProtocolServices services, string clusterId, int maxNotificationBatchSize)
             {
                 this.services = services;

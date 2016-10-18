@@ -81,8 +81,6 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Handle protocol messages.
         /// </summary>
-        /// <param name="payload"></param>
-        /// <returns></returns>
         protected virtual Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
         {
             // subclasses that define custom protocol messages must override this
@@ -92,8 +90,6 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Handle notification messages. Override this to handle notification subtypes.
         /// </summary>
-        /// <param name="payload"></param>
-        /// <returns></returns>
         protected virtual void OnNotificationReceived(INotificationMessage payload)
         {        
             var msg = payload as VersionNotificationMessage; 
@@ -317,10 +313,7 @@ namespace Orleans.Runtime.LogViews
 
         #region Interface
 
-        /// <summary>
-        /// Submit a log entry
-        /// </summary>
-        /// <param name="logEntry">The log entry to submit</param>
+        /// <inheritdoc />
         public void Submit(TLogEntry logEntry)
         {
             if (!SupportSubmissions)
@@ -335,10 +328,7 @@ namespace Orleans.Runtime.LogViews
             worker.Notify();
         }
 
-        /// <summary>
-        /// Submit a range of log entries
-        /// </summary>
-        /// <param name="logEntries">Log entries to submit</param>
+        /// <inheritdoc />
         public void SubmitRange(IEnumerable<TLogEntry> logEntries)
         {
             if (!SupportSubmissions)
@@ -356,11 +346,7 @@ namespace Orleans.Runtime.LogViews
             worker.Notify();
         }
 
-        /// <summary>
-        /// Try append a log entry
-        /// </summary>
-        /// <param name="logEntry">Log entry to append</param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public Task<bool> TryAppend(TLogEntry logEntry)
         {
             if (!SupportSubmissions)
@@ -379,11 +365,7 @@ namespace Orleans.Runtime.LogViews
             return promise.Task;
         }
 
-        /// <summary>
-        /// Try append a range of log entries
-        /// </summary>
-        /// <param name="logEntries">Log entries to append</param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public Task<bool> TryAppendRange(IEnumerable<TLogEntry> logEntries)
         {
             if (!SupportSubmissions)
@@ -439,9 +421,7 @@ namespace Orleans.Runtime.LogViews
             Host.OnViewChanged(true, false);
         }
 
-        /// <summary>
-        /// Tentative view
-        /// </summary>
+        /// <inheritdoc />
         public TLogView TentativeView
         {
             get
@@ -456,9 +436,7 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
-        /// <summary>
-        /// Confirmed view
-        /// </summary>
+        /// <inheritdoc />
         public TLogView ConfirmedView
         {
             get
@@ -470,9 +448,7 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
-        /// <summary>
-        /// Confirmed version
-        /// </summary>
+        /// <inheritdoc />
         public int ConfirmedVersion
         {
             get
@@ -575,7 +551,7 @@ namespace Orleans.Runtime.LogViews
         }
 
         /// <summary>
-        /// Disable states collection
+        /// Disable stats collection
         /// </summary>
         public void DisableStatsCollection()
         {
@@ -760,11 +736,7 @@ namespace Orleans.Runtime.LogViews
         /// </summary>
         protected Exception LastPrimaryException;
 
-        /// <summary>
-        /// Wait for all local updates to finish, and retrieve latest global state. 
-        /// May require global coordination.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public async Task SynchronizeNowAsync()
         {
             if (stats != null)
@@ -786,6 +758,7 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
+        /// <inheritdoc />
         public async Task ConfirmSubmittedEntriesAsync()
         {
             if (stats != null)

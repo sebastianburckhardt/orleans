@@ -44,7 +44,6 @@ namespace Orleans.Providers.LogViews
         /// <param name="name">provider name</param>
         /// <param name="providerRuntime">provider runtime, see <see cref="IProviderRuntime"/></param>
         /// <param name="config">provider configuration</param>
-        /// <returns></returns>
         public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
         {
             Name = name;

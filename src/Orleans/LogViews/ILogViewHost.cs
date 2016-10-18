@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Orleans.LogViews
 {
     /// <summary>
-    /// Interface implemented by all grains which implement <see cref="ILogViewStorageInterface{TView, TLogEntry}"/>.  
+    /// Interface implemented by all grains which use a log view provider for persistence 
     /// It gives the log view adaptor access to grain-specific information and callbacks.
     /// </summary>
     /// <typeparam name="TLogView">type of the log view</typeparam>

@@ -24,14 +24,8 @@ namespace Orleans.Runtime.LogViews
     public class StorageProviderLogViewAdaptor<TLogView,TLogEntry> : PrimaryBasedLogViewAdaptor<TLogView, TLogEntry, SubmissionEntry<TLogEntry>> where TLogView : class,new() where TLogEntry : class
     {
         /// <summary>
-        /// Constructor
+        /// Initialize a StorageProviderLogViewAdaptor class
         /// </summary>
-        /// <param name="host"></param>
-        /// <param name="initialState"></param>
-        /// <param name="repProvider"></param>
-        /// <param name="globalStorageProvider"></param>
-        /// <param name="grainTypeName"></param>
-        /// <param name="services"></param>
         public StorageProviderLogViewAdaptor(ILogViewHost<TLogView, TLogEntry> host, TLogView initialState, ILogViewProvider repProvider, IStorageProvider globalStorageProvider, string grainTypeName, IProtocolServices services)
             : base(host, repProvider, initialState, services)
         {
@@ -112,9 +106,8 @@ namespace Orleans.Runtime.LogViews
         Random random = null;
 
         /// <summary>
-        /// Increase back off
+        /// Increase backoff
         /// </summary>
-        /// <param name="backoff"></param>
         public void IncreaseBackoff(ref int backoff)
         {
             // after first fail do not backoff yet... keep it at zero

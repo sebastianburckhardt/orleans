@@ -34,7 +34,7 @@ namespace Orleans.Providers.LogViews
         public const string GLOBAL_STORAGE_PROVIDER_PARAMETER = "GlobalStorageProvider";
 
         /// <summary>
-        /// Logger
+        /// Gets Logger
         /// </summary>
         public Logger Log { get; private set; }
 
@@ -52,7 +52,6 @@ namespace Orleans.Providers.LogViews
         /// <param name="name">Storage provider name</param>
         /// <param name="providerRuntime">Provider runtime</param>
         /// <param name="config">Provider config</param>
-        /// <returns></returns>
         public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
         {
             Name = name;
@@ -80,22 +79,19 @@ namespace Orleans.Providers.LogViews
         /// <summary>
         /// Close method
         /// </summary>
-        /// <returns></returns>
         public Task Close()
         {
             return TaskDone.Done;
         }
 
         /// <summary>
-        /// Make log view adaptor method
+        /// Make log view adaptor 
         /// </summary>
         /// <typeparam name="TView">View type param</typeparam>
         /// <typeparam name="TEntry">Entry type param</typeparam>
         /// <param name="hostGrain">Host grain</param>
         /// <param name="initialState">Initial state</param>
-        /// <param name="grainTypeName">Grain type name</param>
         /// <param name="services">Protocol services</param>
-        /// <returns></returns>
         public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView, TEntry> hostGrain, TView initialState, string grainTypeName, IProtocolServices services) 
             where TView : class, new()
             where TEntry : class
