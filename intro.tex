@@ -1,0 +1,40 @@
+\section{Introduction}
+
+emergence of client + cloud
+
+
+increasingly interactive: browsers do not just fetch and display data, but run single-page application that communicate via websockets where server can push changes to clients efficiently. Games, collaborative editing, social features, online chats.
+
+However, quite challenging to implement reactive services: elastic scaling, failure handling. Question: what programming models can help to write scalable reactive applications. 
+
+
+Reactive programming is a term that can be meaningfully applied to many systems. At its core, reactivity is about expressing dependencies of an observer or view on some observed entity, and about a mechanism for propagating changes of the latter to the former. Thus, we consider a \emph{reactive programming model} to be a combination of (1) language support for expressing observers, or \emph{views}, and (2) a runtime implementation that propagates changes to views. The challenge is to strike the right balance between ease of use and performance, for the intended workload and architecture.
+
+
+
+oncern.s between consistency and performance, and question of trading  choice to make highly depends on the circumstancesand may choose use explicit timeSynchronous vs. asynchronous, glitches, 
+ 
+This structure can lead to specialized solutions (for example, the database community has known for decades how to solve the view-update problem for relational data). helps to implement efficient algorithms  to the view-update problem. Recursion is common, where views become subjects of other views: for example, signals in FRP can be defined in terms of other signals. Semantics can differ in how they treat 
+
+
+use relations, may be monolithic, or graphs of objects. For example, database Facebook react has 
+relationship, and how changes are propagated by the runtime. Prior approaches to reactive programming fall into two camps: explicit (the programmer expresses dependencies) and implicit (program expresses the viewdependencies are detected automatically, either at compile-time or at runtime).
+Examples of explicit: makefiles, Rx, FRP. Examples of implicit: self-adjusting computation, Facebook React.
+
+
+  is has focused on specifying dataflow explicity. However, there are some 
+
+
+\subsection{Related Work}
+
+\subsection{Expressing Views.} Often, views can observe other views, creating a directed acyclic graph of dependencies. How to express such dependency graphs using recursive operators is a key question in the area of dataflow languages, functional reactive programming, and object-oriented frameworks such as Rx. In relational database systems, views are expressed by relational queries (which allows changes to be propagated incrementally). in Facebook's react.js, the application state is observed by a tree-structured virtual DOM, which is in turn observed by the browser's DOM. And in relational database systems, views are expressed by relational queries (which allows changes to be propagated incrementally). 
+
+We list a few common variations: (1) changes may be pushed or pulled, (2) propagation may happen in response to a periodic timer or in response to other changes, and (3) changes may be propagated as deltas (the difference between the previous observed state and the new observed state), or as summaries (the entire observed state).
+
+  relative change), or as summaries that contain the complete observed information  (which must be interpreted relative to the previous stateChange propagation can take many forms: changes may be pulled or pushed, and from the view, or pushed to the view. propagation may happen he view may pull changes, or the obseperiodically (called \emph{polling}) In the following, we call an observer a \emph{view}, and we define the \emph{state} of a view as the set of updates that has been propagated to it. 
+
+
+
+
+Change propagation is semantically subtle. In sychronous models, time is explicit. Asynchronous models may make strong consistency guarantees based on some form of version tracking, or may have weaker consistency guarantees. For example, a so-called glitch means that an observer sees two observables A, B that have inconsistent state, meaning that the set of updates propagated to A is different from the set of updates propagated to B. are ey may exhibit glitches, where a view see. Clearly, how to best balance consistency and performance is highly dependent on the architecture and workload. 
+
