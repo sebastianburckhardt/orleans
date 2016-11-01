@@ -1,0 +1,143 @@
+\section{Problem Formulation}
+
+Define the virtual actor model, then define why we want reactive programming.
+
+\subsection{Virtual Actors}
+
+Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter [36][37][46]. In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
+
+In a traditional bare-bones actor system, the developer remains responsible for the creation, placement, discovery, recovery, and load-balancing of actors. A newer generation of actor models [4][36][37], called virtual actor models, automate all of these aspects. The developer specifies only (1) a unique key for identifying each actor, and (2) how to save and load the actor state to/from external storage, if persistence is desired. As virtual actor systems can activate and deactivate actors based on use, they strongly resemble distributed caches [14][39][40][55] and provide similar performance benefits. 
+
+Following the terminology [4], we call the virtual actors \emph{grains}. For each grain type, the code defines a (1) key that identifies instances, (2)  fields that define the grain state, and (3) operations supported by the grain. The operations of a grain can read and modify the grain state, and can call operations on other grains, but cannot directly read or write the state of other grains (encapsulation). 
+ 
+\subsubsection{Example: Chirper}
+
+As a running example, we use a service called Chirper (based on the Orleans sample with the same name). It models a typical social application where users post messages to their own timeline, and view messages posted by people they are following.
+The code for the chirper service (not including the chirper client) is shown in Fig.~\ref{fig:chirper}, written in an imaginary DSL (domain-specific language) to help us focus on the programming model. 
+
+\begin{figure}
+\begin{lstlisting}
+grain User[userid: string] %\label{l:def}%
+{
+	// grain state
+	state Messages: map<<time,string>>;%\label{l:msgs}%
+	state Follows: set<<string>>;%\label{l:flws}%
+	// update operations
+	op Post(tstamp: time, msg: string) { Messages[tstamp] = msg; }%\label{b:uo}%
+	op Unpost(tstamp: time) { Messages.remove(tstamp); }
+	op Follow(userid: string) { Follows.add(userid); }
+	op Unfollow(userid: string) { Follows.remove(userid); }%\label{e:uo}%
+	// query operations
+	op GetMessages(from: time) : list<<pair<<time,string>>>> { %\label{l:getm}%
+		var msgs = new list<<pair<<time,string>>>>();
+		foreach(var m in Messages)
+			if (m.key >= from)
+				msgs.add((m.key, m.value));
+		return msgs;
+	}
+	op GetTimeline(from: time): list<<pair<<time,string>>>> {%\label{l:gettl}%
+		var msgs = GetMessages(from);%\label{l:loc}%
+		parallel foreach(var f in Follows) {%\label{l:par}%
+			// retrieve messages from user f by remote call
+			var fm = User[f].GetMessages(from); %\label{l:rcall}%
+			foreach(var m in fm) { msgs.add(m); }%\label{l:add}%
+		}
+		msgs.sort();%\label{l:sort}%
+		return msgs;%\label{l:ret}%
+	}
+}
+\end{lstlisting}
+\caption{Pseudocode for the Chirper service example.}\label{fig:chirper}
+\end{figure}
+
+There is only one type of grain, called \lstinline|User|.  A user grain encapsulates data associated with a user, and is identified by a string called \lstinline{userid} (\lref{def}). Each user grain stores the messages posted by that user in a map data structure \lstinline|Messages| (\lref{msgs}), keyed by timestamp. The current list of followed users is stored in \lstinline|Follows| (\lref{flws}). This grain state can change in response to update operations \lstinline|Post|, \lstinline|Unpost|, \lstinline|Follow|, \lstinline|Unfollow| (\rref{uo}) , which are invoked by the chirper client in response to clicking respective buttons.
+
+The operation \lstinline|GetMessages(from)| (\lref{getm}) returns all messages by this user since the time indicated by \lstinline|from|; it straightforwardly computes the result by iterating over \lstinline{Messages}.  
+
+The operation  \lstinline|GetTimeline(from)|  (\lref{gettl}) is more interesting. It returns a sorted list of all messages posted by the user \emph{and all followed users} since  the time indicated by \lstinline|from|. It computes the result as follows: first, it retrieves the locally stored messages (\lref{loc}). Then, \emph{in parallel} (\lref{par}), it calls \lstinline|GetMessages| on all followed users. These calls target other grains, by constructing a grain reference \lstinline|User[f]| to the grain for userid \lstinline|f| (\lref{rcall}). The returned messages are all added to the list \lstinline|msgs| (\lref{add}). After all the parallel tasks complete, the messages are sorted (\lref{sort}) and returned (\lref{ret}).
+
+\subsubsection{Failure Model}
+
+The virtual actor model does not fully hide failures: a grain may fail at any time, even when in the middle of executing an operation, and this can be observed. However, the runtime does provide some support for dealing with failures.
+
+\paragraph{Persistent Grains.} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The \lstinline|User| grains in this example are persistent. The grain state of a persistent grain is saved after each operation that updates the state, before returning.
+
+\paragraph{Automatic Timeouts.} All grain operations throw a special timeout-exception if no response is received after a configurable time limit (the default is 30 seconds). This helps to avoid hangs and deadlocks if a grain fails before responding, or becomes unavailable for other reasons.
+
+If an operation times out, the caller does not know whether it was performed or not. To handle this issue, applications usually design update operations to be \emph{idempotent}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
+
+\hidden{
+
+\subsection{Runtime Implementation}
+
+Under the hood, the runtime must provide the needed distributed protocols for managing the creation, placement, discovery, recovery, and load-balancing of actors. By design, the application layer is largely unaware of how these details. Nevertheless, we briefly describe the mechanisms used by the Orleans system here. 
+
+\paragraph{Grain Directory}. Grains can be active (there exists an instance of it on some machine) or inactive (otherwise). The runtime maintains a distributed directory (based on the consistent hashing algorithm)  for tracking active grains. When an inactive grain is accessed, the runtime automatically activates it, and places it on a randomly selected server. If a grain is not accessed for a prolonged (configurable) time, it is deactivated and removed from the grain directory. 
+
+\paragraph{Silo Failures}. Under the hood, the runtime tracks all participating servers, called \emph{silos}, using a membership protocol. The set of members can change when administrators choose to increase or decrease the number of servers, or when servers fail, which is detected automatically.  For \emph{volatile} grains, the grain state is lost on failure. For \emph{persistent} grains, the grain state is saved to persistent storage after each change, and loaded from persistent storage when activated. 
+ 
+
+The actual C\# code is similar, but contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
+}
+
+\subsection{Reactivity}
+
+Suppose now that we want our chirper client to not just display a frozen snapshot of the timeline, but to react to changes in the application state and refresh the user interface accordingly. What are our implementation options? 
+
+\paragraph{Client-side Polling. } A straightforward solution is to have the client repeat the query periodically to retrieve the latest state (Fig.\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient time-out exceptions due to high load or failures. However, it confronts us with a unpleasant tradeoff when selecting the polling interval: if long, the displayed result may lag significantly behind the current result; if short, we increase the load on our service and thus have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
+
+\paragraph{Observer Pattern.} To achieve better performance, we may consider changing the service implementation by adding code that tracks observers and sends notification when the state changes. We show a sketch of a partial solution in Fig.~\ref{fig:observer}. Grains now have additional state for tracking observers; clients and grains that call a query operation pass themselves as an additional argument that gets added to the observer list, and notified when the state changes. \emph{But there are many serious problems with this sketch}. For example, it does not remove observers; nor does it handle failures. If observer lists are not persisted, they are lost on failures - but if they are persisted, we face consistency problems because the state of multiple grains is not saved atomically.  State changes force the client to reexecute the entire query, even if only a small part of the computation is different --- it would be better to support incremental changes. Although it is conceivable that a skilled programmer can solve all of these issues, it is a road that likely leads to complex, error-prone code that is susceptible to deadlocks and subtle race conditions.
+
+\paragraph{Best of both.} Is it possible to combine the elegant simplicity and well-defined failure handling of the client-side polling  solution with the performance of a reactive implementation that pushes changes only where necessary and can avoid unnecessary re-execution of unaffected subcomputations. Perhaps surprisingly, the answer is yes.
+
+\subsection{Solution}
+
+
+ 
+\begin{figure}
+\begin{lstlisting}
+while (interested) {
+	try {
+		var result = Grain[myuserid].GetTimeline();
+		display(result); // display
+	} catch(TimeoutException) { }
+	await delay(5000);
+}
+\end{lstlisting}
+\caption{Solution using client-side polling.}\label{fig:chirper}
+\end{figure}
+
+\begin{figure}
+\begin{lstlisting}
+grain User[userid: string] %\label{l:deff}%
+{
+	...
+	// temp grain state
+	state Observers: set<<Observer>>; 
+	// update operations
+	op Post(tstamp: time, msg: string) { ...; Notify(); } 
+	op Unpost(tstamp: time) { ...;  Notify(); }
+	op Follow(userid: string) {  ...;  Notify(); }
+	op Unfollow(userid: string) {  ...;  Notify(); }
+	// query operations
+	op GetMessages(..., Observer client) : ... { 
+		Observers.add(client);
+		...
+	}
+	op GetTimeline(..., Observer client) : ... { 
+		Observers.add(client);
+		...
+			var fm = User[f].GetMessages(from, this);
+		...		
+	}
+	// propagate notifications
+	op Notify() {
+		foreach(var o in Observers)
+			o.Notify();
+       }
+}
+\end{lstlisting}
+\caption{Partial solution sketch using observer pattern.}\label{fig:chirper}
+\end{figure}
+
+

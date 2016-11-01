@@ -29,7 +29,65 @@
 % 11pt          To set in 11-point type instead of 9-point.
 % numbers       To obtain numeric citation style instead of author/year.
 
-\usepackage{amsmath}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath} 
+\usepackage{amssymb}
+
+\definecolor{light-gray}{gray}{0.90}
+\definecolor{dark-gray}{gray}{0.10}
+\definecolor{dark-blue}{rgb}{0,0.08,0.45}
+\definecolor{dark-green}{rgb}{0,0.50,0}
+\definecolor{comment-green}{rgb}{0,0.4,0.1}
+\definecolor{type-blue}{rgb}{0.16,0.56,0.68}
+\definecolor{keyword-blue}{rgb}{0,0.2,0.7}
+\definecolor{string-purple}{rgb}{0.59,0,0.57}
+\definecolor{orange}{rgb}{1,0.5,0}
+
+\def\codestyle{\color{black}\small\sffamily\upshape}
+%\def\kwstyle{\codestyle\color{dark-blue}}
+\def\kwstyle{\codestyle\bfseries}
+%\def\tpstyle{\codestyle\color{type-blue}}
+\def\tpstyle{\codestyle\itshape}
+\def\idstyle{\codestyle}
+%\def\commentstyle{\codestyle\rmfamily\color{comment-green}}
+\def\commentstyle{\codestyle\rmfamily\color{comment-green}}
+
+\newcommand{\textkw}[1]{\mbox{\kwstyle #1}}
+\newcommand{\textcode}[1]{\mbox{\codestyle #1}}
+\newcommand{\textid}[1]{\mbox{\idstyle #1}}
+\newcommand{\texttp}[1]{\mbox{\tpstyle #1}}
+\newcommand{\textcomment}[1]{\mbox{\commentstyle #1}}
+
+\lstset{language=Java
+       ,columns=fullflexible
+       ,basicstyle=\codestyle
+       ,literate={<<}{$\langle$}1 {>>}{$\rangle$}1 {<>}{$\neq\;\,$}1 {>=}{$\geqslant\;$}1 {\&\&}{$\wedge\;\,$}1 {||}{$\vee\;\,$}1 {++}{\texttt{++}}2 {;}{\,;}1 {xx}{$\times\;$}1 {^}{\ $\cdot$\ }2 {->}{$\rightarrow\;$}2 {NN}{$\N$}1 {~>}{$\rightharpoonup\;$}2 {=>}{$\Rightarrow\;$}2
+       ,keywordstyle=\kwstyle
+       ,emph={String,Bool,Int,Set,%
+              int,string,timestamp,bool,str,void,set,map,time}
+       ,emphstyle=\tpstyle
+       ,identifierstyle=\idstyle
+       ,tabsize=2
+       ,commentstyle=\commentstyle
+       ,keywords={entity,array,property,state,relation,function,var,orderby,match,with,not,global,%
+                  where,select,do,sync,flush,yield,barrier,delete,max,min,sum,merge,entries,all,%
+                  class,if,else,while,return,delegate,foreach,in,try,finally,static,threadlocal,private,public,atomic,assert,ref,true,false,with,struct,method,type,const,null,%
+                  cloud,table,grain,parallel,index,op,var,and}
+       ,delim=[l][\upshape]()
+       ,escapeinside={\%}{\%}
+       ,stringstyle=\color{string-purple}
+       ,showstringspaces=false
+       ,morestring=[b]'
+       ,comment=[l]//
+       ,numbers=left
+       ,numberstyle=\tiny
+       }
+\newcommand\comment{\commentstyle\quad// }
+\newcommand{\hidden}[1]{}
+\newcommand{\lref}[1]{line~\ref{l:#1}}
+\newcommand{\rref}[1]{lines~\ref{b:#1}--\ref{e:#1}}
+
 
 \newcommand{\cL}{{\cal L}}
 
