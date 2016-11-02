@@ -23,10 +23,10 @@ grain User[userid: string] %\label{l:def}%
 	state Messages: map<<time,string>>;%\label{l:msgs}%
 	state Follows: set<<string>>;%\label{l:flws}%
 	// update operations
-	op Post(tstamp: time, msg: string) { Messages[tstamp] = msg; }%\label{b:uo}%
-	op Unpost(tstamp: time) { Messages.remove(tstamp); }
-	op Follow(userid: string) { Follows.add(userid); }
-	op Unfollow(userid: string) { Follows.remove(userid); }%\label{e:uo}%
+	op Post(t: time, msg: string) { Messages[t] = msg; }%\label{b:uo}%
+	op Unpost(t: time) { Messages.remove(t); }
+	op Follow(id: string) { Follows.add(id); }
+	op Unfollow(id: string) { Follows.remove(id); }%\label{e:uo}%
 	// query operations
 	op GetMessages(from: time) : list<<pair<<time,string>>>> { %\label{l:getm}%
 		var msgs = new list<<pair<<time,string>>>>();
@@ -58,13 +58,15 @@ The operation  \lstinline|GetTimeline(from)|  (\lref{gettl}) is more interesting
 
 \subsubsection{Failure Model}
 
-The virtual actor model does not fully hide failures: a grain may fail at any time, even when in the middle of executing an operation, and this can be observed. However, the runtime does provide some support for dealing with failures.
+The virtual actor model does not hide failures: a grain may fail at any time, even when in the middle of executing an operation, and this can be observed. However, the runtime does provide some support for dealing with failures.
 
-\paragraph{Persistent Grains.} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The \lstinline|User| grains in this example are persistent. The grain state of a persistent grain is saved after each operation that updates the state, before returning.
+\paragraph{Recovering Grains.} If a grain is hosted on a server and that server fails, the runtime activates a fresh instance of the grain the next time it is accessed. 
+
+\paragraph{Persistent Grains.} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The state of a persistent grain is saved after each operation that updates the state, and loaded from storage when a grain is activated. The \lstinline|User| grains in the chirper example are persistent. 
 
 \paragraph{Automatic Timeouts.} All grain operations throw a special timeout-exception if no response is received after a configurable time limit (the default is 30 seconds). This helps to avoid hangs and deadlocks if a grain fails before responding, or becomes unavailable for other reasons.
 
-If an operation times out, the caller does not know whether it was performed or not. To handle this issue, applications usually design update operations to be \emph{idempotent}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
+If an operation times out, the caller does not know whether its effect was performed or not. To handle this issue, applications often design update operations to be \emph{idempotent} \cite{kapil}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
 
 \hidden{
 
@@ -84,60 +86,114 @@ The actual C\# code is similar, but contains more detail and uses language featu
 
 Suppose now that we want our chirper client to not just display a frozen snapshot of the timeline, but to react to changes in the application state and refresh the user interface accordingly. What are our implementation options? 
 
-\paragraph{Client-side Polling. } A straightforward solution is to have the client repeat the query periodically to retrieve the latest state (Fig.\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient time-out exceptions due to high load or failures. However, it confronts us with a unpleasant tradeoff when selecting the polling interval: if long, the displayed result may lag significantly behind the current result; if short, we increase the load on our service and thus have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
-
-\paragraph{Observer Pattern.} To achieve better performance, we may consider changing the service implementation by adding code that tracks observers and sends notification when the state changes. We show a sketch of a partial solution in Fig.~\ref{fig:observer}. Grains now have additional state for tracking observers; clients and grains that call a query operation pass themselves as an additional argument that gets added to the observer list, and notified when the state changes. \emph{But there are many serious problems with this sketch}. For example, it does not remove observers; nor does it handle failures. If observer lists are not persisted, they are lost on failures - but if they are persisted, we face consistency problems because the state of multiple grains is not saved atomically.  State changes force the client to reexecute the entire query, even if only a small part of the computation is different --- it would be better to support incremental changes. Although it is conceivable that a skilled programmer can solve all of these issues, it is a road that likely leads to complex, error-prone code that is susceptible to deadlocks and subtle race conditions.
-
-\paragraph{Best of both.} Is it possible to combine the elegant simplicity and well-defined failure handling of the client-side polling  solution with the performance of a reactive implementation that pushes changes only where necessary and can avoid unnecessary re-execution of unaffected subcomputations. Perhaps surprisingly, the answer is yes.
-
-\subsection{Solution}
-
-
- 
 \begin{figure}
 \begin{lstlisting}
 while (interested) {
 	try {
 		var result = Grain[myuserid].GetTimeline();
-		display(result); // display
-	} catch(TimeoutException) { }
-	await delay(5000);
+		display(result);
+	} catch(TimeoutException) {  } // ignore this exception
+	await delay(5000); // wait for 5 seconds
 }
 \end{lstlisting}
-\caption{Solution using client-side polling.}\label{fig:chirper}
+\caption{Solution using client-side polling.}\label{fig:polling}
 \end{figure}
+
+\paragraph{Client-side Polling. } A straightforward solution is to have the client repeat the query periodically to retrieve the latest state (Fig.\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (e.g. when requests time out under high load, or when one of the grains fails). However, it confronts us with a unpleasant tradeoff when selecting the \textbf{polling interval}: if \emph{long}, the displayed result may lag significantly behind the current result; if \emph{short}, we increase the load on our service and thus have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
 
 \begin{figure}
 \begin{lstlisting}
-grain User[userid: string] %\label{l:deff}%
-{
+// new additions to  grain state
+state Observers: map<<Observer,time>>; 
+state Followers: set<<userid>>; 	
+// new update operations
+op AddFollower (userid: string)
+	{ Followers.Add(userid); }
+op RemoveFollower (userid: string)
+	{ Followers.Remove(userid); }
+op AddObserver (client: Observer, from: time)
+   : list<<pair<<time,string>>>>{%\label{l:cs}%
+ 	Observers[client] = time; 
+ 	return GetTimeline(from);
+}
+op RemoveObserver (client: Observer)
+	{ Observers.Remove(client); }
+// modifications to existing update operations
+op Post(tstamp: time, msg: string) { 
 	...
-	// temp grain state
-	state Observers: set<<Observer>>; 
-	// update operations
-	op Post(tstamp: time, msg: string) { ...; Notify(); } 
-	op Unpost(tstamp: time) { ...;  Notify(); }
-	op Follow(userid: string) {  ...;  Notify(); }
-	op Unfollow(userid: string) {  ...;  Notify(); }
-	// query operations
-	op GetMessages(..., Observer client) : ... { 
-		Observers.add(client);
-		...
+	NotifyFollowers();  NotifyObservers();
+} 
+op Unpost(tstamp: time) { 
+	...
+	NotifyFollowers();  NotifyObservers();
+}
+op Follow(userid: string) {  
+	... 
+	User[userid].AddFollower(this.userid);
+	NotifyObservers();
+}
+op Unfollow(userid: string) { 
+	...  
+	User[userid].RemoveFollower(this.userid);
+	NotifyObservers(); 
+}
+// new propagation operations
+op NotifyObservers() {
+	foreach(var (client,from) in Observers) {
+		var latest = GetTimeline(from);
+		client.Notify(latest);
 	}
-	op GetTimeline(..., Observer client) : ... { 
-		Observers.add(client);
-		...
-			var fm = User[f].GetMessages(from, this);
-		...		
-	}
-	// propagate notifications
-	op Notify() {
-		foreach(var o in Observers)
-			o.Notify();
-       }
+}
+op NotifyFollowers() {
+	parallel foreach(var f in Followers) { f.NotifyObservers(); }
 }
 \end{lstlisting}
-\caption{Partial solution sketch using observer pattern.}\label{fig:chirper}
+\caption{Cautionary sketch of what it may take to apply the observer pattern to the \lstinline|User| grain from Fig.~\ref{fig:chirper}.}\label{fig:observers}
 \end{figure}
+
+\paragraph{Observer Pattern.} To achieve better performance, we may consider implementing change propagation at the application level.  This is not very simple: we sketch how one may apply the observer pattern to the \lstinline|User| grain in Fig.~\ref{fig:observer}. User grains now track observing clients and followers. Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. \emph{But this design leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Moreover, changes are not propagated selectively: a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
+
+\hidden
+{\begin{itemize}
+\item It is not clear if the client observers should be considered part of the normal grain state and persisted along with it. If observer lists are not persisted, they are lost on failures - but if they are persisted, we pay a performance price.
+\item We are now saving redundant information in the user grains (\lstinline{Follows} and \lstinline{Followers} represent the same relation), and can observe inconsistencies  (the state of multiple grains is not saved atomically).  
+\item Changes are not propagated selectively: a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
+\end{itemize}
+}
+
+\hidden{
+Conceivably, a skilled programmer can solve all of these issues at the application level --- but in our experience, this is a road that leads to complex, error-prone code that is susceptible to deadlocks and subtle race conditions. There is a better way.
+}
+
+\subsection{Proposed Solution}
+
+It turns out that it is in fact possible to retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}) while performing efficient dependency tracking and reactive change propagation \emph{under the hood}, fully automatically. The reason is that the virtual actor model already provides us with a clean decomposition of computations and clear interception points (grain calls) that can be cached (memoized) and updated reactively. 
+
+
+
+
+
+with the performance of a reactive implementation that pushes changes only where necessary and can avoid unnecessary re-execution of unaffected subcomputations. Perhaps surprisingly, the answer is yes.
+
+\begin{figure}
+\begin{lstlisting}
+	var rc = CreateReactiveComputation(
+		() =>  Grain[myuserid].GetTimeline()
+	);
+	var resulttracker = rc.GetResultTracker();
+	try {
+	 	while (interested) 
+	 		try {
+				var result = await resulttracker.NextResult();
+				display(result);
+			} catch(TimeoutException) {  }
+	} finally {
+		rc.Dispose();
+	}
+}
+\end{lstlisting}
+\caption{Proposed solution: runtime support for reactive computations.}\label{fig:chirper}
+\end{figure}
+
 
 

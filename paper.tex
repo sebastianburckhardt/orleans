@@ -33,6 +33,7 @@
 \usepackage{listings}
 \usepackage{amsmath} 
 \usepackage{amssymb}
+\usepackage{graphicx}
 
 \definecolor{light-gray}{gray}{0.90}
 \definecolor{dark-gray}{gray}{0.10}
@@ -72,7 +73,7 @@
        ,commentstyle=\commentstyle
        ,keywords={entity,array,property,state,relation,function,var,orderby,match,with,not,global,%
                   where,select,do,sync,flush,yield,barrier,delete,max,min,sum,merge,entries,all,%
-                  class,if,else,while,return,delegate,foreach,in,try,finally,static,threadlocal,private,public,atomic,assert,ref,true,false,with,struct,method,type,const,null,%
+                  class,if,else,while,catch,await,return,delegate,foreach,in,try,finally,static,threadlocal,private,public,atomic,assert,ref,true,false,with,struct,method,type,const,null,%
                   cloud,table,grain,parallel,index,op,var,and}
        ,delim=[l][\upshape]()
        ,escapeinside={\%}{\%}
@@ -88,8 +89,7 @@
 \newcommand{\lref}[1]{line~\ref{l:#1}}
 \newcommand{\rref}[1]{lines~\ref{b:#1}--\ref{e:#1}}
 
-
-\newcommand{\cL}{{\cal L}}
+	
 
 \begin{document}
 
