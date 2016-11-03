@@ -68,23 +68,9 @@ The virtual actor model does not hide failures: a grain may fail at any time, ev
 
 If an operation times out, the caller does not know whether its effect was performed or not. To handle this issue, applications often design update operations to be \emph{idempotent} \cite{kapil}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
 
-\hidden{
-
-\subsection{Runtime Implementation}
-
-Under the hood, the runtime must provide the needed distributed protocols for managing the creation, placement, discovery, recovery, and load-balancing of actors. By design, the application layer is largely unaware of how these details. Nevertheless, we briefly describe the mechanisms used by the Orleans system here. 
-
-\paragraph{Grain Directory}. Grains can be active (there exists an instance of it on some machine) or inactive (otherwise). The runtime maintains a distributed directory (based on the consistent hashing algorithm)  for tracking active grains. When an inactive grain is accessed, the runtime automatically activates it, and places it on a randomly selected server. If a grain is not accessed for a prolonged (configurable) time, it is deactivated and removed from the grain directory. 
-
-\paragraph{Silo Failures}. Under the hood, the runtime tracks all participating servers, called \emph{silos}, using a membership protocol. The set of members can change when administrators choose to increase or decrease the number of servers, or when servers fail, which is detected automatically.  For \emph{volatile} grains, the grain state is lost on failure. For \emph{persistent} grains, the grain state is saved to persistent storage after each change, and loaded from persistent storage when activated. 
- 
-
-The actual C\# code is similar, but contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
-}
-
 \subsection{Reactivity}
 
-Suppose now that we want our chirper client to not just display a frozen snapshot of the timeline, but to react to changes in the application state and refresh the user interface accordingly. What are our implementation options? 
+Suppose now that we want our chirper client to not just display a frozen snapshot of \lstinline|GetTimeline|, but to react to changes in the application state and refresh the user display accordingly. What are our implementation options? 
 
 \begin{figure}
 \begin{lstlisting}
@@ -92,14 +78,16 @@ while (interested) {
 	try {
 		var result = Grain[myuserid].GetTimeline();
 		display(result);
-	} catch(TimeoutException) {  } // ignore this exception
-	await delay(5000); // wait for 5 seconds
+	} catch(TimeoutException) { 
+		display("server is not responding, retrying...");
+	}  
+	await delay(5000); // wait for 5 seconds between refresh
 }
 \end{lstlisting}
-\caption{Solution using client-side polling.}\label{fig:polling}
+\caption{Possible solution using client-side polling.}\label{fig:polling}
 \end{figure}
 
-\paragraph{Client-side Polling. } A straightforward solution is to have the client repeat the query periodically to retrieve the latest state (Fig.\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (e.g. when requests time out under high load, or when one of the grains fails). However, it confronts us with a unpleasant tradeoff when selecting the \textbf{polling interval}: if \emph{long}, the displayed result may lag significantly behind the current result; if \emph{short}, we increase the load on our service and thus have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
+\paragraph{Client-side Polling. } A straightforward solution is to have the client repeat the query periodically to retrieve the latest state (Fig.\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when selecting the \textbf{polling interval}: if \emph{long}, the displayed result may lag significantly behind the current result; if \emph{short}, we increase the load on our service and thus have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
 
 \begin{figure}
 \begin{lstlisting}
@@ -151,7 +139,7 @@ op NotifyFollowers() {
 \caption{Cautionary sketch of what it may take to apply the observer pattern to the \lstinline|User| grain from Fig.~\ref{fig:chirper}.}\label{fig:observers}
 \end{figure}
 
-\paragraph{Observer Pattern.} To achieve better performance, we may consider implementing change propagation at the application level.  This is not very simple: we sketch how one may apply the observer pattern to the \lstinline|User| grain in Fig.~\ref{fig:observer}. User grains now track observing clients and followers. Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. \emph{But this design leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Moreover, changes are not propagated selectively: a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
+\paragraph{Observer Pattern.} We can implement change propagation at the application level, using the observer design pattern. We sketch how one may modify the User grain accordingly in Fig.~\ref{fig:observer}. It now tracks observing clients and followers. Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. \emph{But this solution leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Also, despite all the extra code, changes are still not propagated very efficiently: for example, a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
 
 \hidden
 {\begin{itemize}
@@ -165,35 +153,44 @@ op NotifyFollowers() {
 Conceivably, a skilled programmer can solve all of these issues at the application level --- but in our experience, this is a road that leads to complex, error-prone code that is susceptible to deadlocks and subtle race conditions. There is a better way.
 }
 
-\subsection{Proposed Solution}
-
-It turns out that it is in fact possible to retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}) while performing efficient dependency tracking and reactive change propagation \emph{under the hood}, fully automatically. The reason is that the virtual actor model already provides us with a clean decomposition of computations and clear interception points (grain calls) that can be cached (memoized) and updated reactively. 
-
-
-
-
-
-with the performance of a reactive implementation that pushes changes only where necessary and can avoid unnecessary re-execution of unaffected subcomputations. Perhaps surprisingly, the answer is yes.
 
 \begin{figure}
 \begin{lstlisting}
-	var rc = CreateReactiveComputation(
-		() =>  Grain[myuserid].GetTimeline()
-	);
-	var resulttracker = rc.GetResultTracker();
+var rc = CreateReactiveComputation(%\label{l:crc}%
+			() =>  Grain[myuserid].GetTimeline()
+	 	);
+var resulttracker = rc.GetResultTracker();%\label{l:crt}%
+
+while (interested) {%\label{b:pl}%
 	try {
-	 	while (interested) 
-	 		try {
-				var result = await resulttracker.NextResult();
-				display(result);
-			} catch(TimeoutException) {  }
-	} finally {
-		rc.Dispose();
+		var result = await resulttracker.NextResult();%\label{l:await}%
+		display(result);
+	} catch(TimeoutException) { 
+		display("server is not responding, retrying...");
 	}
-}
+}%\label{e:pl}%
 \end{lstlisting}
-\caption{Proposed solution: runtime support for reactive computations.}\label{fig:chirper}
+\caption{Proposed solution: runtime support for reactive computations.}\label{fig:rcapi}
 \end{figure}
 
+
+\subsection{Proposed Solution}
+
+By adding support for reactive computations into the virtual actor runtime, we can spare the programmer considerable hassle, and let them benefit from an automatic, optimized distributed algorithm for dependency tracking and change propagation. 
+
+The way in which a client uses our solution is shown in  (Fig.~\ref{fig:rcapi}). Other than the first four lines, it is very similar to the client-side polling solution (Fig.~\ref{fig:polling}) and, like the latter, does \emph{not require any changes to the code for the chirper service}. 
+
+First, the programmer creates a \emph{reactive computation} object (\lref{crc}), passing an anonymous function that describes the computation. This instructs the runtime to continuously track the result of that computation. To consume the results, the programmer creates a \emph{result tracker} object (\lref{crt}). The result tracker operates like an enumerator that produces both the initial result, and any successive changed results, when we call \lstinline|NextResult| (\lref{await}). \footnote{to avoid potential confusion: note that the result tracker is \emph{not} an enumerator for the produced timeline; rather, each call to \lstinline|NextResult| returns the latest version of the \emph{entire} timeline.}
+Note that the code in the loop (\rref{pl}) is very similar to the client-side polling solution (Fig.~\ref{fig:polling}), but no longer needs to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately.
+
+ResultTrackers have some interesting properties that make them well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread (using C\# language support for async/await \cite{Bierman2012}).  Also, it is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed.
+
+%adding support for reactive computations into the virtual actor runtime, we can avoid the hassle of changing the application code, and  retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}). Our proposed API is shown
+
+%The reason is that the virtual actor model already provides us with a clean decomposition of computations and clear interception points (grain calls) that can be cached (memoized) and updated reactively. 
+ 
+
+
+%with the performance of a reactive implementation that pushes changes only where necessary and can avoid unnecessary re-execution of unaffected subcomputations. Perhaps surprisingly, the answer is yes.
 
 
