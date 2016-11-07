@@ -59,7 +59,7 @@ Extending change propagation and garbage collection to the bipartite graph is st
 
 \paragraph{Large Fan-out.} The reactive caching improves performance in situations with a large fan-out (summaries with many observers): rather than sending updates to each observer directly, it is enough to send one update to each silo, and the silo then forwards the update locally. This reduces network traffic.
 
-\paragraph{Back-Pressure}. 
+\paragraph{Back-Pressure.} 
 Our experiments show that in the case of high update rates, it is beneficial to throttle the sending of updates. Our mechanism achieves this by sending results to caches one at a time, and measuring the response time. If above a configurable threshold, we back off (wait for an extra delay equal to the round trip time of the push). 
 
 \subsubsection{Fault Tolerance}

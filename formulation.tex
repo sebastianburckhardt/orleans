@@ -1,8 +1,4 @@
-\section{Problem Formulation}
-
-Define the virtual actor model, then define why we want reactive programming.
-
-\subsection{Virtual Actors}
+\section{Virtual Actor Model}
 
 Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter [36][37][46]. In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
 
@@ -10,10 +6,10 @@ In a traditional bare-bones actor system, the developer remains responsible for 
 
 Following the terminology [4], we call the virtual actors \emph{grains}. For each grain type, the code defines a (1) key that identifies instances, (2)  fields that define the grain state, and (3) operations supported by the grain. The operations of a grain can read and modify the grain state, and can call operations on other grains, but cannot directly read or write the state of other grains (encapsulation). 
  
-\subsubsection{Example: Chirper}
+\subsection{Example: Chirper}
 
 As a running example, we use a service called Chirper (based on the Orleans sample with the same name). It models a typical social application where users post messages to their own timeline, and view messages posted by people they are following.
-The code for the chirper service (not including the chirper client) is shown in Fig.~\ref{fig:chirper}, written in an imaginary DSL (domain-specific language) to help us focus on the programming model. 
+The code for the chirper service is shown in Fig.~\ref{fig:chirper}, written in an imaginary DSL (domain-specific language) that helps us focusing on the programming model (we discuss the actual C\# syntax used by the Orleans system and our implementation in \S\ref{}).
 
 \begin{figure}
 \begin{lstlisting}
@@ -50,25 +46,25 @@ grain User[userid: string] %\label{l:def}%
 \caption{Pseudocode for the Chirper service example.}\label{fig:chirper}
 \end{figure}
 
-There is only one type of grain, called \lstinline|User|.  A user grain encapsulates data associated with a user, and is identified by a string called \lstinline{userid} (\lref{def}). Each user grain stores the messages posted by that user in a map data structure \lstinline|Messages| (\lref{msgs}), keyed by timestamp. The current list of followed users is stored in \lstinline|Follows| (\lref{flws}). This grain state can change in response to update operations \lstinline|Post|, \lstinline|Unpost|, \lstinline|Follow|, \lstinline|Unfollow| (\rref{uo}) , which are invoked by the chirper client in response to clicking respective buttons.
+There is only one type of grain, called \lstinline|User|.  A user grain encapsulates data associated with a user, and is identified by a string called \lstinline{userid} (\lref{def}). Each user grain stores the messages posted by that user in a map data structure \lstinline|Messages| (\lref{msgs}), keyed by timestamp. The current list of followed users is stored in \lstinline|Follows| (\lref{flws}). The grain state can change in response to update operations \lstinline|Post|, \lstinline|Unpost|, \lstinline|Follow|, \lstinline|Unfollow| (\rref{uo}) , which are invoked by the chirper client in response to clicking respective buttons.
 
 The operation \lstinline|GetMessages(from)| (\lref{getm}) returns all messages by this user since the time indicated by \lstinline|from|; it straightforwardly computes the result by iterating over \lstinline{Messages}.  
 
 The operation  \lstinline|GetTimeline(from)|  (\lref{gettl}) is more interesting. It returns a sorted list of all messages posted by the user \emph{and all followed users} since  the time indicated by \lstinline|from|. It computes the result as follows: first, it retrieves the locally stored messages (\lref{loc}). Then, \emph{in parallel} (\lref{par}), it calls \lstinline|GetMessages| on all followed users. These calls target other grains, by constructing a grain reference \lstinline|User[f]| to the grain for userid \lstinline|f| (\lref{rcall}). The returned messages are all added to the list \lstinline|msgs| (\lref{add}). After all the parallel tasks complete, the messages are sorted (\lref{sort}) and returned (\lref{ret}).
 
-\subsubsection{Failure Model}
+\subsection{Failure Model}
 
-The virtual actor model does not hide failures: a grain may fail at any time, even when in the middle of executing an operation, and this can be observed. However, the runtime does provide some support for dealing with failures.
+A grain may fail at any time, even when in the middle of executing an operation, and this can be observed by the application. The runtime does provide some support for simplifying the failure handling at the application level. 
 
-\paragraph{Recovering Grains.} If a grain is hosted on a server and that server fails, the runtime activates a fresh instance of the grain the next time it is accessed. 
+\paragraph{Recovery.} If a grain is hosted on a server and that server fails, the runtime activates a fresh instance of the grain the next time it is accessed. 
 
-\paragraph{Persistent Grains.} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The state of a persistent grain is saved after each operation that updates the state, and loaded from storage when a grain is activated. The \lstinline|User| grains in the chirper example are persistent. 
+\paragraph{Persistence.} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The state of a persistent grain is saved after each operation that updates the state, and loaded from storage when a grain is activated. The \lstinline|User| grains in the chirper example are persistent. 
 
-\paragraph{Automatic Timeouts.} All grain operations throw a special timeout-exception if no response is received after a configurable time limit (the default is 30 seconds). This helps to avoid hangs and deadlocks if a grain fails before responding, or becomes unavailable for other reasons.
+\paragraph{Timeouts.} All grain operations throw a special timeout-exception if no response is received after a configurable time limit (the default is 30 seconds). This helps to avoid hangs and deadlocks at the application level if a grain fails before responding, or becomes unavailable for any reason.
 
 If an operation times out, the caller does not know whether its effect was performed or not. To handle this issue, applications often design update operations to be \emph{idempotent} \cite{kapil}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
 
-\subsection{Reactivity}
+\section{Reactivity}
 
 Suppose now that we want our chirper client to not just display a frozen snapshot of \lstinline|GetTimeline|, but to react to changes in the application state and refresh the user display accordingly. What are our implementation options? 
 
@@ -87,7 +83,9 @@ while (interested) {
 \caption{Possible solution using client-side polling.}\label{fig:polling}
 \end{figure}
 
-\paragraph{Client-side Polling. } A straightforward solution is to have the client repeat the query periodically to retrieve the latest state (Fig.\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when selecting the \textbf{polling interval}: if \emph{long}, the displayed result may lag significantly behind the current result; if \emph{short}, we increase the load on our service and thus have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
+\subsection{Client-side Polling}
+
+ A straightforward solution is to call \lstinline|GetTimeline| periodically on the client to retrieve the latest state (Fig.~\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when choosing the polling \textbf{frequency}: with \emph{sparse polling}, the displayed result may lag significantly behind the current result; but \emph{rapid polling } increases the load on our service which means we have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
 
 \begin{figure}
 \begin{lstlisting}
@@ -139,7 +137,9 @@ op NotifyFollowers() {
 \caption{Cautionary sketch of what it may take to apply the observer pattern to the \lstinline|User| grain from Fig.~\ref{fig:chirper}.}\label{fig:observers}
 \end{figure}
 
-\paragraph{Observer Pattern.} We can implement change propagation at the application level, using the observer design pattern. We sketch how one may modify the User grain accordingly in Fig.~\ref{fig:observer}. It now tracks observing clients and followers. Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. \emph{But this solution leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Also, despite all the extra code, changes are still not propagated very efficiently: for example, a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
+\subsection{Observer Pattern}
+
+A more challenging, but possibly better-performing solution is to push changes to the client. We can implement this at the application level;  Fig.~\ref{fig:observers} shows a sketch of how we can apply the observer design pattern to the User grain. Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. Each grain  tracks observing clients and followers and notifies them. \emph{But this solution leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Also, despite all the extra code, changes are still not propagated very efficiently: for example, a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
 
 \hidden
 {\begin{itemize}
@@ -157,8 +157,7 @@ Conceivably, a skilled programmer can solve all of these issues at the applicati
 \begin{figure}
 \begin{lstlisting}
 var rc = CreateReactiveComputation(%\label{l:crc}%
-			() =>  Grain[myuserid].GetTimeline()
-	 	);
+									() => Grain[myuserid].GetTimeline()   	);
 var resulttracker = rc.GetResultTracker();%\label{l:crt}%
 
 while (interested) {%\label{b:pl}%
@@ -174,16 +173,17 @@ while (interested) {%\label{b:pl}%
 \end{figure}
 
 
-\subsection{Proposed Solution}
+\subsection{Proposal: Runtime Support}
 
 By adding support for reactive computations into the virtual actor runtime, we can spare the programmer considerable hassle, and let them benefit from an automatic, optimized distributed algorithm for dependency tracking and change propagation. 
 
-The way in which a client uses our solution is shown in  (Fig.~\ref{fig:rcapi}). Other than the first four lines, it is very similar to the client-side polling solution (Fig.~\ref{fig:polling}) and, like the latter, does \emph{not require any changes to the code for the chirper service}. 
+We propose a novel API for reactive computations over virtual actors (Fig.~\ref{fig:rcapi}). It is purposefully similar to the client-side polling solution (Fig.~\ref{fig:polling}) and likewise does \emph{not require any changes to the service code}. 
 
-First, the programmer creates a \emph{reactive computation} object (\lref{crc}), passing an anonymous function that describes the computation. This instructs the runtime to continuously track the result of that computation. To consume the results, the programmer creates a \emph{result tracker} object (\lref{crt}). The result tracker operates like an enumerator that produces both the initial result, and any successive changed results, when we call \lstinline|NextResult| (\lref{await}). \footnote{to avoid potential confusion: note that the result tracker is \emph{not} an enumerator for the produced timeline; rather, each call to \lstinline|NextResult| returns the latest version of the \emph{entire} timeline.}
-Note that the code in the loop (\rref{pl}) is very similar to the client-side polling solution (Fig.~\ref{fig:polling}), but no longer needs to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately.
+First, the programmer creates a \emph{reactive computation} object (\lref{crc}), passing an anonymous function that describes the computation. This instructs the runtime to construct a dependency graph which continuously tracks the result of that computation and propagates changes via pushing. 
 
-ResultTrackers have some interesting properties that make them well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread (using C\# language support for async/await \cite{Bierman2012}).  Also, it is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed.
+To consume the results, the programmer simply creates a \emph{result tracker} object (\lref{crt}). The result tracker operates like an enumerator that produces both the initial result, and any successive changed results, when we call \lstinline|NextResult| (\lref{await}). %\footnote{to avoid potential confusion: note that the result tracker is \emph{not} an enumerator for the produced timeline; rather, each call to \lstinline|NextResult| returns the latest version of the \emph{entire} timeline.}
+Note that the code in the loop (\rref{pl}) works just like the client-side polling solution (Fig.~\ref{fig:polling}), but we no longer need to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately.
+
 
 %adding support for reactive computations into the virtual actor runtime, we can avoid the hassle of changing the application code, and  retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}). Our proposed API is shown
 
