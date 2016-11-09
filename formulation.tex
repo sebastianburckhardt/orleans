@@ -83,7 +83,7 @@ while (interested) {
 \caption{Possible solution using client-side polling.}\label{fig:polling}
 \end{figure}
 
-\subsection{Client-side Polling}
+\subsection{Client-side Polling}\label{sec:polling}
 
  A straightforward solution is to call \lstinline|GetTimeline| periodically on the client to retrieve the latest state (Fig.~\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when choosing the polling \textbf{frequency}: with \emph{sparse polling}, the displayed result may lag significantly behind the current result; but \emph{rapid polling } increases the load on our service which means we have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
 
@@ -137,7 +137,7 @@ op NotifyFollowers() {
 \caption{Cautionary sketch of what it may take to apply the observer pattern to the \lstinline|User| grain from Fig.~\ref{fig:chirper}.}\label{fig:observers}
 \end{figure}
 
-\subsection{Observer Pattern}
+\subsection{Observer Pattern}\label{sec:observers}
 
 A more challenging, but possibly better-performing solution is to push changes to the client. We can implement this at the application level;  Fig.~\ref{fig:observers} shows a sketch of how we can apply the observer design pattern to the User grain. Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. Each grain  tracks observing clients and followers and notifies them. \emph{But this solution leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Also, despite all the extra code, changes are still not propagated very efficiently: for example, a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
 
@@ -173,7 +173,7 @@ while (interested) {%\label{b:pl}%
 \end{figure}
 
 
-\subsection{Proposal: Runtime Support}
+\subsection{Proposal: Runtime Support}\label{sec:reactive}
 
 By adding support for reactive computations into the virtual actor runtime, we can spare the programmer considerable hassle, and let them benefit from an automatic, optimized distributed algorithm for dependency tracking and change propagation. 
 
