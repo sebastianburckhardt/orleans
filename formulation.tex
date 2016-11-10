@@ -56,11 +56,11 @@ The operation  \lstinline|GetTimeline(from)|  (\lref{gettl}) is more interesting
 
 A grain may fail at any time, even when in the middle of executing an operation, and this can be observed by the application. The runtime does provide some support for simplifying the failure handling at the application level. 
 
-\paragraph{Recovery.} If a grain is hosted on a server and that server fails, the runtime activates a fresh instance of the grain the next time it is accessed. 
+\mypar{Recovery} If a grain is hosted on a server and that server fails, the runtime activates a fresh instance of the grain the next time it is accessed. 
 
-\paragraph{Persistence.} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The state of a persistent grain is saved after each operation that updates the state, and loaded from storage when a grain is activated. The \lstinline|User| grains in the chirper example are persistent. 
+\mypar{Persistence} Optionally, programmers can declare grains to be \emph{persistent}, which means their state is saved in external persistent storage. The state of a persistent grain is saved after each operation that updates the state, and loaded from storage when a grain is activated. The \lstinline|User| grains in the chirper example are persistent. 
 
-\paragraph{Timeouts.} All grain operations throw a special timeout-exception if no response is received after a configurable time limit (the default is 30 seconds). This helps to avoid hangs and deadlocks at the application level if a grain fails before responding, or becomes unavailable for any reason.
+\mypar{Timeouts} All grain operations throw a special timeout-exception if no response is received after a configurable time limit (the default is 30 seconds). This helps to avoid hangs and deadlocks at the application level if a grain fails before responding, or becomes unavailable for any reason.
 
 If an operation times out, the caller does not know whether its effect was performed or not. To handle this issue, applications often design update operations to be \emph{idempotent} \cite{kapil}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
 
@@ -85,7 +85,7 @@ while (interested) {
 
 \subsection{Client-side Polling}\label{sec:polling}
 
- A straightforward solution is to call \lstinline|GetTimeline| periodically on the client to retrieve the latest state (Fig.~\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when choosing the polling \textbf{frequency}: with \emph{sparse polling}, the displayed result may lag significantly behind the current result; but \emph{rapid polling } increases the load on our service which means we have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
+ A straightforward solution is to call \lstinline|GetTimeline| periodically on the client to retrieve the latest state (Fig.~\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when choosing the \emph{polling frequency}: infrequent polling means the displayed result can lag significantly behind the latest result; but frequent polling increases the load on our service which means we have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
 
 \begin{figure}
 \begin{lstlisting}
@@ -139,7 +139,7 @@ op NotifyFollowers() {
 
 \subsection{Explicit Propagation}\label{sec:observers}
 
-A more challenging, but possibly better-performing solution is to write explicit code that pushes changes to the client. We can implement this at the application level;  Fig.~\ref{fig:observers} shows a sketch of how we can apply the observer design pattern to the User grain (many other variations are possible). Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. Each grain  tracks observing clients and followers and notifies them. \emph{But this solution leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Also, despite all the extra code, changes are still not propagated very efficiently: for example, a change notification forces the client to reexecute the entire query, even if only a small part of the computation is different.
+A more challenging, but possibly better-performing solution is to add code to our service that explicitly tracks dependencies and pushes changes to the client. Fig.~\ref{fig:observers} shows a sketch of how we can apply the observer design pattern to the User grain (many other variations are possible). Clients can register themselves as observers (\lref{cs}), which means they receive notifications containing the latest result. Each grain  tracks observing clients and followers and notifies them. \emph{But this solution leaves much to be desired. } We have polluted the grain state with information about observers, and it is unclear whether this state should be persisted (and thereby pollute our storage as well) or not (and thereby cause issues when grains fail). Also, as written, changes are still not propagated very efficiently --- there remain many potential optimizations, and opportunities for introducing subtle bugs. 
 
 \hidden
 {\begin{itemize}

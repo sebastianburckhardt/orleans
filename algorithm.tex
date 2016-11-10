@@ -21,12 +21,12 @@ During execution, we record and store a \emph{summary} for each executed operati
 
 Fig.~\ref{fig:summaries}(a) shows an example of a dependency graph of summaries. Two clients perform reactive computations \lstinline|Alice.GetTimeline(t)| and \lstinline|Chris.GetTimeline(t)| for the same time parameter \lstinline|t|. Summaries are shown as black boxes, and reside either in a grain or in a reactive computation. Summary dependencies are shown as black arrows.
 
-\paragraph{Reuse.} If a summary for a particular operation already exists, we reuse it. For example, \lstinline|[GetMessages(t)->{y}]| of Bob's grain is shared: two other summaries depend on it. 
+\mypar{Reuse} If a summary for a particular operation already exists, we reuse it. For example, \lstinline|[GetMessages(t)->{y}]| of Bob's grain is shared: two other summaries depend on it. 
 
-\paragraph{Re-execution.} If a summary is stale (see \S\ref{sec:cp}), it is marked for re-execution. When re-executed, the dependencies may change, and are updated accordingly. 
+\mypar{Re-execution} If a summary is stale (see \S\ref{sec:cp}), it is marked for re-execution. When re-executed, the dependencies may change, and are updated accordingly. 
 %After a summary for a reactive computation is re-executed, we push the new result to the client.
 
-\paragraph{Garbage Collection.} A summary for a grain method is deleted if there are no other summaries that depend on it.  A summary for a reactive computation is deleted when the reactive computation object is disposed. Since the dependency graph is acyclic (a cycle would represent a query with infinite recursion, which is prevented by the runtime), this means that summaries are guaranteed to be collected when no longer needed.  
+\mypar{Garbage Collection} A summary for a grain method is deleted if there are no other summaries that depend on it.  A summary for a reactive computation is deleted when the reactive computation object is disposed. Since the dependency graph is acyclic (a cycle would represent a query with infinite recursion, which is prevented by the runtime), this means that summaries are guaranteed to be collected when no longer needed.  
 
 \subsubsection{Change Propagation}\label{sec:cp}
 
@@ -43,7 +43,7 @@ We call a summary \emph{stale} if a re-execution of the computation or operation
 %There are no guarantees about the relative consistency of summaries that are used in a computation (since we just use the most recent summary available for a given invocation). 
 It is possible for the result of a computation to be inconsistent, in the sense that it is based on versions of grain states that never existed at the same time, or even on different versions of the same grain's state. However, if the result of a computation is inconsistent, then it is also ephemeral: an inconsistent summary must be stale, and is thus guaranteed to be re-executed and replaced.
 
-\paragraph{Batching. } Some time may pass in between marking a summary for re-execution and the actual re-execution. In particular, it may be marked multiple times. This batching effect is important for maintaining good throughput under high update frequencies, as we demonstrate in the evaluation section.
+\mypar{Batching} Some time may pass in between marking a summary for re-execution and the actual re-execution. In particular, it may be marked multiple times. This batching effect is important for maintaining good throughput under high update frequencies, as we demonstrate in the evaluation section.
 
 \subsection{Reactive Caching}\label{sec:bp}
 
@@ -55,11 +55,11 @@ As an example, consider Fig.~\ref{fig:summaries}(b). It shows a bipartite graph 
 
 Extending change propagation and garbage collection to the bipartite graph is straightforward: when a cache receives a new value, it marks dependent summaries for re-execution. Caches are removed if they have no summaries that depend on them, and summaries are removed if they are not connected to any caches. 
 
-\paragraph{Fast Re-execution.} When a summary is re-executing, and its dependencies have not changed, all of its grain operations hit in the local cache. Therefore, the overhead of re-execution of summaries is quite low: the latency of our change propagation mechanism is very close to the performance of a hand-written change propagation solution, as we demonstrate in the evaluation section.
+\mypar{Fast Re-execution} When a summary is re-executing, and its dependencies have not changed, all of its grain operations hit in the local cache. Therefore, the overhead of re-execution of summaries is quite low: the latency of our change propagation mechanism is very close to the performance of a hand-written change propagation solution, as we demonstrate in the evaluation section.
 
-\paragraph{Large Fan-out.} The reactive caching improves performance in situations with a large fan-out (summaries with many observers): rather than sending updates to each observer directly, it is enough to send one update to each silo, and the silo then forwards the update locally. This reduces network traffic.
+\mypar{Large Fan-out} The reactive caching improves performance in situations with a large fan-out (summaries with many observers): rather than sending updates to each observer directly, it is enough to send one update to each silo, and the silo then forwards the update locally. This reduces network traffic.
 
-\paragraph{Back-Pressure.} 
+\mypar{Back-Pressure} 
 Our experiments show that in the case of high update rates, it is beneficial to throttle the sending of updates. Our mechanism achieves this by sending results to caches one at a time, and measuring the response time. If above a configurable threshold, we back off (wait for an extra delay equal to the round trip time of the push). 
 
 \subsubsection{Fault Tolerance}
