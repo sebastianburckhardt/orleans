@@ -1,9 +1,14 @@
-\section{Implementation}
+\section{Implementation} \label{sec:implementation}
 
-In our current implementation, we assume that any other sources of nondeterminism, such as clock queries, are avoided.
+TODO
+--- describe C\# language features that help; using clause, async await
 
+--- mention how we detect change
 
+--- In our current implementation, we assume that any other sources of nondeterminism, such as clock queries, are avoided.
 
+\hidden
+{
 \subsection{Runtime Implementation}
 
 Under the hood, the runtime must provide the needed distributed protocols for managing the creation, placement, discovery, recovery, and load-balancing of actors. By design, the application layer is largely unaware of how these details. Nevertheless, we briefly describe the mechanisms used by the Orleans system here. 
@@ -11,8 +16,8 @@ Under the hood, the runtime must provide the needed distributed protocols for ma
 \mypar{Grain Directory} Grains can be active (there exists an instance of it on some machine) or inactive (otherwise). The runtime maintains a distributed directory (based on the consistent hashing algorithm)  for tracking active grains. When an inactive grain is accessed, the runtime automatically activates it, and places it on a randomly selected server. If a grain is not accessed for a prolonged (configurable) time, it is deactivated and removed from the grain directory. 
 
 \mypar{Silo Failures} Under the hood, the runtime tracks all participating servers, called \emph{silos}, using a membership protocol. The set of members can change when administrators choose to increase or decrease the number of servers, or when servers fail, which is detected automatically.  For \emph{volatile} grains, the grain state is lost on failure. For \emph{persistent} grains, the grain state is saved to persistent storage after each change, and loaded from persistent storage when activated. 
- 
+ }
 
-The actual C\# code is similar, but contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
+--- The actual C\# code is similar, but contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
 
-ResultTrackers have some interesting properties that make them well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread (using C\# language support for async/await \cite{Bierman2012}).  Also, it is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed.
+--- ResultTrackers have some interesting properties that make them well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread (using C\# language support for async/await \cite{Bierman2012}).  Also, it is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed.

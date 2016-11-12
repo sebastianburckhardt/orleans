@@ -9,7 +9,7 @@
 \caption{\textbf{(a)}  (on the left) example of a dependency graph of summaries, for two reactive computations; \textbf{(b)} (on the right) example of a corresponding bipartite dependency graph of summaries and local caches, distributed over two silos.}\label{fig:summaries}
 \end{figure*}
 
-\section{Algorithm: Reactive Caching}
+\section{Reactive Caching Algorithm}\label{sec:algorithm}
 
 To determine when a result of a reactive computation changes, we track all the grains it depends on. Tracking these dependencies is done entirely at runtime and does not require any static analysis: rather, we modify the virtual actor runtime to intercept grain calls and construct a \emph{dependency graph}.
 
@@ -64,7 +64,7 @@ Our experiments show that in the case of high update rates, it is beneficial to 
 
 \subsubsection{Fault Tolerance}
 
-To tolerate faults, we need to make sure that we correctly handle the disappearance of any components that are visible to components on other silos.\footnote{we need not worry about components that are not visible on other silos, because whenever they fail, all components that are aware of them also fail.} In our case, the only thing we need to be concerned about is the connection between summaries and caches (this is readily apparent in Fig.~\ref{}: the only lines that cross silo boundaries are the solid edges).
+To tolerate faults, we need to make sure that we correctly handle the disappearance of any components that are visible to components on other silos.\footnote{we need not worry about failure of components that are not visible on other silos, because whenever they fail, all components that are aware of them also fail.} In our case, the only thing we need to be concerned about is the connection between summaries and caches (this is readily apparent in Fig.~\ref{}: the only lines that cross silo boundaries are the solid edges).
 
 Each summary maintains a list of connected caches. To maintain this connection, a cache periodically \emph{re-subscribes} every 30 seconds. This resubscription allows us to handle one-sided failures as follows:
 \begin{itemize}

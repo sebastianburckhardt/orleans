@@ -1,4 +1,4 @@
-\subsection{Virtual Actor Model}
+\section{Virtual Actor Model}\label{sec:virtualactors}
 
 Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter [36][37][46]. In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
 
@@ -64,7 +64,7 @@ A grain may fail at any time, even when in the middle of executing an operation,
 
 If an operation times out, the caller does not know whether its effect was performed or not. To handle this issue, applications often design update operations to be \emph{idempotent} \cite{kapil}, so they can be safely retried after encountering a timeout-exception. For example, all the operations of the \lstinline|User| grain in Fig.~\ref{fig:chirper} are idempotent.
 
-\section{Reactivity}
+\section{Reactive Computations}\label{sec:formulation}
 
 Suppose now that we want our chirper client to not just display a frozen snapshot of \lstinline|GetTimeline|, but to react to changes in the application state and refresh the user display accordingly. What are our implementation options? 
 
@@ -182,8 +182,9 @@ We propose a novel API for reactive computations over virtual actors (Fig.~\ref{
 First, the programmer creates a \emph{reactive computation} object (\lref{crc}), passing an anonymous function that describes the computation. This instructs the runtime to construct a dependency graph which continuously tracks the result of that computation and propagates changes via pushing. 
 
 To consume the results, the programmer simply creates a \emph{result tracker} object (\lref{crt}). The result tracker operates like an enumerator that produces both the initial result, and any successive changed results, when we call \lstinline|NextResult| (\lref{await}). %\footnote{to avoid potential confusion: note that the result tracker is \emph{not} an enumerator for the produced timeline; rather, each call to \lstinline|NextResult| returns the latest version of the \emph{entire} timeline.}
-Note that the code in the loop (\rref{pl}) works just like the client-side polling solution (Fig.~\ref{fig:polling}), but we no longer need to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately.
+Note that the code in the loop (\rref{pl}) looks just like the client-side polling solution (Fig.~\ref{fig:polling}), and has the same semantics, but we no longer need to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately.
 
+Exactly how the client processes the results is outside the scope of this work, and likely depends on the chosen client framework; our sample uses the react.js framework, but an FRP-based front-end such as Elm is conceivable as well.
 
 %adding support for reactive computations into the virtual actor runtime, we can avoid the hassle of changing the application code, and  retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}). Our proposed API is shown
 
