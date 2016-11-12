@@ -1,4 +1,4 @@
-\section{Virtual Actor Model}
+\subsection{Virtual Actor Model}
 
 Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter [36][37][46]. In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
 
@@ -8,7 +8,7 @@ Following the terminology [4], we call the virtual actors \emph{grains}. For eac
  
 \subsection{Example: Chirper}
 
-As a running example, we use a service called Chirper (based on the Orleans sample with the same name). It models a typical social application where users post messages to their own timeline, and view messages posted by people they are following.
+As a running example, we use a service called Chirper (based on the Orleans sample with the same name). It models a typical social application where users post messages to their own timeline, and view a timeline containing all messages posted by people they are following.
 The code for the chirper service is shown in Fig.~\ref{fig:chirper}, written in an imaginary DSL (domain-specific language) that helps us focusing on the programming model (we discuss the actual C\# syntax used by the Orleans system and our implementation in \S\ref{}).
 
 \begin{figure}

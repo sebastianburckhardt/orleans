@@ -1,17 +1,45 @@
 \section{Introduction}
 
-emergence of client + cloud
+Applications that run on client devices and cloud services are ubiquitous. Since the early days of the internet, such applications have evolved from simple data-delivery engines to distributed reactive applications that let users share the experience and interact socially. Whether it is games, collaborative editing, or online conversations: connecting users in real-time via a scalable and fault-tolerant service remains a significant challenge.
 
+Research on \emph{reactive programming} has proposed many interesting solutions, and the community has been experimenting with many reactive programming models, including programming languages, language extensions, or frameworks. At its core, reactive programming is about combining (1) a convenient way to express a view of some state or event source, and (2) a corresponding efficient mechanism that can update the view in response to state updates or events. It is a rich design space including many different specialized solutions. For example, views may be expressed by  a special vocabulary of functional operators, or using standard evaluation of functional or imperative code; the observed state may be  a tree, a collection of objects, or an event stream; and the propagation mechanism may push and/or pull states, deltas, or events.
 
-increasingly interactive: browsers do not just fetch and display data, but run single-page application that communicate via websockets where server can push changes to clients efficiently. Games, collaborative editing, social features, online chats.
+Much research has focused on reactive programming for graphical user interfaces \cite{} on the client. But as the observed state is usually part of the service, the service itself must also be reactive. Unfortunately, providing a reactive programming model for services is much harder than for a single machine. For one, performance is harder to achieve because of the high communication latency between machines. But more importantly, services are expected to provide \emph{elastic scalability} and \emph{fault tolerance}: they must run on a cluster that can be grown or shrunk at runtime, and that can gracefully handle individual server failures. 
 
-However, quite challenging to implement reactive services: elastic scaling, failure handling. Question: what programming models can help to write scalable reactive applications. 
+ \emph{Actors} have emerged as a viable model for developing scalable services, because they can be easily distributed over a cluster. A recent variation called \emph{virtual actors} directly supports elasticity and fault tolerance, as it provides mechanisms for persistence, load balancing, and fault detection (using sophisticated distributed protocols under the hood). Given the proven practicality of actor systems, it makes sense to search for a way to extend them with support for reactive programming.  
+ 
+A common solution is to use some sort of \emph{observer pattern}. Effectively, this means the programmer takes full responsibility for tracking dependencies and propagating changes between actors. But even for non-distributed programs, observer patterns can lead to complex and error-prone code \cite{}; this only get worse when we have to tolerate failures and consider persistence. 
+%Clearly, more support from the language or runtime is desirable.
 
+Another common approach is to add support for \emph{streams} \cite{}. But combining actors and streams is confusing, as the functional-reactive paradigm (state is represented by event streams) conflicts with the actor paradigm (state is encapsulated by actors). When actors interact with streams (subscribing, unsubscribing, producing, consuming) and either can fail at any moment, handling persistence and failures quickly becomes mind-boggling.
 
-Reactive programming is a term that can be meaningfully applied to many systems. At its core, reactivity is about expressing dependencies of an observer or view on some observed entity, and about a mechanism for propagating changes of the latter to the former. Thus, we consider a \emph{reactive programming model} to be a combination of (1) language support for expressing observers, or \emph{views}, and (2) a runtime implementation that propagates changes to views. The challenge is to strike the right balance between ease of use and performance, for the intended workload and architecture.
+In this work, we propose a novel approach for distributed reactive programming that stays entirely within the actor paradigm. Rather than asking developers to change their service implementation in order to achieve reactivity, we provide \emph{automatic reactivity} as a feature of the actor runtime. 
 
+Concretely, this means that any client of the service can issue a \emph{reactive computation} that computes some result involving one or more actors of the service. This result is computed not just once, but \emph{continuously}: the latest result is pushed to the client whenever it changes. 
 
+Notably, \emph{the service code remains exactly the same} - all the programmer has to do is to use a reactive computation on the client.  All the magic happens in the runtime: it executes the computation in a special mode that intercepts all actor calls, including nested calls, and constructs a distributed dependency graph. Whenever the state of any actor involved in the computation changes, the change is automatically  propagated. This happens for as long as the reactive computation remains active. 
+ 
 
+%Also, note that this computation is not restricted to a predefined vocabulary of operators, but can execute any code of the host language (imperative or functional). It does not require static analysis, but can call any number of dynamically determined actors, sequentially or in parallel. 
+We have implemented
+
+eventual consistency
+ 
+ We make the following contributions:
+ 
+ 
+ \begin{enumerate}
+ \item We demonstrate how to add support for reactivity 
+ \item  An algorithm that
+ \item An evaluation
+ \end{enumerate}
+ 
+ 
+     
+   
+ 
+\hidden
+{
 oncern.s between consistency and performance, and question of trading  choice to make highly depends on the circumstancesand may choose use explicit timeSynchronous vs. asynchronous, glitches, 
  
 This structure can lead to specialized solutions (for example, the database community has known for decades how to solve the view-update problem for relational data). helps to implement efficient algorithms  to the view-update problem. Recursion is common, where views become subjects of other views: for example, signals in FRP can be defined in terms of other signals. Semantics can differ in how they treat 
@@ -21,7 +49,8 @@ use relations, may be monolithic, or graphs of objects. For example, database Fa
 relationship, and how changes are propagated by the runtime. Prior approaches to reactive programming fall into two camps: explicit (the programmer expresses dependencies) and implicit (program expresses the viewdependencies are detected automatically, either at compile-time or at runtime).
 Examples of explicit: makefiles, Rx, FRP. Examples of implicit: self-adjusting computation, Facebook React.
 
+Philosophical: Model-View separation, Event Streams
 
   is has focused on specifying dataflow explicity. However, there are some 
-
+}
 
