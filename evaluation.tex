@@ -5,7 +5,9 @@ When operating a service, the overall performance objective is to provide accept
 To clarify the value that our automatic, fault-tolerant change propagation provides to service architects, we now quantify both (a) its latency and (b) its resource consumption, by comparing them to alternative solutions, including periodic polling (\S\ref{sec:polling}), which is also fault-tolerant, and explicit change propagation at the application level (\S\ref{sec:observers}), which is not fault-tolerant. To this end, we designed two series of experiments that measure low-load latency (\S\ref{sec:latency}), and variable-load throughput (\S\ref{sec:throughput}).
 
 \mypar{Application Model}  
-We model the application using  \emph{item} grains that are observed by \emph{view} grains. Each view depends on a fixed number of items, selected at random at the beginning of the test. Views are updated when items change, in a manner that depends on the chosen propagation solution, one of \emph{polling} (\S\ref{sec:polling}), \emph{explicit propagation} (\S\ref{sec:observers}), or \emph{automatic propagation} (\S\ref{sec:reactive}). Moreover, we vary the number of items and views to simulate different workloads (Table~\ref{tab:param}).  For example, a high \emph{fan-out} (= average number of views that depend on an item) means that whenever an item is mutated, many views need to be updated. 
+We model the application using  \emph{item} grains that are observed by \emph{view} grains. Each view depends on a fixed number of items, selected at random at the beginning of the test. Views are updated when items change, in a manner that depends on the chosen propagation solution.
+%, one of \emph{polling} (\S\ref{sec:polling}), \emph{explicit propagation} (\S\ref{sec:observers}), or \emph{automatic propagation} (\S\ref{sec:reactive}). 
+Moreover, we vary the number of items and views to simulate different workloads (Table~\ref{tab:param}).  For example, a high \emph{fan-out} (= average number of views that depend on an item) means that whenever an item is mutated, many views need to be updated. 
 
 The items and views run on five Orleans silos deployed as a Windows Azure cloud service. The robots run on 10 load generator servers. All processors have 8 cores, 14GB of RAM, and run at 1.6 GHz. To account for unexpected variations, we made sure to run each experiment series on at least 2 different datacenters, on at least 3 different days, and running the experiments in different order. Between runs, absolute numbers can vary up to 10\%, but the relative performance of the various solutions were stable. Note that we achieved this only after investing substantial work into our experimentation framework. 
 
@@ -83,7 +85,7 @@ Second, we measured the speed of automatic propagation provided by our reactive 
 
 Finally, we looked at the propagation speed of a polling-based solution. Fig.~\ref{fig:querylatencies} (bottom) shows the measured latencies, using a sequential query and various polling intervals. As expected, we see a median propagation time in the neighborhood of half of the polling interval plus the query latency, and a wide inter-quartile distance. However, polling every 100ms is usually not advisable (we show impact of polling on throughput in \S\ref{sec:throughput}). Reasonable polling intervals are more typically between 1 and 30 seconds, with a median propagation speed that is easily three orders of magnitude worse than for explicit or automatic change propagation.  
 
-\paragraph{Conclusions.} The results show that our automatic propagation performs much better than a polling solution, while having the same simple programming model; and is not much slower than explicit change propagation.
+\paragraph{Conclusions.} The results show that our automatic propagation performs much better than a polling solution, while having the same simple programming model; and is not much slower than explicit change propagation, despite offering the advantage of being fault-tolerant, and much simpler to use.
 
 
 \subsection{Throughput}\label{sec:throughput}
@@ -123,7 +125,7 @@ To compare the solutions across different configurations and update ratios, we r
 
 \mypar{Automatic Propagation} There are two main differences between the work required for automatic and explicit propagation: (1) automatic propagation incurs a bit more work due to scheduling indirection, re-execution of summaries, and management of reactive caches;  and (2) automatic propagation can adapt to back-pressure and reduce the number of updates sent.  We can observe these effects: throughput for automatic propagation is generally lower than for explicit propagation, except for high update rates and/or fanout where explicit propagation suffers more. 
  
-\mypar{Conclusions} The results show that automatic propagation is generally competitive with explicit propagation. It is even better in cases where there are many updates to be propagated, thanks to its batching optimization. Polling remains an acceptable solution for applications that do not require quick propagation time; it can be tuned to reliably consume little resources, even under high update rates.
+\mypar{Conclusions} The results show that automatic propagation is generally competitive with explicit propagation, despite the added benefit of fault tolerance and a simpler programming model. It is even better in cases where there are many updates to be propagated, thanks to its batching optimization. Polling remains an acceptable solution for applications that do not require quick propagation time; it can be tuned to reliably consume little resources, even under high update rates.
 
  
  
