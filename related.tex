@@ -1,5 +1,9 @@
 \section{Related Work}
 
+\noindent{to do. I will focus on this section on Monday.}
+
+\hidden
+{
 \subsection{Expressing Views.} Often, views can observe other views, creating a directed acyclic graph of dependencies. How to express such dependency graphs using recursive operators is a key question in the area of dataflow languages, functional reactive programming, and object-oriented frameworks such as Rx. In relational database systems, views are expressed by relational queries (which allows changes to be propagated incrementally). in Facebook's react.js, the application state is observed by a tree-structured virtual DOM, which is in turn observed by the browser's DOM. And in relational database systems, views are expressed by relational queries (which allows changes to be propagated incrementally). 
 
 We list a few common variations: (1) changes may be pushed or pulled, (2) propagation may happen in response to a periodic timer or in response to other changes, and (3) changes may be propagated as deltas (the difference between the previous observed state and the new observed state), or as summaries (the entire observed state).
@@ -10,8 +14,8 @@ We list a few common variations: (1) changes may be pushed or pulled, (2) propag
 
 
 Change propagation is semantically subtle. In sychronous models, time is explicit. Asynchronous models may make strong consistency guarantees based on some form of version tracking, or may have weaker consistency guarantees. For example, a so-called glitch means that an observer sees two observables A, B that have inconsistent state, meaning that the set of updates propagated to A is different from the set of updates propagated to B. are ey may exhibit glitches, where a view see. Clearly, how to best balance consistency and performance is highly dependent on the architecture and workload. 
+}
 
-TODO
 \cite{burckhardt-leijen-yi-sadowski-ball-OOPSLA11}
 \cite{camil}
 

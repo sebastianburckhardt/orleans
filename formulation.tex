@@ -1,15 +1,15 @@
 \section{Virtual Actor Model}\label{sec:virtualactors}
 
-Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter [36][37][46]. In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
+Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter ["36"]["37"]["46"]. In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
 
-In a traditional bare-bones actor system, the developer remains responsible for the creation, placement, discovery, recovery, and load-balancing of actors. A newer generation of actor models [4][36][37], called virtual actor models, automate all of these aspects. The developer specifies only (1) a unique key for identifying each actor, and (2) how to save and load the actor state to/from external storage, if persistence is desired. As virtual actor systems can activate and deactivate actors based on use, they strongly resemble distributed caches [14][39][40][55] and provide similar performance benefits. 
+In a traditional bare-bones actor system, the developer remains responsible for the creation, placement, discovery, recovery, and load-balancing of actors. A newer generation of actor models ["4"]["36"]["37"], called virtual actor models, automate all of these aspects. The developer specifies only (1) a unique key for identifying each actor, and (2) how to save and load the actor state to/from external storage, if persistence is desired. As virtual actor systems can activate and deactivate actors based on use, they strongly resemble distributed caches ["14"]["39"]["40"]["55"] and provide similar performance benefits. 
 
-Following the terminology [4], we call the virtual actors \emph{grains}. For each grain type, the code defines a (1) key that identifies instances, (2)  fields that define the grain state, and (3) operations supported by the grain. The operations of a grain can read and modify the grain state, and can call operations on other grains, but cannot directly read or write the state of other grains (encapsulation). 
+Following the terminology ["4"], we call the virtual actors \emph{grains}. For each grain type, the code defines a (1) key that identifies instances, (2)  fields that define the grain state, and (3) operations supported by the grain. The operations of a grain can read and modify the grain state, and can call operations on other grains, but cannot directly read or write the state of other grains (encapsulation). 
  
 \subsection{Example: Chirper}
 
-As a running example, we use a service called Chirper (based on the Orleans sample with the same name). It models a typical social application where users post messages to their own timeline, and view a timeline containing all messages posted by people they are following.
-The code for the chirper service is shown in Fig.~\ref{fig:chirper}, written in an imaginary DSL (domain-specific language) that helps us focusing on the programming model (we discuss the actual C\# syntax used by the Orleans system and our implementation in \S\ref{}).
+As a running example, we use a service called \emph{Chirper} (based on the Orleans sample with the same name). It models a typical social application where users post messages to their own timeline, and view a timeline containing all messages posted by people they are following.
+The code for the chirper service is shown in Fig.~\ref{fig:chirper}. We use imperative pseudocode and an imaginary actor DSL (domain-specific language) to focus on the programming model and minimize distractions (such as framework details or C\# language features). 
 
 \begin{figure}
 \begin{lstlisting}
@@ -85,7 +85,7 @@ while (interested) {
 
 \subsection{Client-side Polling}\label{sec:polling}
 
- A straightforward solution is to call \lstinline|GetTimeline| periodically on the client to retrieve the latest state (Fig.~\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or partial failures). However, it confronts us with a unpleasant tradeoff when choosing the \emph{polling frequency}: infrequent polling means the displayed result can lag significantly behind the latest result; but frequent polling increases the load on our service which means we have to pay for more servers. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
+ A straightforward solution is to call \lstinline|GetTimeline| periodically on the client to retrieve the latest state (Fig.~\ref{fig:polling}). This solution is easy to understand, requires no changes to the service code, and gracefully handles transient exceptions (such as caused by high load or server failures). However, it confronts us with a unpleasant tradeoff when choosing the \emph{polling frequency}: infrequent polling means the displayed result can lag significantly behind the latest result; but frequent polling dramatically increases the load on our service. We demonstrate this tradeoff experimentally in section \ref{sec:evaluation} .
 
 \begin{figure}
 \begin{lstlisting}
@@ -179,19 +179,14 @@ By adding support for reactive computations into the virtual actor runtime, we c
 
 We propose a novel API for reactive computations over virtual actors (Fig.~\ref{fig:rcapi}). It is purposefully similar to the client-side polling solution (Fig.~\ref{fig:polling}) and likewise does \emph{not require any changes to the service code}. 
 
-First, the programmer creates a \emph{reactive computation} object (\lref{crc}), passing an anonymous function that describes the computation. This instructs the runtime to construct a dependency graph which continuously tracks the result of that computation and propagates changes via pushing. 
+First, the programmer creates a \emph{reactive computation} object (\lref{crc}), passing an anonymous function that describes the computation. This instructs the runtime to construct a dependency graph which continuously tracks the result of that computation and propagates changes via pushing, until the rc object is disposed.
 
 To consume the results, the programmer simply creates a \emph{result tracker} object (\lref{crt}). The result tracker operates like an enumerator that produces both the initial result, and any successive changed results, when we call \lstinline|NextResult| (\lref{await}). %\footnote{to avoid potential confusion: note that the result tracker is \emph{not} an enumerator for the produced timeline; rather, each call to \lstinline|NextResult| returns the latest version of the \emph{entire} timeline.}
-Note that the code in the loop (\rref{pl}) looks just like the client-side polling solution (Fig.~\ref{fig:polling}), and has the same semantics, but we no longer need to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately.
+Note that the code in the loop (\rref{pl}) looks just like the client-side polling solution (Fig.~\ref{fig:polling}), and has the same failure and exception semantics, but we no longer need to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately. With compiler support for \lstinline|await|, as in C\# \cite{Bierman2012}, this is just as efficient as using callbacks, because the compiler constructs continuations that do not block the thread.
 
-Exactly how the client processes the results is outside the scope of this work, and likely depends on the chosen client framework; our sample uses the react.js framework, but an FRP-based front-end such as Elm is conceivable as well.
+Exactly how the client processes the results is outside the scope of this work, and likely depends on the chosen client framework. For chirper  we used react.js; it lets us simply assign the result to the model, and automatically does the diffing.
 
 %adding support for reactive computations into the virtual actor runtime, we can avoid the hassle of changing the application code, and  retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}). Our proposed API is shown
 
 %The reason is that the virtual actor model already provides us with a clean decomposition of computations and clear interception points (grain calls) that can be cached (memoized) and updated reactively. 
  
-
-
-%with the performance of a reactive implementation that pushes changes only where necessary and can avoid unnecessary re-execution of unaffected subcomputations. Perhaps surprisingly, the answer is yes.
-
-
