@@ -1,11 +1,49 @@
 \section{Implementation} \label{sec:implementation}
+There are a couple of interesting things to discuss with respect to our current implementation, even though they do not necessarily contribute to the core algorithm of this paper. In general, the actual C\# code is very similar to the pseudo-code used in this paper, but it contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
 
-TODO
+
+\paragraph{Detecting Changes.} The propagation algorithm described in \S~\ref{sec:cp} assumes that we can detect whenever the state of a grain changes. Even though that might be possible, we opted for a simpler approach and used a \textit{heuristic}: we assume that every method call that was not invoked in context of a reactive computation, might change the grain's state. By doing so we over-approximate the operations that might cause state changes. In the same vain that programmers have to indicate to the runtime when they want the state to be persisted (using a dedicated \texttt{WriteStateAsync()} method), we could also provide a call that invalidates the grain's summaries in the future. For persisted grains, we could even re-use the persistence call, since there the programmer already clearly indicates that the state has changed.
+
+\paragraph{Garbage Collection.} Even though the result of the reactive computation might not be required any more, the programmer might still be holding on to a reference to the object or a tracker. This would prevent the runtime from cleaning up the entire distributed dependency the graph. In order to prevent this, we instruct the programmer to always create reactive computations and trackers within a C\# \texttt{using} block (as shown in Fig. \ref{fig:impl} Lines 1 and 3). By doing so, the bipartite graph will only exist, and thus produce overhead, as long as anyone is using it, giving the 90 second time frame for cleaning up.
+
+% This Figure can easily be removed when the page limit is reached %%
+\begin{figure}
+\begin{lstlisting}
+using(var rc = CreateReactiveComputation(
+									() => Grain[myuserid].GetTimeline())) {
+	using(var resulttracker = rc.GetResultTracker()) {
+
+		while (interested) {
+			try {
+				var result = await resulttracker.NextResult();
+				display(result);
+			} catch(TimeoutException) { 
+				display("server is not responding, retrying...");
+			} catch(DivisionByZeroException) {
+				display("can't divide by zero");			
+			}
+		}
+	}
+}
+\end{lstlisting}
+\caption{Proposed solution, including the \texttt{using} constructs that make sure the graph is garbage collected when no longer required.}\label{fig:impl}
+\end{figure}
+
+\paragraph{Non-Determinism.}
+Whenever a method is called from within the context of a reactive computation, it is now prone to being re-executed without the programmer explicitly performing the call. Furthermore, we assume that when such invocation is performed twice with the same grain state (and the grains it depends on), the result is the same. In other words, the algorithm disregards any other source of non-determinism such as clock queries and I/O. The programmer should thus avoid using these operations in a reactive computation. On the other hand, we don't statically or dynamically enforce this, because some type of non-deterministic operations might still be useful for example for debugging purposes. After all this makes sense, because the reactive computations are aimed towards computations that perform some type of \textit{query} over the system. On the other hand, it might be interesting to explore extensions of the algorithm that do explicitly incorporate this by for example recording and re-using non-deterministic operations.
+
+\paragraph{Exception Handling}
+As can be seen from Fig.~\ref{fig:impl} (lines 11-13), whenever an exception occurs somewhere down the reactive computation, we don't simply stop the computation and deconstruct the dependency graph. Instead we assume the exception just occurred due to some current state of the grains, but following states might produce results again. The exception can be catched (1) either somewhere upstream in the reactive computation itself, or (2) on the \texttt{NextResult()} call of a tracker if it wasn't caught. This also provides a uniform way of handling both distributed (timeout) exceptions and computational exceptions. 
+
+
+\paragraph{Result Tracker.}
+ResultTrackers have some interesting properties that make them well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread (using C\# language support for async/await \cite{Bierman2012}).  Also, it is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed.
+
+\paragraph{TODO}
 --- describe C\# language features that help; using clause, async await
 
---- mention how we detect change
 
---- In our current implementation, we assume that any other sources of nondeterminism, such as clock queries, are avoided.
+
 
 \hidden
 {
@@ -17,7 +55,3 @@ Under the hood, the runtime must provide the needed distributed protocols for ma
 
 \mypar{Silo Failures} Under the hood, the runtime tracks all participating servers, called \emph{silos}, using a membership protocol. The set of members can change when administrators choose to increase or decrease the number of servers, or when servers fail, which is detected automatically.  For \emph{volatile} grains, the grain state is lost on failure. For \emph{persistent} grains, the grain state is saved to persistent storage after each change, and loaded from persistent storage when activated. 
  }
-
---- The actual C\# code is similar, but contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
-
---- ResultTrackers have some interesting properties that make them well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread (using C\# language support for async/await \cite{Bierman2012}).  Also, it is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed.
