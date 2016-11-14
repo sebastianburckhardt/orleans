@@ -30,7 +30,7 @@ Fig.~\ref{fig:summaries}(a) shows an example of a dependency graph of summaries.
 
 \subsubsection{Change Propagation}\label{sec:cp}
 
-We call a summary \emph{stale} if a re-execution of the computation or operation would necessarily yield a different result. Our change propagation algorithm guarantees that \emph{any stale summary is eventually re-executed}. Because grains cannot share any state, summaries can become stale for only two reasons: either (1) the state of their grain changes, or (2) a summary they depend on becomes stale. \footnote{We assume that the grain operations used in reactive computations depend only on grain states, and not external state such as clocks or arbitrary I/O.} Thus, the following is sufficient:
+We call a summary \emph{stale} if a re-execution of the computation or operation would necessarily yield a different result. Our change propagation algorithm guarantees that \emph{any stale summary is eventually re-executed}. Because grains cannot share any state, summaries can become stale for only two reasons: either (1) the state of their grain changes, or (2) a summary they depend on becomes stale.\footnote{We assume that the grain operations used in reactive computations depend only on grain states, and not external state such as clocks or arbitrary I/O.} Thus, the following is sufficient:
 \begin{enumerate}
 \item Whenever a grain operation changes the state of a grain, we mark all summaries of that grain for re-execution.
 \item After a summary for a grain operation is re-executed, we compare the new result to the previous result. If it is the same, no further action is needed. Otherwise, we mark all dependent summaries for re-execution.
@@ -53,14 +53,14 @@ Rather than summaries that depend directly on other summaries, we now have summa
 
 As an example, consider Fig.~\ref{fig:summaries}(b). It shows a bipartite graph of summaries and caches that corresponds to the dependency graph in Fig.~\ref{fig:summaries}(a). We show two types of edges: summary dependencies (dotted arrows), which are always within a silo, and cache connections (solid lines), which may cross silo boundaries. 
 
-Extending change propagation and garbage collection to the bipartite graph is straightforward: when a cache receives a new value, it marks dependent summaries for re-execution. Caches are removed if they have no summaries that depend on them, and summaries are removed if they are not connected to any caches. 
+Extending change propagation and garbage collection to the bipartite graph is straightforward: when a cache receives a new value, it marks dependent summaries for re-execution. Caches are removed if they have no summaries that depend on them, and summaries that are not part of a reactive computation are removed if they are not connected to any caches. 
 
 \mypar{Fast Re-execution} When a summary is re-executing, and its dependencies have not changed, all of its grain operations hit in the local cache. Therefore, the overhead of re-execution of summaries is quite low: the latency of our change propagation mechanism is very close to the performance of a hand-written change propagation solution (see \S\ref{sec:evaluation}).
 
 \mypar{Large Fan-out} The reactive caching improves performance in situations with a large fan-out (summaries with many observers): rather than sending updates to each observer directly, it is enough to send one update to each silo, and the silo then forwards the update locally.
 
 \mypar{Back-Pressure} 
-Our experiments show that in the case of high update rates, it is beneficial to throttle the sending of updates. Our mechanism achieves this by sending results to caches one at a time, and measuring the response time. If above a configurable threshold, we back off (wait for an extra delay equal to the round trip time of the push). 
+Our experiments show that in the case of high update rates, it is beneficial to throttle the sending of updates (only the latest result matters, so intermediate results can be dropped). Our mechanism achieves this by sending results to caches one at a time, and measuring the response time. If above a configurable threshold, we back off (wait for an extra delay equal to the round trip time of the push). 
 
 \subsubsection{Fault Tolerance}
 
