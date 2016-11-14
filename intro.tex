@@ -14,7 +14,7 @@ all of which are not guaranteed by the current distributed reactive models \cite
 
 \emph{Actors} have emerged as a viable model for developing such services, because they can be easily distributed over a cluster. In particular, \emph{virtual actor} runtimes provide the necessary distributed protocols for compute-storage separation, load balancing, and fault detection. But how can we support reactive programming on virtual actor systems?
  
-A common ad-hoc solution is to employ some sort of \emph{observer pattern}. The programmer takes full responsibility for tracking dependencies and propagating changes between actors. But even for non-distributed programs, observer patterns can lead to complex and error-prone code \cite{}; this only gets worse when we have to tolerate failures and provide persistence. 
+A common ad-hoc solution is to employ some sort of \emph{observer pattern}. The programmer takes full responsibility for tracking dependencies and propagating changes between actors. But even for non-distributed programs, observer patterns can lead to complex and error-prone code \cite{sobserver}; this only gets worse when we have to tolerate failures and provide persistence. 
 %Clearly, more support from the language or runtime is desirable.
 
 Another common approach is to add support for \emph{streams} \cite{}. However, combining actors and streams is confusing, as the FRP paradigm (state is an event stream) is at odds with the actor paradigm (state is encapsulated by independent actors). Also, it is difficult to make streams both fault tolerant and performant ---  persisting every event is costly. 
