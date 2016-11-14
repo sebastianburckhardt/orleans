@@ -13,7 +13,7 @@
 
 To determine when a result of a reactive computation changes, we track all the grains it depends on. Tracking these dependencies is done entirely at runtime and does not require any static analysis: rather, we modify the virtual actor runtime to intercept grain calls and construct a \emph{dependency graph}.
 
-We explain the dependency graph in two stages: first, we describe it as a directed ayclic graph of summaries (\S\ref{sec:summaries}). Then, we show to represent it as a bipartite graph of summaries and caches (\S\ref{sec:bp}) to improve performance and handle failures in a distributed setting. 
+We explain the dependency graph in two stages: first, we describe it as a directed acyclic graph of summaries (\S\ref{sec:summaries}). Then, we show to represent it as a bipartite graph of summaries and caches (\S\ref{sec:bp}) to improve performance and handle failures in a distributed setting. 
 
 \subsection{Summaries and Dependencies}\label{sec:summaries}
 
@@ -43,7 +43,7 @@ We call a summary \emph{stale} if a re-execution of the computation or operation
 %There are no guarantees about the relative consistency of summaries that are used in a computation (since we just use the most recent summary available for a given invocation). 
 It is possible for the result of a computation to be inconsistent, in the sense that it is based on versions of grain states that never existed at the same time, or even on different versions of the same grain's state. However, if the result of a computation is inconsistent, then it is also ephemeral: an inconsistent summary must be stale, and is thus guaranteed to be re-executed and replaced.
 
-\mypar{Batching} Some time may pass in between marking a summary for re-execution and the actual re-execution. In particular, it may be marked multiple times. This batching effect is important for maintaining good throughput under high update frequencies, as we demonstrate in the evaluation section.
+\mypar{Batching} Some time may pass in between marking a summary for re-execution and the actual re-execution. In particular, it may be marked multiple times, in which case it only needs to be executed once. This batching effect is important for maintaining good throughput under high update frequencies, as we demonstrate in the evaluation section.
 
 \subsection{Reactive Caching}\label{sec:bp}
 
@@ -66,8 +66,8 @@ Our experiments show that in the case of high update rates, it is beneficial to 
 
 To tolerate faults, we need to make sure that we correctly handle the disappearance of any components that are visible to components on other silos.\footnote{We need not worry about failure of components that are not visible on other silos, because whenever they fail, all components that are aware of them also fail.} In our case, the only thing we need to be concerned about is the connection between summaries and caches (this is readily apparent in Fig.~\ref{fig:summaries}b: the only lines that cross silo boundaries are the solid edges).
 
-Each summary maintains a list of connected caches. To maintain this connection, a cache periodically \emph{re-subscribes} every 30 seconds. This resubscription allows us to handle one-sided failures as follows:
+Each summary maintains a list of connected caches. To maintain this connection, a cache periodically \emph{re-subscribes} every 30 seconds. This re-subscription allows us to handle one-sided failures as follows:
 \begin{itemize}
 \item if a cache fails, it will no longer resubscribe. If a summary does not hear from a cache for 90 seconds, it removes it from the list. 
-\item if a summary fails, the cache sends a resubscription after some time --- but the summary, and its associated grain, no longer exist. In that case, the standard virtual actor mechanism reactivates the grain on some silo, and loads its state from persistent storage. Then we recreate the summary and execute it. The cache is now connected to the new instance of the same summary. 
+\item if a summary fails, the cache sends a re-subscription after some time --- but the summary, and its associated grain, no longer exist. In that case, the standard virtual actor mechanism re-activates the grain on some silo, and loads its state from persistent storage. Then we recreate the summary and execute it. The cache is now connected to the new instance of the same summary. 
 \end{itemize}
