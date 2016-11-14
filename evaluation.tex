@@ -25,7 +25,7 @@ fanout-200 & 1,000	& 20,000 & 10& 1,000\\
 \end{table}
 
 
-\subsection{Latency}\label{sec:latency}
+\subsection{Latency Experiments}\label{sec:latency}
 
 Our latency experiments use the low-load parameters (Table~\ref{tab:param}) to eliminate delays caused by queueing and contention. We measure two types, called \emph{query latency} and \emph{propagation latency}. Latencies are measured 4000 times each (200 times per view, separated by 500ms). We describe the results using the median and lower and upper quartiles.\footnote{Average and standard deviation are unsuitable statistics because of the long tail of the distribution.}
 
@@ -73,7 +73,7 @@ grain View
 
 For measuring query latency, we execute a query on a view that calls each of four items (either sequentially or in parallel) to collect some value and returns the values in an array (Fig.~\ref{fig:queries}). We now compare the latency when executed normally (\lstinline|Query|) to the latency when executed as a reactive computation (\lstinline|OneTimeReactiveQuery|). The normal latency for the sequential and parallel versions are shown in the first two rows of Fig.~\ref{fig:querylatencies} (top). The median latency is about 1.2ms for the parallel query and 3.8ms for the sequential query. This is consistent with the round-trip time of a typical grain call taking a bit less than 1ms. For the reactive queries, we distinguish two cases. If  the relevant summaries are not already cached on the silo, the query takes about 25\% longer than normal (rows 2,3). This overhead is caused by the installation and removal of the summary caches, and by scheduling overhead of our reactive caching implementation. However, if summaries for the items are already cached on the silo (for example, if another view is tracking the same items), the latency of \lstinline|OneTimeReactiveQuery| is less than 200$\mu$s (rows 4,5) because remote calls can be completely avoided. 
 
-\paragraph{Conclusions.} The results demonstrate that (1) the latency overhead of constructing the dependency graph is modest, and (2)  the caching effect alone can improve latency, even if not using the reactive features.
+\mypar{Conclusions} The results demonstrate that (1) the latency overhead of constructing the dependency graph is modest, and (2)  the caching effect alone can improve latency, even if not using the reactive features.
 
 \subsubsection{Propagation Latency}
 
@@ -85,10 +85,10 @@ Second, we measured the speed of automatic propagation provided by our reactive 
 
 Finally, we looked at the propagation speed of a polling-based solution. Fig.~\ref{fig:querylatencies} (bottom) shows the measured latencies, using a sequential query and various polling intervals. As expected, we see a median propagation time in the neighborhood of half of the polling interval plus the query latency, and a wide inter-quartile distance. However, polling every 100ms is usually not advisable (we show impact of polling on throughput in \S\ref{sec:throughput}). Reasonable polling intervals are more typically between 1 and 30 seconds, with a median propagation speed that is easily three orders of magnitude worse than for explicit or automatic change propagation.  
 
-\paragraph{Conclusions.} The results show that our automatic propagation performs much better than a polling solution, while having the same simple programming model; and is not much slower than explicit change propagation, despite offering the advantage of being fault-tolerant, and much simpler to use.
+\mypar{Conclusions} The results show that our automatic propagation performs much better than a polling solution, while having the same simple programming model; and is not much slower than explicit change propagation, despite offering the advantage of being fault-tolerant, and much simpler to use.
 
 
-\subsection{Throughput}\label{sec:throughput}
+\subsection{Throughput Experiments}\label{sec:throughput}
 
 For the throughput experiments, we generate external load as shown in Fig.~\ref{fig:tp-setup}. The load generator contains up to 2000 robots; each runs a continuous loop that sends requests to the service, either to read a view, or to update an item. The percentage of updates in the mix is configurable. 
 
