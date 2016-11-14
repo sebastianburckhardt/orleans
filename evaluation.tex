@@ -1,16 +1,16 @@
-\section{Evaluation}
+\section{Performance Evaluation}\label{sec:evaluation}
 
 When operating a service, the overall performance objective is to provide acceptable service latency at minimal cost. The cost can be lowered by running fewer servers - but this increases the latency because requests spend more time waiting for contended resources (such as network, storage, CPU, threads, locks, and so on). This tradeoff is an essential challenge for developers writing an elastic service application. 
 
 To clarify the value that our automatic change propagation provides to service architects, we now quantify both (a) its latency overhead and (b) its resource consumption, by comparing them to alternative solutions, including periodic polling (\S\ref{sec:polling}) and explicit change propagation at the application level (\S\ref{sec:observers}). To this end, we designed two series of experiments that measure low-load latency (\S\ref{sec:latency}), and variable-load throughput (\S\ref{sec:throughput}).
 
 \mypar{Application Model}  
-We model the application using  \emph{item} grains that are observed by \emph{view} grains. Each view depends on a fixed number of items, selected at random at the beginning of the test. Views are updated when items change, in a manner that depends on the chosen propagation solution, one of \emph{polling} (\S\ref{sec:polling}), \emph{explicit propagation} (\S\ref{sec:observers}), or \emph{automatic propagation} (\S\ref{sec:reactive}). Moreover, we vary the number of items and views to simulate different workloads (Table~\ref{tab:param}).  For example, a high \emph{fan-out} (= average number of views that depend on an item) means that whenever an item is mutated, many views need to be updated.  
+We model the application using  \emph{item} grains that are observed by \emph{view} grains. Each view depends on a fixed number of items, selected at random at the beginning of the test. Views are updated when items change, in a manner that depends on the chosen propagation solution, one of \emph{polling} (\S\ref{sec:polling}), \emph{explicit propagation} (\S\ref{sec:observers}), or \emph{automatic propagation} (\S\ref{sec:reactive}). Moreover, we vary the number of items and views to simulate different workloads (Table~\ref{tab:param}).  For example, a high \emph{fan-out} (= average number of views that depend on an item) means that whenever an item is mutated, many views need to be updated. 
 
- 
 The items and views run on five Orleans silos deployed as a Windows Azure cloud service. The robots run on 10 load generator servers. All processors have 8 cores, 14GB of RAM, and run at 1.6 GHz. To account for unexpected variations, we made sure to run each experiment series on at least 2 different datacenters, on at least 3 different days, and running the experiments in different order. Between runs, absolute numbers can vary up to 10\%, but the relative performance of the various solutions were stable. Note that we achieved this only after investing substantial work into our experimentation framework. 
 
-
+Note that by design, this is a microbenchmark that isolates the mechanism we want to measure (change propagation) and removes all other aspects. If deployed as part of a complete service, including item persistence, the performance differences between the various solutions are likely to be less pronounced.
+ 
 \begin{table}
 \begin{tabularx}{.99\columnwidth}{@{}Xrrrr@{}} \toprule
 Name		& \#items 	& \#views & \#deps. & max robots\\ \midrule
