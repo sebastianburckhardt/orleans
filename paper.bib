@@ -28,7 +28,7 @@ OS conferences:
 @STRING{osdi = "Operating Systems Design and Implementation (OSDI)"}
 @STRING{hotos= "Workshop on Hot Topics in Operating Systems (HOTOS)"}
 @STRING{ecrts= "Euromicro Conference on Real-Time Systems (ECRTS)"}
-
+@STRING{nsdi= "Networked Systems Design and Implementation (NSDI)"}
 
 SE conferences:
 @STRING{fse = "International Symposium on Foundations of Software Engineering (FSE)"} %ACM SIGSOFT
@@ -3010,6 +3010,7 @@ pages={233--257},
    year={2016}
 }
  
+ 
 
 @article{mapreduce,
   title={MapReduce: simplified data processing on large clusters},
@@ -3021,6 +3022,13 @@ pages={233--257},
   year={2008},
   publisher={ACM}
 }
+@misc{flink,
+   key={Apache Flink},
+   howpublished = {https://flink.apache.org/},
+   year={2016}
+}
+ 
+
 
 @article{principles,
  author = {Burckhardt, Sebastian},
@@ -3144,3 +3152,62 @@ bookTitle={Practical Aspects of Declarative Languages (PADL)},
 pages="29--44",
 publisher={Springer}
 }
+
+@inproceedings{frank,
+author = {Frank McSherry, Derek Murray, Rebecca Isaacs, Michael Isard},
+title = {Differential dataflow},
+booktitle = {Proceedings of CIDR 2013},
+year = {2013},
+month = {January},
+}
+
+@inproceedings{mronline,
+ author = {Condie, Tyson and Conway, Neil and Alvaro, Peter and Hellerstein, Joseph M. and Elmeleegy, Khaled and Sears, Russell},
+ title = {MapReduce Online},
+ booktitle = nsdi,
+ year = {2010},
+ pages = {21--21},
+ numpages = {1},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+} 
+
+
+@inproceedings {spark,
+	author = {Matei Zaharia and Mosharaf Chowdhury and Tathagata Das and Ankur Dave and Justin Ma and Murphy McCauly and Michael J. Franklin and Scott Shenker and Ion Stoica},
+	title = {Resilient Distributed Datasets: A Fault-Tolerant Abstraction for In-Memory Cluster Computing},
+	booktitle = nsdi,
+	year = {2012},
+	pages = {15--28},
+	publisher = {USENIX},
+}
+
+@inproceedings{nectar,
+ author = {Gunda, Pradeep Kumar and Ravindranath, Lenin and Thekkath, Chandramohan A. and Yu, Yuan and Zhuang, Li},
+ title = {Nectar: Automatic Management of Data and Computation in Datacenters},
+ booktitle = osdi,
+ series = {OSDI'10},
+ year = {2010},
+  pages = {75--88},
+ numpages = {14},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+} 
+
+
+@inproceedings{incoop,
+ author = {Bhatotia, Pramod and Wieder, Alexander and Rodrigues, Rodrigo and Acar, Umut A. and Pasquin, Rafael},
+ title = {Incoop: MapReduce for Incremental Computations},
+ booktitle = {Symposium on Cloud Computing},
+ series = {SOCC '11},
+ year = {2011},
+ location = {Cascais, Portugal},
+ pages = {7:1--7:14},
+ articleno = {7},
+ numpages = {14},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {memoization, self-adjusting computation, stability},
+} 
+
+
