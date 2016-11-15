@@ -21,13 +21,13 @@ Reactive techniques have been successfully applied to large-scale data-parallel 
 
 While fault tolerance, compute-storage separation, and elasticity are common guarantees for large-scale analytics, we are not aware of any system for programming reactive services that guarantees them. In fact, most such systems don't even consider the use of multiple servers, but assume a single-machine configuration, a configuration involving multiple clients and a single server, or consider the service to be part of the environment. An exception is distributed ReScala\cite{drescala} which parallelizes update propagation across multiple servers. Unlike our solution, it needs to know the dataflow dependencies in advance. It guarantees glitch-freedom, but only under the limiting assumption that updates are not concurrent, in start contrast to our workload that exhibits a large volume of concurrent independent updates on actors.
 
-\subsection{Reactive Objects}
+\subsection{Other}
 
 The problem of combining object-oriented and reactive paradigms is not new \cite{Salvaneschi:2013:RBO:2451436.2451442}, as there is often a desire to connect object-oriented GUI frameworks with functional-reactive backends \cite{statelines}. In some sense our problem is the exact opposite: adding reactivity to an object-oriented (or rather, actor) back-end to support a reactive user interface.  SuperGlue \cite{superglue} is another example that adds reactivity to objects. In our experience, actor models provide a much better home for reactivity than mainstream object-oriented programs, because actors completely prevent the passing of shared data structures as arguments and return values. Our dependency tracking algorithm crucially relies on this fact when computing and caching summaries.
 
 
-\paragraph{AmbientTalk/R}
-AmbientTalkR also introduces reactive programming into the actor model. The focus there lies on providing reactivity within a mobile ad-hoc network. So-called \emph{ambient behaviours} can be exposed, which allow actors to share behaviours using an intentional description of the behaviour. A decentralized pub/sub mechanism then makes sure proximate actors can connect to each other through these behaviours. No glitch freedom is guaranteed for the ambient behaviours at all, since that would not be suited for an ambient network.
+%\paragraph{AmbientTalk/R}
+\vspace{.05in}\emph{AmbientTalk/R} also introduces reactive programming into the actor model. Its focus is on providing reactivity within a mobile ad-hoc network. So-called \emph{ambient behaviours} can be exposed, which allow actors to share behaviours using an intentional description of the behaviour. A decentralized pub/sub mechanism then makes sure proximate actors can connect to each other through these behaviours. No glitch-freedom is guaranteed, since that would not be suited for an ambient network.
 
 
 \hidden{
