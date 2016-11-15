@@ -32,10 +32,51 @@ avoiding glitches in a distributed actor system like ours is likely to add signi
 % These are just paragraphs of information about certain topics, still needs to be put in a nice text if they are used %
 
 
+% RP %
+\paragraph{General purpose FRP models} \cite{reactivesurvey} require you to write down your program in terms of signals and behaviours, i.e. explicitly write down the dependency graph. Furthermore, while still a lot of research is being conducted to efficiently perform glitch-free propagation cycles on a single node, lately some initial research is being performed to do this in a distributed setting \cite{elm}\cite{drescala}. Even though future research might solve this, it is still an open research question on how to maintain a distributed propagation algorithm that can handle dynamic dependency graphs and doesn't require a central coordinator. Yet, these two properties are essential to providing scalable services, since topologies change, nodes fail and coordination is very costly.
 
-General purpose FRP models \cite{reactivesurvey} require you to write down your program in terms of signals and behaviours, i.e. explicitly writing down the dependency graph. Furthermore, while still a lot of research is being conducted to efficiently perform glitch-free propagation cycles on a single node, lately some initial research is being performed to do this in a distributed setting \cite{elm}\cite{drescala}. Even though we believe future research might solve this, right now it is tremendously difficult to create a distributed propagation algorithm that can handle dynamic dependency graphs and doesn't require a central coordinator. The presented model in this paper is very different in that sense, because it allows executions that observe a glitch. Yet, it does guarantee that it will eventually perform a glitch-free execution. As a result, this algorithm naturally lends itself more towards large-scale, fault-tolerant systems, by sacrificing some consistency guarantees.
+The presented model in this paper is very different in the sense that (1) the programmer is not required to explicitly provide the dependency graph using special constructs/types (2) because it allows executions that observe a glitch. Yet, it does guarantee that it will eventually perform a glitch-free execution. As a result, this algorithm naturally lends itself more towards large-scale, fault-tolerant systems, by sacrificing some consistency guarantees. At the same time it demands less from the programmer. \newline
 
 
-Big data processing/analytics models: (1) batch processing (Spark, Hadoop) \cite{mapreduce} and (2) stream processing (Apache Flink \& Storm). Can be seen as a  distributed FRP model, because it uses functional operators over sets of distributed data. Batch processing assumes the data doesn't change and stream processing is able to handle continuously changing data. They have the same drawback as any FRP, in that they require special purpose types and functions.
+%% More info on distributed FRP %%
+Citations straight from \cite{drescala}:
+
+\emph{We propose Distributed REScala, a reactive language
+with a change propagation algorithm that works without
+centralized knowledge about the topology of the dependency
+structure among reactive values and avoids unnecessary
+propagation of changes, while retaining safety guarantees
+(glitch freedom).}
+
+The ``centralized knowledge of the topology of the dependency structure'' is very important here. This doesn't mean they don't need a central coordinator, because then on page 7 you can find the crux of why I think the algorithm is being oversold:
+
+\emph{Update turns in SID-UP must happen mutually exclusive:
+Concurrent updates may cause glitches by exposing partial
+results to each other whenever they affect the same node in
+the DG. If this can not be guaranteed by the nature of the
+application, a centralized coordinator is needed during the
+admission phase. Every thread that wants to admit a change
+must first contact this coordinator to acquire exclusive access
+to execute an update turn. After the turn completes, the
+exclusive access is relinquished to allow the next update turn
+to start. These are the only two messages outside of regular
+pulses in SID-UP and they require many-to-one communication
+only. Supporting concurrent update turns, thus getting
+rid of the centralized coordination, is ongoing work.}
+
+
+% Big Data %
+\paragraph{Big data processing/analytics models.} Two types: (1) batch processing (Spark, Hadoop) \cite{mapreduce} and (2) stream processing (Apache Flink \& Storm). Can be seen as a  distributed FRP model, because it uses functional operators over sets of distributed data. Batch processing assumes the data doesn't change and stream processing is able to handle continuously changing data. They have the same drawback as any FRP, in that they require special purpose types and functions.
+
+
+\paragraph{Dataflow (Synchronous) Languages}
+\cite{syncdataflow}
+The main idea is that they describe, and formalize, dataflow sychronous languages and categorize two important types of applications w.r.t. asynchronous environments: "exochronous" and "endochronous". Exochronous applications can have multiple inputs to the dependency graph, while endochronous only have one. As a consequence, synchronous endochronous applications can be easily compiled into an asynchronous setting, i.e. distributed application, without coordination. Exochronous applications on the other hand require a coordinator when distributed. \newline
+
+Haven't read this paper very well, but one of my friends at the lab his paper about a distributed reactive propagation algorithm got rejected because he did not mention it...
+It's a pretty terse paper, but if you're interested, the crux about the compilation to asynchronous environments is on page 141 (or 17 in de pdf), it's in the related folder. I'm not sure if and how we should incorporate this though. \newline
+
+\cite{esterel} In multi-clock Esterel different parts of the program are no longer bound to the global clock. This means that we could possibly run different parts of the reactive program in a distributed setting. Nevertheless, the model assumes instantaneous communication between the parts running on different clocks and clock ticks happen mutually exclusive. This inherently makes it a bad fit for implementing scalable distributed services.
+
 
 \cite{orleans}
