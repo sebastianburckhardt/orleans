@@ -17,7 +17,7 @@ An important difference is that with FRP, all intermediate values matter (stream
 A common ad-hoc solution is to employ some sort of \emph{observer pattern}. The programmer takes full responsibility for tracking dependencies and propagating changes between actors. But even for non-distributed programs, observer patterns can lead to complex and error-prone code \cite{sobserver}; this only gets worse when we have to tolerate failures and provide persistence. 
 %Clearly, more support from the language or runtime is desirable.
 
-Another common approach is to add support for \emph{streams} \cite{orleans,reactors-io}. However, combining actors and streams can be confusing, as the FRP paradigm (state is an event stream) is at odds with the actor paradigm (state is encapsulated by asynchronously communicating actors). It is difficult to keep programs that combine actors and streams both fault tolerant and performant --- persisting every event in a stream is costly. Similarly, combining actors with a publish-subscribe mechanism \cite{patrick} can ameliorate some of the drawbacks of observers, but does complicate fault tolerance and persistence.
+Another common approach is to add support for \emph{streams} \cite{orleans,reactors-io}. However, combining actors and streams can be confusing, as the FRP paradigm (state is an event stream) is at odds with the actor paradigm (state is encapsulated by asynchronously communicating actors). It is difficult to keep programs that combine actors and streams both fault tolerant and performant --- persisting every event in a stream is costly and often redundant. Similarly, combining actors with a publish-subscribe mechanism \cite{patrick} can ameliorate some of the drawbacks of observers, but does complicate fault tolerance and persistence.
 
 \mypar{Reactive Computations} In this work, we propose a novel approach to distributed reactive programming that does not replace the actor paradigm, but extends it with a new feature called \emph{reactive computations}. Any client of the service can start such a reactive computation, which computes some result that depends on one or more actors of the service. But, as in self-adjusting computation \cite{Acar:SelfAdjustingOverview}, this result is computed not just once, but \emph{continuously}: the latest result is pushed to the client whenever it changes. 
 
@@ -25,7 +25,10 @@ Notably, the service code remains exactly the same ---  all the programmer has t
 
 %Also, note that this computation is not restricted to a predefined vocabulary of operators, but can execute any code of the host language (imperative or functional). It does not require static analysis, but can call any number of dynamically determined actors, sequentially or in parallel. 
 
-\mypar{Contributions} We make the following contributions:
+\subsection{Contributions}
+
+We make the following contributions:
+
 \begin{enumerate}
 \item We propose a new programming model for reactive elastic services, which extends the virtual actor model (\S\ref{sec:virtualactors}) with runtime support for reactive computations (\S\ref{sec:formulation}). 
 \item We present a new fault-tolerant distributed reactive caching algorithm (\S\ref{sec:algorithm}), and implement it as an extension of the Orleans virtual actor runtime (\S\ref{sec:implementation}).
