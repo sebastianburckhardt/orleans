@@ -62,7 +62,7 @@ Extending change propagation and garbage collection to the bipartite graph is st
 \mypar{Back-Pressure} 
 Our experiments show that in the case of high update rates, it is beneficial to throttle the sending of updates (only the latest result matters, so intermediate results can be dropped). Our mechanism achieves this by sending results to caches one at a time, and measuring the response time. If above a configurable threshold, we back off (wait for an extra delay equal to the round trip time of the push). 
 
-\subsubsection{Fault Tolerance}
+\subsubsection{Fault Tolerance}\label{sec:ft}
 
 To tolerate faults, we need to make sure that we correctly handle the disappearance of any components that are visible to components on other silos.\footnote{We need not worry about failure of components that are not visible on other silos, because whenever they fail, all components that are aware of them also fail.} In our case, the only thing we need to be concerned about is the connection between summaries and caches (this is readily apparent in Fig.~\ref{fig:summaries}b: the only lines that cross silo boundaries are the solid edges).
 

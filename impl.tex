@@ -1,45 +1,61 @@
 \section{Implementation} \label{sec:implementation}
-There are a couple of interesting things to discuss with respect to our current implementation, even though they do not necessarily contribute to the core algorithm of this paper. In general, the actual C\# code is very similar to the pseudo-code used in this paper, but it contains more detail and uses language features that are not highly relevant in this context, albeit interesting in their own right (e.g. LINQ expressions, cooperative concurrency with async-await).
 
+We have implemented reactive computations as extensions to Orleans, an open-source distributed actor framework for .NET available on GitHub \cite{orleans}. The Orleans runtime already provides the needed distributed protocols for managing the creation, placement, discovery, recovery, and load-balancing of grains \cite{orleans-socc,orleanstr}. What we added is (a) extensions to the grain objects to store summaries, (b) interception points for grain calls, (b) modifications to the grain scheduler to distinguish between reactive and normal execution mode, and (c) a silo-wide cache manager. 
 
-\paragraph{Detecting Changes.} The propagation algorithm described in \S~\ref{sec:cp} assumes that we can detect whenever the state of a grain changes. Even though that might be possible, we opted for a simpler approach and used a \textit{heuristic}: we assume that every method call that was not invoked in context of a reactive computation, might change the grain's state. By doing so we over-approximate the operations that might cause state changes. In the same vain that programmers have to indicate to the runtime when they want the state to be persisted (using a dedicated \texttt{WriteStateAsync()} method), we could in the future also provide a call that invalidates the grain's summaries. For persisted grains, we could even re-use the persistence call, since the programmer already clearly indicates significant state changes have been made.
+\subsection{Language and Framework}
 
-\paragraph{Garbage Collection.} Even though the result of the reactive computation might not be required any more, the programmer might still be holding on to a reference of the reactive computation object, or even just a tracker. This would prevent the runtime from cleaning up the entire distributed dependency graph. In order to prevent this, we instruct the programmer to always create reactive computations and trackers within a C\# \texttt{using} block (as shown in Fig. \ref{fig:impl} Lines 1 and 3). This guarantees that the reactive computation is directly disposed when it's not used any more. Consequently, the bipartite graph will only exist, and thus produce overhead, as long as anyone is using it, giving the 90 second time frame for cleaning up.
+So far, our exposition of the programming model and algorithm has avoided delving into particulars of the Orleans framework or of C\#. We now discuss some of these details.
+
+\mypar{Disposal by \lstinline{using}} Until the programmer disposes the reactive computation object, the runtime incurs the cost of tracking summaries and propagating updates. To avoid leaking these computational resources accidentally,  programmers can use the C\# \lstinline|using| clause as shown in Fig. \ref{fig:impl} (\lref{using}). This guarantees that \lstinline|Dispose| is called automatically on the reactive computation when control leaves the block (\rref{ubl}), either normally or due to an exception (and it works correctly in combination with \textsf{await}). 
+
+Disposing the reactive computation removes the summary associated with the reactive computation, and any local caches it depends on (unless those have other dependents). As described in  (\S\ref{sec:summaries}), this eventually guarantees that all summaries and caches that have no observers are removed. It can take some time because summaries are not removed until 90 seconds have passed since the last subscription by a cache (\S\ref{sec:ft}). 
+
+\mypar{Asynchronous I/O} ResultTrackers are well suited for situations where updating the display requires I/O, such as when communicating with a remotely connected client device:   (1) result trackers may skip intermediate versions: only the latest result matters, and (2) result trackers return a task that can be efficiently awaited without blocking the thread.  (using C\# language support for async/await \cite{Bierman2012}). 
+
+It is possible to use multiple result trackers for the same reactive computation, and each one can consume results at its own speed (for example, over different websockets).
+
+\mypar{Exception Handling}
+As can be seen from Fig.~\ref{fig:impl}, whenever an exception occurs somewhere down the reactive computation, we don't simply stop the computation and deconstruct the dependency graph. Instead we assume the exception just occurred due to some current state of the grains, but following states might produce results again. The exception can be caught (1) either somewhere upstream in the reactive computation itself, or (2) on the \lstinline|NextResult()| call of a tracker if it wasn't caught. This provides a uniform way of handling both faults (timeout exceptions) (Fig.~\ref{fig:impl} line 9) and computational exceptions (Fig.~\ref{fig:impl} line 13).
+
 
 % This Figure can easily be removed when the page limit is reached %%
 \begin{figure}
 \begin{lstlisting}
-using(var rc = GrainFactory.CreateReactiveComputation(
-									() => Grain[myuserid].GetTimeline())) {
-	using(var resulttracker = rc.GetResultTracker()) {
-
+using(var rc = CreateReactiveComputation( %\label{l:using}%
+									() => Grain[myuserid].GetTimeline())) 
+{%\label{b:ubl}%
+	using(var resulttracker = rc.GetResultTracker()) 
+	{
 		while (interested) {
 			try {
 				var result = await resulttracker.NextResult();
 				display(result);
-			} catch(TimeoutException) { 
+			} catch(TimeoutException) { %\label{b:eh}%
 				display("server is not responding, retrying...");
 			} catch(DivisionByZeroException) {
 				display("can't divide by zero");			
-			}
+			}%\label{e:eh}%
 		}
 	}
-}
+}%\label{e:ubl}%
 \end{lstlisting}
 \caption{Proposed solution, including the \texttt{using} constructs that make sure the graph is garbage collected when no longer required.}\label{fig:impl}
 \end{figure}
+\subsection{Effects, Dependencies, and Determinism}
 
-\paragraph{Non-Determinism.}
-Whenever a method is called from within the context of a reactive computation, it is now prone to being re-executed without the programmer explicitly performing the call. Furthermore, we assume that when such invocation is performed twice with the same grain state (and the grains it depends on), the result is the same. In other words, the algorithm disregards any other source of non-determinism such as clock queries and I/O. The programmer should thus avoid using these operations in a reactive computation. Keep in mind that this solution is geared towards performing some kind of \emph{query} over the distributed state, thus it makes sense to make this assumption. Currently, we do no statically or dynamically enforce this, because some type of non-deterministic operations might still be useful for example for debugging purposes. On the other hand, it might be interesting to explore extensions of the algorithm that do explicitly incorporate this by for example recording and re-using non-deterministic operations.
+\mypar{Detecting Changes} The propagation algorithm described in \S~\ref{sec:cp} requires that we detect whenever the state of a grain changes. Unfortunately, in Orleans, we cannot easily detect whether an operation has side effects, because grains are C\# objects, and the use of heap and libraries obfuscates the presence of side effects. Therefore, we overapproximate and conservatively assume that \emph{all} operations change the grain's state. This is not as expensive as it may seem at first, because if the grain state has not changed, or changed in ways that are irrelevant, re-execution of the summary produces the same result, and propagation stops. 
 
-\paragraph{Exception Handling}
-As can be seen from Fig.~\ref{fig:impl} (lines 11-13), whenever an exception occurs somewhere down the reactive computation, we don't simply stop the computation and deconstruct the dependency graph. Instead we assume the exception just occurred due to some current state of the grains, but following states might produce results again. The exception can be catched (1) either somewhere upstream in the reactive computation itself, or (2) on the \texttt{NextResult()} call of a tracker if it wasn't caught. This also provides a uniform way of handling both distributed exceptions (timeout) (Fig.~\ref{fig:impl} line 9) and computational exceptions (Fig.~\ref{fig:impl} line 13).
+Programmers can annotate an operation with a \lstinline|[ReadOnly]| attribute to avoid the re-execution overhead; also, we assume that any operation called as part of a reactive computation does not change the grain state, and thus avoid summary re-execution in that case.
 
+\mypar{To execute or not to execute}
+Our algorithm changes the way grain operations are executed, which can surprise programmers.  Any method that is called from within a reactive context is now prone to being re-executed without the programmer explicitly performing the call. Conversely, calling any such method may skip the execution entirely and instead return a cached result. In theory, this is fine as long the method does not modify any state, and if it does not have an external dependency that is invisible to our staleness detection (e.g. read a clock or do arbitrary I/O). 
 
-We have implemented reactive computations as extensions to Orleans, an open-source distributed actor framework for .NET available on GitHub \cite{orleans}. The Orleans runtime already provides the needed distributed protocols for managing the creation, placement, discovery, recovery, and load-balancing of grains \cite{orleans-socc,orleanstr}. What we added is (a) extensions to the grain objects to store summaries, (b) interception points for grain calls, (b) modifications to the grain scheduler to distinguish between reactive and normal execution mode, and (c) a silo-wide cache manager. 
+These conditions are usually satisfied as reactive computations are meant to be used for some kind of \emph{query} over the distributed state. However, currently, we do not enforce them. For a different host language, one can imagine a type/effect system to this end. However, a naive rigid enforcement is probably not advisable, because we want to allow harmless side effects (such as writing a timestamped message to a log). 
 
-In an object-oriented imperative language like C\#, we cannot statically determine whether a grain operation modifies the grain state. Thus, we conservatively trigger change propagation after \emph{any} operation on a grain. This is not as expensive as it may seem at first, because if the grain state has not changed, re-execution of the summary produces the same result, and propagation stops. Still, the programmer can annotate an operation as read-only to avoid this overhead; also, we assume that any operation called as part of a reactive computation does not change the grain state, and avoid summary re-execution in that case.
-
+\mypar{Determinism} 
+We do \emph{not} require that grain operations are deterministic. For example, it is o.k. for an operation to call two other grains concurrently, and return the first of the two results returned. By definition, a cached value is considered stale only if a re-execution \emph{must} return a different result, not if it \emph{may} return a different result.
+ 
+ 
 \hidden
 {
 \subsection{Runtime Implementation}

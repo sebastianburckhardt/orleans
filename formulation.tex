@@ -2,9 +2,9 @@
 
 Actors have emerged as a useful abstraction for the middle tier of scalable service applications that run on virtualized cloud infrastructure in a datacenter . In such systems, each actor is an object with a user-defined meaning, identity, state, and operations. For example, actors can represent user profiles, articles, game sessions, devices, bank accounts, or chat rooms. Actors resemble miniature servers: they do not share memory, but communicate asynchronously, and can fail and recover independently. One of the main benefit of actor systems is that they \emph{scale horizontally}, because the actor instances can be distributed across a cluster of servers.
 
-In a traditional bare-bones actor system, the developer remains responsible for the creation, placement, discovery, recovery, and load-balancing of actors. A newer generation of actor models \cite{orleans,orbit,sfactors}, called virtual actor models, automate all of these aspects. The developer specifies only (1) a unique key for identifying each actor, and (2) how to save and load the actor state to/from external storage, if persistence is desired. As virtual actor systems can activate and deactivate actors based on use, they strongly resemble distributed caches ["14"]["39"]["40"]["55"] and provide similar performance benefits. 
+In a traditional bare-bones actor system, the developer remains responsible for the creation, placement, discovery, recovery, and load-balancing of actors. A newer generation of actor models \cite{orleans,orbit,sfactors}, called virtual actor models, automate all of these aspects. The developer specifies only (1) a unique key for identifying each actor, and (2) how to save and load the actor state to/from external storage, if persistence is desired. As virtual actor systems can activate and deactivate actors based on use, they strongly resemble distributed caches \cite{memcached} and provide similar performance benefits. 
 
-Following the terminology ["4"], we call the virtual actors \emph{grains}. For each grain type, the code defines a (1) key that identifies instances, (2)  fields that define the grain state, and (3) operations supported by the grain. The operations of a grain can read and modify the grain state, and can call operations on other grains, but cannot directly read or write the state of other grains (encapsulation). 
+Following the terminology \cite{orleanstr,orleans-socc}, we call the virtual actors \emph{grains}. For each grain type, the code defines a (1) key that identifies instances, (2)  fields that define the grain state, and (3) operations supported by the grain. The operations of a grain can read and modify the grain state, and can call operations on other grains, but cannot directly read or write the state of other grains (encapsulation). 
  
 \subsection{Example: Chirper}
 
@@ -66,7 +66,7 @@ If an operation times out, the caller does not know whether its effect was perfo
 
 \section{Reactive Computations}\label{sec:formulation}
 
-Suppose now that we want our chirper client to not just display a frozen snapshot of \lstinline|GetTimeline|, but to react to changes in the application state and refresh the user display accordingly. What are our implementation options? 
+Suppose now that we want our chirper client to not just display a frozen snapshot of \lstinline|GetTimeline|, but to react to changes in the application state and refresh the user display accordingly. In the absence of any special support for reactive programming, our options are to use polling (\S\ref{sec:polling}) or to implement change propagation explicitly at the application level (\S\ref{sec:observers}). Next, we briefly discuss those two solutions, and then show the solution based on runtime support for reactive computations (\S\ref{sec:reactive}). 
 
 \begin{figure}
 \begin{lstlisting}
@@ -92,6 +92,7 @@ while (interested) {
 // new additions to  grain state
 state Observers: map<<Observer,time>>; 
 state Followers: set<<userid>>; 	
+
 // new update operations
 op AddFollower (userid: string)
 	{ Followers.Add(userid); }
@@ -104,6 +105,7 @@ op AddObserver (client: Observer, from: time)
 }
 op RemoveObserver (client: Observer)
 	{ Observers.Remove(client); }
+
 // modifications to existing update operations
 op Post(tstamp: time, msg: string) { 
 	...
@@ -123,6 +125,7 @@ op Unfollow(userid: string) {
 	User[userid].RemoveFollower(this.userid);
 	NotifyObservers(); 
 }
+
 // new propagation operations
 op NotifyObservers() {
 	foreach(var (client,from) in Observers) {
@@ -184,7 +187,7 @@ First, the programmer creates a \emph{reactive computation} object (\lref{crc}),
 To consume the results, the programmer simply creates a \emph{result tracker} object (\lref{crt}). The result tracker operates like an enumerator that produces both the initial result, and any successive changed results, when we call \lstinline|NextResult| (\lref{await}). %\footnote{to avoid potential confusion: note that the result tracker is \emph{not} an enumerator for the produced timeline; rather, each call to \lstinline|NextResult| returns the latest version of the \emph{entire} timeline.}
 Note that the code in the loop (\rref{pl}) looks just like the client-side polling solution (Fig.~\ref{fig:polling}), and has the same failure and exception semantics, but we no longer need to specify an arbitrary polling delay --- instead, the loop simply waits for a new result to arrive, and then delivers it immediately. With compiler support for \lstinline|await|, as in C\# \cite{Bierman2012}, this is just as efficient as using callbacks, because the compiler constructs continuations that do not block the thread.
 
-Exactly how the client processes the results is outside the scope of this work, and likely depends on the chosen client framework. For chirper  we used react.js; it lets us simply assign the result to the model, and automatically does the diffing.
+Exactly how the client processes the results is outside the scope of this work, and likely depends on the chosen client framework. For chirper  we used react \cite{react}; it lets us simply assign the result to the model, and automatically does the diffing.
 
 %adding support for reactive computations into the virtual actor runtime, we can avoid the hassle of changing the application code, and  retain the elegant simplicity and well-defined failure handling of the client-side polling solution (Fig.\ref{}). Our proposed API is shown
 
