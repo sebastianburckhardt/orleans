@@ -14,11 +14,12 @@ Change propagation is semantically subtle. In sychronous models, time is explici
 
 At the other end of the spectrum are synchronous reactive languages \cite{lustre,signal,esterel,syncdataflow}, where time is explicit, and systems make very strong semantic guarantees. It is hard to imagine an efficient implementation of such models in the context of a scalable service built from asynchronously communicating independent actors, given the high cost of coordination. Because actors can be modified independently on different machines, our applications are \emph{exochronous} (multiple inputs to the dependency graph) as opposed to \emph{endochronous}.  
 
-The problem of combining object-oriented and reactive paradigms is  not new, as there is often a desire to connect object-oriented GUI frameworks with functional-reactive backends \cite{statelines}. In some sense our problem is the exact opposite: adding reactivity to an object-oriented (or rather, actor) back-end to support a reactive user interface.  SuperGlue \cite{superglue} is another example that adds reactivity to objects. In our experience, actor models provide a much better home for reactivity than mainstream object-oriented programs, because actors completely prevent the passing of shared data structures as arguments and return values. Our dependency tracking algorithm crucially relies on this fact when computing and caching summaries.
+The problem of combining object-oriented and reactive paradigms is not new \cite{Salvaneschi:2013:RBO:2451436.2451442}, as there is often a desire to connect object-oriented GUI frameworks with functional-reactive backends \cite{statelines}. In some sense our problem is the exact opposite: adding reactivity to an object-oriented (or rather, actor) back-end to support a reactive user interface.  SuperGlue \cite{superglue} is another example that adds reactivity to objects. In our experience, actor models provide a much better home for reactivity than mainstream object-oriented programs, because actors completely prevent the passing of shared data structures as arguments and return values. Our dependency tracking algorithm crucially relies on this fact when computing and caching summaries.
+
 
 
 Clearly, how to best balance consistency and performance is highly dependent on the architecture and workload. 
-avoiding glitches in a distributed actor system like ours is likely to add significant latency overhead: updates are only partially ordered to begin with, and dependencies are detected dynamically. Also, for the applications we have in mind, it is typically preferrable to quickly display a glitchy result and then quickly correct it, than to generally wait longer. Consequently, we chose an algorithm that does not avoid glitches or causality violations categorically, but guarantees that they are ephemeral (\S\ref{sec:cp}). This tradeoff is quite similar to the variations of eventual consistency \cite{principles}.
+Avoiding glitches in a distributed actor system like ours is likely to add significant latency overhead: updates are only partially ordered to begin with, and dependencies are detected dynamically. Also, for the applications we have in mind, it is typically preferrable to quickly display a glitchy result and then quickly correct it, than to generally wait longer. Consequently, we chose an algorithm that does not avoid glitches or causality violations categorically, but guarantees that they are ephemeral (\S\ref{sec:cp}). This tradeoff is quite similar to the variations of eventual consistency \cite{principles}.
  
 
 
@@ -65,7 +66,12 @@ exclusive access is relinquished to allow the next update turn
 to start. These are the only two messages outside of regular
 pulses in SID-UP and they require many-to-one communication
 only. Supporting concurrent update turns, thus getting
-rid of the centralized coordination, is ongoing work.}
+rid of the centralized coordination, is ongoing work.} \newline
+
+And this is from the conclusion:
+\emph{There are several areas for future work. We plan to extend
+our approach to support concurrent update turns and to handle
+failures.}\newline
 
 
 % Big Data %
