@@ -1,5 +1,6 @@
 PL conferences:
 @STRING{esop = "European Symposium on Programming (ESOP)"}
+@STRING{ecoop = "European Conference on Object-Oriented Programming (ECOOP)"}
 @STRING{cav = "Computer Aided Verification (CAV)"}
 @STRING{concur = "International Conference on Concurrency Theory (CONCUR)"}
 @STRING{pldi = "Programming Language Design and Implementation (PLDI)"} % ACM SIGPLAN Conference on 
@@ -156,54 +157,29 @@ Other:
 @inproceedings{camil,
  author = {Demetrescu, Camil and Finocchi, Irene and Ribichini, Andrea},
  title = {Reactive Imperative Programming with Dataflow Constraints},
- booktitle = {Proceedings of the 2011 ACM International Conference on Object Oriented Programming Systems Languages and Applications},
- series = {OOPSLA '11},
+ booktitle =oopsla,
  year = {2011},
- isbn = {978-1-4503-0940-0},
- location = {Portland, Oregon, USA},
  pages = {407--426},
  numpages = {20},
- dont_url = {http://doi.acm.org/10.1145/2048066.2048100},
- dont_doi = {10.1145/2048066.2048100},
- acmid = {2048100},
- publisher = {ACM},
- address = {New York, NY, USA},
- keywords = {constraint solving, data structure repair, dataflow programming, imperative programming, incremental computation, observer design pattern, reactive programming},
+  keywords = {constraint solving, data structure repair, dataflow programming, imperative programming, incremental computation, observer design pattern, reactive programming},
 } 
 
 @inproceedings{alive,
  author = {Burckhardt, Sebastian and Fahndrich, Manuel and de Halleux, Peli and McDirmid, Sean and Moskal, Michal and Tillmann, Nikolai and Kato, Jun},
- title = {{It's Alive! Continuous Feedback in UI Programming}},
- booktitle = {Proceedings of the 34th ACM SIGPLAN Conference on Programming Language Design and Implementation},
- series = {PLDI '13},
+ title = {It's Alive! {Continuous} Feedback in {UI} Programming},
+ booktitle = pldi,
  year = {2013},
- _isbn = {978-1-4503-2014-6},
- _location = {Seattle, Washington, USA},
  pages = {95--104},
- _numpages = {10},
- dont__url = {http://doi.acm.org/10.1145/2491956.2462170},
- dont__doi = {10.1145/2491956.2462170},
- _acmid = {2462170},
- publisher = {ACM},
- address = {New York, NY, USA},
  _keywords = {graphical user interface, live programming},
 } 
 
 @inproceedings{elm,
  author = {Czaplicki, Evan and Chong, Stephen},
- title = {Asynchronous Functional Reactive Programming for GUIs},
- booktitle = {Proceedings of the 34th ACM SIGPLAN Conference on Programming Language Design and Implementation},
- series = {PLDI '13},
+ title = {Asynchronous Functional Reactive Programming for {GUI}s},
+ booktitle = pldi,
  year = {2013},
- isbn = {978-1-4503-2014-6},
- location = {Seattle, Washington, USA},
  pages = {411--422},
  numpages = {12},
- dont_url = {http://doi.acm.org/10.1145/2491956.2462161},
- dont_doi = {10.1145/2491956.2462161},
- acmid = {2462161},
- publisher = {ACM},
- address = {New York, NY, USA},
  keywords = {functional reactive programming, graphical user interfaces},
 } 
 
@@ -211,8 +187,6 @@ Other:
 author="Ignatoff, Daniel
 and Cooper, Gregory H.
 and Krishnamurthi, Shriram",
-editor="Hagiya, Masami
-and Wadler, Philip",
 title="Crossing State Lines: Adapting Object-Oriented Frameworks to Functional Reactive Languages",
 bookTitle="Functional and Logic Programming: 8th International Symposium, FLOPS 2006, Fuji-Susono, Japan, April 24-26, 2006. Proceedings",
 year="2006",
@@ -1471,7 +1445,7 @@ Concurrent programming without locks
 
 @inproceedings{burckhardt-leijen-yi-sadowski-ball-OOPSLA11,
  author = {S. Burckhardt and D. Leijen and J. Yi and C. Sadowski and T. Ball},
- title = {Two for the Price of One: A Model for Parallel and Incremental Computation (Distinguished Paper Award)},
+ title = {Two for the Price of One: A Model for Parallel and Incremental Computation},
  booktitle = {Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA)},
  year = {2011},
 }
@@ -1949,7 +1923,7 @@ author = {Sebastian Burckhardt}
 @inproceedings{sevcik-ecoop08,
  author = {J. Sevcik and D. Aspinall},
  title = {On Validity of Program Transformations in the {J}ava Memory Model},
- booktitle = {European Conference on Object-Oriented Programming (ECOOP)},
+ booktitle = ecoop,
  year = {2008},
  }
 
@@ -2700,7 +2674,7 @@ masid = {66652}
 
 @InProceedings{cloudtypes,
 year={2012},
-booktitle={European Conference on Object-Oriented Programming (ECOOP)},
+booktitle=ecoop,
 volume={7313},
 series={LNCS},
 title={Cloud Types for Eventual Consistency},
@@ -2795,7 +2769,7 @@ number = {MSR-TR-2013-39}
 @inproceedings{ourpopl,
  author ={S. Burckhardt and A. Gotsman and H. Yang and M. Zawirski},
  title = {Replicated Data Types: Specification, Verification, Optimality},
- booktitle = {Principles of Programming Languages (POPL)},
+ booktitle = popl,
  year = {2014},
 }
 
@@ -2808,10 +2782,8 @@ number = {MSR-TR-2013-39}
 
 @TechReport {Burckhardt:ct,
   author       = {Sebastian Burckhardt and Daan Leijen and Manuel F\"ahndrich},
-  ANONauthor       = {Anonymized},
   month        = {March},
   number       = {MSR-TR-2014-43},
-  ANONnumber       = {TR-XXXXXX (included as an appendix in this anonymous submission) },
   title        = {Cloud Types: Robust Abstractions for Replicated Shared State},
   url          = {http://research.microsoft.com/apps/pubs/default.aspx?id=211340},
   year         = {2014},
@@ -2821,7 +2793,7 @@ number = {MSR-TR-2013-39}
 @inproceedings{tim,
  author = {Coppieters, Tim and Philips, Laure and De Meuter, Wolfgang and Van Cutsem, Tom},
  title = {An Open Implementation of Cloud Types for the Web},
- booktitle = {Proceedings of the First Workshop on Principles and Practice of Eventual Consistency},
+ booktitle = {Principles and Practice of Eventual Consistency (PaPEC)},
  series = {PaPEC '14},
  year = {2014},
  isbn = {978-1-4503-2716-9},
@@ -2839,25 +2811,21 @@ number = {MSR-TR-2013-39}
 @inproceedings{kapil,
 author = {G. Ramalingam, Kapil Vaswani},
 title = {Fault Tolerance via Idempotence},
-booktitle = {Principles of Programming Languages (POPL)},
+booktitle = popl,
 year = {2013},
-month = {January},
-publisher = {ACM},
-dont_url = {https://www.microsoft.com/en-us/research/publication/fault-tolerance-via-idempotence/},
 }
 
-@Inbook{Bierman2012,
-author="Bierman, Gavin
+@inproceedings{Bierman2012,
+author={Bierman, Gavin
 and Russo, Claudio
 and Mainland, Geoffrey
 and Meijer, Erik
-and Torgersen, Mads",
-editor="Noble, James",
-title="Pause 'n' Play: Formalizing Asynchronous C\#",
-bookTitle="European Conference on Object-Oriented Programming (ECOOP)",
-year="2012",
-publisher="Springer",
-pages="233--257",
+and Torgersen, Mads},
+title={Pause 'n' Play: Formalizing Asynchronous {C\#}},
+booktitle=ecoop,
+year={2012},
+publisher={Springer},
+pages={233--257},
 }
 
 
@@ -2870,12 +2838,8 @@ pages="233--257",
  number = {10},
  month = oct,
  year = {2009},
- issn = {0362-1340},
  pages = {1--20},
  numpages = {20},
- url = {http://doi.acm.org/10.1145/1639949.1640091},
- doi = {10.1145/1639949.1640091},
- acmid = {1640091},
  publisher = {ACM},
  address = {New York, NY, USA},
  keywords = {functional reactive programming, javascript, web programming},
@@ -2883,36 +2847,157 @@ pages="233--257",
 
 @inproceedings{drescala,
  author = {Drechsler, Joscha and Salvaneschi, Guido and Mogk, Ragnar and Mezini, Mira},
- title = {Distributed REScala: An Update Algorithm for Distributed Reactive Programming},
- booktitle = {Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages \& Applications},
- series = {OOPSLA '14},
+ title = {Distributed {REScala}: An Update Algorithm for Distributed Reactive Programming},
+ booktitle = oopsla,
  year = {2014},
- isbn = {978-1-4503-2585-1},
- location = {Portland, Oregon, USA},
- pages = {361--376},
  numpages = {16},
- url = {http://doi.acm.org/10.1145/2660193.2660240},
- doi = {10.1145/2660193.2660240},
- acmid = {2660240},
- publisher = {ACM},
- address = {New York, NY, USA},
- keywords = {distributed programming, reactive programming, scala},
+  keywords = {distributed programming, reactive programming, scala},
 }
 
 @inproceedings{sobserver,
  author = {Salvaneschi, Guido and Amann, Sven and Proksch, Sebastian and Mezini, Mira},
  title = {An Empirical Study on Program Comprehension with Reactive Programming},
- booktitle = {Proceedings of the 22Nd ACM SIGSOFT International Symposium on Foundations of Software Engineering},
- series = {FSE 2014},
+ booktitle = fse,
  year = {2014},
- isbn = {978-1-4503-3056-5},
- location = {Hong Kong, China},
  pages = {564--575},
  numpages = {12},
- url = {http://doi.acm.org/10.1145/2635868.2635895},
- doi = {10.1145/2635868.2635895},
- acmid = {2635895},
+   keywords = {Controlled Experiment, Empirical Study, Reactive Programming},
+}
+
+@misc{orleans,
+   key={Orleans - Distributed Virtual Actor Model for .NET},
+   howpublished = {MIT license. https://github.com/dotnet/orleans},
+   year={2016}
+}
+
+@misc{orbit,
+   key={Orbit - Virtual Actors for the JVM},
+   howpublished = {BSD 3-clause license. https://github.com/orbit/orbit},
+   year={2016}
+}
+
+@misc{sfactors,
+   key={Service Fabric Reliable Actors},
+   howpublished = {Available for the Windows Azure platform, see https://azure.microsoft.com/en-us/documentation/articles/service-fabric-reliable-actors-get-started/},
+   year={2016}
+}
+
+@misc{akka,
+   key={Akka - Actors for the JVM},
+   howpublished = {Apache 2 License, https://github.com/akka/akka},
+   year={2016}
+}
+
+@article{Meijer:2012:YDB:2330087.2338507,
+ author = {Meijer, Erik},
+ title = {All Your Database Are Belong to Us},
+ journal = {Queue},
+ issue_date = {07-01-2012},
+ volume = {10},
+ number = {7},
+ month = jul,
+ year = {2012},
+ issn = {1542-7730},
+ pages = {40:40--40:49},
+ articleno = {40},
+ numpages = {10},
+ url = {http://doi.acm.org/10.1145/2330087.2338507},
+ doi = {10.1145/2330087.2338507},
+ acmid = {2338507},
  publisher = {ACM},
  address = {New York, NY, USA},
- keywords = {Controlled Experiment, Empirical Study, Reactive Programming},
+} 
+
+@article{erlang,
+ author = {Armstrong, Joe},
+ title = {Erlang},
+ journal = {Commun. ACM},
+ issue_date = {September 2010},
+ volume = {53},
+ number = {9},
+ month = sep,
+ year = {2010},
+ pages = {68--75},
+ numpages = {8},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+} 
+
+@inproceedings{orleans-socc,
+ author = {Bykov, Sergey and Geller, Alan and Kliot, Gabriel and Larus, James and Pandya, Ravi and Thelin, Jorgen},
+ title = {Orleans: Cloud Computing for Everyone},
+ booktitle = {ACM Symposium on Cloud Computing},
+ series = {SOCC '11},
+ year = {2011},
+ pages = {16:1--16:14},
+ articleno = {16},
+ numpages = {14},
+ keywords = {cloud computing, distributed actors, programming models},
+} 
+
+@TECHREPORT{orleanstr,
+  author = {Phil Bernstein and Sergey Bykov and Alan Geller and Gabriel Kliot and Jorgen Thelin},
+  month = {March},
+  number       = {MSR-TR-2014-41},
+  title = {Orleans: Distributed Virtual Actors for Programmability and Scalability},  
+  year = {2014},
+  institution  = {Microsoft Research},
 }
+
+
+@article{afp,
+ author = {Acar, Umut A. and Blelloch, Guy E. and Harper, Robert},
+ title = {Adaptive Functional Programming},
+ journal = {ACM Trans. Program. Lang. Syst.},
+ issue_date = {November 2006},
+ volume = {28},
+ number = {6},
+ month = nov,
+ year = {2006},
+ issn = {0164-0925},
+ pages = {990--1034},
+ numpages = {45},
+ keywords = {Incremental computation, adaptive computation, dynamic algorithms},
+} 
+
+@article{frp-firstprinciples,
+ author = {Wan, Zhanyong and Hudak, Paul},
+ title = {Functional Reactive Programming from First Principles},
+ journal = {SIGPLAN Not.},
+ issue_date = {May 2000},
+ volume = {35},
+ number = {5},
+ month = may,
+ year = {2000},
+ pages = {242--252},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+} 
+
+@inproceedings{frp-frtime,
+ author = {Cooper, Gregory H. and Krishnamurthi, Shriram},
+ title = {Embedding Dynamic Dataflow in a Call-by-value Language},
+ booktitle=esop,
+ year = {2006},
+ pages = {294--308},
+ publisher = {Springer-Verlag},
+ address = {Berlin, Heidelberg},
+} 
+
+
+@misc{react,
+   key={React - A declarative JavaScript library for building user interfaces},
+   howpublished = {BSD 3-clause license. https://github.com/facebook/react},
+   year={2016}
+}
+
+@misc{reactors-io,
+   key={Reactors.IO},
+   howpublished = {BSD 3-clause license. https://github.com/reactors-io/reactors},
+   year={2016}
+}
+
+
+
+
+
