@@ -1,6 +1,10 @@
 \section{Related Work}
 
- 
+As discussed in the introduction, reactive programming is a rich area of research that spans language design, algorithms and implementation architecture (see the survey \cite{reactivesurvey}).
+
+A main difference between our solution and much prior work on FRP \cite{frp-firstprinciples,frp-animation,frp-frtime,elm,afp} is that our computations are not expressed using a set of operators/combinators supported by the compiler, but execute like regular code of the host language (imperative, object-oriented C\#). Incrementality is achieved at runtime, by decomposing the computation into subcomputations at that can be selectively re-evaluated if their dependencies change. In that sense, our solution follows the same principle as self-adjusting computation \cite{acar-ahmed-blume-POPL08,Acar:SelfAdjustingExperiments,Acar:SelfAdjustingOverview,Hammer:Ceal09,Acar:SelfAdjustingTypes10}, one-way dataflow constraints \cite{camil}, or incremental concurrent revisions \cite{burckhardt-leijen-yi-sadowski-ball-OOPSLA11}, except that here, we use the encapsulation afforded by the actor model as a means to decompose the computation.
+
+
 Change propagation is semantically subtle. In sychronous models, time is explicit. Asynchronous models may make strong consistency guarantees based on some form of version tracking, or may have weaker consistency guarantees. For example, a so-called glitch means that an observer sees two observables A, B that have inconsistent state, meaning that the set of updates propagated to A is different from the set of updates propagated to B. Many reactive systems strive to eliminate glitches (e.g. using topological ordering of dependencies), but some embrace them.
 
 Clearly, how to best balance consistency and performance is highly dependent on the architecture and workload. 
@@ -10,10 +14,10 @@ avoiding glitches in a distributed actor system like ours is likely to add signi
 \subsection{Expressing Views.} Often, views can observe other views, creating a directed acyclic graph of dependencies. How to express such dependency graphs using recursive operators is a key question in the area of dataflow languages, functional reactive programming, and object-oriented frameworks such as Rx. In relational database systems, views are expressed by relational queries (which allows changes to be propagated incrementally). in Facebook's react.js, the application state is observed by a tree-structured virtual DOM, which is in turn observed by the browser's DOM. And in relational database systems, views are expressed by relational queries (which allows changes to be propagated incrementally)
 
  
- \subsection{Dependency Detection}. 
+
 
  
-
+ 
 \cite{burckhardt-leijen-yi-sadowski-ball-OOPSLA11}
 \cite{camil}
 
