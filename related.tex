@@ -25,5 +25,13 @@ avoiding glitches in a distributed actor system like ours is likely to add signi
 
 \cite{statelines} inverse problem
 
+% These are just paragraphs of information about certain topics, still needs to be put in a nice text if they are used %
+
+
+
+General purpose FRP models \cite{reactivesurvey} require you to write down your program in terms of signals and behaviours, i.e. explicitly writing down the dependency graph. Furthermore, while still a lot of research is being conducted to efficiently perform glitch-free propagation cycles on a single node, lately some initial research is being performed to do this in a distributed setting \cite{elm}\cite{drescala}. Even though we believe future research might solve this, right now it is tremendously difficult to create a distributed propagation algorithm that can handle dynamic dependency graphs and doesn't require a central coordinator. The presented model in this paper is very different in that sense, because it allows executions that observe a glitch. Yet, it does guarantee that it will eventually perform a glitch-free execution. As a result, this algorithm naturally lends itself more towards large-scale, fault-tolerant systems, by sacrificing some consistency guarantees.
+
+
+Big data processing/analytics models: (1) batch processing (Spark, Hadoop) \cite{mapreduce} and (2) stream processing (Apache Flink \& Storm). Can be seen as a  distributed FRP model, because it uses functional operators over sets of distributed data. Batch processing assumes the data doesn't change and stream processing is able to handle continuously changing data. They have the same drawback as any FRP, in that they require special purpose types and functions.
 
 \cite{orleans}
