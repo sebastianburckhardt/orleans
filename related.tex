@@ -4,7 +4,6 @@ As discussed in the introduction, reactive programming is a rich area of researc
 
 A main difference between our solution and much prior work on FRP \cite{frp-firstprinciples,frp-animation,frp-frtime,elm,afp} is that our computations are not expressed using a set of operators/combinators supported by the compiler, but execute like regular code of the host language (imperative, object-oriented C\#). Incrementality is achieved at runtime, by decomposing the computation into subcomputations at that can be selectively re-evaluated if their dependencies change. In that sense, our solution follows the same principle as self-adjusting computation \cite{acar-ahmed-blume-POPL08,Acar:SelfAdjustingExperiments,Acar:SelfAdjustingOverview,Hammer:Ceal09,Acar:SelfAdjustingTypes10}, one-way dataflow constraints \cite{camil}, or incremental concurrent revisions \cite{burckhardt-leijen-yi-sadowski-ball-OOPSLA11}, except that here, we use the encapsulation afforded by the actor model as a means to decompose the computation.
 
-
 Change propagation is semantically subtle. In sychronous models, time is explicit. Asynchronous models may make strong consistency guarantees based on some form of version tracking, or may have weaker consistency guarantees. For example, a so-called glitch means that an observer sees two observables A, B that have inconsistent state, meaning that the set of updates propagated to A is different from the set of updates propagated to B. Many reactive systems strive to eliminate glitches (e.g. using topological ordering of dependencies), but some embrace them.
 
 Clearly, how to best balance consistency and performance is highly dependent on the architecture and workload. 
@@ -33,12 +32,13 @@ avoiding glitches in a distributed actor system like ours is likely to add signi
 
 
 % RP %
-\paragraph{General purpose FRP models} \cite{reactivesurvey} require you to write down your program in terms of signals and behaviours, i.e. explicitly write down the dependency graph. Furthermore, while still a lot of research is being conducted to efficiently perform glitch-free propagation cycles on a single node, lately some initial research is being performed to do this in a distributed setting \cite{elm}\cite{drescala}. Even though future research might solve this, it is still an open research question on how to maintain a distributed propagation algorithm that can handle dynamic dependency graphs and doesn't require a central coordinator. Yet, these two properties are essential to providing scalable services, since topologies change, nodes fail and coordination is very costly.
+\paragraph{General purpose FRP models} \cite{reactivesurvey} require you to write down your program in terms of signals and behaviours, i.e. explicitly write down the dependencies. Furthermore, while still a lot of research is being conducted to efficiently perform glitch-free propagation cycles on a single node, lately some initial research is being performed to do this in a distributed setting \cite{elm}\cite{drescala}. Even though future research might solve this, it is still an open research question on how to maintain a distributed propagation algorithm that can handle dynamic dependency graphs and doesn't require a central coordinator. Yet, these two properties are essential to providing scalable services, since topologies change, nodes fail and coordination is too costly.
 
-The presented model in this paper is very different in the sense that (1) the programmer is not required to explicitly provide the dependency graph using special constructs/types (2) because it allows executions that observe a glitch. Yet, it does guarantee that it will eventually perform a glitch-free execution. As a result, this algorithm naturally lends itself more towards large-scale, fault-tolerant systems, by sacrificing some consistency guarantees. At the same time it demands less from the programmer. \newline
+The presented model in this paper is very different in the sense that (1) the programmer is not required to explicitly provide the dependency graph using special constructs/types, allowing snapshot and reactive behaviour from the exact same code base, and (2) it allows executions that observe a glitch, yet, it does guarantee that it will eventually perform a glitch-free execution. As a result, this algorithm naturally lends itself more towards large-scale, fault-tolerant systems, by sacrificing some consistency guarantees. At the same time it demands less from the programmer. \newline
 
 
 %% More info on distributed FRP %%
+\paragraph{motivation against distributed reactive FRP for the statement in the introduction}
 Citations straight from \cite{drescala}:
 
 \emph{We propose Distributed REScala, a reactive language
@@ -72,11 +72,13 @@ rid of the centralized coordination, is ongoing work.}
 \paragraph{Dataflow (Synchronous) Languages}
 \cite{syncdataflow}
 The main idea is that they describe, and formalize, dataflow sychronous languages and categorize two important types of applications w.r.t. asynchronous environments: "exochronous" and "endochronous". Exochronous applications can have multiple inputs to the dependency graph, while endochronous only have one. As a consequence, synchronous endochronous applications can be easily compiled into an asynchronous setting, i.e. distributed application, without coordination. Exochronous applications on the other hand require a coordinator when distributed. \newline
+We clearly support asynchronous exochronous applications without coordination.
 
 Haven't read this paper very well, but one of my friends at the lab his paper about a distributed reactive propagation algorithm got rejected because he did not mention it...
 It's a pretty terse paper, but if you're interested, the crux about the compilation to asynchronous environments is on page 141 (or 17 in de pdf), it's in the related folder. I'm not sure if and how we should incorporate this though. \newline
 
-\cite{esterel} In multi-clock Esterel different parts of the program are no longer bound to the global clock. This means that we could possibly run different parts of the reactive program in a distributed setting. Nevertheless, the model assumes instantaneous communication between the parts running on different clocks and clock ticks happen mutually exclusive. This inherently makes it a bad fit for implementing scalable distributed services.
+
+\cite{lustre}\cite{signal} In general synchronous dataflow languages are aimed towards applications with bounded memory and real-time constraints. In multi-clock Esterel\cite{esterel} different parts of the program are no longer bound to the global clock though. This means that we could possibly run different parts of the reactive program in a distributed setting. Nevertheless, the model assumes instantaneous communication between the parts running on different clocks and clock ticks happen mutually exclusive. This inherently makes it a bad fit for implementing scalable distributed services.
 
 
 \cite{orleans}
