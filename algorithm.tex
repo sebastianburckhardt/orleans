@@ -39,7 +39,7 @@ We call a summary \emph{stale} if a re-execution of the computation or operation
  
 \noindent For example, executing the operation \lstinline|Chris.Unfollow("Bob")| will mark both of the summaries in Bob's grain for re-execution. Re-execution of \lstinline|[GetMessages(t)->{}]| yields the same result, and propagation stops. But re-execution of \lstinline|[GetTimeline(t)->{y}]| yields a different result \lstinline|{}|, which means we mark the dependent summary in Reactive Computation 2, \lstinline|[Chris.GetTimeline(t)->{y}]|, for re-execution. After it re-executes, the latest result reaches the client as desired.
 
-\paragraph{Ephemeral Inconsistency. }  
+\mypar{Ephemeral Inconsistency}  
 %There are no guarantees about the relative consistency of summaries that are used in a computation (since we just use the most recent summary available for a given invocation). 
 It is possible for the result of a computation to be inconsistent, in the sense that it is based on versions of grain states that never existed at the same time, or even on different versions of the same grain's state. However, if the result of a computation is inconsistent, then it is also ephemeral: an inconsistent summary must be stale, and is thus guaranteed to be re-executed and replaced.
 
