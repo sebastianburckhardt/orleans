@@ -40,7 +40,7 @@ namespace Orleans.Storage
     }
 
     /// <summary>
-    /// Marker interface for providers that implement a grain persistence mechanisms
+    /// Marker interface for providers that implement a grain state persistence mechanisms
     /// </summary>
     public interface IPersistenceProvider : IProvider {
     }

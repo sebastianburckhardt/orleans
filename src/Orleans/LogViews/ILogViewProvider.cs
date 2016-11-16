@@ -20,7 +20,7 @@ namespace Orleans.LogViews
         Logger Log { get; }
 
         /// <summary>
-        /// Construct a log view adaptor to be installed in the given host grain.
+        /// Construct a <see cref="ILogViewAdaptor{TLogView,TLogEntry}"/> to be installed in the given host grain.
         /// </summary>
         ILogViewAdaptor<TLogView, TLogEntry> MakeLogViewAdaptor<TLogView, TLogEntry>(
             ILogViewHost<TLogView, TLogEntry> hostgrain,

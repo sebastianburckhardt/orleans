@@ -258,10 +258,11 @@ namespace Orleans
 
 
         /// <summary>
-        /// The [Orleans.Providers.LogViewProvider] attribute is used to specify a log view provider for grains that extend LogViewGrain&lt;T&gt;.
+        /// The [Orleans.Providers.LogViewProvider] attribute is used to define which log view provider to use for persisting state for grain which extend LogViewGrain;.
         /// <para>
-        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute,
-        /// otherwise we try to find a storage provider as for all other grains. 
+        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute for that grain, 
+        /// Otherwise system will try to find a [Orleans.Providers.StorageProvider] for the grain, depends on its  [Orleans.Providers.StorageProviderAttributes] set up,
+        /// If a suitable storage provider cannot be located for this grain, then the grain will fail to load into the Silo.
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
@@ -274,12 +275,12 @@ namespace Orleans
 
 
         /// <summary>
-        /// The common superclass of storage and log view provider attributes.
+        /// The common superclass of [Orleans.Providers.StorageProviderAttributes] and [Orleans.Providers.LogViewProviderAttributes]
         /// </summary>
         public class PersistenceProviderAttribute : Attribute
         {
             /// <summary>
-            /// The name of the provider to ne used for persisting state for this grain.
+            /// The name of the provider to be used for persisting of grain state
             /// </summary>
             public string ProviderName { get; set; }
         }

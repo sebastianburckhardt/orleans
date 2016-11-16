@@ -6,7 +6,7 @@ namespace Orleans.GrainDirectory
 {
     /// <summary>
     /// A superclass for all multi-cluster registration strategies.
-    /// Strategy objects are used as keys to select the proper registrar.
+    /// Strategy object which is used as keys to select the proper registrar.
     /// </summary>
     [Serializable]
     public abstract class MultiClusterRegistrationStrategy
@@ -34,7 +34,7 @@ namespace Orleans.GrainDirectory
             return defaultStrategy;
         }
 
-        internal static MultiClusterRegistrationStrategy FromAttributes(Type graintype)
+        internal static MultiClusterRegistrationStrategy FromGrainType(Type graintype)
         {
             var attrs = graintype.GetCustomAttributes(typeof(RegistrationAttribute), true);
             if (attrs.Length == 0)

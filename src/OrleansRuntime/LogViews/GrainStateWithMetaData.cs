@@ -14,8 +14,14 @@ namespace Orleans.Runtime.LogViews
     [Serializable]
     public class GrainStateWithMetaDataAndETag<TView> : IGrainState where TView: class, new()
     {
+        /// <summary>
+        /// Gets and Sets StateAndMetaData
+        /// </summary>
         public GrainStateWithMetaData<TView> StateAndMetaData { get; set; }
        
+        /// <summary>
+        /// Gets and Sets Etag
+        /// </summary>
         public string ETag { get; set; }
 
         object IGrainState.State
@@ -30,15 +36,25 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
+        /// <summary>
+        /// Initialize a new instance of GrainStateWithMetaDataAndETag class with a initialVew
+        /// </summary>
         public GrainStateWithMetaDataAndETag(TView initialview)
         {
             StateAndMetaData = new GrainStateWithMetaData<TView>(initialview);
         }
+
+        /// <summary>
+        /// Initializes a new instance of GrainStateWithMetaDataAndETag class
+        /// </summary>
         public GrainStateWithMetaDataAndETag()
         {
             StateAndMetaData = new GrainStateWithMetaData<TView>();
         }
 
+        /// <summary>
+        /// Convert current GrainStateWithMetaDataAndETag object information to a string
+        /// </summary>
         public override string ToString()
         {
             return string.Format("v{0} Flags={1} ETag={2} Data={3}", StateAndMetaData.GlobalVersion, StateAndMetaData.WriteVector, ETag, StateAndMetaData.State);
