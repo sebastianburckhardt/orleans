@@ -202,8 +202,8 @@ namespace Orleans.Runtime.LogViews
             needInitialRead = true;
             // kick off notification for initial read cycle with a bit of delay
             // so that we don't do this several times if user does strong sync
-            await Task.Delay(10);
-            Services.Verbose2("Notify (initial read)");
+            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            Services.Verbose2("Notify ({0})", nameof(KickOffInitialRead));
             worker.Notify();
         }
 
