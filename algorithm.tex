@@ -17,7 +17,7 @@ We explain the dependency graph in two stages: first, we describe it as a direct
 
 \subsection{Summaries and Dependencies}\label{sec:summaries}
 
-During execution, we record and store a \emph{summary} for each executed operation. A summary is a pair consisting of (1) the invoked operation (including grain identity, method name, and all parameters), and (2) the value or exception returned at the end. For each summary, we record what other summaries it depends on, and what summaries depend on it. The result is a \emph{dependency graph} that represents the computation that was performed.
+During execution, we record and store a \emph{summary} for each executed operation. A summary is a pair consisting of (1) the invoked operation (including grain identity, method name, and all parameters), and (2) the value or exception returned at the end. For each summary, we record what other summaries it depends on, and what summaries depend on it. The result is a directed \emph{dependency graph} that represents the computation that was performed.
 
 Fig.~\ref{fig:summaries}(a) shows an example of a dependency graph of summaries. Two clients perform reactive computations \lstinline|Alice.GetTimeline(t)| and \lstinline|Chris.GetTimeline(t)| for the same time parameter \lstinline|t|. Summaries are shown as black boxes, and reside either in a grain or in a reactive computation. Summary dependencies are shown as black arrows.
 
