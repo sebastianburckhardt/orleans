@@ -25,21 +25,25 @@ namespace Orleans.Runtime.LogViews
             this.maxNotificationBatchSize = maxNotificationBatchSize;
 
             foreach (var x in configuration.Clusters)
+            {
                 if (x != services.MyClusterId)
                 {
                     services.Verbose("Now sending notifications to {0}", x);
                     sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
                 }
+            }
         }
 
         public void BroadcastNotification(INotificationMessage msg, string exclude = null)
         {
             foreach (var kvp in sendWorkers)
+            {
                 if (kvp.Key != exclude)
                 {
                     var w = kvp.Value;
                     w.Enqueue(msg);
                 }
+            }
         }
 
         /// <summary>
@@ -68,11 +72,13 @@ namespace Orleans.Runtime.LogViews
 
             var added = oldConfig == null ? newConfig.Clusters : newConfig.Clusters.Except(oldConfig.Clusters);
             foreach (var x in added)
+            {
                 if (x != services.MyClusterId)
                 {
                     services.Verbose("Now sending notifications to {0}", x);
                     sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
                 }
+            }
         }
 
 

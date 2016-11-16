@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Orleans.GrainDirectory;
+using Orleans.Runtime;
+
 namespace Orleans
 {
     namespace Concurrency
@@ -270,12 +272,21 @@ namespace Orleans
         {
             public LogViewProviderAttribute()
             {
+                // There is no default log view provider (because the default is to use the default storage provider),
+                // therefore we are not setting the string there.
             }
         }
 
 
         /// <summary>
-        /// The common superclass of [Orleans.Providers.StorageProviderAttributes] and [Orleans.Providers.LogViewProviderAttributes]
+        /// The common superclass of [Orleans.Providers.StorageProviderAttributes] and [Orleans.Providers.LogViewProviderAttributes].
+        /// <para>
+        /// They inherit from this same base attribute because they are alternative ways to specify
+        /// a persistence mechanism for the grain. For log view grains, users can either specify a storage provider
+        /// or a log view provider. Those are different kinds of persistence providers, but they are somewhat interchangeable
+        /// (a standard storage provider can be used for log view grains). See the code inside Catalog.SetupPersistenceProvider
+        /// which first finds out what persistence attribute is specified, and then retrieves the appropriate type of provider.
+        /// </para>
         /// </summary>
         public class PersistenceProviderAttribute : Attribute
         {
