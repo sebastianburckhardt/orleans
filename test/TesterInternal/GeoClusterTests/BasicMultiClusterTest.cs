@@ -26,7 +26,7 @@ namespace Tests.GeoClusterTests
 
             public Dictionary<SiloAddress, SiloStatus> GetHosts()
             {
-                return systemManagement.GetHosts().Result;
+                return systemManagement.GetHosts().GetResult();
             }
         }
 

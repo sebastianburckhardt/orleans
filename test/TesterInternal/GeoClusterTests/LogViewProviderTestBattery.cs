@@ -39,85 +39,85 @@ namespace Tests.GeoClusterTests
             public void SetALocal(string grainclass, int i, int a)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.SetALocal(a).Wait();
+                grainRef.SetALocal(a).GetResult();
             }
 
             public void SetAGlobal(string grainclass, int i, int a)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.SetAGlobal(a).Wait();
+                grainRef.SetAGlobal(a).GetResult();
             }
 
             public Tuple<int, bool> SetAConditional(string grainclass, int i, int a)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.SetAConditional(a).Result;
+                return grainRef.SetAConditional(a).GetResult();
             }
 
             public void IncrementAGlobal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.IncrementAGlobal().Wait();
+                grainRef.IncrementAGlobal().GetResult();
             }
 
             public void IncrementALocal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.IncrementALocal().Wait();
+                grainRef.IncrementALocal().GetResult();
             }
 
             public int GetAGlobal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetAGlobal().Result;
+                return grainRef.GetAGlobal().GetResult();
             }
 
             public int GetALocal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetALocal().Result;
+                return grainRef.GetALocal().GetResult();
             }    
 
             public void AddReservationLocal(string grainclass, int i, int x)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.AddReservationLocal(x).Wait();
+                grainRef.AddReservationLocal(x).GetResult();
             }
 
             public void RemoveReservationLocal(string grainclass, int i, int x)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.RemoveReservationLocal(x).Wait();
+                grainRef.RemoveReservationLocal(x).GetResult();
             }
 
             public int[] GetReservationsGlobal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetReservationsGlobal().Result;
+                return grainRef.GetReservationsGlobal().GetResult();
             }
 
             public void Synchronize(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.SynchronizeGlobalState().Wait();
+                grainRef.SynchronizeGlobalState().GetResult();
             }
 
             public void InjectClusterConfiguration(params string[] clusters)
             {
-                systemManagement.InjectMultiClusterConfiguration(clusters).Wait();
+                systemManagement.InjectMultiClusterConfiguration(clusters).GetResult();
             }
             IManagementGrain systemManagement;
 
             public long GetConfirmedVersion(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetConfirmedVersion().Result;
+                return grainRef.GetConfirmedVersion().GetResult();
             }
 
             public Exception GetLastException(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetLastException().Result;
+                return grainRef.GetLastException().GetResult();
             }
 
         }
