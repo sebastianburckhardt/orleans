@@ -38,7 +38,7 @@ namespace Orleans.Providers.LogViews
         /// </summary>
         public Logger Log { get; private set; }
 
-        private static int counter;
+        private static int counter; // used for constructing a unique id
         private int id;
 
         protected virtual string GetLoggerName()
@@ -55,7 +55,7 @@ namespace Orleans.Providers.LogViews
         public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
         {
             Name = name;
-            id = Interlocked.Increment(ref counter);
+            id = Interlocked.Increment(ref counter); // unique id for this provider; matters only for tracing
 
             Log = providerRuntime.GetLogger(GetLoggerName());
             Log.Info("Init (Severity={0})", Log.SeverityLevel);

@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 namespace Orleans.Runtime.LogViews
 {
     /// <summary>
-    /// Used by StorageProviderLogViewAdaptor, which allows a plain storage provider to
-    /// be wrapped by a log view provider, by adding meta data to the grain state.
+    /// A class that extends grain state with versioning metadata, so that a log view grain
+    /// can use a standard storage provider via <see cref="StorageProviderLogViewAdaptor{TView,TEntry}"/>
     /// </summary>
-    /// <typeparam name="TView">The view state</typeparam>
+    /// <typeparam name="TView">The type used for log view</typeparam>
     [Serializable]
-    public class GrainStateWithMetaDataAndETag<TView> : IGrainState where TView: class, new()
+    public class GrainStateWithMetaDataAndETag<TView> : IGrainState where TView : class, new()
     {
         /// <summary>
         /// Gets and Sets StateAndMetaData
@@ -32,7 +32,7 @@ namespace Orleans.Runtime.LogViews
             }
             set
             {
-                StateAndMetaData = (GrainStateWithMetaData<TView>) value;
+                StateAndMetaData = (GrainStateWithMetaData<TView>)value;
             }
         }
 
@@ -62,6 +62,11 @@ namespace Orleans.Runtime.LogViews
     }
 
 
+    /// <summary>
+    /// A class that extends grain state with versioning metadata, so that a log view grain
+    /// can use a standard storage provider via <see cref="StorageProviderLogViewAdaptor{TView,TEntry}"/>
+    /// </summary>
+    /// <typeparam name="TView"></typeparam>
     [Serializable]
     public class GrainStateWithMetaData<TView> where TView : class, new()
     {
@@ -77,13 +82,18 @@ namespace Orleans.Runtime.LogViews
 
 
         /// <summary>
-        /// Used to avoid duplicate appends.
-        /// A string representing a bit vector, with one bit per replica. 
+        /// Metadata that is used to avoid duplicate appends.
+        /// Logically, this is a (string->bit) map, the keys being replica ids
+        /// But this map is represented compactly as a simple string to reduce serialization/deserialization overhead
+        /// Bits are read by <see cref="GetBit"/> and flipped by  <see cref="FlipBit"/>.
         /// Bits are toggled when writing, so that the retry logic can avoid appending an entry twice
         /// when retrying a failed append. 
         /// </summary>
         public string WriteVector { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GrainStateWithMetaData{TView}"/> class.
+        /// </summary>
         public GrainStateWithMetaData()
         {
             State = new TView();
@@ -91,6 +101,10 @@ namespace Orleans.Runtime.LogViews
             WriteVector = "";
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GrainStateWithMetaData{TView}"/> class.
+        /// </summary>
+        /// <param name="initialstate">The initial state of the view</param>
         public GrainStateWithMetaData(TView initialstate)
         {
             this.State = initialstate;
@@ -108,18 +122,23 @@ namespace Orleans.Runtime.LogViews
         // ",A,B" represents    {A,B}     represents 110 
         // ",BB,A,B" represents {A,B,BB}  represents 111 
 
-        public bool ContainsBit(string Replica)
+        /// <summary>
+        /// Gets one of the bits in <see cref="WriteVector"/>
+        /// </summary>
+        /// <param name="Replica">The replica for which we want to look up the bit</param>
+        /// <returns></returns>
+        public bool GetBit(string Replica)
         {
             var pos = WriteVector.IndexOf(Replica);
             return pos != -1 && WriteVector[pos - 1] == ',';
         }
 
         /// <summary>
-        /// toggle the bit and return the new value.
+        /// toggle one of the bits in <see cref="WriteVector"/> and return the new value.
         /// </summary>
-        /// <param name="Replica"></param>
-        /// <returns></returns>
-        public bool ToggleBit(string Replica)
+        /// <param name="Replica">The replica for which we want to flip the bit</param>
+        /// <returns>the state of the bit after flipping it</returns>
+        public bool FlipBit(string Replica)
         {
             var pos = WriteVector.IndexOf(Replica);
             if (pos != -1 && WriteVector[pos - 1] == ',')

@@ -143,7 +143,7 @@ namespace Orleans.Runtime.LogViews
             nextglobalstate.StateAndMetaData.GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion + updates.Length;
             nextglobalstate.ETag = GlobalStateCache.ETag;
 
-            var writebit = nextglobalstate.StateAndMetaData.ToggleBit(Services.MyClusterId);
+            var writebit = nextglobalstate.StateAndMetaData.FlipBit(Services.MyClusterId);
 
             try
             {
@@ -204,7 +204,7 @@ namespace Orleans.Runtime.LogViews
 
                 // check if last apparently failed write was in fact successful
 
-                if (writebit == GlobalStateCache.StateAndMetaData.ContainsBit(Services.MyClusterId))
+                if (writebit == GlobalStateCache.StateAndMetaData.GetBit(Services.MyClusterId))
                 {
                     GlobalStateCache = nextglobalstate;
 
@@ -313,7 +313,7 @@ namespace Orleans.Runtime.LogViews
 
                 GlobalStateCache.StateAndMetaData.GlobalVersion = updateNotification.Version;
 
-                GlobalStateCache.StateAndMetaData.ToggleBit(updateNotification.Origin);
+                GlobalStateCache.StateAndMetaData.FlipBit(updateNotification.Origin);
 
                 GlobalStateCache.ETag = updateNotification.ETag;         
 
