@@ -35,7 +35,7 @@ namespace Orleans.LogViews
         /// <summary>
         /// The multicluster registration strategy for this grain.
         /// </summary>
-        MultiClusterRegistrationStrategy RegistrationStrategy { get; }
+        IMultiClusterRegistrationStrategy RegistrationStrategy { get; }
 
 
         /// <summary>

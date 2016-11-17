@@ -25,14 +25,11 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
-        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
+        public IMultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
 
         private Grain grain;   // links to the grain that owns this service object
 
-        // cached 
-
-
-        internal ProtocolServices(Grain gr, ILogViewProvider provider, MultiClusterRegistrationStrategy strategy)
+        internal ProtocolServices(Grain gr, ILogViewProvider provider, IMultiClusterRegistrationStrategy strategy)
         {
             this.grain = gr;
             this.Provider = provider;
@@ -120,6 +117,21 @@ namespace Orleans.Runtime.LogViews
                     return PseudoMultiClusterConfiguration;
                 else
                     return Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration();
+            }
+        }
+
+        public IEnumerable<string> GetRemoteInstances()
+        {
+            if (PseudoMultiClusterConfiguration == null
+                && RegistrationStrategy != ClusterLocalRegistration.Singleton)
+            {
+                var myclusterid = Silo.CurrentSilo.ClusterId;
+
+                foreach (var cluster in Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration().Clusters)
+                {
+                    if (cluster != myclusterid)
+                        yield return cluster;
+                }
             }
         }
 

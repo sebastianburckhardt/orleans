@@ -517,6 +517,11 @@ namespace Orleans.Runtime.LogViews
                 worker.Notify();
             }
 
+            if (notificationTracker != null)
+            {
+                var remoteInstances = Services.RegistrationStrategy.GetRemoteInstances(newConfig, Services.MyClusterId).ToList();
+                notificationTracker.UpdateNotificationTargets(remoteInstances);
+            }
         }
 
 
@@ -817,14 +822,15 @@ namespace Orleans.Runtime.LogViews
 
         protected void BroadcastNotification(INotificationMessage msg, string exclude = null)
         {
-            // if there is only one cluster, or if we are global single instance, don't send notifications.
-            if (Services.MultiClusterConfiguration.Clusters.Count == 1
-                || Services.RegistrationStrategy != ClusterLocalRegistration.Singleton)
+            var remoteinstances = Services.RegistrationStrategy.GetRemoteInstances(Configuration, Services.MyClusterId);
+
+            // if there is only one cluster, don't send notifications.
+            if (remoteinstances.Count() == 0)
                 return;
 
             // create notification tracker if we haven't already
             if (notificationTracker == null)
-                notificationTracker = new NotificationTracker(this.Services, Configuration, max_notification_batch_size);
+                notificationTracker = new NotificationTracker(this.Services, remoteinstances, max_notification_batch_size);
 
             notificationTracker.BroadcastNotification(msg, exclude);
         }

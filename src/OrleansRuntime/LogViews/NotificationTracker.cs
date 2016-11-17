@@ -18,19 +18,16 @@ namespace Orleans.Runtime.LogViews
         private Dictionary<string, NotificationWorker> sendWorkers;
         private int maxNotificationBatchSize;
 
-        public NotificationTracker(IProtocolServices services, MultiClusterConfiguration configuration, int maxNotificationBatchSize)
+        public NotificationTracker(IProtocolServices services, IEnumerable<string> remoteInstances, int maxNotificationBatchSize)
         {
             this.services = services;
             sendWorkers = new Dictionary<string, NotificationWorker>();
             this.maxNotificationBatchSize = maxNotificationBatchSize;
 
-            foreach (var x in configuration.Clusters)
+            foreach (var x in remoteInstances)
             {
-                if (x != services.MyClusterId)
-                {
-                    services.Verbose("Now sending notifications to {0}", x);
-                    sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
-                }
+                services.Verbose("Now sending notifications to {0}", x);
+                sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
             }
         }
 
@@ -60,9 +57,9 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Update the multicluster configuration (change who to send notifications to)
         /// </summary>
-        public void ProcessConfigurationChange(MultiClusterConfiguration oldConfig, MultiClusterConfiguration newConfig)
+        public void UpdateNotificationTargets(IReadOnlyList<string> remoteInstances)
         {
-            var removed = sendWorkers.Keys.Except(newConfig.Clusters);
+            var removed = sendWorkers.Keys.Except(remoteInstances);
             foreach (var x in removed)
             {
                 services.Verbose("No longer sending notifications to {0}", x);
@@ -70,7 +67,7 @@ namespace Orleans.Runtime.LogViews
                 sendWorkers.Remove(x);
             }
 
-            var added = oldConfig == null ? newConfig.Clusters : newConfig.Clusters.Except(oldConfig.Clusters);
+            var added = remoteInstances.Except(sendWorkers.Keys);
             foreach (var x in added)
             {
                 if (x != services.MyClusterId)
