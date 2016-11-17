@@ -16,12 +16,14 @@ namespace Orleans
         /// <summary>Implement this member in derived classes to define what constitutes a work cycle</summary>
         protected abstract Task Work();
 
+        protected object lockable = new object();
+
         /// <summary>
         /// Notify the worker that there is more work.
         /// </summary>
         public void Notify()
         {
-            lock (this)
+            lock (lockable)
             {
                 if (currentWorkCycle != null)
                 {
@@ -62,7 +64,7 @@ namespace Orleans
             TaskCompletionSource<Task> signal = null;
             Task taskToSignal = null;
 
-            lock (this)
+            lock (lockable)
             {
                 if (moreWork)
                 {
@@ -109,7 +111,7 @@ namespace Orleans
             Task waitfortask = null;
 
             // figure out exactly what we need to wait for
-            lock (this)
+            lock (lockable)
             {
                 if (!moreWork)
                     // just wait for current work cycle
@@ -141,7 +143,7 @@ namespace Orleans
             Task<Task> waitForTaskTask = null;
             Task waitForTask = null;
 
-            lock (this)
+            lock (lockable)
             {
                 if (currentWorkCycle != null)
                 {
