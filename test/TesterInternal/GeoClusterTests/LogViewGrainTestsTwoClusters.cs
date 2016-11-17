@@ -35,6 +35,12 @@ namespace Tests.GeoClusterTests
             await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleLogViewGrainSharedStorage", true, phases);
         }
 
+        [Fact, TestCategory("GeoCluster")]
+        public async Task TestBattery_GsiDefaultStorageProvider()
+        {
+            await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleGsiLogViewGrain", true, phases);
+        }
+
 
         [Fact, TestCategory("GeoCluster")]
         public async Task TestBattery_CustomStorageProvider()
