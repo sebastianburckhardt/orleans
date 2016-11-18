@@ -59,6 +59,8 @@
     <Compile Include="Catalog\ActivationState.cs" />
     <Compile Include="Catalog\GrainCreator.cs" />
     <Compile Include="Counters\CounterConfigData.cs" />
+    <Compile Include="LogViews\ConnectionIssues.cs" />
+    <Compile Include="LogViews\RecordedConnectionIssue.cs" />
     <Compile Include="LogViews\NotificationMessage.cs" />
     <Compile Include="LogViews\NotificationTracker.cs" />
     <Compile Include="Startup\ConfigureServicesBuilder.cs" />

@@ -113,16 +113,10 @@ namespace Orleans.Providers.LogViews
         {
             enter_operation("ReadAsync");
 
-            int backoff_msec = -1;
-
             while (true)
             {
-                if (backoff_msec > 0)
-                    await Task.Delay(backoff_msec);
-
                 try
                 {
-
                     if (MayAccessStorage())
                     {
                         // read from storage
@@ -144,57 +138,32 @@ namespace Orleans.Providers.LogViews
                         }              
                     }
 
-                    LastPrimaryException = null; // successful, so we clear stored prior exceptions
-
                     Services.Verbose("read success v{0}", version);
+
+                    LastPrimaryIssue.Resolve(Host, Services);
 
                     break; // successful
                 }
                 catch (Exception e)
                 {
-                    LastPrimaryException = e; // store last exception for inspection by user code
+                    // unwrap inner exception that was forwarded - helpful for debugging
+                    if ((e as ProtocolTransportException)?.InnerException != null)
+                        e = ((ProtocolTransportException)e).InnerException;
+
+                    LastPrimaryIssue.Record(new ReadFromPrimaryFailed() { Exception = e }, Host, Services);
                 }
 
-                Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
+                Services.Verbose("read failed {0}", LastPrimaryIssue);
 
-                Increasebackoff(ref backoff_msec);
+                await LastPrimaryIssue.DelayBeforeRetry();
             }
 
             exit_operation("ReadAsync");
         }
 
-
-
-        Random random = null;
-
-        /// <summary>
-        /// Increase backoff
-        /// </summary>
-        public void Increasebackoff(ref int backoff)
-        {
-            // after first fail do not backoff yet... keep it at zero
-            if (backoff == -1) {  
-                backoff = 0; 
-                return;
-            }
-
-            if (random == null)
-                random = new Random();
-
-            // grows exponentially up to slowpoll interval
-            if (backoff < slowpollinterval)
-                backoff = (int)((backoff + random.Next(5, 15)) * 1.5);
-
-            // during slowpoll, slightly randomize
-            if (backoff > slowpollinterval)
-                   backoff = slowpollinterval + random.Next(1, 200);
-        }
-
         protected override async Task<int> WriteAsync()
         {
             enter_operation("WriteAsync");
-
-            int backoff_msec = -1;
 
             var updates = GetCurrentBatchOfUpdates().Select(submissionentry => submissionentry.Entry).ToList();
             bool writesuccessful = false;
@@ -204,48 +173,46 @@ namespace Orleans.Providers.LogViews
             {
                 writesuccessful = await ((ICustomStorageInterface<TLogView,TLogEntry>) Host).ApplyUpdatesToStorageAsync(updates, version);
 
-                LastPrimaryException = null; // successful, so we clear stored exception
-
-                if (writesuccessful)
-                {
-                    Services.Verbose("write ({0} updates) success v{1}", updates.Count, version + updates.Count);
-
-                    // now we update the cached state by applying the same updates
-                    // in case we encounter any exceptions we will re-read the whole state from storage
-                    try
-                    {
-                        foreach (var u in updates)
-                        {
-                            version++;
-                            Host.UpdateView(this.cached, u);
-                        }
-
-                        transitionssuccessful = true;
-                    }
-                    catch (Exception e)
-                    {
-                        Services.CaughtViewUpdateException("CustomStorageLogViewAdaptor.WriteAsync", e);
-                    }
-                }
+                LastPrimaryIssue.Resolve(Host, Services);
             }
             catch (Exception e)
             {
-                LastPrimaryException = e; // store exception for inspection by user code
+                // unwrap inner exception that was forwarded - helpful for debugging
+                if ((e as ProtocolTransportException)?.InnerException != null)
+                    e = ((ProtocolTransportException)e).InnerException;
+
+                LastPrimaryIssue.Record(new UpdatePrimaryFailed() { Exception = e }, Host, Services);
             }
 
-            if (!writesuccessful || !transitionssuccessful)    {
-                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
+            if (writesuccessful)
+            {
+                Services.Verbose("write ({0} updates) success v{1}", updates.Count, version + updates.Count);
 
-                Increasebackoff(ref backoff_msec);
+                // now we update the cached state by applying the same updates
+                // in case we encounter any exceptions we will re-read the whole state from storage
+                try
+                {
+                    foreach (var u in updates)
+                    {
+                        version++;
+                        Host.UpdateView(this.cached, u);
+                    }
+
+                    transitionssuccessful = true;
+                }
+                catch (Exception e)
+                {
+                    Services.CaughtUserCodeException("UpdateView", nameof(WriteAsync), e);
+                }
+            }
+
+            if (!writesuccessful || !transitionssuccessful)
+            {
+                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastPrimaryIssue);
 
                 while (true) // be stubborn until we can re-read the state from storage
                 {
-                    if (backoff_msec > 0)
-                    {
-                        Services.Verbose("backoff {0}", backoff_msec);
-
-                        await Task.Delay(backoff_msec);
-                    }
+                    await LastPrimaryIssue.DelayBeforeRetry();
 
                     try
                     {
@@ -253,20 +220,22 @@ namespace Orleans.Providers.LogViews
                         version = result.Key;
                         cached = result.Value;
 
-                        LastPrimaryException = null; // successful
-
                         Services.Verbose("read success v{0}", version);
+
+                        LastPrimaryIssue.Resolve(Host, Services);
 
                         break;
                     }
                     catch (Exception e)
                     {
-                        LastPrimaryException = e;
+                        // unwrap inner exception that was forwarded - helpful for debugging
+                        if ((e as ProtocolTransportException)?.InnerException != null)
+                            e = ((ProtocolTransportException)e).InnerException;
+
+                        LastPrimaryIssue.Record(new ReadFromPrimaryFailed() { Exception = e }, Host, Services);
                     }
 
-                    Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
-
-                    Increasebackoff(ref backoff_msec);
+                    Services.Verbose("read failed {0}", LastPrimaryIssue);
                 }
             }
 
@@ -283,6 +252,26 @@ namespace Orleans.Providers.LogViews
 
             return writesuccessful ? updates.Count : 0;
         }
+
+        [Serializable]
+        public class UpdatePrimaryFailed : PrimaryOperationFailed
+        {
+            public override string ToString()
+            {
+                return $"update primary failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+        [Serializable]
+        public class ReadFromPrimaryFailed : PrimaryOperationFailed
+        {
+            public override string ToString()
+            {
+                return $"read from primary failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
 
 
         [Serializable]
@@ -333,7 +322,7 @@ namespace Orleans.Providers.LogViews
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtViewUpdateException("ProcessNotifications", e);
+                        Services.CaughtUserCodeException("UpdateView", nameof(ProcessNotifications), e);
                     }
 
                 version = updatenotification.Version;

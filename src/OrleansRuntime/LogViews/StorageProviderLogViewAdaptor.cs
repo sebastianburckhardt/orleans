@@ -21,7 +21,7 @@ namespace Orleans.Runtime.LogViews
     /// </summary>
     /// <typeparam name="TLogView">Type of log view</typeparam>
     /// <typeparam name="TLogEntry">Type of log entry</typeparam>
-    public class StorageProviderLogViewAdaptor<TLogView,TLogEntry> : PrimaryBasedLogViewAdaptor<TLogView, TLogEntry, SubmissionEntry<TLogEntry>> where TLogView : class,new() where TLogEntry : class
+    public class StorageProviderLogViewAdaptor<TLogView, TLogEntry> : PrimaryBasedLogViewAdaptor<TLogView, TLogEntry, SubmissionEntry<TLogEntry>> where TLogView : class, new() where TLogEntry : class
     {
         /// <summary>
         /// Initialize a StorageProviderLogViewAdaptor class
@@ -35,7 +35,6 @@ namespace Orleans.Runtime.LogViews
 
 
         private const int maxEntriesInNotifications = 200;
-        private const int slowpollinterval = 10000;
 
 
         IStorageProvider globalStorageProvider;
@@ -49,7 +48,7 @@ namespace Orleans.Runtime.LogViews
 
         protected override int GetConfirmedVersion()
         {
-           return GlobalStateCache.StateAndMetaData.GlobalVersion;
+            return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
 
         protected override void InitializeConfirmedView(TLogView initialstate)
@@ -60,21 +59,15 @@ namespace Orleans.Runtime.LogViews
         // no special tagging is required, thus we create a plain submission entry
         protected override SubmissionEntry<TLogEntry> MakeSubmissionEntry(TLogEntry entry)
         {
-            return new SubmissionEntry<TLogEntry>() { Entry = entry } ;
+            return new SubmissionEntry<TLogEntry>() { Entry = entry };
         }
-      
 
         protected override async Task ReadAsync()
         {
             enter_operation("ReadAsync");
 
-            int backoff_msec = -1;
-
             while (true)
             {
-                if (backoff_msec > 0)
-                    await Task.Delay(backoff_msec);
-
                 try
                 {
                     // for manual testing
@@ -82,57 +75,30 @@ namespace Orleans.Runtime.LogViews
 
                     await globalStorageProvider.ReadStateAsync(grainTypeName, Services.GrainReference, GlobalStateCache);
 
-                    LastPrimaryException = null; // successful, so we clear stored exception
-                    
                     Services.Verbose("read success {0}", GlobalStateCache);
+
+                    LastPrimaryIssue.Resolve(Host, Services);
 
                     break; // successful
                 }
                 catch (Exception e)
                 {
-                    LastPrimaryException = e;
+                    LastPrimaryIssue.Record(new ReadFromStorageFailed() { Exception = e }, Host, Services);
                 }
 
-                Services.Verbose("read failed");
+                Services.Verbose("read failed {0}", LastPrimaryIssue);
 
-                IncreaseBackoff(ref backoff_msec);
+                await LastPrimaryIssue.DelayBeforeRetry();
             }
 
             exit_operation("ReadAsync");
         }
 
 
-
-        Random random = null;
-
-        /// <summary>
-        /// Increase backoff
-        /// </summary>
-        public void IncreaseBackoff(ref int backoff)
-        {
-            // after first fail do not backoff yet... keep it at zero
-            if (backoff == -1) {  
-                backoff = 0; 
-                return;
-            }
-
-            if (random == null)
-                random = new Random();
-
-            // grows exponentially up to slowpoll interval
-            if (backoff < slowpollinterval)
-                backoff = (int)((backoff + random.Next(5, 15)) * 1.5);
-
-            // during slowpoll, slightly randomize
-            if (backoff > slowpollinterval)
-                   backoff = slowpollinterval + random.Next(1, 200);
-        }
-
+        /// <inheritdoc/>
         protected override async Task<int> WriteAsync()
         {
             enter_operation("WriteAsync");
-
-            int backoffMsec = -1;
 
             var state = CopyTentativeState();
             var updates = GetCurrentBatchOfUpdates();
@@ -152,54 +118,44 @@ namespace Orleans.Runtime.LogViews
 
                 await globalStorageProvider.WriteStateAsync(grainTypeName, Services.GrainReference, nextglobalstate);
 
-                LastPrimaryException = null; // successful
-
                 batchsuccessfullywritten = true;
 
                 GlobalStateCache = nextglobalstate;
 
                 Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
 
+                LastPrimaryIssue.Resolve(Host, Services);
             }
             catch (Exception e)
             {
-                LastPrimaryException = e;
+                LastPrimaryIssue.Record(new UpdateStorageFailed() { Exception = e }, Host, Services);
             }
 
             if (!batchsuccessfullywritten)
             {
-                IncreaseBackoff(ref backoffMsec);
-
-                Services.Verbose("write apparently failed {0}", nextglobalstate);
+                Services.Verbose("write apparently failed {0} {1}", nextglobalstate, LastPrimaryIssue);
 
                 while (true) // be stubborn until we can read what is there
                 {
 
-                    if (backoffMsec > 0)
-                    {
-                        Services.Verbose("backoff {0}", backoffMsec);
-
-                        await Task.Delay(backoffMsec);
-                    }
+                    await LastPrimaryIssue.DelayBeforeRetry();
 
                     try
                     {
                         await globalStorageProvider.ReadStateAsync(grainTypeName, Services.GrainReference, GlobalStateCache);
 
-                        LastPrimaryException = null; // successful, so we clear stored exception
-
                         Services.Verbose("read success {0}", GlobalStateCache);
+
+                        LastPrimaryIssue.Resolve(Host, Services);
 
                         break;
                     }
                     catch (Exception e)
                     {
-                        LastPrimaryException = e;
+                        LastPrimaryIssue.Record(new ReadFromStorageFailed() { Exception = e }, Host, Services);
                     }
 
-                    Services.Verbose("read failed");
-
-                    IncreaseBackoff(ref backoffMsec);
+                    Services.Verbose("read failed {0}", LastPrimaryIssue);
                 }
 
                 // check if last apparently failed write was in fact successful
@@ -232,8 +188,29 @@ namespace Orleans.Runtime.LogViews
 
             return updates.Length;
         }
-    
-        
+
+
+        [Serializable]
+        public class UpdateStorageFailed : PrimaryOperationFailed
+        {
+            public override string ToString()
+            {
+                return $"update storage failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+        [Serializable]
+        public class ReadFromStorageFailed : PrimaryOperationFailed
+        {
+            public override string ToString()
+            {
+                return $"read from storage failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+
         [Serializable]
         protected class UpdateNotificationMessage : INotificationMessage 
         {
@@ -308,7 +285,7 @@ namespace Orleans.Runtime.LogViews
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtViewUpdateException("ProcessNotifications", e);
+                        Services.CaughtUserCodeException("UpdateView", nameof(ProcessNotifications), e);
                     }
 
                 GlobalStateCache.StateAndMetaData.GlobalVersion = updateNotification.Version;

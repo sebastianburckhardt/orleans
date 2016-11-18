@@ -14,20 +14,23 @@ namespace Orleans.Runtime.LogViews
     /// </summary>
     internal class NotificationTracker
     {
-        private IProtocolServices services;
-        private Dictionary<string, NotificationWorker> sendWorkers;
-        private int maxNotificationBatchSize;
+        internal IProtocolServices services;
+        internal IConnectionIssueListener listener;
+        internal int maxNotificationBatchSize;
 
-        public NotificationTracker(IProtocolServices services, IEnumerable<string> remoteInstances, int maxNotificationBatchSize)
+        private Dictionary<string, NotificationWorker> sendWorkers;
+
+        public NotificationTracker(IProtocolServices services, IEnumerable<string> remoteInstances, int maxNotificationBatchSize, IConnectionIssueListener listener)
         {
             this.services = services;
+            this.listener = listener;
             sendWorkers = new Dictionary<string, NotificationWorker>();
             this.maxNotificationBatchSize = maxNotificationBatchSize;
 
             foreach (var x in remoteInstances)
             {
                 services.Verbose("Now sending notifications to {0}", x);
-                sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
+                sendWorkers.Add(x, new NotificationWorker(this, x));
             }
         }
 
@@ -44,13 +47,13 @@ namespace Orleans.Runtime.LogViews
         }
 
         /// <summary>
-        /// last observed exception, or null if last notification attempts were successful for all clusters
+        /// returns unresolved connection issues observed by the workers
         /// </summary>
-        public Exception LastException
+        public IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
             get
             {
-                return sendWorkers.Values.OrderBy(ns => ns.LastFailure).Select(ns => ns.LastException).LastOrDefault();
+                return sendWorkers.Values.Select(sw => sw.LastConnectionIssue.Issue).Where(i => i != null);
             }
         }
 
@@ -73,7 +76,7 @@ namespace Orleans.Runtime.LogViews
                 if (x != services.MyClusterId)
                 {
                     services.Verbose("Now sending notifications to {0}", x);
-                    sendWorkers.Add(x, new NotificationWorker(services, x, maxNotificationBatchSize));
+                    sendWorkers.Add(x, new NotificationWorker(this, x));
                 }
             }
         }
@@ -92,9 +95,8 @@ namespace Orleans.Runtime.LogViews
         /// </summary>
         public class NotificationWorker : BatchWorker
         {
-            private IProtocolServices services;
+            private NotificationTracker tracker;
             private string clusterId;
-            private int maxNotificationBatchSize;
 
             /// <summary>
             /// Queue messages
@@ -107,11 +109,7 @@ namespace Orleans.Runtime.LogViews
             /// <summary>
             /// Last exception
             /// </summary>
-            public Exception LastException;
-            /// <summary>
-            /// Time of last failure
-            /// </summary>
-            public DateTime LastFailure;
+            public RecordedConnectionIssue LastConnectionIssue;
             /// <summary>
             /// Number of consecutive failures
             /// </summary>
@@ -124,11 +122,10 @@ namespace Orleans.Runtime.LogViews
             /// <summary>
             /// Initialize a new instance of NotificationWorker class
             /// </summary>
-            public NotificationWorker(IProtocolServices services, string clusterId, int maxNotificationBatchSize)
+            public NotificationWorker(NotificationTracker tracker, string clusterId)
             {
-                this.services = services;
+                this.tracker = tracker;
                 this.clusterId = clusterId;
-                this.maxNotificationBatchSize = maxNotificationBatchSize;
             }
 
             /// <summary>
@@ -157,7 +154,7 @@ namespace Orleans.Runtime.LogViews
                     case (NotificationQueueState.Batch):
                         {
                             var batchmsg = (BatchedNotificationMessage)QueuedMessage;
-                            if (batchmsg.Notifications.Count < maxNotificationBatchSize)
+                            if (batchmsg.Notifications.Count < tracker.maxNotificationBatchSize)
                             {
                                 batchmsg.Notifications.Add(msg);
                                 break;
@@ -180,9 +177,14 @@ namespace Orleans.Runtime.LogViews
                 Notify();
             }
 
+
+
             protected override async Task Work()
             {
                 if (Done) return; // has been terminated - now garbage.
+
+                // if we had issues sending last time, wait a bit before retrying
+                await LastConnectionIssue.DelayBeforeRetry();
 
                 // take all of current queue
                 var msg = QueuedMessage;
@@ -198,32 +200,26 @@ namespace Orleans.Runtime.LogViews
                 // try to send it
                 try
                 {
-                    await services.SendMessage(msg, clusterId);
-                    services.Verbose("Sent notification to cluster {0}: {1}", clusterId, msg);
-                    LastException = null;
-                    NumConsecutiveFailures = 0;
+                    await tracker.services.SendMessage(msg, clusterId);
+
+                    // notification was successful
+                    tracker.services.Verbose("Sent notification to cluster {0}: {1}", clusterId, msg);
+
+                    LastConnectionIssue.Resolve(tracker.listener, tracker.services);
                 }
                 catch (Exception e)
                 {
-                    services.Info("Could not send notification to cluster {0}: {1}", clusterId, e);
+                    tracker.services.Info("Could not send notification to cluster {0}: {1}", clusterId, e);
+
+                    LastConnectionIssue.Record(
+                        new NotificationFailed() { RemoteCluster = clusterId, Exception = e },
+                        tracker.listener, tracker.services);
 
                     // next time, send only version (this is an optimization that 
                     // avoids the queueing and sending of lots of data when there are errors observed)
                     QueuedMessage = new VersionNotificationMessage() { Version = msg.Version };
                     QueueState = NotificationQueueState.VersionOnly;
                     Notify();
-
-                    LastException = e;
-                    LastFailure = DateTime.UtcNow;
-                    NumConsecutiveFailures++;
-                }
-
-                // throttle retries, based on number of consecutive failures
-                if (NumConsecutiveFailures > 0)
-                {
-                    if (NumConsecutiveFailures < 3) await Task.Delay(TimeSpan.FromMilliseconds(1));
-                    else if (NumConsecutiveFailures < 1000) await Task.Delay(TimeSpan.FromSeconds(30));
-                    else await Task.Delay(TimeSpan.FromMinutes(1));
                 }
             }
         }

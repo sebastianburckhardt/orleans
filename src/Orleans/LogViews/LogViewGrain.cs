@@ -70,6 +70,23 @@ namespace Orleans
         }
 
         /// <summary>
+        /// called by adaptor on connection issues. 
+        /// </summary>
+        void IConnectionIssueListener.OnConnectionIssue(ConnectionIssue connectionIssue)
+        {
+            OnConnectionIssue(connectionIssue);
+        }
+
+        /// <summary>
+        /// called by adaptor when a connection issue is resolved. 
+        /// </summary>
+        void IConnectionIssueListener.OnConnectionIssueResolved(ConnectionIssue connectionIssue)
+        {
+            OnConnectionIssueResolved(connectionIssue);
+        }
+
+
+        /// <summary>
         /// Notify log view adaptor of activation
         /// </summary>
         public Task ActivateProtocolParticipant()
@@ -103,10 +120,11 @@ namespace Orleans
             return Adaptor.OnMultiClusterConfigurationChange(next);
         }
 
-         #region methods implemented by subclasses
+        #region methods implemented by subclasses
 
         /// <summary>
-        /// Subclasses must implement this method to define how the view is updated when entries are appended.
+        /// Subclasses must implement this method to define how the view is updated when entries are appended. 
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.
         /// </summary>
         /// <param name="view">The view to mutate</param>
         /// <param name="entry">The entry to apply</param>
@@ -115,7 +133,8 @@ namespace Orleans
 
         /// <summary>
         /// Called after the tentative view may have changed due to entries being appended.
-        /// <para>Subclasses can implement this to react to changes of the tentative view.</para>
+        /// <para>Subclasses can implement this to react to changes of the tentative view. 
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
         /// </summary>
         protected virtual void OnTentativeViewChanged()
         {
@@ -123,9 +142,30 @@ namespace Orleans
 
         /// <summary>
         /// Called after the confirmed view may have changed (i.e. the confirmed version increased).
-        /// <para>Subclasses can implement this to react to changes of the confirmed view.</para>
+        /// <para>Subclasses can implement this to react to changes of the confirmed view.
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
         /// </summary>
         protected virtual void OnConfirmedViewChanged()
+        {
+        }
+
+        /// <summary>
+        /// Called when the underlying persistence or replication protocol is running into some sort of connection trouble.
+        /// <para>Subclasses can override, to monitor the health of the persistence or replication algorithm and/or
+        /// to customize retry delays.
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// </summary>
+        /// <returns>The time to wait before retrying</returns>
+        protected virtual void OnConnectionIssue(ConnectionIssue issue)
+        {
+        }
+
+        /// <summary>
+        /// Called when a previously reported connection issue has been resolved.
+        /// <para>Subclasses can override, to monitor the health of the persistence or replication algorithm. 
+        /// Any exceptions thrown will be caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// </summary>
+        protected virtual void OnConnectionIssueResolved(ConnectionIssue issue)
         {
         }
 
@@ -225,15 +265,19 @@ namespace Orleans
             return Adaptor.SynchronizeNowAsync();
         }
 
-  
+
         /// <summary>
-        /// The last exception thrown by any internal storage or network operation,
-        /// or null if the last such operation was successful.
+        /// Returns the currently unresolved connection issues.
         /// </summary>
-        protected Exception LastException
+        protected IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
-            get { return Adaptor.LastException; }
+            get
+            {
+                return Adaptor.UnresolvedConnectionIssues;
+            }
         }
+
+
 
         /// <summary>
         /// Enable statistics collection in the log view provider.
@@ -260,6 +304,7 @@ namespace Orleans
             return Adaptor.GetStats();
         }
 
+ 
         #endregion
     }
 }

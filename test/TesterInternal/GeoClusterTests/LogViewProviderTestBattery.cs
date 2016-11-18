@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
+using Orleans.LogViews;
 using Orleans.TestingHost;
 using System;
 using System.Collections.Generic;
@@ -114,10 +115,10 @@ namespace Tests.GeoClusterTests
                 return grainRef.GetConfirmedVersion().GetResult();
             }
 
-            public Exception GetLastException(string grainclass, int i)
+            public IEnumerable<ConnectionIssue> GetUnresolvedConnectionIssues(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetLastException().GetResult();
+                return grainRef.GetUnresolvedConnectionIssues().GetResult();
             }
 
         }

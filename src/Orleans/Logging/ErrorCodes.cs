@@ -1095,7 +1095,7 @@ namespace Orleans
         GlobalSingleInstance_MultipleOwners = GlobalSingleInstanceBase + 4,
 
         LogViewBase = Runtime + 4200,
-        LogView_ViewUpdateException = LogViewBase + 1,
+        LogView_UserCodeException = LogViewBase + 1,
         LogView_CaughtException = LogViewBase + 2,
         LogView_ProtocolError = LogViewBase + 3,
         LogView_ProtocolFatalError = LogViewBase + 4,

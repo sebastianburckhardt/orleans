@@ -81,10 +81,10 @@ namespace Orleans.LogViews
         void CaughtException(string where, Exception e);
 
         /// <summary>
-        /// Log an exception that occurred when trying to update a view.
+        /// Log an exception that occurred in user code, for some callback
         /// </summary>
         /// <param name="e"></param>
-        void CaughtViewUpdateException(string where, Exception e);
+        void CaughtUserCodeException(string callback, string where, Exception e);
 
         /// <summary> Output the specified message at <c>Info</c> log level. </summary>
         void Info(string format, params object[] args);        
@@ -117,6 +117,14 @@ namespace Orleans.LogViews
         protected ProtocolTransportException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         { }
+
+        public override string ToString()
+        {
+            if (InnerException != null)
+                return $"ProtocolTransportException: {InnerException}";
+            else
+                return Message;
+        }
     }
 
   

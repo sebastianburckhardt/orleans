@@ -81,6 +81,8 @@
     <Compile Include="Logging\LoggerImpl.cs" />
     <Compile Include="Logging\LogFormatter.cs" />
     <Compile Include="Logging\LogManager.cs" />
+    <Compile Include="LogViews\ConnectionIssues.cs" />
+    <Compile Include="LogViews\IConnectionIssueListener.cs" />
     <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />

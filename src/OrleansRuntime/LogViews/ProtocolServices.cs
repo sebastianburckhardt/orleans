@@ -174,14 +174,17 @@ namespace Orleans.Runtime.LogViews
         }
      
 
-        public void CaughtViewUpdateException(string where, Exception e)
+
+        public void CaughtUserCodeException(string callback, string where, Exception e)
         {
-            Provider.Log.Warn((int)ErrorCode.LogView_ViewUpdateException,  
-         string.Format("{0}{1} Exception Caught at {2}",
+            Provider.Log.Warn((int)ErrorCode.LogView_UserCodeException,
+                string.Format("{0}{1} Exception caught in user code for {2}, called from {3}",
                    grain.GrainReference,
                    PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
+                   callback,
                    where), e);
         }
+
 
         public void Info(string format, params object[] args)
         {

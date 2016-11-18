@@ -159,9 +159,9 @@ namespace UnitTests.Grains
             return Task.FromResult(this.ConfirmedVersion);
         }
 
-        public Task<Exception> GetLastException()
+        public Task<IEnumerable<ConnectionIssue>> GetUnresolvedConnectionIssues()
         {
-            return Task.FromResult(LastException);
+            return Task.FromResult(this.UnresolvedConnectionIssues);
         }
 
         public async Task<KeyValuePair<int, object>> Read()

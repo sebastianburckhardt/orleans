@@ -21,7 +21,7 @@ namespace Orleans.LogViews
 
         #region Diagnostics
 
-        Exception LastException { get; }
+        IEnumerable<ConnectionIssue> UnresolvedConnectionIssues { get; }
 
         void EnableStatsCollection();
 

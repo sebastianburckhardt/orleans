@@ -31,7 +31,7 @@ namespace UnitTests.GrainInterfaces
         Task<int> GetConfirmedVersion();
 
         // exception
-        Task<Exception> GetLastException();
+        Task<IEnumerable<ConnectionIssue>> GetUnresolvedConnectionIssues();
 
         #endregion
 

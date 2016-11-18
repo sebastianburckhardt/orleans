@@ -57,12 +57,14 @@ namespace Orleans.Runtime.LogViews
 
         /// <summary>
         /// Read the latest primary state. Must block/retry until successful.
+        /// Should not throw exceptions, but record them in <see cref="LastPrimaryIssue"/>
         /// </summary>
         /// <returns></returns>
         protected abstract Task ReadAsync();
 
         /// <summary>
         /// Apply pending entries to the primary. Must block/retry until successful. 
+        /// Should not throw exceptions, but record them in <see cref="LastPrimaryIssue"/>
         /// </summary>
         protected abstract Task<int> WriteAsync();
 
@@ -112,6 +114,9 @@ namespace Orleans.Runtime.LogViews
             throw new ProtocolTransportException(string.Format("message type {0} not handled by OnNotificationReceived", payload.GetType().FullName));
         }
 
+        /// <summary>
+        /// The last version we have been notified of
+        /// </summary>
         private int lastVersionNotified;
 
         /// <summary>
@@ -157,10 +162,13 @@ namespace Orleans.Runtime.LogViews
 
         protected ILogViewProvider Provider;
 
+    
+
         /// <summary>
         /// Tracks notifications sent. Created lazily since many copies will never need to send notifications.
         /// </summary>
         private NotificationTracker notificationTracker;
+
 
 
         private const int max_notification_batch_size = 10000;
@@ -311,6 +319,8 @@ namespace Orleans.Runtime.LogViews
 
 
 
+
+
         #region Interface
 
         /// <inheritdoc />
@@ -414,11 +424,18 @@ namespace Orleans.Runtime.LogViews
                 }
                 catch (Exception e)
                 {
-                    Services.CaughtViewUpdateException("PrimaryBasedLogViewAdaptor.SubmitInternal", e);
+                    Services.CaughtUserCodeException("UpdateView", nameof(SubmitInternal), e);
                 }
             }
 
-            Host.OnViewChanged(true, false);
+            try
+            {
+                Host.OnViewChanged(true, false);
+            }
+            catch (Exception e)
+            {
+                Services.CaughtUserCodeException("OnViewChanged", nameof(SubmitInternal), e);
+            }
         }
 
         /// <inheritdoc />
@@ -572,7 +589,6 @@ namespace Orleans.Runtime.LogViews
             return stats;
         }
 
-
         private void CalculateTentativeState()
         {
             // copy the master
@@ -586,7 +602,7 @@ namespace Orleans.Runtime.LogViews
                 }
                 catch (Exception e)
                 {
-                    Services.CaughtViewUpdateException("PrimaryBasedLogViewAdaptor.CalculateTentativeState", e);
+                    Services.CaughtUserCodeException("UpdateView", nameof(CalculateTentativeState), e);
                 }
         }
 
@@ -638,7 +654,7 @@ namespace Orleans.Runtime.LogViews
             {
                 // this should never happen - we are supposed to catch and store exceptions 
                 // in the correct place (LastPrimaryException or notification trackers)
-                Services.ProtocolError("WorkerCycle threw exception " + e, true);
+                Services.ProtocolError($"Exception in Worker Cycle: {e}", true);
 
             }
 
@@ -673,7 +689,14 @@ namespace Orleans.Runtime.LogViews
                     if (writeResult == 0)
                         continue;
 
-                    Host.OnViewChanged(false, true);
+                    try
+                    {
+                        Host.OnViewChanged(false, true);
+                    }
+                    catch (Exception e)
+                    {
+                        Services.CaughtUserCodeException("OnViewChanged", nameof(UpdatePrimary), e);
+                    }
 
                     // notify waiting promises of the success of conditional updates
                     NotifyPromises(writeResult, true);
@@ -696,13 +719,13 @@ namespace Orleans.Runtime.LogViews
                 }
                 catch (Exception e)
                 {
-                    LastPrimaryException = e; // store last exception for inspection by user code
-
-                    // retry again
-                    continue;
+                    // this should never happen - we are supposed to catch and store exceptions 
+                    // in the correct place (LastPrimaryException or notification trackers)
+                    Services.ProtocolError($"Exception in {nameof(UpdatePrimary)}: {e}", true);
                 }
             }
         }
+        
 
         private void NotifyViewChanges(ref int version, int numWritten = 0)
         {
@@ -712,34 +735,42 @@ namespace Orleans.Runtime.LogViews
             if (tentativeChanged || confirmedChanged)
             {
                 tentativeStateInternal = null; // conservative.
-                Host.OnViewChanged(tentativeChanged, confirmedChanged);
+                try
+                {
+                    Host.OnViewChanged(tentativeChanged, confirmedChanged);
+                }
+                catch (Exception e)
+                {
+                    Services.CaughtUserCodeException("OnViewChanged", nameof(NotifyViewChanges), e);
+                }
                 version = v;
             }
         }
 
         /// <summary>
-        /// returns last observed communication exception, or null if communication was successful.
-        /// Exceptions are either observed while communicating with the primary, or while trying to 
-        /// notify other clusters. The latter type of exception is reported only if there is not a
-        /// exception of the former type.
+        /// returns a list of all connection health issues that have not been restored yet.
+        /// Such issues are observed while communicating with the primary, or while trying to 
+        /// notify other clusters, for example.
         /// </summary>
-        public Exception LastException
+        public IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
             get
             {
-                if (LastPrimaryException != null)
-                    return LastPrimaryException;
+                if (LastPrimaryIssue.Issue != null)
+                    yield return LastPrimaryIssue.Issue;
                 if (notificationTracker != null)
-                    return notificationTracker.LastException;
-                return null;
+                    foreach (var x in notificationTracker.UnresolvedConnectionIssues)
+                        yield return x;
             }
         }
 
         /// <summary>
-        /// Store the last exception that occurred while communicating with the primary.
-        /// Is null if the last communication was successful.
+        /// Store the last issue that occurred while reading or updating primary.
+        /// Is null if successful.
         /// </summary>
-        protected Exception LastPrimaryException;
+        protected RecordedConnectionIssue LastPrimaryIssue;
+
+     
 
         /// <inheritdoc />
         public async Task SynchronizeNowAsync()
@@ -816,7 +847,14 @@ namespace Orleans.Runtime.LogViews
             {
                 pending.RemoveAll(e => e.ConditionalPosition != unconditional);
                 tentativeStateInternal = null;
-                Host.OnViewChanged(true, false);
+                try
+                {
+                    Host.OnViewChanged(true, false);
+                }
+                catch (Exception e)
+                {
+                    Services.CaughtUserCodeException("OnViewChanged", nameof(RemoveStaleConditionalUpdates), e);
+                }
             }
         }
 
@@ -830,7 +868,7 @@ namespace Orleans.Runtime.LogViews
 
             // create notification tracker if we haven't already
             if (notificationTracker == null)
-                notificationTracker = new NotificationTracker(this.Services, remoteinstances, max_notification_batch_size);
+                notificationTracker = new NotificationTracker(this.Services, remoteinstances, max_notification_batch_size, Host);
 
             notificationTracker.BroadcastNotification(msg, exclude);
         }
