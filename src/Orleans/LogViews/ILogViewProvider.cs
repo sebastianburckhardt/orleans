@@ -1,12 +1,4 @@
-﻿
-using System;
-using System.Net;
-using System.Runtime.Serialization;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using Orleans.Providers;
-using Orleans.Runtime;
-using Orleans.Core;
+﻿using Orleans.Runtime;
 using Orleans.Storage;
 
 namespace Orleans.LogViews
@@ -23,15 +15,12 @@ namespace Orleans.LogViews
         /// Construct a <see cref="ILogViewAdaptor{TLogView,TLogEntry}"/> to be installed in the given host grain.
         /// </summary>
         ILogViewAdaptor<TLogView, TLogEntry> MakeLogViewAdaptor<TLogView, TLogEntry>(
-            ILogViewHost<TLogView, TLogEntry> hostgrain,
-            TLogView initialstate,
-            string graintypename,
+            ILogViewHost<TLogView, TLogEntry> hostGrain,
+            TLogView initialState,
+            string grainTypeName,
             IProtocolServices services)
 
             where TLogView : class,new()
             where TLogEntry : class;
-
     }
-
-   
 }

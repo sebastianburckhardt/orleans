@@ -91,9 +91,9 @@ namespace Orleans.Runtime.LogViews
             WriteVector = "";
         }
 
-        public GrainStateWithMetaData(TView initialstate)
+        public GrainStateWithMetaData(TView initialState)
         {
-            this.State = initialstate;
+            this.State = initialState;
             GlobalVersion = 0;
             WriteVector = "";
         }

@@ -53,9 +53,9 @@ namespace Orleans.Providers.LogViews
             return version;
         }
 
-        protected override void InitializeConfirmedView(TLogView initialstate)
+        protected override void InitializeConfirmedView(TLogView initialState)
         {
-            cached = initialstate;
+            cached = initialState;
             version = 0;
         }
 

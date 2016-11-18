@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Orleans.LogViews
 {
@@ -20,5 +17,4 @@ namespace Orleans.LogViews
         /// </summary>
         public List<int> StabilizationLatenciesInMsecs;
     }
-
 }

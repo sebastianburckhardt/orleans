@@ -20,8 +20,6 @@ namespace Orleans.MultiCluster
         /// <summary>
         /// Called when a configuration change notification is received.
         /// </summary>
-        /// <param name="prev"></param>
-        /// <param name="current"></param>
         /// <returns></returns>
         [AlwaysInterleave]
         Task OnMultiClusterConfigurationChange(MultiClusterConfiguration next);

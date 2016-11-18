@@ -1,11 +1,4 @@
-﻿using Orleans.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Orleans.LogViews
+﻿namespace Orleans.LogViews
 {
     /// <summary>
     /// Interface implemented by all grains which use a log view provider for persistence 

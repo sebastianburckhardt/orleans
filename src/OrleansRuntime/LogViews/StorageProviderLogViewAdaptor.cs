@@ -52,9 +52,9 @@ namespace Orleans.Runtime.LogViews
            return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
 
-        protected override void InitializeConfirmedView(TLogView initialstate)
+        protected override void InitializeConfirmedView(TLogView initialState)
         {
-            GlobalStateCache = new GrainStateWithMetaDataAndETag<TLogView>(initialstate);
+            GlobalStateCache = new GrainStateWithMetaDataAndETag<TLogView>(initialState);
         }
 
         // no special tagging is required, thus we create a plain submission entry

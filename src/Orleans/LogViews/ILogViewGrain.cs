@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Orleans.Concurrency;
-using Orleans.Runtime;
-
-namespace Orleans.LogViews
+﻿namespace Orleans.LogViews
 {
     /// <summary>
     ///  This interface encapsulates functionality of grains that want to host a log view adaptor.
@@ -18,11 +10,11 @@ namespace Orleans.LogViews
         /// called right after grain construction to install the log view adaptor 
         /// </summary>
         /// <param name="provider"> The log view provider to install </param>
-        /// <param name="state"> The grain state to presistant </param>
+        /// <param name="state"> The grain state to presist </param>
+        /// <param name="grainTypeName"> The type of the grain </param>
         /// <param name="services"> Protocol services </param>
-        void InstallAdaptor(ILogViewProvider provider, object state, string graintypename, IProtocolServices services);
+        void InstallAdaptor(ILogViewProvider provider, object state, string grainTypeName, IProtocolServices services);
     }
-
 
     /// <summary>
     /// Base class for all grains using a log view provider.

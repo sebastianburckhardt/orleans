@@ -1,13 +1,12 @@
-﻿using System.Threading.Tasks;
-using Orleans.Concurrency;
-using Orleans.MultiCluster;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Orleans.Concurrency;
 using Orleans.LogViews;
+using Orleans.MultiCluster;
 
 namespace Orleans
-{
-
+{ 
     /// <summary>
     /// Log view grain.
     /// <typeparam name="TView">The type for the log view, i.e. state of this grain.</typeparam>
@@ -26,7 +25,7 @@ namespace Orleans
 
         /// <summary>
         /// The object encapsulating the log view provider functionality and local state
-        /// (similar to <see cref="StorageBridge"> for storage providers)
+        /// (similar to <see cref="Core.GrainStateStorageBridge"/> for storage providers)
         /// </summary>
         internal ILogViewAdaptor<TView, TLogEntry> Adaptor { get; private set; }
 
@@ -34,10 +33,10 @@ namespace Orleans
         /// Called right after grain is constructed, to install the log view adaptor.
         /// The log view provider contains a factory method that constructs the adaptor with chosen types for this grain
         /// </summary>
-        void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
+        void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialState, string grainTypeName, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeLogViewAdaptor<TView, TLogEntry>(this, (TView)initialstate, graintypename, services);
+            Adaptor = provider.MakeLogViewAdaptor<TView, TLogEntry>(this, (TView)initialState, grainTypeName, services);
         }
 
         /// <summary>
@@ -103,7 +102,7 @@ namespace Orleans
             return Adaptor.OnMultiClusterConfigurationChange(next);
         }
 
-         #region methods implemented by subclasses
+        #region methods implemented by subclasses
 
         /// <summary>
         /// Subclasses must implement this method to define how the view is updated when entries are appended.

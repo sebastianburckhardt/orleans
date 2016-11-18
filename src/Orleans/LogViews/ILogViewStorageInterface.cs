@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Orleans.LogViews
@@ -15,7 +12,6 @@ namespace Orleans.LogViews
         : ILogViewRead<TView,TLogEntry>, 
           ILogViewUpdate<TLogEntry>
     { }
-
 
     /// <summary>
     /// Interface for reading the log view.

@@ -1,13 +1,10 @@
-﻿
-using System;
-using System.Net;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using Orleans.Providers;
-using Orleans.Runtime;
-using Orleans.MultiCluster;
 using Orleans.GrainDirectory;
+using Orleans.MultiCluster;
+using Orleans.Runtime;
 
 namespace Orleans.LogViews
 {
@@ -83,7 +80,6 @@ namespace Orleans.LogViews
         /// <summary>
         /// Log an exception that occurred when trying to update a view.
         /// </summary>
-        /// <param name="e"></param>
         void CaughtViewUpdateException(string where, Exception e);
 
         /// <summary> Output the specified message at <c>Info</c> log level. </summary>

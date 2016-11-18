@@ -43,7 +43,7 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Set confirmed view the initial value (a view of the empty log)
         /// </summary>
-        protected abstract void InitializeConfirmedView(TLogView initialstate);
+        protected abstract void InitializeConfirmedView(TLogView initialState);
 
         /// <summary>
         /// Read cached global state.
@@ -167,13 +167,13 @@ namespace Orleans.Runtime.LogViews
 
 
         protected PrimaryBasedLogViewAdaptor(ILogViewHost<TLogView, TLogEntry> host, ILogViewProvider provider,
-            TLogView initialstate, IProtocolServices services)
+            TLogView initialState, IProtocolServices services)
         {
-            Debug.Assert(host != null && services != null && initialstate != null);
+            Debug.Assert(host != null && services != null && initialState != null);
             this.Host = host;
             this.Services = services;
             this.Provider = provider;
-            InitializeConfirmedView(initialstate);
+            InitializeConfirmedView(initialState);
             worker = new BatchWorkerFromDelegate(() => Work());
         }
 

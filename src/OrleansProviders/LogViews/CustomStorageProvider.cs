@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using Orleans;
 using Orleans.LogViews;
 using Orleans.Runtime;
-using Orleans.Runtime.LogViews;
-using Orleans.Storage;
-using System.Threading;
 
 namespace Orleans.Providers.LogViews
 {
@@ -62,11 +54,11 @@ namespace Orleans.Providers.LogViews
             return TaskDone.Done;
         }
 
-        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView, TEntry> hostgrain, TView initialstate, string graintypename, IProtocolServices services)
+        public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView, TEntry> hostGrain, TView initialState, string grainTypeName, IProtocolServices services)
             where TView : class, new()
             where TEntry : class
         {
-            return new CustomStorageAdaptor<TView, TEntry>(hostgrain, initialstate, this, services, PrimaryCluster);
+            return new CustomStorageAdaptor<TView, TEntry>(hostGrain, initialState, this, services, PrimaryCluster);
         }
     }
 
