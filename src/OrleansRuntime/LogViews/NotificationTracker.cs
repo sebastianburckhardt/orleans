@@ -82,7 +82,7 @@ namespace Orleans.Runtime.LogViews
         }
 
 
-        public enum NotificationQueueState : byte
+        public enum NotificationQueueState
         {
             Empty,
             Single,
