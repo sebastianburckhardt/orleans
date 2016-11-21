@@ -152,28 +152,35 @@ namespace Orleans.Runtime.LogViews
         }
 
         /// <summary>
-        /// The grain that is using this adaptor
+        /// The grain that is using this adaptor.
         /// </summary>
         protected ILogViewHost<TLogView, TLogEntry> Host { get; private set; }
 
+        /// <summary>
+        /// The runtime services required for implementing notifications between grain instances in different cluster.
+        /// </summary>
         protected IProtocolServices Services { get; private set; }
 
+        /// <summary>
+        /// The current multi-cluster configuration for this grain instance.
+        /// </summary>
         protected MultiClusterConfiguration Configuration { get; set; }
 
+        /// <summary>
+        /// The log view provider for this grain.
+        /// </summary>
         protected ILogViewProvider Provider;
-
-    
 
         /// <summary>
         /// Tracks notifications sent. Created lazily since many copies will never need to send notifications.
         /// </summary>
         private NotificationTracker notificationTracker;
 
-
-
         private const int max_notification_batch_size = 10000;
 
-
+        /// <summary>
+        /// Construct an instance, for the given parameters.
+        /// </summary>
         protected PrimaryBasedLogViewAdaptor(ILogViewHost<TLogView, TLogEntry> host, ILogViewProvider provider,
             TLogView initialstate, IProtocolServices services)
         {
@@ -185,6 +192,7 @@ namespace Orleans.Runtime.LogViews
             worker = new BatchWorkerFromDelegate(() => Work());
         }
 
+        /// <inheritdoc/>
         public virtual async Task Activate()
         {
             Services.Verbose2("Activation Started");
@@ -215,6 +223,7 @@ namespace Orleans.Runtime.LogViews
             worker.Notify();
         }
 
+        /// <inheritdoc/>
         public virtual async Task Deactivate()
         {
             Services.Verbose2("Deactivation Started");
@@ -786,6 +795,7 @@ namespace Orleans.Runtime.LogViews
             Services.Verbose("SynchronizeNowComplete");
         }
 
+        /// <inheritdoc/>
         public IEnumerable<TLogEntry> UnconfirmedSuffix
         {
             get
@@ -858,6 +868,11 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
+        /// <summary>
+        /// Send a notification message to all remote instances
+        /// </summary>
+        /// <param name="msg">the notification message to send</param>
+        /// <param name="exclude">if non-null, exclude this cluster id from the notification</param>
         protected void BroadcastNotification(INotificationMessage msg, string exclude = null)
         {
             var remoteinstances = Services.RegistrationStrategy.GetRemoteInstances(Configuration, Services.MyClusterId);
@@ -877,12 +892,19 @@ namespace Orleans.Runtime.LogViews
     /// <summary>
     /// Base class for submission entries stored in pending queue. 
     /// </summary>
-    /// <typeparam name="E"></typeparam>
-    public class SubmissionEntry<E>
+    /// <typeparam name="TLogEntry">The type of entry for this submission</typeparam>
+    public class SubmissionEntry<TLogEntry>
     {
-        public E Entry;
+        /// <summary> The log entry that is submitted. </summary>
+        public TLogEntry Entry;
+
+        /// <summary> A timestamp for this submission. </summary>
         public DateTime SubmissionTime;
+
+        /// <summary> For conditional updates, a promise that resolves once it is known whether the update was successful or not.</summary>
         public TaskCompletionSource<bool> ResultPromise;
+
+        /// <summary> For conditional updates, the log position at which this update is supposed to be applied. </summary>
         public int ConditionalPosition;
     }
 

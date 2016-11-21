@@ -8,13 +8,19 @@ using Orleans.LogViews;
 namespace Orleans.Runtime.LogViews
 {
 
-
+    /// <summary>
+    /// Describes a connection issue that occurred when sending update notifications to remote instances.
+    /// </summary>
     [Serializable]
     public class NotificationFailed : ConnectionIssue
     {
+        /// <summary> The destination cluster which we could not reach successfully. </summary>
         public string RemoteCluster { get; set; }
+
+        /// <summary> The exception we caught when trying to send the notification message. </summary>
         public Exception Exception { get; set; }
 
+        /// <inheritdoc/>
         public override TimeSpan ComputeRetryDelay(TimeSpan? previous)
         {
             if (NumberOfConsecutiveFailures < 3) return TimeSpan.FromMilliseconds(1);
@@ -23,11 +29,18 @@ namespace Orleans.Runtime.LogViews
         }
     }
 
+    /// <summary>
+    /// Describes a connection issue that occurred when communicating with primary storage.
+    /// </summary>
     [Serializable]
     public class PrimaryOperationFailed : ConnectionIssue
     {
+        /// <summary>
+        /// The exception that was caught when communicating with the primary.
+        /// </summary>
         public Exception Exception { get; set; }
 
+        /// <inheritdoc/>
         public override TimeSpan ComputeRetryDelay(TimeSpan? previous)
         {
             // after first fail do not backoff yet... keep it at zero

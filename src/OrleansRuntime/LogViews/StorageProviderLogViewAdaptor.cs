@@ -41,27 +41,32 @@ namespace Orleans.Runtime.LogViews
         string grainTypeName;        // stores the confirmed state including metadata
         GrainStateWithMetaDataAndETag<TLogView> GlobalStateCache;
 
+        /// <inheritdoc/>
         protected override TLogView LastConfirmedView()
         {
             return GlobalStateCache.StateAndMetaData.State;
         }
 
+        /// <inheritdoc/>
         protected override int GetConfirmedVersion()
         {
             return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
 
+        /// <inheritdoc/>
         protected override void InitializeConfirmedView(TLogView initialstate)
         {
             GlobalStateCache = new GrainStateWithMetaDataAndETag<TLogView>(initialstate);
         }
 
         // no special tagging is required, thus we create a plain submission entry
+        /// <inheritdoc/>
         protected override SubmissionEntry<TLogEntry> MakeSubmissionEntry(TLogEntry entry)
         {
             return new SubmissionEntry<TLogEntry>() { Entry = entry };
         }
 
+        /// <inheritdoc/>
         protected override async Task ReadAsync()
         {
             enter_operation("ReadAsync");
@@ -190,9 +195,13 @@ namespace Orleans.Runtime.LogViews
         }
 
 
+        /// <summary>
+        /// Describes a connection issue that occurred when updating the primary storage.
+        /// </summary>
         [Serializable]
         public class UpdateStorageFailed : PrimaryOperationFailed
         {
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return $"update storage failed: caught {Exception.GetType().Name}: {Exception.Message}";
@@ -200,9 +209,13 @@ namespace Orleans.Runtime.LogViews
         }
 
 
+        /// <summary>
+        /// Describes a connection issue that occurred when reading from the primary storage.
+        /// </summary>
         [Serializable]
         public class ReadFromStorageFailed : PrimaryOperationFailed
         {
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return $"read from storage failed: caught {Exception.GetType().Name}: {Exception.Message}";
@@ -210,24 +223,32 @@ namespace Orleans.Runtime.LogViews
         }
 
 
-
+        /// <summary>
+        /// A notification message sent to remote instances after updating this grain in storage.
+        /// </summary>
         [Serializable]
         protected class UpdateNotificationMessage : INotificationMessage 
         {
+            /// <inheritdoc/>
             public int Version { get; set; }
 
+            /// <summary> The cluster that performed the update </summary>
             public string Origin { get; set; }
 
+            /// <summary> The list of updates that were applied </summary>
             public List<TLogEntry> Updates { get; set; }
 
+            /// <summary> The e-tag of the storage after applying the updates</summary>
             public string ETag { get; set; }
 
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return string.Format("v{0} ({1} updates by {2}) etag={2}", Version, Updates.Count, Origin, ETag);
             }
          }
 
+        /// <inheritdoc/>
         protected override INotificationMessage Merge(INotificationMessage earlierMessage, INotificationMessage laterMessage)
         {
             var earlier = earlierMessage as UpdateNotificationMessage;
@@ -253,6 +274,7 @@ namespace Orleans.Runtime.LogViews
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
+        /// <inheritdoc/>
         protected override void OnNotificationReceived(INotificationMessage payload)
         {
             var um = payload as UpdateNotificationMessage;
@@ -262,6 +284,7 @@ namespace Orleans.Runtime.LogViews
                 base.OnNotificationReceived(payload);
         }
 
+        /// <inheritdoc/>
         protected override void ProcessNotifications()
         {
             // discard notifications that are behind our already confirmed state

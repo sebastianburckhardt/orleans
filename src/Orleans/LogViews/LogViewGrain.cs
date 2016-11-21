@@ -4,6 +4,7 @@ using Orleans.MultiCluster;
 using System;
 using System.Collections.Generic;
 using Orleans.LogViews;
+using Orleans.Core;
 
 namespace Orleans
 {
@@ -26,7 +27,7 @@ namespace Orleans
 
         /// <summary>
         /// The object encapsulating the log view provider functionality and local state
-        /// (similar to <see cref="StorageBridge"> for storage providers)
+        /// (similar to <see cref="GrainStateStorageBridge"/> for storage providers)
         /// </summary>
         internal ILogViewAdaptor<TView, TLogEntry> Adaptor { get; private set; }
 
@@ -120,7 +121,9 @@ namespace Orleans
             return Adaptor.OnMultiClusterConfigurationChange(next);
         }
 
-        #region methods implemented by subclasses
+        #region callbacks from storage interface
+
+        // these methods are protected because they get called from inside the class only
 
         /// <summary>
         /// Subclasses must implement this method to define how the view is updated when entries are appended. 
@@ -171,104 +174,74 @@ namespace Orleans
 
         #endregion
 
-        #region methods called by subclasses
+        #region storage interface exposed to user grain code
 
-        /// <summary>
-        /// Local, tentative view of the log (reflecting both confirmed and unconfirmed entries)
-        /// </summary>
+        // these methods are protected because the user should call them only from within the grain,
+        // not directly from other grains. 
+        // These methods match what is defined in ILogViewStorageInterface{TLogView,TLogEntry}.
+        // Unfortunately, we cannot simply inherit that interface because that only works for public members.
+
+        /// <inheritdoc cref="ILogViewRead{TLogView,TLogEntry}.TentativeView"/>
         protected TView TentativeView
         {
             get { return Adaptor.TentativeView; }
         }
 
-        /// <summary>
-        /// Confirmed view of the log (reflecting only confirmed entries)
-        /// </summary>
+        /// <inheritdoc cref="ILogViewRead{TLogView,TLogEntry}.ConfirmedView"/>
         protected TView ConfirmedView
         {
             get { return Adaptor.ConfirmedView; }
         }
 
-        /// <summary>
-        /// The length of the confirmed prefix of the log
-        /// </summary>
+        /// <inheritdoc cref="ILogViewRead{TLogView,TLogEntry}.ConfirmedVersion"/>
         protected int ConfirmedVersion
         {
             get { return Adaptor.ConfirmedVersion; }
         }
 
-        /// <summary>
-        /// A list of the submitted entries that do not yet appear in the confirmed prefix.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewRead{TLogView,TLogEntry}.UnconfirmedSuffix"/>
         protected IEnumerable<TLogEntry> UnconfirmedSuffix
         {
             get { return Adaptor.UnconfirmedSuffix; }
         }
 
-
-        /// <summary>
-        /// Submit a single log entry to be appended to the global log,
-        /// either at the current or at any later position.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewUpdate{TLogEntry}.Submit(TLogEntry)"/>
         protected void Submit(TLogEntry entry)
         {
             Adaptor.Submit(entry);
         }
 
-        /// <summary>
-        /// Submit a range of log entries to be appended atomically to the global log,
-        /// either at the current or at any later position.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewUpdate{TLogEntry}.SubmitRange(IEnumerable{TLogEntry})"/>
         protected void SubmitRange(IEnumerable<TLogEntry> entries)
         {
             Adaptor.SubmitRange(entries);
         }
 
-        /// <summary>
-        /// Try to append a single log entry at the current position of the log.
-        /// </summary>
-        /// <returns>true if the entry was appended successfully, or false 
-        /// if there was a concurrency conflict (i.e. some other entries were previously appended).
-        /// </returns>
+        /// <inheritdoc cref="ILogViewUpdate{TLogEntry}.TryAppend(TLogEntry)"/>
         protected Task<bool> TryAppend(TLogEntry entry)
         {
             return Adaptor.TryAppend(entry);
         }
 
-        /// <summary>
-        /// Try to append a range of log entries atomically at the current position of the log.
-        /// </summary>
-        /// <returns>true if the entries were appended successfully, or false 
-        /// if there was a concurrency conflict (i.e. some other entries were previously appended).
-        /// </returns>
+        /// <inheritdoc cref="ILogViewUpdate{TLogEntry}.TryAppendRange(IEnumerable{TLogEntry})"/>
         protected Task<bool> TryAppendRange(IEnumerable<TLogEntry> entries)
         {
             return Adaptor.TryAppendRange(entries);
         }
 
-        /// <summary>
-        /// Confirm all submitted entries.
-        ///<para>Waits until all previously submitted entries appear in the confirmed prefix of the log.</para>
-        /// </summary>
+        /// <inheritdoc cref="ILogViewUpdate{TLogEntry}.ConfirmSubmittedEntriesAsync"/>
         protected Task ConfirmSubmittedEntriesAsync()
         {
             return Adaptor.ConfirmSubmittedEntriesAsync();
         }
 
-        /// <summary>
-        /// Confirm all submitted entries and get the latest log view.
-        ///<para>Waits until all previously submitted entries appear in the confirmed prefix of the log, and forces a refresh of the confirmed prefix.</para>
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc cref="ILogViewUpdate{TLogEntry}.SynchronizeNowAsync"/>
         protected Task SynchronizeNowAsync()
         {
             return Adaptor.SynchronizeNowAsync();
         }
 
-
-        /// <summary>
-        /// Returns the currently unresolved connection issues.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewDiagnostics.UnresolvedConnectionIssues"/>
         protected IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
             get
@@ -277,28 +250,19 @@ namespace Orleans
             }
         }
 
-
-
-        /// <summary>
-        /// Enable statistics collection in the log view provider.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewDiagnostics.EnableStatsCollection"/>
         protected void EnableStatsCollection()
         {
             Adaptor.EnableStatsCollection();
         }
 
-        /// <summary>
-        /// Disable statistics collection in the log view provider.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewDiagnostics.DisableStatsCollection"/>
         protected void DisableStatsCollection()
         {
             Adaptor.DisableStatsCollection();
         }
 
-        /// <summary>
-        /// access internal statistics about the log view provider.
-        /// </summary>
-        /// <returns>an object containing statistics.</returns>
+        /// <inheritdoc cref="ILogViewDiagnostics.GetStats"/>
         protected LogViewStatistics GetStats()
         {
             return Adaptor.GetStats();

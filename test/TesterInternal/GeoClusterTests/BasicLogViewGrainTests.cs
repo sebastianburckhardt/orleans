@@ -20,7 +20,7 @@ namespace Tests.GeoClusterTests
                     StartSecondary = false,
                     SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
                     DataConnectionString = StorageTestConstants.DataConnectionString,
-                    AdjustConfig = ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting
+                    AdjustConfig = LogViewProviderConfiguration.ConfigureLogViewProvidersForTesting
                 }
             )
 

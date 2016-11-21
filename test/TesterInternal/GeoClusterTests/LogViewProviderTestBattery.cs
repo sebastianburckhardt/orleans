@@ -156,7 +156,7 @@ namespace Tests.GeoClusterTests
                 for (int i = 0; i < numclusters; i++)
                 {
                     var clustername = Cluster[i] = ((char)('A' + i)).ToString();
-                    NewGeoCluster(globalserviceid, clustername, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
+                    NewGeoCluster(globalserviceid, clustername, 1, LogViewProviderConfiguration.ConfigureLogViewProvidersForTesting);
                     Client[i] = NewClient<ClientWrapper>(clustername, 0);
                 }
 

@@ -23,31 +23,26 @@ namespace Orleans.Providers.LogViews
     /// </summary>
     public class SharedStorageProvider : ILogViewProvider
     {
-        /// <summary>
-        /// Shared storage provider name
-        /// </summary>
+        /// <inheritdoc/>
         public string Name { get; private set; }
 
-        /// <summary>
-        /// Global storage provider parameter
-        /// </summary>
+        /// <summary> Global storage provider parameter </summary>
         public const string GLOBAL_STORAGE_PROVIDER_PARAMETER = "GlobalStorageProvider";
 
-        /// <summary>
-        /// Gets Logger
-        /// </summary>
+        /// <inheritdoc/>
         public Logger Log { get; private set; }
 
         private static int counter; // used for constructing a unique id
         private int id;
 
+        /// <inheritdoc/>
         protected virtual string GetLoggerName()
         {
             return string.Format("LogViews.{0}.{1}", GetType().Name, id);
         }
 
         /// <summary>
-        /// Init metrhod
+        /// Init method
         /// </summary>
         /// <param name="name">Storage provider name</param>
         /// <param name="providerRuntime">Provider runtime</param>
@@ -87,11 +82,12 @@ namespace Orleans.Providers.LogViews
         /// <summary>
         /// Make log view adaptor 
         /// </summary>
-        /// <typeparam name="TView">View type param</typeparam>
-        /// <typeparam name="TEntry">Entry type param</typeparam>
-        /// <param name="hostGrain">Host grain</param>
-        /// <param name="initialState">Initial state</param>
-        /// <param name="services">Protocol services</param>
+        /// <typeparam name="TView">The type of the view</typeparam>
+        /// <typeparam name="TEntry">The type of the log entries</typeparam>
+        /// <param name="hostGrain">The grain that is hosting this adaptor</param>
+        /// <param name="initialState">The initial state for this view</param>
+        /// <param name="grainTypeName">The type name of the grain</param>
+        /// <param name="services">Runtime services for multi-cluster coherence protocols</param>
         public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView, TEntry> hostGrain, TView initialState, string grainTypeName, IProtocolServices services) 
             where TView : class, new()
             where TEntry : class

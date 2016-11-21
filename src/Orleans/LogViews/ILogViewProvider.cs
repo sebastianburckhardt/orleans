@@ -16,7 +16,7 @@ namespace Orleans.LogViews
     /// </summary>
     public interface ILogViewProvider : IPersistenceProvider
     {
-        /// <summary>TraceLogger used by this log view provider.</summary>
+        /// <summary>Gets the TraceLogger used by this log view provider.</summary>
         Logger Log { get; }
 
         /// <summary>

@@ -10,15 +10,19 @@ using Orleans.Runtime;
 
 namespace Orleans.TestingHost
 {
-    public static class ReplicationProviderConfiguration
+    /// <summary> A static class with functionality shared by various log view provider tests.  </summary>
+    public static class LogViewProviderConfiguration
     {
         // change this as needed for debugging failing tests
         private const Severity LogViewProviderTraceLevel = Severity.Verbose2;
 
-
+        /// <summary>
+        /// Initializes a bunch of different
+        /// log view providers with different configuration settings.
+        /// </summary>
+        /// <param name="config">The configuration to modify</param>
         public static void ConfigureLogViewProvidersForTesting(ClusterConfiguration config)
         {
-
             {
                 var props = new Dictionary<string, string>();
                 props.Add("DataConnectionString", StorageTestConstants.DataConnectionString);
@@ -45,6 +49,7 @@ namespace Orleans.TestingHost
                 props.Add("PrimaryCluster", "A");
                 config.Globals.RegisterLogViewProvider("Orleans.Providers.LogViews.CustomStorageProvider", "CustomStoragePrimaryCluster", props);
             }
+
             // logging  
             foreach (var o in config.Overrides)
                 o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));

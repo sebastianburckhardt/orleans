@@ -43,22 +43,26 @@ namespace Orleans.Providers.LogViews
         private TLogView cached;
         private int version;
 
+        /// <inheritdoc/>
         protected override TLogView LastConfirmedView()
         {
             return cached;
         }
 
+        /// <inheritdoc/>
         protected override int GetConfirmedVersion()
         {
             return version;
         }
 
+        /// <inheritdoc/>
         protected override void InitializeConfirmedView(TLogView initialstate)
         {
             cached = initialstate;
             version = 0;
         }
 
+        /// <inheritdoc/>
         protected override bool SupportSubmissions
         {
             get
@@ -74,10 +78,11 @@ namespace Orleans.Providers.LogViews
                    || primaryCluster == Services.MyClusterId;
         }
 
-        // no special tagging is required, thus we create a plain submission entry
+        /// <inheritdoc/>
         protected override SubmissionEntry<TLogEntry> MakeSubmissionEntry(TLogEntry entry)
         {
-            return new SubmissionEntry<TLogEntry>() { Entry = entry };
+           // no special tagging is required, thus we create a plain submission entry
+           return new SubmissionEntry<TLogEntry>() { Entry = entry };
         }
 
         [Serializable]
@@ -86,13 +91,14 @@ namespace Orleans.Providers.LogViews
             public int KnownVersion { get; set; }
         }
         [Serializable]
-        private class ReadResponse<TLogView> : IProtocolMessage
+        private class ReadResponse<ViewType> : IProtocolMessage
         {
             public int Version { get; set; }
 
-            public TLogView Value { get; set; }
+            public ViewType Value { get; set; }
         }
 
+        /// <inheritdoc/>
         protected override Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
         {
             var request = (ReadRequest) payload;
@@ -109,6 +115,7 @@ namespace Orleans.Providers.LogViews
             return Task.FromResult<IProtocolMessage>(response);
         }
 
+        /// <inheritdoc/>
         protected override async Task ReadAsync()
         {
             enter_operation("ReadAsync");
@@ -161,6 +168,7 @@ namespace Orleans.Providers.LogViews
             exit_operation("ReadAsync");
         }
 
+        /// <inheritdoc/>
         protected override async Task<int> WriteAsync()
         {
             enter_operation("WriteAsync");
@@ -253,9 +261,13 @@ namespace Orleans.Providers.LogViews
             return writesuccessful ? updates.Count : 0;
         }
 
+        /// <summary>
+        /// Describes a connection issue that occurred when updating the primary storage.
+        /// </summary>
         [Serializable]
         public class UpdatePrimaryFailed : PrimaryOperationFailed
         {
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return $"update primary failed: caught {Exception.GetType().Name}: {Exception.Message}";
@@ -263,9 +275,13 @@ namespace Orleans.Providers.LogViews
         }
 
 
+        /// <summary>
+        /// Describes a connection issue that occurred when reading from the primary storage.
+        /// </summary>
         [Serializable]
         public class ReadFromPrimaryFailed : PrimaryOperationFailed
         {
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return $"read from primary failed: caught {Exception.GetType().Name}: {Exception.Message}";
@@ -273,22 +289,31 @@ namespace Orleans.Providers.LogViews
         }
 
 
-
+        /// <summary>
+        /// A notification message that is sent to remote instances of this grain after the primary has been
+        /// updated, to let them know the latest version. Contains all the updates that were applied.
+        /// </summary>
         [Serializable]
         protected class UpdateNotificationMessage : INotificationMessage
         {
+            /// <inheritdoc/>
             public int Version { get; set; }
+
+            /// <summary> The list of updates that were applied. </summary>
             public List<TLogEntry> Updates { get; set; }
 
+            /// <summary>
+            /// A representation of this notification message suitable for tracing.
+            /// </summary>
             public override string ToString()
             {
                 return string.Format("v{0} ({1} updates)", Version, Updates.Count);
             }
         }
-
    
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
+        /// <inheritdoc/>
         protected override void OnNotificationReceived(INotificationMessage payload)
         {
            var um = payload as UpdateNotificationMessage;
@@ -298,6 +323,7 @@ namespace Orleans.Providers.LogViews
                 base.OnNotificationReceived(payload);
         }
 
+        /// <inheritdoc/>
         protected override void ProcessNotifications()
         {
 

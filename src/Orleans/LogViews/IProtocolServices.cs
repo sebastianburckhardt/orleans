@@ -83,7 +83,9 @@ namespace Orleans.LogViews
         /// <summary>
         /// Log an exception that occurred in user code, for some callback
         /// </summary>
-        /// <param name="e"></param>
+        /// <param name="callback">The name of the callback</param>
+        /// <param name="where">The context from which the callback was called</param>
+        /// <param name="e">The caught exception</param>
         void CaughtUserCodeException(string callback, string where, Exception e);
 
         /// <summary> Output the specified message at <c>Info</c> log level. </summary>
