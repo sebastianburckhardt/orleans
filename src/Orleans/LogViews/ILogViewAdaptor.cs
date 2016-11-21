@@ -17,33 +17,22 @@ namespace Orleans.LogViews
     /// <typeparam name="TLogEntry"> Type for the log entry </typeparam>
     public interface ILogViewAdaptor<TLogView, TLogEntry> : ILogViewStorageInterface<TLogView, TLogEntry>
         where TLogView: new()
-    {
-
-        #region Diagnostics
-
-        IEnumerable<ConnectionIssue> UnresolvedConnectionIssues { get; }
-
-        void EnableStatsCollection();
-
-        void DisableStatsCollection();
-
-        LogViewStatistics GetStats();
-
-        #endregion
+    {     
 
 
-
-        #region Framework interaction
-
+        /// <summary>Called during activation, right before the user grain activation code is run.</summary>
         Task Activate();
 
+        /// <summary>Called during deactivation, right after the user grain deactivation code is run.</summary>
         Task Deactivate();
 
+        /// <summary>Called when a grain receives a message from a remote instance.</summary>
         Task<IProtocolMessage> OnProtocolMessageReceived(IProtocolMessage payload);
 
+        /// <summary>Called after the silo receives a new multi-cluster configuration.</summary>
         Task OnMultiClusterConfigurationChange(MultiClusterConfiguration next);
 
-        #endregion
+
     }
 
  

@@ -12,8 +12,9 @@ namespace Orleans.LogViews
     /// <typeparam name="TView">The type of the view (state of the grain)</typeparam>
     /// <typeparam name="TLogEntry">The type of log entries </typeparam>
     public interface ILogViewStorageInterface<TView, TLogEntry>
-        : ILogViewRead<TView,TLogEntry>, 
-          ILogViewUpdate<TLogEntry>
+        : ILogViewRead<TView, TLogEntry>,
+          ILogViewUpdate<TLogEntry>,
+          ILogViewDiagnostics
     { }
 
 
@@ -22,7 +23,7 @@ namespace Orleans.LogViews
     /// </summary>
     /// <typeparam name="TView">The type of the view (state of the grain).</typeparam>
     /// <typeparam name="TLogEntry">The type of log entries.</typeparam>
-    public interface ILogViewRead<TView, TLogEntry> 
+    public interface ILogViewRead<TView, TLogEntry>
     {
         /// <summary>
         /// Local, tentative view of the log (reflecting both confirmed and unconfirmed entries)
@@ -92,6 +93,26 @@ namespace Orleans.LogViews
         /// </summary>
         /// <returns></returns>
         Task SynchronizeNowAsync();
+    }
+
+    /// <summary>
+    /// Interface for diagnostics.
+    /// </summary>
+    public interface ILogViewDiagnostics
+    {
+
+        /// <summary>Gets a list of all currently unresolved connection issues.</summary>
+        IEnumerable<ConnectionIssue> UnresolvedConnectionIssues { get; }
+
+        /// <summary>Turns on the statistics collection for this log-view grain.</summary>
+        void EnableStatsCollection();
+
+        /// <summary>Turns off the statistics collection for this log-view grain.</summary>
+        void DisableStatsCollection();
+
+        /// <summary>Gets the collected statistics for this log-view grain.</summary>
+        LogViewStatistics GetStats();
+
     }
 
 }
