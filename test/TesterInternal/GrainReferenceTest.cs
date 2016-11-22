@@ -2,8 +2,8 @@
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Orleans;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
 
 namespace UnitTests.General
@@ -46,6 +46,15 @@ namespace UnitTests.General
             IChainedGrain g2 = GrainClient.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
             
             g1.PassThis(g2).Wait();
+        }
+
+        [Fact, TestCategory("Functional"), TestCategory("GrainReference")]
+        public void GrainReference_Pass_this_Nested()
+        {
+            IChainedGrain g1 = GrainClient.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
+            IChainedGrain g2 = GrainClient.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
+
+            g1.PassThisNested(new ChainGrainHolder { Next = g2 }).Wait();
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Serialization"), TestCategory("GrainReference")]

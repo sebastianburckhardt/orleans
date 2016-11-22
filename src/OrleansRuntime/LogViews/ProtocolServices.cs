@@ -71,7 +71,9 @@ namespace Orleans.Runtime.LogViews
 
             var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
 
-            if (silo.TestHook.DropNotificationMessages && payload is INotificationMessage)
+            // test hook
+            if ((oracle as MultiClusterNetwork.MultiClusterOracle).DropNotificationMessagesForTesting
+                && payload is INotificationMessage)
                 return null;
 
             try

@@ -5,6 +5,8 @@ using Orleans.Messaging;
 using Orleans.Runtime;
 using Orleans.Runtime.MembershipService;
 using Orleans.TestingHost;
+using Tester;
+using TestExtensions;
 using UnitTests.StorageTests;
 using Xunit;
 
@@ -34,7 +36,7 @@ namespace UnitTests.MembershipTests
 
         protected override string GetConnectionString()
         {
-            return StorageTestConstants.DataConnectionString;
+            return TestDefaultConfiguration.DataConnectionString;
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Membership"), TestCategory("Azure")]

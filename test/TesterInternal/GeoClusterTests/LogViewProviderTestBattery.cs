@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using UnitTests.GrainInterfaces;
 using Xunit;
 using Xunit.Abstractions;
+using TestExtensions;
 
 namespace Tests.GeoClusterTests
 {
@@ -29,7 +30,7 @@ namespace Tests.GeoClusterTests
             public ClientWrapper(string name, int gatewayport, string clusterId, Action<ClientConfiguration> customizer)
                : base(name, gatewayport, clusterId, customizer)
             {
-                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
+                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(0);
             }
 
             public string GetGrainRef(string grainclass, int i)
@@ -156,7 +157,8 @@ namespace Tests.GeoClusterTests
                 for (int i = 0; i < numclusters; i++)
                 {
                     var clustername = Cluster[i] = ((char)('A' + i)).ToString();
-                    NewGeoCluster(globalserviceid, clustername, 1, LogViewProviderConfiguration.ConfigureLogViewProvidersForTesting);
+                    NewGeoCluster(globalserviceid, clustername, 1,
+                        cfg => LogViewProviderConfiguration.ConfigureLogViewProvidersForTesting(TestDefaultConfiguration.DataConnectionString, cfg));
                     Client[i] = NewClient<ClientWrapper>(clustername, 0);
                 }
 

@@ -10,6 +10,7 @@ using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Tester;
+using TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -71,7 +72,7 @@ namespace Tests.GeoClusterTests
             catch (Exception e)
             {
                 WriteLog("--- Exception observed in {0}: {1})", name, e);
-                throw e;
+                throw;
             }
         }
 
@@ -81,10 +82,10 @@ namespace Tests.GeoClusterTests
             {
                 Assert.Equal(expected, actual);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 WriteLog("Equality assertion failed; expected={0}, actual={1} comment={2}", expected, actual, comment);
-                throw e;
+                throw;
             }
         }
         public void AssertNull<T>(T actual, string comment)
@@ -182,7 +183,7 @@ namespace Tests.GeoClusterTests
                           new GlobalConfiguration.GossipChannelConfiguration()
                           {
                               ChannelType = GlobalConfiguration.GossipChannelType.AzureTable,
-                              ConnectionString = StorageTestConstants.DataConnectionString
+                              ConnectionString = TestDefaultConfiguration.DataConnectionString
                           }};
 
                     customizer?.Invoke(config);
@@ -229,7 +230,7 @@ namespace Tests.GeoClusterTests
                 };
 
                 if (myCount == 0)
-                    gossipStabilizationTime = GetGossipStabilizationTime(silohandles[0].Silo.GlobalConfig);
+                    gossipStabilizationTime = GetGossipStabilizationTime(this.siloHost.Globals);
 
                 WriteLog("Cluster {0} started. [{1}]", clusterId, string.Join(" ", silohandles.Select(s => s.ToString())));
             }
@@ -273,7 +274,7 @@ namespace Tests.GeoClusterTests
             catch (Exception e)
             {
                 WriteLog("Exception caught in test cleanup function: {0}", e);
-                throw e;
+                throw;
             }
 
             stopwatch.Stop();
@@ -344,12 +345,12 @@ namespace Tests.GeoClusterTests
             var name = string.Format("Client-{0}-{1}", ClusterId, ClientNumber);
 
             // clients are assigned to silos round-robin
-            var gatewayport = ci.Silos[ClientNumber % ci.Silos.Count].GatewayPort;
+            var gatewayport = ci.Silos[ClientNumber % ci.Silos.Count].NodeConfiguration.ProxyGatewayEndpoint.Port;
 
             WriteLog("Starting {0} connected to {1}", name, gatewayport);
 
-            var clientArgs = new object[] { name, gatewayport.Value, ClusterId, customizer };
-            var setup = new AppDomainSetup { ApplicationBase = Environment.CurrentDirectory };
+            var clientArgs = new object[] { name, gatewayport, ClusterId, customizer };
+            var setup = AppDomainSiloHandle.GetAppDomainSetupInfo();
             var clientDomain = AppDomain.CreateDomain(name, null, setup);
 
             T client = (T)clientDomain.CreateInstanceFromAndUnwrap(
@@ -400,7 +401,7 @@ namespace Tests.GeoClusterTests
                 foreach (var dest in Clusters[to].Silos)
                 {
                     WriteLog("Blocking {0}->{1}", silo, dest);
-                    silo.Silo.TestHook.BlockSiloCommunication(dest.Endpoint, 100);
+                    silo.AppDomainTestHook.BlockSiloCommunication(dest.SiloAddress.Endpoint, 100);
                 }
         }
 
@@ -409,7 +410,7 @@ namespace Tests.GeoClusterTests
             foreach (var silo in Clusters[from].Silos)
             {
                 WriteLog("Unblocking {0}", silo);
-                silo.Silo.TestHook.UnblockSiloCommunication();
+                silo.AppDomainTestHook.UnblockSiloCommunication();
             }
         }
   
@@ -417,14 +418,14 @@ namespace Tests.GeoClusterTests
         {
             var silos = Clusters[origincluster].Silos;
             foreach (var silo in silos)
-                silo.Silo.TestHook.DropNotificationMessages = true;
+                silo.AppDomainTestHook.DropNotificationMessagesForTesting = true;
 
         }
         public void UnblockNotificationMessages(string origincluster)
         {
             var silos = Clusters[origincluster].Silos;
             foreach (var silo in silos)
-                silo.Silo.TestHook.DropNotificationMessages = false;
+                silo.AppDomainTestHook.DropNotificationMessagesForTesting = false;
 
         }
   

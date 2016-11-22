@@ -63,6 +63,10 @@
     <Compile Include="LogViews\RecordedConnectionIssue.cs" />
     <Compile Include="LogViews\NotificationMessage.cs" />
     <Compile Include="LogViews\NotificationTracker.cs" />
+    <Compile Include="Messaging\ObjectPool.cs" />
+    <Compile Include="Silo\SiloInitializationParameters.cs" />
+    <Compile Include="Silo\TestHooks\ITestHooksSystemTarget.cs" />
+    <Compile Include="Silo\TestHooks\TestHooksSystemTarget.cs" />
     <Compile Include="Startup\ConfigureServicesBuilder.cs" />
     <Compile Include="Startup\StartupBuilder.cs" />
     <Compile Include="MultiClusterNetwork\MultiClusterData.cs" />
@@ -88,7 +92,7 @@
     <Compile Include="Placement\ClientObserversPlacementDirector.cs" />
     <Compile Include="Placement\PreferLocalPlacementDirector.cs" />
     <Compile Include="Placement\StatelessWorkerDirector.cs" />
-    <Compile Include="Placement\PlacementDirector.cs" />
+    <Compile Include="Placement\IPlacementDirector.cs" />
     <Compile Include="Placement\RandomPlacementDirector.cs" />
     <Compile Include="Catalog\ActivationData.cs" />
     <Compile Include="Core\BootstrapProviderManager.cs" />
@@ -177,6 +181,7 @@
     <Compile Include="Silo\SiloControl.cs" />
     <Compile Include="Storage\MemoryStorageGrain.cs" />
     <Compile Include="Storage\StorageProviderManager.cs" />
+    <Compile Include="Streams\LoadShedQueueFlowController.cs" />
     <Compile Include="Streams\PersistentStream\PersistentStreamPullingManager.cs" />
     <Compile Include="Streams\PersistentStream\PersistentStreamPullingAgent.cs" />
     <Compile Include="Streams\PubSub\PubSubRendezvousGrain.cs" />
@@ -199,6 +204,7 @@
     <Compile Include="Streams\QueueBalancer\DeploymentBasedQueueBalancer.cs" />
     <Compile Include="Streams\QueueBalancer\StreamQueueBalancerFactory.cs" />
     <Compile Include="Streams\StreamProviderManagerAgent.cs" />
+    <Compile Include="Utilities\ServiceCollectionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Orleans\Orleans.csproj">

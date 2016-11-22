@@ -7,8 +7,8 @@ using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Orleans.TestingHost.Utils;
 using Tester;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
 
 namespace UnitTests.StreamingTests
@@ -98,7 +98,7 @@ namespace UnitTests.StreamingTests
         public override void Dispose()
         {
             var deploymentId = HostedCluster.DeploymentId;
-            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, StorageTestConstants.DataConnectionString).Wait();
+            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, TestDefaultConfiguration.DataConnectionString).Wait();
         }
 
         [Fact, TestCategory("Functional")]

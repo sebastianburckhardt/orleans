@@ -20,12 +20,13 @@ namespace Orleans.TestingHost
         /// Initializes a bunch of different
         /// log view providers with different configuration settings.
         /// </summary>
+        /// <param name="dataConnectionString">the data connection string</param>
         /// <param name="config">The configuration to modify</param>
-        public static void ConfigureLogViewProvidersForTesting(ClusterConfiguration config)
+        public static void ConfigureLogViewProvidersForTesting(string dataConnectionString, ClusterConfiguration config)
         {
             {
                 var props = new Dictionary<string, string>();
-                props.Add("DataConnectionString", StorageTestConstants.DataConnectionString);
+                props.Add("DataConnectionString", dataConnectionString);
                 config.Globals.RegisterStorageProvider("Orleans.Storage.AzureTableStorage", "AzureStore", props);
             }
 

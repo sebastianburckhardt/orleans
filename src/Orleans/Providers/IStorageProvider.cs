@@ -68,7 +68,7 @@ namespace Orleans.Storage
     public class BadProviderConfigException : OrleansException
     {
         public BadProviderConfigException()
-        {}
+        { }
         public BadProviderConfigException(string msg)
             : base(msg)
         { }
@@ -95,7 +95,7 @@ namespace Orleans.Storage
         public string CurrentEtag { get; private set; }
 
         public InconsistentStateException()
-        {}
+        { }
         public InconsistentStateException(string msg)
             : base(msg)
         { }
@@ -105,7 +105,7 @@ namespace Orleans.Storage
 #if !NETSTANDARD
         protected InconsistentStateException(SerializationInfo info, StreamingContext context)
             : base(info, context)
-        {}
+        { }
 #endif
 
         public InconsistentStateException(
@@ -136,5 +136,12 @@ namespace Orleans.Storage
             return String.Format("InconsistentStateException: {0} Expected Etag={1} Received Etag={2} {3}",
                 Message, StoredEtag, CurrentEtag, InnerException);
         }
+
+#if !NETSTANDARD
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+        }
+#endif
     }
 }

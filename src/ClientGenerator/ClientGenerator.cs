@@ -21,9 +21,7 @@ namespace Orleans.CodeGeneration
         {
             public FileInfo InputLib;
 
-            public bool LanguageConflict;
-
-            public Language? TargetLanguage;
+            public bool InvalidLanguage;
 
             public List<string> ReferencedAssemblies = new List<string>();
 
@@ -96,8 +94,6 @@ namespace Orleans.CodeGeneration
         /// </summary>
         private bool CreateGrainClient(CodeGenOptions options)
         {
-            PlacementStrategy.Initialize();
-
             // Load input assembly 
             // special case Orleans.dll because there is a circular dependency.
             var assemblyName = AssemblyName.GetAssemblyName(options.InputLib.FullName);
@@ -334,7 +330,7 @@ namespace Orleans.CodeGeneration
                     }
                 }
 
-                if (options.TargetLanguage != Language.CSharp)
+                if (options.InvalidLanguage)
                 {
                     ConsoleText.WriteLine(
                         "ERROR: Compile-time code generation is supported for C# only. "
@@ -389,9 +385,8 @@ namespace Orleans.CodeGeneration
         private static void HandleSourceFile(string arg, CodeGenOptions options)
         {
             AssertWellFormed(arg, true);
-            SetLanguageIfMatchNoConflict(arg, ".cs", Language.CSharp, ref options.TargetLanguage, ref options.LanguageConflict);
-            SetLanguageIfMatchNoConflict(arg, ".vb", Language.VisualBasic, ref options.TargetLanguage, ref options.LanguageConflict);
-            SetLanguageIfMatchNoConflict(arg, ".fs", Language.FSharp, ref options.TargetLanguage, ref options.LanguageConflict);
+            options.InvalidLanguage |= arg.EndsWith(".vb", StringComparison.InvariantCultureIgnoreCase)
+                                       | arg.EndsWith(".fs", StringComparison.InvariantCultureIgnoreCase);
 
             if (arg.EndsWith(CodeGenFileRelativePathCSharp, StringComparison.InvariantCultureIgnoreCase))
             {
@@ -403,29 +398,6 @@ namespace Orleans.CodeGeneration
             }
         }
 
-        private static void SetLanguageIfMatchNoConflict(
-            string arg,
-            string extension,
-            Language value,
-            ref Language? language,
-            ref bool conflict)
-        {
-            if (conflict) return;
-
-            if (arg.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase))
-            {
-                if (language.HasValue && language != value)
-                {
-                    language = null;
-                    conflict = true;
-                }
-                else
-                {
-                    language = value;
-                }
-            }
-        }
-        
         private static void AssertWellFormed(string path, bool mustExist = false)
         {
             CheckPathNotStartWith(path, ":");
