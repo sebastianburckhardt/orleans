@@ -688,6 +688,8 @@ namespace Orleans
         Messaging_Dispatcher_ForwardingRequests = MessagingBase + 33,
         Messaging_SimulatedMessageLoss          = MessagingBase + 34,
         Messaging_Dispatcher_ReturnToOriginCluster    = MessagingBase + 35,
+        MessagingAcceptAsyncSocketException     = MessagingBase + 36,
+        Messaging_ExceptionReceiveAsync         = MessagingBase + 37,
 
         DirectoryBase                           = Runtime + 1100,
         DirectoryBothPrimaryAndBackupForGrain   = DirectoryBase + 1,
@@ -1095,7 +1097,7 @@ namespace Orleans
         GlobalSingleInstance_MultipleOwners = GlobalSingleInstanceBase + 4,
 
         LogViewBase = Runtime + 4200,
-        LogView_ViewUpdateException = LogViewBase + 1,
+        LogView_UserCodeException = LogViewBase + 1,
         LogView_CaughtException = LogViewBase + 2,
         LogView_ProtocolError = LogViewBase + 3,
         LogView_ProtocolFatalError = LogViewBase + 4,

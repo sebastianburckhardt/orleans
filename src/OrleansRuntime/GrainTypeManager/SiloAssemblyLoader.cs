@@ -8,6 +8,7 @@ using Orleans.CodeGeneration;
 using Orleans.Serialization;
 using Orleans.LogViews;
 using Orleans.Providers;
+using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime
 {
@@ -16,6 +17,11 @@ namespace Orleans.Runtime
         private readonly LoggerImpl logger = LogManager.GetLogger("AssemblyLoader.Silo");
         private List<string> discoveredAssemblyLocations;
         private Dictionary<string, SearchOption> directories;
+
+        public SiloAssemblyLoader(NodeConfiguration nodeConfig)
+            : this(nodeConfig.AdditionalAssemblyDirectories)
+        {
+        }
 
         public SiloAssemblyLoader(IDictionary<string, SearchOption> additionalDirectories)
         {
@@ -93,7 +99,7 @@ namespace Orleans.Runtime
                         if (definition == typeof(Grain<>) || definition == typeof(LogViewGrainBase<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
-                            if (stateArg.GetTypeInfo().IsClass)
+                            if (stateArg.GetTypeInfo().IsClass || stateArg.GetTypeInfo().IsValueType)
                             {
                                 grainStateType = stateArg;
                                 break;

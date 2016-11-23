@@ -15,19 +15,24 @@ namespace Orleans.Providers.LogViews
 {
 
     /// <summary>
-    /// A log view adaptor that wraps around a user-provided storage interface
+    /// A log view adaptor that uses the user-provided storage interface <see cref="ICustomStorageInterface{T,E}"/>. 
+    /// This interface must be implemented by any grain that uses this log view adaptor.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class CustomStorageAdaptor<T, E> : PrimaryBasedLogViewAdaptor<T, E, SubmissionEntry<E>>
-        where T : class, new()
-        where E : class
+    /// <typeparam name="TLogView">log view type</typeparam>
+    /// <typeparam name="TLogEntry">log entry type</typeparam>
+    public class CustomStorageAdaptor<TLogView, TLogEntry> : PrimaryBasedLogViewAdaptor<TLogView, TLogEntry, SubmissionEntry<TLogEntry>>
+        where TLogView : class, new()
+        where TLogEntry : class
     {
-        public CustomStorageAdaptor(ILogViewHost<T, E> host, T initialstate,
-            ILogViewProvider repprovider, IProtocolServices services, string primaryCluster)
-            : base(host, repprovider, initialstate, services)
+        /// <summary>
+        /// Initialize a new instance of CustomStorageAdaptor class
+        /// </summary>
+        public CustomStorageAdaptor(ILogViewHost<TLogView, TLogEntry> host, TLogView initialState,
+            ILogViewProvider repProvider, IProtocolServices services, string primaryCluster)
+            : base(host, repProvider, initialState, services)
         {
-            if (!(host is ICustomStorageInterface<T, E>))
-                throw new BadProviderConfigException("Must implement ICustomStorageInterface<T,E> for CustomStorageLogView provider");
+            if (!(host is ICustomStorageInterface<TLogView, TLogEntry>))
+                throw new BadProviderConfigException("Must implement ICustomStorageInterface<TLogView,TLogEntry> for CustomStorageLogView provider");
             this.primaryCluster = primaryCluster;
         }
 
@@ -35,25 +40,29 @@ namespace Orleans.Providers.LogViews
 
         private const int slowpollinterval = 10000;
 
-        private T cached;
+        private TLogView cached;
         private int version;
 
-        protected override T LastConfirmedView()
+        /// <inheritdoc/>
+        protected override TLogView LastConfirmedView()
         {
             return cached;
         }
 
+        /// <inheritdoc/>
         protected override int GetConfirmedVersion()
         {
             return version;
         }
 
-        protected override void InitializeConfirmedView(T initialstate)
+        /// <inheritdoc/>
+        protected override void InitializeConfirmedView(TLogView initialstate)
         {
             cached = initialstate;
             version = 0;
         }
 
+        /// <inheritdoc/>
         protected override bool SupportSubmissions
         {
             get
@@ -69,10 +78,11 @@ namespace Orleans.Providers.LogViews
                    || primaryCluster == Services.MyClusterId;
         }
 
-        // no special tagging is required, thus we create a plain submission entry
-        protected override SubmissionEntry<E> MakeSubmissionEntry(E entry)
+        /// <inheritdoc/>
+        protected override SubmissionEntry<TLogEntry> MakeSubmissionEntry(TLogEntry entry)
         {
-            return new SubmissionEntry<E>() { Entry = entry };
+           // no special tagging is required, thus we create a plain submission entry
+           return new SubmissionEntry<TLogEntry>() { Entry = entry };
         }
 
         [Serializable]
@@ -81,13 +91,14 @@ namespace Orleans.Providers.LogViews
             public int KnownVersion { get; set; }
         }
         [Serializable]
-        private class ReadResponse<T> : IProtocolMessage
+        private class ReadResponse<ViewType> : IProtocolMessage
         {
             public int Version { get; set; }
 
-            public T Value { get; set; }
+            public ViewType Value { get; set; }
         }
 
+        /// <inheritdoc/>
         protected override Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
         {
             var request = (ReadRequest) payload;
@@ -95,7 +106,7 @@ namespace Orleans.Providers.LogViews
             if (! MayAccessStorage())
                 throw new ProtocolTransportException("message destined for primary cluster ended up elsewhere (inconsistent configurations?)");
 
-            var response = new ReadResponse<T>() { Version = version };
+            var response = new ReadResponse<TLogView>() { Version = version };
 
             // optimization: include value only if version is newer
             if (version > request.KnownVersion)
@@ -104,24 +115,19 @@ namespace Orleans.Providers.LogViews
             return Task.FromResult<IProtocolMessage>(response);
         }
 
+        /// <inheritdoc/>
         protected override async Task ReadAsync()
         {
             enter_operation("ReadAsync");
 
-            int backoff_msec = -1;
-
             while (true)
             {
-                if (backoff_msec > 0)
-                    await Task.Delay(backoff_msec);
-
                 try
                 {
-
                     if (MayAccessStorage())
                     {
                         // read from storage
-                        var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
+                        var result = await ((ICustomStorageInterface<TLogView, TLogEntry>)Host).ReadStateFromStorageAsync();
                         version = result.Key;
                         cached = result.Value;
                     }
@@ -131,7 +137,7 @@ namespace Orleans.Providers.LogViews
                         var request = new ReadRequest() { KnownVersion = version };
                         if (!Services.MultiClusterConfiguration.Clusters.Contains(primaryCluster))
                             throw new ProtocolTransportException("the specified primary cluster is not in the multicluster configuration");
-                        var response =(ReadResponse<T>) await Services.SendMessage(request, primaryCluster);
+                        var response =(ReadResponse<TLogView>) await Services.SendMessage(request, primaryCluster);
                         if (response.Version > request.KnownVersion)
                         {
                             version = response.Version;
@@ -139,54 +145,33 @@ namespace Orleans.Providers.LogViews
                         }              
                     }
 
-                    LastPrimaryException = null; // successful, so we clear stored prior exceptions
-
                     Services.Verbose("read success v{0}", version);
+
+                    LastPrimaryIssue.Resolve(Host, Services);
 
                     break; // successful
                 }
                 catch (Exception e)
                 {
-                    LastPrimaryException = e; // store last exception for inspection by user code
+                    // unwrap inner exception that was forwarded - helpful for debugging
+                    if ((e as ProtocolTransportException)?.InnerException != null)
+                        e = ((ProtocolTransportException)e).InnerException;
+
+                    LastPrimaryIssue.Record(new ReadFromPrimaryFailed() { Exception = e }, Host, Services);
                 }
 
-                Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
+                Services.Verbose("read failed {0}", LastPrimaryIssue);
 
-                increasebackoff(ref backoff_msec);
+                await LastPrimaryIssue.DelayBeforeRetry();
             }
 
             exit_operation("ReadAsync");
         }
 
-
-
-        Random random = null;
-
-        public void increasebackoff(ref int backoff)
-        {
-            // after first fail do not backoff yet... keep it at zero
-            if (backoff == -1) {  
-                backoff = 0; 
-                return;
-            }
-
-            if (random == null)
-                random = new Random();
-
-            // grows exponentially up to slowpoll interval
-            if (backoff < slowpollinterval)
-                backoff = (int)((backoff + random.Next(5, 15)) * 1.5);
-
-            // during slowpoll, slightly randomize
-            if (backoff > slowpollinterval)
-                   backoff = slowpollinterval + random.Next(1, 200);
-        }
-
+        /// <inheritdoc/>
         protected override async Task<int> WriteAsync()
         {
             enter_operation("WriteAsync");
-
-            int backoff_msec = -1;
 
             var updates = GetCurrentBatchOfUpdates().Select(submissionentry => submissionentry.Entry).ToList();
             bool writesuccessful = false;
@@ -194,71 +179,71 @@ namespace Orleans.Providers.LogViews
 
             try
             {
-                writesuccessful = await ((ICustomStorageInterface<T,E>) Host).ApplyUpdatesToStorageAsync(updates, version);
+                writesuccessful = await ((ICustomStorageInterface<TLogView,TLogEntry>) Host).ApplyUpdatesToStorageAsync(updates, version);
 
-                LastPrimaryException = null; // successful, so we clear stored exception
-
-                if (writesuccessful)
-                {
-                    Services.Verbose("write ({0} updates) success v{1}", updates.Count, version + updates.Count);
-
-                    // now we update the cached state by applying the same updates
-                    // in case we encounter any exceptions we will re-read the whole state from storage
-                    try
-                    {
-                        foreach (var u in updates)
-                        {
-                            version++;
-                            Host.UpdateView(this.cached, u);
-                        }
-
-                        transitionssuccessful = true;
-                    }
-                    catch (Exception e)
-                    {
-                        Services.CaughtViewUpdateException("CustomStorageLogViewAdaptor.WriteAsync", e);
-                    }
-                }
+                LastPrimaryIssue.Resolve(Host, Services);
             }
             catch (Exception e)
             {
-                LastPrimaryException = e; // store exception for inspection by user code
+                // unwrap inner exception that was forwarded - helpful for debugging
+                if ((e as ProtocolTransportException)?.InnerException != null)
+                    e = ((ProtocolTransportException)e).InnerException;
+
+                LastPrimaryIssue.Record(new UpdatePrimaryFailed() { Exception = e }, Host, Services);
             }
 
-            if (!writesuccessful || !transitionssuccessful)    {
-                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
+            if (writesuccessful)
+            {
+                Services.Verbose("write ({0} updates) success v{1}", updates.Count, version + updates.Count);
 
-                increasebackoff(ref backoff_msec);
+                // now we update the cached state by applying the same updates
+                // in case we encounter any exceptions we will re-read the whole state from storage
+                try
+                {
+                    foreach (var u in updates)
+                    {
+                        version++;
+                        Host.UpdateView(this.cached, u);
+                    }
+
+                    transitionssuccessful = true;
+                }
+                catch (Exception e)
+                {
+                    Services.CaughtUserCodeException("UpdateView", nameof(WriteAsync), e);
+                }
+            }
+
+            if (!writesuccessful || !transitionssuccessful)
+            {
+                Services.Verbose("{0} failed {1}", writesuccessful ? "transitions" : "write", LastPrimaryIssue);
 
                 while (true) // be stubborn until we can re-read the state from storage
                 {
-                    if (backoff_msec > 0)
-                    {
-                        Services.Verbose("backoff {0}", backoff_msec);
-
-                        await Task.Delay(backoff_msec);
-                    }
+                    await LastPrimaryIssue.DelayBeforeRetry();
 
                     try
                     {
-                        var result = await ((ICustomStorageInterface<T, E>)Host).ReadStateFromStorageAsync();
+                        var result = await ((ICustomStorageInterface<TLogView, TLogEntry>)Host).ReadStateFromStorageAsync();
                         version = result.Key;
                         cached = result.Value;
 
-                        LastPrimaryException = null; // successful
-
                         Services.Verbose("read success v{0}", version);
+
+                        LastPrimaryIssue.Resolve(Host, Services);
 
                         break;
                     }
                     catch (Exception e)
                     {
-                        LastPrimaryException = e;
+                        // unwrap inner exception that was forwarded - helpful for debugging
+                        if ((e as ProtocolTransportException)?.InnerException != null)
+                            e = ((ProtocolTransportException)e).InnerException;
+
+                        LastPrimaryIssue.Record(new ReadFromPrimaryFailed() { Exception = e }, Host, Services);
                     }
 
-                    Services.Verbose("read failed {0}", LastPrimaryException != null ? (LastPrimaryException.GetType().Name + LastPrimaryException.Message) : "");
-
-                    increasebackoff(ref backoff_msec);
+                    Services.Verbose("read failed {0}", LastPrimaryIssue);
                 }
             }
 
@@ -276,22 +261,59 @@ namespace Orleans.Providers.LogViews
             return writesuccessful ? updates.Count : 0;
         }
 
+        /// <summary>
+        /// Describes a connection issue that occurred when updating the primary storage.
+        /// </summary>
+        [Serializable]
+        public class UpdatePrimaryFailed : PrimaryOperationFailed
+        {
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return $"update primary failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
 
+
+        /// <summary>
+        /// Describes a connection issue that occurred when reading from the primary storage.
+        /// </summary>
+        [Serializable]
+        public class ReadFromPrimaryFailed : PrimaryOperationFailed
+        {
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return $"read from primary failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+        /// <summary>
+        /// A notification message that is sent to remote instances of this grain after the primary has been
+        /// updated, to let them know the latest version. Contains all the updates that were applied.
+        /// </summary>
         [Serializable]
         protected class UpdateNotificationMessage : INotificationMessage
         {
+            /// <inheritdoc/>
             public int Version { get; set; }
-            public List<E> Updates { get; set; }
 
+            /// <summary> The list of updates that were applied. </summary>
+            public List<TLogEntry> Updates { get; set; }
+
+            /// <summary>
+            /// A representation of this notification message suitable for tracing.
+            /// </summary>
             public override string ToString()
             {
                 return string.Format("v{0} ({1} updates)", Version, Updates.Count);
             }
         }
-
    
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
+        /// <inheritdoc/>
         protected override void OnNotificationReceived(INotificationMessage payload)
         {
            var um = payload as UpdateNotificationMessage;
@@ -301,6 +323,7 @@ namespace Orleans.Providers.LogViews
                 base.OnNotificationReceived(payload);
         }
 
+        /// <inheritdoc/>
         protected override void ProcessNotifications()
         {
 
@@ -325,7 +348,7 @@ namespace Orleans.Providers.LogViews
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtViewUpdateException("ProcessNotifications", e);
+                        Services.CaughtUserCodeException("UpdateView", nameof(ProcessNotifications), e);
                     }
 
                 version = updatenotification.Version;

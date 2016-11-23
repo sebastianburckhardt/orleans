@@ -134,7 +134,7 @@ namespace Orleans.Providers
             }
         }
 
-        internal int GetNumLoadedProviders()
+        internal int GetLoadedProvidersNum()
         {
             lock (providers)
             {

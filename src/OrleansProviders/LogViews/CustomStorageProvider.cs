@@ -23,20 +23,35 @@ namespace Orleans.Providers.LogViews
     /// </summary>
     public class CustomStorageProvider : ILogViewProvider
     {
+        /// <inheritdoc/>
         public string Name { get; private set; }
 
+        /// <inheritdoc/>
         public Logger Log { get; private set; }
 
         private static int counter;
         private int id;
 
+        /// <summary>
+        /// Specifies a clusterid of the primary cluster from which to access storage exclusively, null if
+        /// storage should be accessed direcly from all clusters.
+        /// </summary>
         public string PrimaryCluster { get; private set; }
 
+        /// <summary>
+        /// Gets a unique name for this provider, suited for logging.
+        /// </summary>
         protected virtual string GetLoggerName()
         {
             return string.Format("LogViews.{0}.{1}", GetType().Name, id);
         }
 
+        /// <summary>
+        /// Init function
+        /// </summary>
+        /// <param name="name">provider name</param>
+        /// <param name="providerRuntime">provider runtime, see <see cref="IProviderRuntime"/></param>
+        /// <param name="config">provider configuration</param>
         public Task Init(string name, IProviderRuntime providerRuntime, IProviderConfiguration config)
         {
             Name = name;
@@ -50,11 +65,13 @@ namespace Orleans.Providers.LogViews
             return TaskDone.Done;
         }
 
+        /// <inheritdoc/>
         public Task Close()
         {
             return TaskDone.Done;
         }
 
+        /// <inheritdoc/>
         public ILogViewAdaptor<TView, TEntry> MakeLogViewAdaptor<TView, TEntry>(ILogViewHost<TView, TEntry> hostgrain, TView initialstate, string graintypename, IProtocolServices services)
             where TView : class, new()
             where TEntry : class

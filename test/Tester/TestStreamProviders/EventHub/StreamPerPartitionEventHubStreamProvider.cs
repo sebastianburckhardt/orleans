@@ -28,7 +28,7 @@ namespace Tester.TestStreamProviders.EventHub
                 }
                 var bufferPool = new FixedSizeObjectPool<FixedSizeBuffer>(adapterSettings.CacheSizeMb, () => new FixedSizeBuffer(1 << 20));
                 var dataAdapter = new CachedDataAdapter(partition, bufferPool, timePurgePredicate);
-                return new EventHubQueueCache(checkpointer, dataAdapter, log);
+                return new EventHubQueueCache(checkpointer, dataAdapter, EventHubDataComparer.Instance, log);
             }
         }
 
@@ -45,7 +45,7 @@ namespace Tester.TestStreamProviders.EventHub
             public override StreamPosition GetStreamPosition(EventData queueMessage)
             {
                 IStreamIdentity stremIdentity = new StreamIdentity(partitionStreamGuid, null);
-                StreamSequenceToken token = new EventSequenceToken(queueMessage.SequenceNumber, 0);
+                StreamSequenceToken token = new EventSequenceTokenV2(queueMessage.SequenceNumber, 0);
                 return new StreamPosition(stremIdentity, token);
             }
         }

@@ -29,7 +29,7 @@
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
     <NoWarn>1591</NoWarn>
     <DocumentationFile>bin\Debug\Orleans.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -64,6 +64,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyLoader\TypeMetadataCache.cs" />
     <Compile Include="AssemblyLoader\AssemblyProcessor.cs" />
     <Compile Include="Async\AsyncBatchedContinuationQueue.cs" />
     <Compile Include="Async\BatchWorker.cs" />
@@ -77,10 +78,14 @@
     <Compile Include="Async\UnobservedExceptionsHandlerClass.cs" />
     <Compile Include="Async\TaskExtensions.cs" />
     <Compile Include="CodeGeneration\GeneratedAssembly.cs" />
+    <Compile Include="Core\GrainCasterFactory.cs" />
+    <Compile Include="Core\IInternalGrainFactory.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
     <Compile Include="Logging\LoggerImpl.cs" />
     <Compile Include="Logging\LogFormatter.cs" />
     <Compile Include="Logging\LogManager.cs" />
+    <Compile Include="LogViews\ConnectionIssues.cs" />
+    <Compile Include="LogViews\IConnectionIssueListener.cs" />
     <Compile Include="LogViews\LogViewGrain.cs" />
     <Compile Include="MultiCluster\IMultiClusterGatewayInfo.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorManager.cs" />
@@ -90,7 +95,6 @@
     <Compile Include="CodeGeneration\IRuntimeCodeGenerator.cs" />
     <Compile Include="CodeGeneration\ISourceCodeGenerator.cs" />
     <Compile Include="CodeGeneration\KnownAssemblyAttribute.cs" />
-    <Compile Include="CodeGeneration\Language.cs" />
     <Compile Include="CodeGeneration\OrleansCodeGenerationTargetAttribute.cs" />
     <Compile Include="CodeGeneration\ConsiderForCodeGenerationAttribute.cs" />
     <Compile Include="CodeGeneration\SkipCodeGenerationAttribute.cs" />
@@ -106,6 +110,7 @@
     <Compile Include="LogViews\ILogViewHost.cs" />
     <Compile Include="Providers\ProviderStateManager.cs" />
     <Compile Include="QueuedGrains\QueuedGrainVariants.cs" />
+    <Compile Include="Runtime\ILocalSiloDetails.cs" />
     <Compile Include="Runtime\RingRange.cs" />
     <Compile Include="Serialization\IExternalSerializer.cs" />
     <Compile Include="Configuration\LimitNames.cs" />
@@ -145,8 +150,16 @@
     <Compile Include="IDs\UniqueKey.cs" />
     <Compile Include="Core\IGrainFactory.cs" />
     <Compile Include="Runtime\IGrainRuntime.cs" />
+    <Compile Include="Serialization\ILBasedSerializer.cs" />
+    <Compile Include="Serialization\ILFieldBuilder.cs" />
+    <Compile Include="Serialization\ILGenerationException.cs" />
+    <Compile Include="Serialization\ILSerializerGenerator.cs" />
+    <Compile Include="Serialization\ILDelegateBuilder.cs" />
     <Compile Include="Serialization\OrleansJsonSerializer.cs" />
     <Compile Include="Serialization\BinaryFormatterSerializer.cs" />
+    <Compile Include="Utils\ReferenceEqualsComparer.cs" />
+    <Compile Include="Serialization\ReflectedSerializationMethodInfo.cs" />
+    <Compile Include="Serialization\SerializationTestEnvironment.cs" />
     <Compile Include="Streams\Core\StreamIdentity.cs" />
     <Compile Include="Streams\Internal\StreamHandshakeToken.cs" />
     <Compile Include="Streams\PersistentStreams\IDeploymentConfiguration.cs" />
@@ -336,7 +349,6 @@
     <Compile Include="Runtime\SiloStatus.cs" />
     <Compile Include="Core\GrainClient.cs" />
     <Compile Include="Runtime\OutsideRuntimeClient.cs" />
-    <Compile Include="Placement\GrainStrategy.cs" />
     <Compile Include="Runtime\CallbackData.cs" />
     <Compile Include="Core\GrainAttributes.cs" />
     <Compile Include="CodeGeneration\GrainFactoryBase.cs" />
