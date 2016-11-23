@@ -36,6 +36,7 @@ namespace Orleans
         protected LogViewGrain(IGrainIdentity identity, IGrainRuntime runtime) : base(identity, runtime)
         { }
 
+        /// <summary>
         /// The object encapsulating the log view provider functionality and local state
         /// (similar to <see cref="GrainStateStorageBridge"/> for storage providers)
         /// </summary>
