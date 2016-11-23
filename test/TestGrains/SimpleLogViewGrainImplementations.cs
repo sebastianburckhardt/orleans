@@ -13,6 +13,7 @@ namespace UnitTests.Grains
 {
 
     // use the explictly specified "SharedStorage" log view provider
+    [OneInstancePerCluster]
     [LogViewProvider(ProviderName = "SharedStorage")]
     public class SimpleLogViewGrainSharedStorage : SimpleLogViewGrain
     {
@@ -25,7 +26,14 @@ namespace UnitTests.Grains
     }
 
     // use the default storage provider as the shared storage
+    [OneInstancePerCluster]
     public class SimpleLogViewGrainDefaultStorage : SimpleLogViewGrain
+    {
+    }
+
+    // use a single-instance log view grain
+    [GlobalSingleInstance]
+    public class SimpleGsiLogViewGrain : SimpleLogViewGrain
     {
     }
 
@@ -37,14 +45,15 @@ namespace UnitTests.Grains
     {
     }
 
-    // use an explicitly specified storage provider
-    // use MemoryStore as the log view provider (uses GSI grain for memory store)
+    // use MemoryStore as the log view provider (which uses GSI grain for memory store)
+    [OneInstancePerCluster]
     [StorageProvider(ProviderName = "MemoryStore")]
     public class SimpleLogViewGrainMemoryStorage : SimpleLogViewGrain
     {
     }
 
     // use the explictly specified "CustomStorage" log view provider with symmetric access from all clusters
+    [OneInstancePerCluster]
     [LogViewProvider(ProviderName = "CustomStorage")]
     public class SimpleLogViewGrainCustomStorage : SimpleLogViewGrain,
         Orleans.Providers.LogViews.ICustomStorageInterface<MyGrainState, object>
@@ -72,6 +81,7 @@ namespace UnitTests.Grains
     }
 
     // use the explictly specified "CustomStorage" log view provider with access from primary cluster only
+    [OneInstancePerCluster]
     [LogViewProvider(ProviderName = "CustomStoragePrimaryCluster")]
     public class SimpleLogViewGrainCustomStoragePrimaryCluster : SimpleLogViewGrain,
         Orleans.Providers.LogViews.ICustomStorageInterface<MyGrainState, object>

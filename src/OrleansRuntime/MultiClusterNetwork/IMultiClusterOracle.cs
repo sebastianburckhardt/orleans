@@ -67,5 +67,10 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// </summary>
         /// <returns>bool value indicating that subscription succeeded or not.</returns>
         bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer);
+
+        /// <summary>
+        /// A test hook for disabling notification messages between replicated grain instances
+        /// </summary>
+        bool DropNotificationMessagesForTesting { get; set; }
     }
 }

@@ -124,6 +124,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return localData.UnSubscribeFromMultiClusterConfigurationEvents(observer);
         }
 
+
+        /// <inheritdoc/>
+        public bool DropNotificationMessagesForTesting { get; set; }
+
+
         public async Task Start(ISiloStatusOracle oracle)
         {
             logger.Info(ErrorCode.MultiClusterNetwork_Starting, "MultiClusterOracle starting on {0}, Severity={1} ", Silo, logger.SeverityLevel);

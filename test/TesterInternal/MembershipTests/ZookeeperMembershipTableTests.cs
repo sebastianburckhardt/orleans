@@ -3,6 +3,8 @@ using Orleans;
 using Orleans.Messaging;
 using Orleans.Runtime;
 using Orleans.TestingHost;
+using Tester;
+using TestExtensions;
 using Xunit;
 
 namespace UnitTests.MembershipTests
@@ -29,7 +31,7 @@ namespace UnitTests.MembershipTests
 
         protected override string GetConnectionString()
         {
-            return StorageTestConstants.GetZooKeeperConnectionString();
+            return TestDefaultConfiguration.ZooKeeperConnectionString;
         }
 
         [Fact, TestCategory("Membership"), TestCategory("ZooKeeper")]

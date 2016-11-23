@@ -6,11 +6,14 @@ using UnitTests.GrainInterfaces;
 using Orleans.TestingHost;
 using Xunit;
 using Assert = Xunit.Assert;
+using TestExtensions;
 
 namespace Tests.GeoClusterTests
 {
     public class BasicLogViewGrainTests : TestingSiloHost
     {
+
+
         public BasicLogViewGrainTests() :
             base(
                 new TestingSiloOptions
@@ -19,8 +22,7 @@ namespace Tests.GeoClusterTests
                     StartPrimary = true,
                     StartSecondary = false,
                     SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
-                    DataConnectionString = StorageTestConstants.DataConnectionString,
-                    AdjustConfig = ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting
+                    AdjustConfig = cfg => LogViewProviderConfiguration.ConfigureLogViewProvidersForTesting(TestDefaultConfiguration.DataConnectionString,cfg)
                 }
             )
 

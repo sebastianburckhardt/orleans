@@ -1,15 +1,32 @@
 ﻿using System;
 using Orleans.Runtime.Configuration;
 using Orleans.MultiCluster;
+using System.Collections.Generic;
 
 namespace Orleans.GrainDirectory
 {
+
+    /// <summary>
+    /// Interface for multi-cluster registration strategies. Used by protocols that coordinate multiple instances.
+    /// </summary>
+    public interface IMultiClusterRegistrationStrategy {
+
+        /// <summary>
+        /// Determines which remote clusters have instances.
+        /// </summary>
+        /// <param name="mcConfig">The multi-cluster configuration</param>
+        /// <param name="myClusterId">The cluster id of this cluster</param>
+        /// <returns></returns>
+        IEnumerable<string> GetRemoteInstances(MultiClusterConfiguration mcConfig, string myClusterId);
+
+    }
+
     /// <summary>
     /// A superclass for all multi-cluster registration strategies.
-    /// Strategy objects are used as keys to select the proper registrar.
+    /// Strategy object which is used as keys to select the proper registrar.
     /// </summary>
     [Serializable]
-    public abstract class MultiClusterRegistrationStrategy
+    internal abstract class MultiClusterRegistrationStrategy : IMultiClusterRegistrationStrategy
     {
         private static MultiClusterRegistrationStrategy defaultStrategy;
 
@@ -35,7 +52,7 @@ namespace Orleans.GrainDirectory
             return defaultStrategy;
         }
 
-        internal static MultiClusterRegistrationStrategy FromAttributes(Type graintype)
+        internal static MultiClusterRegistrationStrategy FromGrainType(Type graintype)
         {
             var attrs = graintype.GetCustomAttributes(typeof(RegistrationAttribute), true);
             if (attrs.Length == 0)
@@ -43,6 +60,6 @@ namespace Orleans.GrainDirectory
             return ((RegistrationAttribute)attrs[0]).RegistrationStrategy;
         }
 
-        internal abstract bool IsSingleInstance();
+        public abstract IEnumerable<string> GetRemoteInstances(MultiClusterConfiguration mcConfig, string myClusterId);
     }
 }

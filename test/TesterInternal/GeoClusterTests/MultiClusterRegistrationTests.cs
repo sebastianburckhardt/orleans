@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Tester;
+using TestExtensions;
 using TestGrainInterfaces;
 using Tests.GeoClusterTests;
 using Xunit;
@@ -116,7 +118,7 @@ namespace UnitTests.GeoClusterTests
             // configuration for cluster
             Action<ClusterConfiguration> addtracing = (ClusterConfiguration c) =>
             {
-                c.AddAzureTableStorageProvider("PubSubStore", deleteOnClear:true, useJsonFormat:false, connectionString: Orleans.TestingHost.StorageTestConstants.DataConnectionString);
+                c.AddAzureTableStorageProvider("PubSubStore", deleteOnClear:true, useJsonFormat:false, connectionString: TestDefaultConfiguration.DataConnectionString);
                 c.AddSimpleMessageStreamProvider("SMSProvider", fireAndForgetDelivery: false);
 
                 // logging  
@@ -176,7 +178,7 @@ namespace UnitTests.GeoClusterTests
                 GrainClient.Logger.Info("Call Grain {0}", grainRef);
                 Task<int> toWait = grainRef.SayHelloAsync();
                 toWait.Wait();
-                return toWait.Result;
+                return toWait.GetResult();
             }
             public string GetRuntimeId(int i)
             {
@@ -184,14 +186,14 @@ namespace UnitTests.GeoClusterTests
                 GrainClient.Logger.Info("GetRuntimeId {0}", grainRef);
                 Task<string> toWait = grainRef.GetRuntimeId();
                 toWait.Wait();
-                return toWait.Result;
+                return toWait.GetResult();
             }
             public void Deactivate(int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<IClusterTestGrain>(i);
                 GrainClient.Logger.Info("Deactivate {0}", grainRef);
                 Task toWait = grainRef.Deactivate();
-                toWait.Wait();
+                toWait.GetResult();
             }
 
             public void EnableStreamNotifications(int i)
@@ -199,7 +201,7 @@ namespace UnitTests.GeoClusterTests
                 var grainRef = GrainClient.GrainFactory.GetGrain<IClusterTestGrain>(i);
                 GrainClient.Logger.Info("EnableStreamNotifications {0}", grainRef);
                 Task toWait = grainRef.EnableStreamNotifications();
-                toWait.Wait();
+                toWait.GetResult();
             }
 
             // observer-based notification
@@ -212,7 +214,7 @@ namespace UnitTests.GeoClusterTests
                 listeners.Add(obj);
                 GrainClient.Logger.Info("Subscribe {0}", grainRef);
                 Task toWait = grainRef.Subscribe(obj);
-                toWait.Wait();
+                toWait.GetResult();
             }
             List<IClusterTestListener> listeners = new List<IClusterTestListener>(); // keep them from being GCed
 
@@ -222,7 +224,7 @@ namespace UnitTests.GeoClusterTests
                 IStreamProvider streamProvider = GrainClient.GetStreamProvider("SMSProvider");
                 Guid guid = new Guid(i, 0, 0, new byte[8]);
                 IAsyncStream<int> stream = streamProvider.GetStream<int>(guid, "notificationtest");
-                handle = stream.SubscribeAsync(listener).Result;
+                handle = stream.SubscribeAsync(listener).GetResult();
             }
             StreamSubscriptionHandle<int> handle;
 
@@ -339,7 +341,7 @@ namespace UnitTests.GeoClusterTests
             var id = Clients[0][0].GetRuntimeId(x);
 
             WriteLog("Grain {0} at {1}", gref, id);
-            Assert.True(Clusters[ClusterNames[0]].Silos.Any(silo => silo.Silo.SiloAddress.ToString() == id));
+            Assert.True(Clusters[ClusterNames[0]].Silos.Any(silo => silo.SiloAddress.ToString() == id));
 
             // ensure presence in all caches
             var list = EnumerateClients().ToList();
@@ -363,7 +365,7 @@ namespace UnitTests.GeoClusterTests
             AssertEqual(1, val, gref);
             var newid = Clients[1][0].GetRuntimeId(x);
             WriteLog("{2} sees Grain {0} at {1}", gref, newid, ClusterNames[1]);
-            Assert.True(Clusters[ClusterNames[1]].Silos.Any(silo => silo.Silo.SiloAddress.ToString() == newid));
+            Assert.True(Clusters[ClusterNames[1]].Silos.Any(silo => silo.SiloAddress.ToString() == newid));
 
             WriteLog("Grain {0} Check that other clusters find new activation.", gref);
             for (int i = 2; i < Clusters.Count; i++)
@@ -475,7 +477,7 @@ namespace UnitTests.GeoClusterTests
                 var id = Clients[0][0].GetRuntimeId(x);
 
                 WriteLog("Grain {0} at {1}", gref, id);
-                Assert.True(Clusters[ClusterNames[0]].Silos.Any(silo => silo.Silo.SiloAddress.ToString() == id));
+                Assert.True(Clusters[ClusterNames[0]].Silos.Any(silo => silo.SiloAddress.ToString() == id));
 
                 var id2 = Clients[1][0].GetRuntimeId(x);
                 AssertEqual(id2, id, gref);
@@ -496,7 +498,7 @@ namespace UnitTests.GeoClusterTests
                 AssertEqual(1, val, gref);
                 var newid = Clients[1][0].GetRuntimeId(x);
                 WriteLog("{2} sees Grain {0} at {1}", gref, newid, ClusterNames[1]);
-                Assert.True(Clusters[ClusterNames[1]].Silos[0].Silo.SiloAddress.ToString() == newid);
+                Assert.True(Clusters[ClusterNames[1]].Silos[0].SiloAddress.ToString() == newid);
             });
         }
     }

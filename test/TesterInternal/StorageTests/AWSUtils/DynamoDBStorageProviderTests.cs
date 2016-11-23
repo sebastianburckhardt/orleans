@@ -6,12 +6,12 @@ using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Storage;
 using Orleans.Serialization;
 using Orleans.Storage;
+using TestExtensions;
 using UnitTests.StorageTests.Relational;
 using Xunit;
 
 namespace UnitTests.StorageTests.AWSUtils
 {
-
     [TestCategory("Persistence"), TestCategory("AWS"), TestCategory("DynamoDb")]
     public class DynamoDBStorageProviderTests
     {
@@ -24,9 +24,10 @@ namespace UnitTests.StorageTests.AWSUtils
             if (!AWSTestConstants.IsDynamoDbAvailable)
                 throw new SkipException("Unable to connect to DynamoDB simulator");
 
-            DefaultProviderRuntime = new StorageProviderManager(new GrainFactory(), null);
-            ((StorageProviderManager)DefaultProviderRuntime).LoadEmptyStorageProviders(new ClientProviderRuntime(new GrainFactory(), null)).WaitWithThrow(TestConstants.InitTimeout);
-            SerializationManager.InitializeForTesting();
+            var testEnvironment = new SerializationTestEnvironment();
+            DefaultProviderRuntime = new StorageProviderManager(testEnvironment.GrainFactory, null);
+            ((StorageProviderManager)DefaultProviderRuntime).LoadEmptyStorageProviders(new ClientProviderRuntime(testEnvironment.GrainFactory, null)).WaitWithThrow(TestConstants.InitTimeout);
+            testEnvironment.InitializeForTesting();
 
             var properties = new Dictionary<string, string>();
             properties["DataConnectionString"] = $"Service={AWSTestConstants.Service}";
@@ -45,7 +46,7 @@ namespace UnitTests.StorageTests.AWSUtils
         [SkippableFact, TestCategory("Functional")]
         internal async Task WriteRead100StatesInParallel()
         {
-            await PersistenceStorageTests.PersistenceStorage_WriteReadWriteRead100StatesInParallel();
+            await PersistenceStorageTests.PersistenceStorage_WriteReadWriteReadStatesInParallel();
         }
     }
 }

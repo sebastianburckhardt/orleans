@@ -44,7 +44,7 @@ namespace Orleans.Runtime.Storage
 
         public int GetNumLoadedProviders()
         {
-            return storageProviderLoader.GetNumLoadedProviders();
+            return storageProviderLoader.GetLoadedProvidersNum();
         }
 
         public IList<IStorageProvider> GetProviders()

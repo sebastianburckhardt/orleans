@@ -6,10 +6,8 @@
 
 
 
-[![Build status](http://dotnet-ci.cloudapp.net/job/dotnet_orleans/job/innerloop/badge/icon)](http://dotnet-ci.cloudapp.net/job/dotnet_orleans/job/innerloop)
+[![Build status](http://ci.dot.net/job/dotnet_orleans/job/master/job/netfx/badge/icon)](http://ci.dot.net/job/dotnet_orleans/job/master/)
 [![NuGet](https://img.shields.io/nuget/v/Microsoft.Orleans.Core.svg?style=flat)](http://www.nuget.org/profiles/Orleans)
-[![Issue Stats](http://www.issuestats.com/github/dotnet/orleans/badge/pr)](http://www.issuestats.com/github/dotnet/orleans)
-[![Issue Stats](http://www.issuestats.com/github/dotnet/orleans/badge/issue)](http://www.issuestats.com/github/dotnet/orleans)
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dotnet/orleans?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
@@ -102,7 +100,7 @@ Community
 
 * [Chat on Gitter](https://gitter.im/dotnet/orleans)
 
-* Follow the [@ProjectOrleans](https://twitter.com/ProjectOrleans) Twitter account for Orleans announcements.
+* Follow the [@MSFTOrleans](https://twitter.com/MSFTOrleans) Twitter account for Orleans announcements.
 
 * [OrleansContrib - Repository of community add-ons to Orleans](https://github.com/OrleansContrib/) Various community projects, including Orleans Monitoring, Design Patterns, Storage Provider, etc.
 

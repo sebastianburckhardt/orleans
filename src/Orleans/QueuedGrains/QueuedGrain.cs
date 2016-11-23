@@ -36,34 +36,64 @@ namespace Orleans.QueuedGrains
         protected QueuedGrain(IGrainIdentity identity, IGrainRuntime runtime) : base(identity, runtime)
         { }
 
-        // the object encapsulating the log view provider functionality and local state
+        /// The object encapsulating the log view provider functionality and local state
+        /// (similar to <see cref="GrainStateStorageBridge"/> for storage providers)
         internal ILogViewAdaptor<TState,TDelta> Adaptor { get; private set; }
 
 
-        // Called right after grain is constructed, to install the log view adaptor
+        /// <summary>
+        /// Called right after grain is constructed, to install the log view adaptor.
+        /// The log view provider contains a factory method that constructs the adaptor with chosen types for this grain
+        /// </summary>
         void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
             Adaptor = provider.MakeLogViewAdaptor<TState,TDelta>(this, (TState) initialstate, graintypename, services);            
         }
 
+        /// <summary>
+        /// called by adaptor to update the view when entries are appended.
+        /// </summary>
+        /// <param name="view">log view</param>
+        /// <param name="entry">log entry</param>
         void ILogViewHost<TState, TDelta>.UpdateView(TState view, TDelta entry)
         {
             ApplyDeltaToState(view, entry);
         }
 
         /// <summary>
-        /// Subclasses must implement this method to define how deltas are applied to states.
+        /// called by adaptor to retrieve the identity of this grain, for tracing purposes.
         /// </summary>
-        /// <param name="state">The state to mutate</param>
-        /// <param name="delta">The update object to apply</param>
-        /// <returns></returns>
-        protected abstract void ApplyDeltaToState(TState state, TDelta delta);
-  
-
         string ILogViewHost<TState, TDelta>.IdentityString
         {
             get { return Identity.IdentityString; }
+        }
+
+        /// <summary>
+        /// called by adaptor on state change. 
+        /// </summary>
+        void ILogViewHost<TState, TDelta>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
+        {
+            if (TentativeStateChanged)
+                OnTentativeStateChanged();
+            if (ConfirmedStateChanged)
+                OnConfirmedStateChanged();
+        }
+
+        /// <summary>
+        /// called by adaptor on connection issues. 
+        /// </summary>
+        void IConnectionIssueListener.OnConnectionIssue(ConnectionIssue connectionIssue)
+        {
+            OnConnectionIssue(connectionIssue);
+        }
+
+        /// <summary>
+        /// called by adaptor when a connection issue is resolved. 
+        /// </summary>
+        void IConnectionIssueListener.OnConnectionIssueResolved(ConnectionIssue connectionIssue)
+        {
+            OnConnectionIssueResolved(connectionIssue);
         }
 
         /// <summary>
@@ -82,27 +112,36 @@ namespace Orleans.QueuedGrains
             return Adaptor.Deactivate();
         }
 
-        
-        // Receive a message from other clusters, passed on to log view adaptor.
+
+        /// <summary>
+        /// Receive a protocol message from other clusters, passed on to log view adaptor.
+        /// </summary>
         [AlwaysInterleave]
         Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
         {
             return Adaptor.OnProtocolMessageReceived(payload);
         }
 
+        /// <summary>
+        /// Receive a configuration change, pass on to log view adaptor.
+        /// </summary>
         [AlwaysInterleave]
         Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
         {
             return Adaptor.OnMultiClusterConfigurationChange(next);
         }
 
-        void ILogViewHost<TState, TDelta>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
-        {
-            if (TentativeStateChanged)
-                OnTentativeStateChanged();
-            if (ConfirmedStateChanged)
-                OnConfirmedStateChanged();
-        }
+        #region callbacks from storage interface
+
+        // these methods are protected because they get called from inside the class only
+
+        /// <summary>
+        /// Subclasses must implement this method to define how deltas are applied to states.
+        /// </summary>
+        /// <param name="state">The state to mutate</param>
+        /// <param name="delta">The update object to apply</param>
+        /// <returns></returns>
+        protected abstract void ApplyDeltaToState(TState state, TDelta delta);
 
         /// <summary>
         /// Called after the tentative state may have changed due to local or remote events.
@@ -120,7 +159,33 @@ namespace Orleans.QueuedGrains
         {
         }
 
-     
+        /// <summary>
+        /// Called when the underlying persistence or replication protocol is running into some sort of connection trouble.
+        /// <para>Subclasses can override, to monitor the health of the persistence or replication algorithm and/or
+        /// to customize retry delays.
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// </summary>
+        /// <returns>The time to wait before retrying</returns>
+        protected virtual void OnConnectionIssue(ConnectionIssue issue)
+        {
+        }
+
+        /// <summary>
+        /// Called when a previously reported connection issue has been resolved.
+        /// <para>Subclasses can override, to monitor the health of the persistence or replication algorithm. 
+        /// Any exceptions thrown will be caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// </summary>
+        protected virtual void OnConnectionIssueResolved(ConnectionIssue issue)
+        {
+        }
+
+        #endregion
+
+        #region storage interface exposed to user grain code
+
+        // these methods are protected because the user should call them only from within the grain,
+        // not directly from other grains. 
+
         /// <summary>
         /// Retrieve the current, latest global version of the state, and confirm all updates currently in the queue. 
         /// <returns>A task that can be waited on.</returns>
@@ -218,43 +283,37 @@ namespace Orleans.QueuedGrains
             get { return Adaptor.ConfirmedVersion; }
         }
 
-        /// <summary>
-        /// The last exception thrown by any internal storage or network operation,
-        /// or null if the last such operation was successful.
-        /// </summary>
-        public Exception LastException
+        /// <inheritdoc cref="ILogViewDiagnostics.UnresolvedConnectionIssues"/>
+        protected IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
-            get { return Adaptor.LastException; }
+            get
+            {
+                return Adaptor.UnresolvedConnectionIssues;
+            }
         }
 
-        /// <summary>
-        /// Enable statistics collection in the log view provider.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewDiagnostics.EnableStatsCollection"/>
         public void EnableStatsCollection()
         {
             Adaptor.EnableStatsCollection();
         }
 
-        /// <summary>
-        /// Disable statistics collection in the log view provider.
-        /// </summary>
+        /// <inheritdoc cref="ILogViewDiagnostics.DisableStatsCollection"/>
         public void DisableStatsCollection()
         {
             Adaptor.DisableStatsCollection();
         }
 
-        /// <summary>
-        /// access internal statistics about the log view provider.
-        /// </summary>
-        /// <returns>an object containing statistics.</returns>
+        /// <inheritdoc cref="ILogViewDiagnostics.GetStats"/>
         public LogViewStatistics GetStats()
         {
             return Adaptor.GetStats();
         }
 
-       
+        #endregion
+
 
     }
 
-   
+
 }

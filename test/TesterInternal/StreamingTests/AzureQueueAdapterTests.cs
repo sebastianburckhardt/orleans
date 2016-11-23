@@ -13,7 +13,8 @@ using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Serialization;
 using Orleans.Streams;
-using Orleans.TestingHost;
+using Tester;
+using TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -40,7 +41,7 @@ namespace UnitTests.StorageTests
         
         public void Dispose()
         {
-            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(AZURE_QUEUE_STREAM_PROVIDER_NAME, deploymentId, StorageTestConstants.DataConnectionString).Wait();
+            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(AZURE_QUEUE_STREAM_PROVIDER_NAME, deploymentId, TestDefaultConfiguration.DataConnectionString).Wait();
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Halo"), TestCategory("Azure"), TestCategory("Streaming")]
@@ -48,8 +49,9 @@ namespace UnitTests.StorageTests
         {
             var properties = new Dictionary<string, string>
                 {
-                    {AzureQueueAdapterFactory.DataConnectionStringPropertyName, StorageTestConstants.DataConnectionString},
-                    {AzureQueueAdapterFactory.DeploymentIdPropertyName, deploymentId}
+                    {AzureQueueAdapterFactory.DataConnectionStringPropertyName, TestDefaultConfiguration.DataConnectionString},
+                    {AzureQueueAdapterFactory.DeploymentIdPropertyName, deploymentId},
+                    {AzureQueueAdapterFactory.MessageVisibilityTimeoutPropertyName, "00:00:30" }
                 };
             var config = new ProviderConfiguration(properties, "type", "name");
 
@@ -128,7 +130,7 @@ namespace UnitTests.StorageTests
             Assert.Equal(NumBatches, receivedBatches);
 
             // check to see if all the events are in the cache and we can enumerate through them
-            StreamSequenceToken firstInCache = new EventSequenceToken(0);
+            StreamSequenceToken firstInCache = new EventSequenceTokenV2(0);
             foreach (KeyValuePair<QueueId, HashSet<IStreamIdentity>> kvp in streamsPerQueue)
             {
                 var receiver = receivers[kvp.Key];
