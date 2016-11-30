@@ -78,7 +78,7 @@ namespace Orleans.Providers.EventStores
 
                     var eventstream = await EventStore.LoadStreamFromVersion(streamname, ConfirmedVersionInternal);
 
-                    LastPrimaryException = null;
+                    LastPrimaryIssue.Resolve(Host, Services);
 
                     Services.Verbose("Read success version={0}", eventstream.Version);
 
@@ -108,7 +108,7 @@ namespace Orleans.Providers.EventStores
                         }
                         catch (Exception e)
                         {
-                            Services.CaughtViewUpdateException("ReadAsync", e); // logged by log view provider
+                            Services.CaughtUserCodeException("UpdateView", nameof(ReadAsyncInternal), e);
                         }
 
                         ConfirmedVersionInternal++;
@@ -118,8 +118,7 @@ namespace Orleans.Providers.EventStores
                 }
                 catch (Exception e)
                 {
-                    Services.CaughtException("ReadAsync", e); // logged by log view provider
-                    LastPrimaryException = e;
+                    LastPrimaryIssue.Record(new LoadStreamFailed() { Exception = e }, Host, Services);
                 }
             }
         }
@@ -153,7 +152,8 @@ namespace Orleans.Providers.EventStores
                        TagLast(updates, guid)
                     );
 
-                LastPrimaryException = null;
+                LastPrimaryIssue.Resolve(Host, Services);
+
                 success = true;
 
                 Services.Verbose("Write successful");
@@ -167,7 +167,7 @@ namespace Orleans.Providers.EventStores
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtViewUpdateException("WriteAsync", e); // logged by log view provider
+                        Services.CaughtUserCodeException("UpdateView", nameof(WriteAsync), e);
                     }
 
                     ConfirmedVersionInternal++;
@@ -176,18 +176,18 @@ namespace Orleans.Providers.EventStores
             catch (OptimisticConcurrencyException e)
             {
                 success = false;
-                LastPrimaryException = e;
-                Services.Verbose("Write failed due to conflict");
+                LastPrimaryIssue.Record(new AppendToStreamFailed() { Exception = e, IsOptimisticConcurrencyConflict = true }, Host, Services);
             }
             catch (Exception e)
             {
-                Services.CaughtException("WriteAsync", e); // logged by log view provider
-                LastPrimaryException = e;
                 success = false;
+                LastPrimaryIssue.Record(new AppendToStreamFailed() { Exception = e, IsOptimisticConcurrencyConflict = false }, Host, Services);
             }
 
             if (!success)
             {
+                Services.Verbose("Write unsuccessful");
+
                 // either there was a concurrency failure, or some other problem.
                 // In either case, we need to read the latest state.
                 // if we see the guid in there, we know this actually succeeded
@@ -204,10 +204,40 @@ namespace Orleans.Providers.EventStores
 
             return success ? updates.Length : 0;
         }
- 
 
 
-     
+
+        /// <summary>
+        /// Describes a connection issue that occurred when loading events from the event store.
+        /// </summary>
+        [Serializable]
+        public class LoadStreamFailed : PrimaryOperationFailed
+        {
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return $"load stream failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+        /// <summary>
+        /// Describes a connection issue that occurred when appending events to the event store.
+        /// </summary>
+        [Serializable]
+        public class AppendToStreamFailed : PrimaryOperationFailed
+        {
+            /// <summary>
+            /// Whether this failure was caused by an optimistic-concurrency conflict
+            /// </summary>
+            public bool IsOptimisticConcurrencyConflict { get; set; }
+
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return $"append to stream failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
 
 
     }

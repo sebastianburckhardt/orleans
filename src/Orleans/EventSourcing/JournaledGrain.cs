@@ -170,7 +170,26 @@ namespace Orleans.EventSourcing
             s.Apply(e);
         }
 
-    
+        /// <summary>
+        /// Called when the underlying persistence or replication protocol is running into some sort of connection trouble.
+        /// <para>Override this to monitor the health of the persistence or replication algorithm and/or
+        /// to customize retry delays.
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// </summary>
+        /// <returns>The time to wait before retrying</returns>
+        protected virtual void OnConnectionIssue(ConnectionIssue issue)
+        {
+        }
+
+        /// <summary>
+        /// Called when a previously reported connection issue has been resolved.
+        /// <para>Override this to monitor the health of the persistence or replication algorithm. 
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// </summary>
+        protected virtual void OnConnectionIssueResolved(ConnectionIssue issue)
+        {
+        }
+
 
         #region Adaptor Hookup
 
@@ -220,6 +239,23 @@ namespace Orleans.EventSourcing
             if (confirmed)
                 OnConfirmedStateChanged();
         }
+
+        /// <summary>
+        /// called by adaptor on connection issues. 
+        /// </summary>
+        void IConnectionIssueListener.OnConnectionIssue(ConnectionIssue connectionIssue)
+        {
+            OnConnectionIssue(connectionIssue);
+        }
+
+        /// <summary>
+        /// called by adaptor when a connection issue is resolved. 
+        /// </summary>
+        void IConnectionIssueListener.OnConnectionIssueResolved(ConnectionIssue connectionIssue)
+        {
+            OnConnectionIssueResolved(connectionIssue);
+        }
+
 
         #endregion
 
