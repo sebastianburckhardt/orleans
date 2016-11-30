@@ -1,38 +1,35 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using Orleans;
 using TestGrainInterfaces;
-using UnitTests.Tester;
-using Orleans.Runtime.Configuration;
-using Orleans.Providers.EventStores;
-using Orleans.TestingHost;
-using System.IO;
-using Orleans.Runtime;
 using Xunit;
 using Assert = Xunit.Assert;
+using TestExtensions;
+using Xunit.Abstractions;
+using Orleans.Runtime;
 
 namespace UnitTests.EventSourcingTests
 {
-    public class JournaledGrainTests : TestingSiloHost
+    public class JournaledGrainTests : HostedTestClusterEnsureDefaultStarted, IDisposable
     {
-        public JournaledGrainTests()
-        : base(new TestingSiloOptions
-                {
-                    StartFreshOrleans = true,
-                    StartPrimary = true,
-                    StartSecondary = false,
-                    SiloConfigFile = new FileInfo("OrleansConfigurationForTesting.xml"),
-                    DataConnectionString = StorageTestConstants.DataConnectionString,
-                    AdjustConfig = (ClusterConfiguration config) => {
-                        config.Globals.RegisterLogViewProvider<MemoryEventStore>("TestEventStore");
-                        foreach (var o in config.Overrides)
-                            o.Value.TraceLevelOverrides.Add(new Tuple<string, Severity>("LogViews", Severity.Verbose2));
-                    }
-                }
-            )
-        { }
-      
+        private const string LoggerPrefix = "Storage.MemoryStorage.1";
+
+        public JournaledGrainTests(DefaultClusterFixture fixture, ITestOutputHelper output) : base(fixture)
+        {
+            var mgmt = GrainClient.GrainFactory.GetGrain<IManagementGrain>(0);
+            var hosts = mgmt.GetHosts().Result.Select(kvp => kvp.Key).ToArray();
+            mgmt.SetLogLevel(hosts, LoggerPrefix, (int) Severity.Verbose2);
+        }
+
+        public void Dispose()
+        {
+            var mgmt = GrainClient.GrainFactory.GetGrain<IManagementGrain>(0);
+            var hosts = mgmt.GetHosts().Result.Select(kvp => kvp.Key).ToArray();
+            mgmt.SetLogLevel(hosts, LoggerPrefix, (int) Severity.Info);
+        }
+
+
         [Fact, TestCategory("EventSourcing"), TestCategory("Functional")]
         public async Task JournaledGrainTests_Activate()
         {
@@ -76,38 +73,9 @@ namespace UnitTests.EventSourcingTests
         {
             var leia = GrainClient.GrainFactory.GetGrain<IJournaledPersonGrain>(Guid.NewGuid());
 
-            Assert.Equal(0, await leia.GetConfirmedVersion());
-            Assert.Equal(0, await leia.GetVersion());
-            Assert.Equal(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.Equal(null, (await leia.GetPersonalAttributes()).LastName);
-
-            await leia.ChangeLastName("Organa");
-
-            Assert.Equal(0, await leia.GetConfirmedVersion());
-            Assert.Equal(1, await leia.GetVersion());
-            Assert.Equal(null, (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.Equal("Organa", (await leia.GetPersonalAttributes()).LastName);
-
-            await leia.SaveChanges();
-
-            Assert.Equal(1, await leia.GetConfirmedVersion());
-            Assert.Equal(1, await leia.GetVersion());
-            Assert.Equal("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.Equal("Organa", (await leia.GetPersonalAttributes()).LastName);
-
-            await leia.ChangeLastName("Solo");
-
-            Assert.Equal(1, await leia.GetConfirmedVersion());
-            Assert.Equal(2, await leia.GetVersion());
-            Assert.Equal("Organa", (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.Equal("Solo", (await leia.GetPersonalAttributes()).LastName);
-
-            await leia.SaveChanges();
-
-            Assert.Equal(2, await leia.GetConfirmedVersion());
-            Assert.Equal(2, await leia.GetVersion());
-            Assert.Equal("Solo", (await leia.GetConfirmedPersonalAttributes()).LastName);
-            Assert.Equal("Solo", (await leia.GetPersonalAttributes()).LastName);
+            // the whole test has to run inside the grain, otherwise the interleaving of 
+            // the individual steps is nondeterministic
+            await leia.RunTentativeConfirmedStateTest();
         }
     }
 }

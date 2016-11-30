@@ -5,10 +5,11 @@ using Orleans.EventSourcing;
 using Orleans.Providers;
 using TestGrainInterfaces;
 using System.Collections.Generic;
+using Orleans.Runtime;
 
 namespace TestGrains
 {
-    [LogViewProvider(ProviderName = "TestEventStore")]
+    //[LogViewProvider(ProviderName = "TestEventStore")]
     public class JournaledPersonGrain : JournaledGrain<PersonState>, IJournaledPersonGrain, ICustomStreamName
     {
 
@@ -52,7 +53,7 @@ namespace TestGrains
             return TaskDone.Done;
         }
 
-        public Task SaveChanges()
+        public Task ConfirmChanges()
         {
             return WaitForConfirmation();
         }
@@ -96,6 +97,57 @@ namespace TestGrains
         {
             dynamic e = @event;
             state.Apply(e);
+        }
+
+        private static void AssertEqual<T>(T a, T b)
+        {
+            if (! Object.Equals(a, b))
+                throw new OrleansException($"Test failed. Expected = {a}. Actual = {b}.");
+        }
+
+        public async Task RunTentativeConfirmedStateTest()
+        {
+            // initially both the confirmed version and the tentative version are the same: version 0
+            AssertEqual(0, ConfirmedVersion);
+            AssertEqual(0, Version);
+            AssertEqual(null, ConfirmedState.LastName);
+            AssertEqual(null, State.LastName);
+
+            // now we change the last name
+            await ChangeLastName("Organa");
+
+            // while the udpate is pending, the confirmed version and the tentative version are different
+            AssertEqual(0, ConfirmedVersion);
+            AssertEqual(1, Version);
+            AssertEqual(null, ConfirmedState.LastName);
+            AssertEqual("Organa", State.LastName);
+
+            // let's wait until the update has been confirmed.
+            await ConfirmChanges(); 
+
+            // now the two versions are the same again
+            AssertEqual(1, ConfirmedVersion);
+            AssertEqual(1, Version);
+            AssertEqual("Organa", ConfirmedState.LastName);
+            AssertEqual("Organa", State.LastName);
+
+            // issue another change
+            await ChangeLastName("Solo");
+
+            // again, the confirmed and the tentative versions are different
+            AssertEqual(1, ConfirmedVersion);
+            AssertEqual(2, Version);
+            AssertEqual("Organa", ConfirmedState.LastName);
+            AssertEqual("Solo", State.LastName);
+
+            // this time, we wait for enough time to commit to MemoryStorage.
+            await Task.Delay(20);
+
+            // now the two versions should be the same again
+            AssertEqual(2, ConfirmedVersion);
+            AssertEqual(2, Version);
+            AssertEqual("Solo", ConfirmedState.LastName);
+            AssertEqual("Solo", State.LastName);
         }
     }
 }
