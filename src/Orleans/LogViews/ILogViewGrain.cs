@@ -14,7 +14,13 @@ namespace Orleans.LogViews
     /// </summary>
     public interface ILogViewGrain 
     {
-        // called right after grain construction to install the log view adaptor 
+        /// <summary>
+        /// called right after grain construction to install the log view adaptor 
+        /// </summary>
+        /// <param name="provider"> The log view provider to install </param>
+        /// <param name="state"> The initial state of the view </param>
+        /// <param name="graintypename"> The type name of the grain </param>
+        /// <param name="services"> Protocol services </param>
         void InstallAdaptor(ILogViewProvider provider, object state, string graintypename, IProtocolServices services);
     }
 

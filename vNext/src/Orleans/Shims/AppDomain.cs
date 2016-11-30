@@ -1,13 +1,17 @@
 ﻿#if NETSTANDARD_TODO
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
-using Orleans.Runtime;
+#pragma warning disable 67
 
 namespace Orleans
 {
     internal sealed class AppDomain
     {
         public delegate void AssemblyLoadEventHandler(object sender, AssemblyLoadEventArgs args);
+
         public delegate void UnhandledExceptionEventHandler(object sender, UnhandledExceptionEventArgs e);
 
         public static AppDomain CurrentDomain { get; private set; }
@@ -31,16 +35,55 @@ namespace Orleans
             //};
         }
 
+        private readonly Lazy<Assembly[]> assembliesList = new Lazy<Assembly[]>(() =>
+        {
+            string path = AppContext.BaseDirectory;
+            var assemblyFiles = Directory.EnumerateFiles(path, "*.dll");
+            var assemblyNames = assemblyFiles.Select(Path.GetFileNameWithoutExtension).ToList();
+            var assemblies = new HashSet<Assembly>();
+            foreach (var assemblyName in assemblyNames)
+            {
+                try
+                {
+                    assemblies.Add(Assembly.Load(new AssemblyName(assemblyName)));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"WARNING: Failed to load assembly '{assemblyName}'. Skipping. {ex}");
+                }
+            }
+            assemblies.Add(typeof(Exception).GetTypeInfo().Assembly);
+
+            foreach (var assembly in assemblies.ToList())
+            {
+                LoadDependencies(assemblies, assembly);
+            }
+            return assemblies.ToArray();
+        });
+
         public Assembly[] GetAssemblies()
         {
-            // TODO: replace with IAssemblyCatalog or something like that.
-            Assembly[] assemblies =
+            // TODO: very naive approach to be replaced with IAssemblyCatalog or something like that.
+            return assembliesList.Value;
+        }
+
+        private static void LoadDependencies(HashSet<Assembly> loadedAssemblies, Assembly fromAssembly)
+        {
+            foreach (var reference in fromAssembly.GetReferencedAssemblies())
             {
-                typeof(Exception).GetTypeInfo().Assembly,
-                typeof(AssemblyProcessor).GetTypeInfo().Assembly,
-                Assembly.GetEntryAssembly(),
-            };
-            return assemblies;
+                try
+                {
+                    var asm = Assembly.Load(reference);
+                    if (loadedAssemblies.Add(asm))
+                    {
+                        LoadDependencies(loadedAssemblies, asm);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"WARNING: Unable to load assembly {reference.FullName} referenced by {fromAssembly.FullName}. Skipping. {ex}");
+                }
+            }
         }
     }
 

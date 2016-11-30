@@ -60,7 +60,7 @@ namespace Tests.GeoClusterTests
         {
             public ClientWrapper(string name, int gatewayport, string clusterId, Action<ClientConfiguration> customizer) : base(name, gatewayport, clusterId, customizer)
             {
-                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
+                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(0);
             }
 
             public int CallGrain(int i)
@@ -68,12 +68,12 @@ namespace Tests.GeoClusterTests
                 var grainRef = GrainClient.GrainFactory.GetGrain<IClusterTestGrain>(i);
                 Task<int> toWait = grainRef.SayHelloAsync();
                 toWait.Wait();
-                return toWait.Result;
+                return toWait.GetResult();
             }
 
             public void InjectMultiClusterConf(params string[] args)
             {
-                systemManagement.InjectMultiClusterConfiguration(args).Wait();
+                systemManagement.InjectMultiClusterConfiguration(args).GetResult();
             }
 
             IManagementGrain systemManagement;
@@ -507,7 +507,7 @@ namespace Tests.GeoClusterTests
             int totalSoFar = 0;
             foreach (var silo in silos)
             {
-                var dir = silo.Silo.TestHook.GetDirectoryForTypeNamesContaining("ClusterTestGrain");
+                var dir = silo.AppDomainTestHook.GetDirectoryForTypeNamesContaining("ClusterTestGrain");
                 foreach (var grainKeyValue in dir)
                 {
                     GrainId grainId = grainKeyValue.Key;
@@ -527,7 +527,7 @@ namespace Tests.GeoClusterTests
                         grains.Add(grainId);
                     }
                 }
-                WriteLog("Returning: Silo {0} State = {1} Count = {2}", silo.Silo.SiloAddress, status.HasValue ? status.Value.ToString() : "ANY", (grains.Count - totalSoFar));
+                WriteLog("Returning: Silo {0} State = {1} Count = {2}", silo.SiloAddress, status.HasValue ? status.Value.ToString() : "ANY", (grains.Count - totalSoFar));
                 totalSoFar = grains.Count;
             }
             WriteLog("Returning: Cluster {0} State = {1} Count = {2}", clusterId, status.HasValue ? status.Value.ToString() : "ANY", grains.Count);
@@ -543,7 +543,7 @@ namespace Tests.GeoClusterTests
             foreach (var kvp in Clusters)
                 foreach (var silo in kvp.Value.Silos)
                 {
-                    var dir = silo.Silo.TestHook.GetDirectoryForTypeNamesContaining("ClusterTestGrain");
+                    var dir = silo.AppDomainTestHook.GetDirectoryForTypeNamesContaining("ClusterTestGrain");
 
                     foreach (var grainKeyValue in dir)
                     {

@@ -31,7 +31,7 @@ namespace UnitTests.GrainInterfaces
         Task<int> GetConfirmedVersion();
 
         // exception
-        Task<Exception> GetLastException();
+        Task<IEnumerable<ConnectionIssue>> GetUnresolvedConnectionIssues();
 
         #endregion
 
@@ -78,6 +78,11 @@ namespace UnitTests.GrainInterfaces
         #endregion
     }
 
+    /// <summary>
+    /// Used by unit tests. 
+    /// The fields don't really have any meaning. 
+    /// The point of the struct is just that a grain method can return both A and B at the same time.
+    /// </summary>
     public struct AB
     {
         public int A;

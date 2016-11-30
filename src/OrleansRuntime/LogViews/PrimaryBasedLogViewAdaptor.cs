@@ -57,12 +57,14 @@ namespace Orleans.Runtime.LogViews
 
         /// <summary>
         /// Read the latest primary state. Must block/retry until successful.
+        /// Should not throw exceptions, but record them in <see cref="LastPrimaryIssue"/>
         /// </summary>
         /// <returns></returns>
         protected abstract Task ReadAsync();
 
         /// <summary>
         /// Apply pending entries to the primary. Must block/retry until successful. 
+        /// Should not throw exceptions, but record them in <see cref="LastPrimaryIssue"/>
         /// </summary>
         protected abstract Task<int> WriteAsync();
 
@@ -81,8 +83,6 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Handle protocol messages.
         /// </summary>
-        /// <param name="payload"></param>
-        /// <returns></returns>
         protected virtual Task<IProtocolMessage> OnMessageReceived(IProtocolMessage payload)
         {
             // subclasses that define custom protocol messages must override this
@@ -92,8 +92,6 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Handle notification messages. Override this to handle notification subtypes.
         /// </summary>
-        /// <param name="payload"></param>
-        /// <returns></returns>
         protected virtual void OnNotificationReceived(INotificationMessage payload)
         {        
             var msg = payload as VersionNotificationMessage; 
@@ -116,6 +114,9 @@ namespace Orleans.Runtime.LogViews
             throw new ProtocolTransportException(string.Format("message type {0} not handled by OnNotificationReceived", payload.GetType().FullName));
         }
 
+        /// <summary>
+        /// The last version we have been notified of
+        /// </summary>
         private int lastVersionNotified;
 
         /// <summary>
@@ -126,7 +127,7 @@ namespace Orleans.Runtime.LogViews
             if (lastVersionNotified > this.GetConfirmedVersion())
             {
                 Services.Verbose("force refresh because of version notification v{0}", lastVersionNotified);
-                need_refresh = true;
+                needRefresh = true;
             }
         }
 
@@ -151,25 +152,35 @@ namespace Orleans.Runtime.LogViews
         }
 
         /// <summary>
-        /// The grain that is using this adaptor
+        /// The grain that is using this adaptor.
         /// </summary>
         protected ILogViewHost<TLogView, TLogEntry> Host { get; private set; }
 
+        /// <summary>
+        /// The runtime services required for implementing notifications between grain instances in different cluster.
+        /// </summary>
         protected IProtocolServices Services { get; private set; }
 
+        /// <summary>
+        /// The current multi-cluster configuration for this grain instance.
+        /// </summary>
         protected MultiClusterConfiguration Configuration { get; set; }
 
+        /// <summary>
+        /// The log view provider for this grain.
+        /// </summary>
         protected ILogViewProvider Provider;
 
         /// <summary>
         /// Tracks notifications sent. Created lazily since many copies will never need to send notifications.
         /// </summary>
-        private NotificationTracker notificationtracker;
-
+        private NotificationTracker notificationTracker;
 
         private const int max_notification_batch_size = 10000;
 
-
+        /// <summary>
+        /// Construct an instance, for the given parameters.
+        /// </summary>
         protected PrimaryBasedLogViewAdaptor(ILogViewHost<TLogView, TLogEntry> host, ILogViewProvider provider,
             TLogView initialstate, IProtocolServices services)
         {
@@ -181,6 +192,7 @@ namespace Orleans.Runtime.LogViews
             worker = new BatchWorkerFromDelegate(() => Work());
         }
 
+        /// <inheritdoc/>
         public virtual async Task Activate()
         {
             Services.Verbose2("Activation Started");
@@ -203,14 +215,15 @@ namespace Orleans.Runtime.LogViews
 
         private async Task KickOffInitialRead()
         {
-            need_initial_read = true;
+            needInitialRead = true;
             // kick off notification for initial read cycle with a bit of delay
             // so that we don't do this several times if user does strong sync
-            await Task.Delay(10);
-            Services.Verbose2("Notify (initial read)");
+            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            Services.Verbose2("Notify ({0})", nameof(KickOffInitialRead));
             worker.Notify();
         }
 
+        /// <inheritdoc/>
         public virtual async Task Deactivate()
         {
             Services.Verbose2("Deactivation Started");
@@ -241,7 +254,7 @@ namespace Orleans.Runtime.LogViews
         protected TLogView CopyTentativeState()
         {
             var state = TentativeView;
-            TentativeStateInternal = null; // to avoid aliasing
+            tentativeStateInternal = null; // to avoid aliasing
             return state;
         }
         /// called at beginning of WriteAsync to the current batch of updates
@@ -259,17 +272,17 @@ namespace Orleans.Runtime.LogViews
         ///  Tentative State. Represents Stable State + effects of pending updates.
         ///  Computed lazily (null if not in use)
         /// </summary>
-        private TLogView TentativeStateInternal;
+        private TLogView tentativeStateInternal;
 
         /// <summary>
         /// A flag that indicates to the worker that the client wants to refresh the state
         /// </summary>
-        private bool need_refresh;
+        private bool needRefresh;
 
         /// <summary>
         /// A flag that indicates that we have not read global state at all yet, and should do so
         /// </summary>
-        private bool need_initial_read;
+        private bool needInitialRead;
 
         /// <summary>
         /// Background worker which asynchronously sends operations to the leader
@@ -315,9 +328,12 @@ namespace Orleans.Runtime.LogViews
 
 
 
+
+
         #region Interface
 
-        public void Submit(TLogEntry logentry)
+        /// <inheritdoc />
+        public void Submit(TLogEntry logEntry)
         {
             if (!SupportSubmissions)
                 throw new InvalidOperationException("provider does not support submissions on cluster " + Services.MyClusterId);
@@ -326,12 +342,13 @@ namespace Orleans.Runtime.LogViews
 
             Services.Verbose2("Submit");
 
-            SubmitInternal(DateTime.UtcNow, logentry);
+            SubmitInternal(DateTime.UtcNow, logEntry);
 
             worker.Notify();
         }
 
-        public void SubmitRange(IEnumerable<TLogEntry> logentries)
+        /// <inheritdoc />
+        public void SubmitRange(IEnumerable<TLogEntry> logEntries)
         {
             if (!SupportSubmissions)
                 throw new InvalidOperationException("Provider does not support submissions on cluster " + Services.MyClusterId);
@@ -342,13 +359,14 @@ namespace Orleans.Runtime.LogViews
 
             var time = DateTime.UtcNow;
 
-            foreach (var e in logentries)
+            foreach (var e in logEntries)
                 SubmitInternal(time, e);
 
             worker.Notify();
         }
 
-        public Task<bool> TryAppend(TLogEntry logentry)
+        /// <inheritdoc />
+        public Task<bool> TryAppend(TLogEntry logEntry)
         {
             if (!SupportSubmissions)
                 throw new InvalidOperationException("Provider does not support submissions on cluster " + Services.MyClusterId);
@@ -359,14 +377,15 @@ namespace Orleans.Runtime.LogViews
 
             var promise = new TaskCompletionSource<bool>();
 
-            SubmitInternal(DateTime.UtcNow, logentry, GetConfirmedVersion() + pending.Count, promise);
+            SubmitInternal(DateTime.UtcNow, logEntry, GetConfirmedVersion() + pending.Count, promise);
 
             worker.Notify();
 
             return promise.Task;
         }
 
-        public Task<bool> TryAppendRange(IEnumerable<TLogEntry> logentries)
+        /// <inheritdoc />
+        public Task<bool> TryAppendRange(IEnumerable<TLogEntry> logEntries)
         {
             if (!SupportSubmissions)
                 throw new InvalidOperationException("Provider does not support submissions on cluster " + Services.MyClusterId);
@@ -380,7 +399,7 @@ namespace Orleans.Runtime.LogViews
             var pos = GetConfirmedVersion() + pending.Count;
 
             bool first = true;
-            foreach (var e in logentries)
+            foreach (var e in logEntries)
             {
                 SubmitInternal(time, e, pos++, first ? promise : null);
                 first = false;
@@ -392,9 +411,9 @@ namespace Orleans.Runtime.LogViews
         }
 
 
-        private const int Unconditional = -1;
+        private const int unconditional = -1;
 
-        private void SubmitInternal(DateTime time, TLogEntry logentry, int conditionalPosition = Unconditional, TaskCompletionSource<bool> resultPromise = null)
+        private void SubmitInternal(DateTime time, TLogEntry logentry, int conditionalPosition = unconditional, TaskCompletionSource<bool> resultPromise = null)
         {
             // create a submission entry
             var submissionentry = this.MakeSubmissionEntry(logentry);
@@ -406,21 +425,29 @@ namespace Orleans.Runtime.LogViews
             pending.Add(submissionentry);
 
             // if we have a tentative state in use, update it
-            if (this.TentativeStateInternal != null)
+            if (this.tentativeStateInternal != null)
             {
                 try
                 {
-                    Host.UpdateView(this.TentativeStateInternal, logentry);
+                    Host.UpdateView(this.tentativeStateInternal, logentry);
                 }
                 catch (Exception e)
                 {
-                    Services.CaughtViewUpdateException("PrimaryBasedLogViewAdaptor.SubmitInternal", e);
+                    Services.CaughtUserCodeException("UpdateView", nameof(SubmitInternal), e);
                 }
             }
 
-            Host.OnViewChanged(true, false);
+            try
+            {
+                Host.OnViewChanged(true, false);
+            }
+            catch (Exception e)
+            {
+                Services.CaughtUserCodeException("OnViewChanged", nameof(SubmitInternal), e);
+            }
         }
 
+        /// <inheritdoc />
         public TLogView TentativeView
         {
             get
@@ -428,14 +455,14 @@ namespace Orleans.Runtime.LogViews
                 if (stats != null)
                     stats.EventCounters["TentativeViewCalled"]++;
 
-                if (TentativeStateInternal == null)
+                if (tentativeStateInternal == null)
                     CalculateTentativeState();
 
-                return TentativeStateInternal;
+                return tentativeStateInternal;
             }
         }
 
-
+        /// <inheritdoc />
         public TLogView ConfirmedView
         {
             get
@@ -447,6 +474,7 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
+        /// <inheritdoc />
         public int ConfirmedVersion
         {
             get
@@ -461,17 +489,17 @@ namespace Orleans.Runtime.LogViews
         /// <summary>
         /// Called from network
         /// </summary>
-        /// <param name="payload"></param>
+        /// <param name="payLoad"></param>
         /// <returns></returns>
-        public async Task<IProtocolMessage> OnProtocolMessageReceived(IProtocolMessage payload)
+        public async Task<IProtocolMessage> OnProtocolMessageReceived(IProtocolMessage payLoad)
         {
-            var notificationmessage = payload as INotificationMessage;
+            var notificationMessage = payLoad as INotificationMessage;
 
-            if (notificationmessage != null)
+            if (notificationMessage != null)
             {
-                Services.Verbose("NotificationReceived v{0}", notificationmessage.Version);
+                Services.Verbose("NotificationReceived v{0}", notificationMessage.Version);
 
-                OnNotificationReceived(notificationmessage);
+                OnNotificationReceived(notificationMessage);
 
                 // poke worker so it will process the notifications
                 worker.Notify();
@@ -481,7 +509,7 @@ namespace Orleans.Runtime.LogViews
             else
             {
                 //it's a protocol message
-                return await OnMessageReceived(payload);
+                return await OnMessageReceived(payLoad);
             }
         }
 
@@ -490,40 +518,45 @@ namespace Orleans.Runtime.LogViews
         /// Called by MultiClusterOracle when there is a configuration change.
         /// </summary>
         /// <returns></returns>
-        public async Task OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration newconf)
+        public async Task OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration newConfig)
         {
-            Debug.Assert(newconf != null);
+            Debug.Assert(newConfig != null);
 
-            var oldconf = Configuration;
+            var oldConfig = Configuration;
 
             // process only if newer than what we already have
-            if (!MultiClusterConfiguration.OlderThan(oldconf, newconf))
+            if (!MultiClusterConfiguration.OlderThan(oldConfig, newConfig))
                 return;
 
-            Services.Verbose("Processing Configuration {0}", newconf);
+            Services.Verbose("Processing Configuration {0}", newConfig);
 
-            await this.OnConfigurationChange(newconf); // updates Configuration and does any work required
+            await this.OnConfigurationChange(newConfig); // updates Configuration and does any work required
 
-            var added = oldconf == null ? newconf.Clusters : newconf.Clusters.Except(oldconf.Clusters);
+            var added = oldConfig == null ? newConfig.Clusters : newConfig.Clusters.Except(oldConfig.Clusters);
 
             // if the multi-cluster is operated correctly, this grain should not be active before we are joined to the multicluster
             // but if we detect that anyway here, enforce a refresh to reduce risk of missed notifications
-            if (!need_initial_read && added.Contains(Services.MyClusterId))
+            if (!needInitialRead && added.Contains(Services.MyClusterId))
             {
-                need_refresh = true;
+                needRefresh = true;
                 Services.Verbose("Refresh Because of Join");
                 worker.Notify();
             }
 
+            if (notificationTracker != null)
+            {
+                var remoteInstances = Services.RegistrationStrategy.GetRemoteInstances(newConfig, Services.MyClusterId).ToList();
+                notificationTracker.UpdateNotificationTargets(remoteInstances);
+            }
         }
 
 
 
         #endregion
 
-
-
-        // method is virtual so subclasses can add their own events
+        /// <summary>
+        /// method is virtual so subclasses can add their own events
+        /// </summary>
         public virtual void EnableStatsCollection()
         {
 
@@ -548,31 +581,37 @@ namespace Orleans.Runtime.LogViews
             stats.StabilizationLatenciesInMsecs = new List<int>();
         }
 
+        /// <summary>
+        /// Disable stats collection
+        /// </summary>
         public void DisableStatsCollection()
         {
             stats = null;
         }
 
+        /// <summary>
+        /// Get states
+        /// </summary>
+        /// <returns></returns>
         public LogViewStatistics GetStats()
         {
             return stats;
         }
 
-
         private void CalculateTentativeState()
         {
             // copy the master
-            this.TentativeStateInternal = (TLogView)SerializationManager.DeepCopy(LastConfirmedView());
+            this.tentativeStateInternal = (TLogView)SerializationManager.DeepCopy(LastConfirmedView());
 
             // Now apply all operations in pending 
             foreach (var u in this.pending)
                 try
                 {
-                    Host.UpdateView(this.TentativeStateInternal, u.Entry);
+                    Host.UpdateView(this.tentativeStateInternal, u.Entry);
                 }
                 catch (Exception e)
                 {
-                    Services.CaughtViewUpdateException("PrimaryBasedLogViewAdaptor.CalculateTentativeState", e);
+                    Services.CaughtUserCodeException("UpdateView", nameof(CalculateTentativeState), e);
                 }
         }
 
@@ -593,26 +632,26 @@ namespace Orleans.Runtime.LogViews
 
             NotifyViewChanges(ref version);
 
-            bool have_to_write = (pending.Count != 0);
+            bool haveToWrite = (pending.Count != 0);
 
-            bool have_to_read = need_initial_read || (need_refresh && !have_to_write);
+            bool haveToRead = needInitialRead || (needRefresh && !haveToWrite);
 
-            Services.Verbose("<3 Storage htr={0} htw={1}", have_to_read, have_to_write);
+            Services.Verbose("<3 Storage htr={0} htw={1}", haveToRead, haveToWrite);
 
             try
             {
-                if (have_to_read)
+                if (haveToRead)
                 {
-                    need_refresh = need_initial_read = false; // retrieving fresh version
+                    needRefresh = needInitialRead = false; // retrieving fresh version
 
                     await ReadAsync();
 
                     NotifyViewChanges(ref version);
                 }
 
-                if (have_to_write)
+                if (haveToWrite)
                 {
-                    need_refresh = need_initial_read = false; // retrieving fresh version
+                    needRefresh = needInitialRead = false; // retrieving fresh version
 
                     await UpdatePrimary();
 
@@ -624,7 +663,7 @@ namespace Orleans.Runtime.LogViews
             {
                 // this should never happen - we are supposed to catch and store exceptions 
                 // in the correct place (LastPrimaryException or notification trackers)
-                Services.ProtocolError("WorkerCycle threw exception " + e, true);
+                Services.ProtocolError($"Exception in Worker Cycle: {e}", true);
 
             }
 
@@ -651,24 +690,31 @@ namespace Orleans.Runtime.LogViews
                         return; // no updates to write.
 
                     // try to write the updates as a batch
-                    var writeresult = await WriteAsync();
+                    var writeResult = await WriteAsync();
 
-                    NotifyViewChanges(ref version, writeresult);
+                    NotifyViewChanges(ref version, writeResult);
 
                     // if the batch write failed due to conflicts, retry.
-                    if (writeresult == 0)
+                    if (writeResult == 0)
                         continue;
 
-                    Host.OnViewChanged(false, true);
+                    try
+                    {
+                        Host.OnViewChanged(false, true);
+                    }
+                    catch (Exception e)
+                    {
+                        Services.CaughtUserCodeException("OnViewChanged", nameof(UpdatePrimary), e);
+                    }
 
                     // notify waiting promises of the success of conditional updates
-                    NotifyPromises(writeresult, true);
+                    NotifyPromises(writeResult, true);
 
                     // record stabilization time, for statistics
                     if (stats != null)
                     {
                         var timeNow = DateTime.UtcNow;
-                        for (int i = 0; i < writeresult; i++)
+                        for (int i = 0; i < writeResult; i++)
                         {
                             var latency = timeNow - pending[i].SubmissionTime;
                             stats.StabilizationLatenciesInMsecs.Add(latency.Milliseconds);
@@ -676,62 +722,66 @@ namespace Orleans.Runtime.LogViews
                     }
 
                     // remove completed updates from queue
-                    pending.RemoveRange(0, writeresult);
+                    pending.RemoveRange(0, writeResult);
 
                     return;
                 }
                 catch (Exception e)
                 {
-                    LastPrimaryException = e; // store last exception for inspection by user code
-
-                    // retry again
-                    continue;
+                    // this should never happen - we are supposed to catch and store exceptions 
+                    // in the correct place (LastPrimaryException or notification trackers)
+                    Services.ProtocolError($"Exception in {nameof(UpdatePrimary)}: {e}", true);
                 }
             }
         }
+        
 
-        private void NotifyViewChanges(ref int version, int numwritten = 0)
+        private void NotifyViewChanges(ref int version, int numWritten = 0)
         {
             var v = GetConfirmedVersion();
-            bool tentativechanged = (v != version + numwritten);
-            bool confirmedchanged = (v != version);
-            if (tentativechanged || confirmedchanged)
+            bool tentativeChanged = (v != version + numWritten);
+            bool confirmedChanged = (v != version);
+            if (tentativeChanged || confirmedChanged)
             {
-                TentativeStateInternal = null; // conservative.
-                Host.OnViewChanged(tentativechanged, confirmedchanged);
+                tentativeStateInternal = null; // conservative.
+                try
+                {
+                    Host.OnViewChanged(tentativeChanged, confirmedChanged);
+                }
+                catch (Exception e)
+                {
+                    Services.CaughtUserCodeException("OnViewChanged", nameof(NotifyViewChanges), e);
+                }
                 version = v;
             }
         }
 
         /// <summary>
-        /// returns last observed communication exception, or null if communication was successful.
-        /// Exceptions are either observed while communicating with the primary, or while trying to 
-        /// notify other clusters. The latter type of exception is reported only if there is not a
-        /// exception of the former type.
+        /// returns a list of all connection health issues that have not been restored yet.
+        /// Such issues are observed while communicating with the primary, or while trying to 
+        /// notify other clusters, for example.
         /// </summary>
-        public Exception LastException
+        public IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
             get
             {
-                if (LastPrimaryException != null)
-                    return LastPrimaryException;
-                if (notificationtracker != null)
-                    return notificationtracker.LastException;
-                return null;
+                if (LastPrimaryIssue.Issue != null)
+                    yield return LastPrimaryIssue.Issue;
+                if (notificationTracker != null)
+                    foreach (var x in notificationTracker.UnresolvedConnectionIssues)
+                        yield return x;
             }
         }
 
         /// <summary>
-        /// Store the last exception that occurred while communicating with the primary.
-        /// Is null if the last communication was successful.
+        /// Store the last issue that occurred while reading or updating primary.
+        /// Is null if successful.
         /// </summary>
-        protected Exception LastPrimaryException;
+        protected RecordedConnectionIssue LastPrimaryIssue;
 
-        /// <summary>
-        /// Wait for all local updates to finish, and retrieve latest global state. 
-        /// May require global coordination.
-        /// </summary>
-        /// <returns></returns>
+     
+
+        /// <inheritdoc />
         public async Task SynchronizeNowAsync()
         {
             if (stats != null)
@@ -739,12 +789,13 @@ namespace Orleans.Runtime.LogViews
 
             Services.Verbose("SynchronizeNowStart");
 
-            need_refresh = true;
-            await worker.NotifyAndWait();
+            needRefresh = true;
+            await worker.NotifyAndWaitForWorkToBeServiced();
 
             Services.Verbose("SynchronizeNowComplete");
         }
 
+        /// <inheritdoc/>
         public IEnumerable<TLogEntry> UnconfirmedSuffix
         {
             get
@@ -753,6 +804,7 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
+        /// <inheritdoc />
         public async Task ConfirmSubmittedEntriesAsync()
         {
             if (stats != null)
@@ -785,54 +837,74 @@ namespace Orleans.Runtime.LogViews
         protected void RemoveStaleConditionalUpdates()
         {
             int version = GetConfirmedVersion();
-            bool foundfailedconditionalupdates = false;
+            bool foundFailedConditionalUpdates = false;
 
             for (int pos = 0; pos < pending.Count; pos++)
             {
-                var submissionentry = pending[pos];
-                if (submissionentry.ConditionalPosition != Unconditional
-                    && (foundfailedconditionalupdates ||
-                           submissionentry.ConditionalPosition != (version + pos)))
+                var submissionEntry = pending[pos];
+                if (submissionEntry.ConditionalPosition != unconditional
+                    && (foundFailedConditionalUpdates ||
+                           submissionEntry.ConditionalPosition != (version + pos)))
                 {
-                    foundfailedconditionalupdates = true;
-                    if (submissionentry.ResultPromise != null)
-                        submissionentry.ResultPromise.SetResult(false);
+                    foundFailedConditionalUpdates = true;
+                    if (submissionEntry.ResultPromise != null)
+                        submissionEntry.ResultPromise.SetResult(false);
                 }
                 pos++;
             }
 
-            if (foundfailedconditionalupdates)
+            if (foundFailedConditionalUpdates)
             {
-                pending.RemoveAll(e => e.ConditionalPosition != Unconditional);
-                TentativeStateInternal = null;
-                Host.OnViewChanged(true, false);
+                pending.RemoveAll(e => e.ConditionalPosition != unconditional);
+                tentativeStateInternal = null;
+                try
+                {
+                    Host.OnViewChanged(true, false);
+                }
+                catch (Exception e)
+                {
+                    Services.CaughtUserCodeException("OnViewChanged", nameof(RemoveStaleConditionalUpdates), e);
+                }
             }
         }
 
+        /// <summary>
+        /// Send a notification message to all remote instances
+        /// </summary>
+        /// <param name="msg">the notification message to send</param>
+        /// <param name="exclude">if non-null, exclude this cluster id from the notification</param>
         protected void BroadcastNotification(INotificationMessage msg, string exclude = null)
         {
-            // if there is only one cluster, or if we are global single instance, don't send notifications.
-            if (Services.MultiClusterConfiguration.Clusters.Count == 1
-                || Services.RegistrationStrategy != ClusterLocalRegistration.Singleton)
+            var remoteinstances = Services.RegistrationStrategy.GetRemoteInstances(Configuration, Services.MyClusterId);
+
+            // if there is only one cluster, don't send notifications.
+            if (remoteinstances.Count() == 0)
                 return;
 
             // create notification tracker if we haven't already
-            if (notificationtracker == null)
-                notificationtracker = new NotificationTracker(this.Services, Configuration, max_notification_batch_size);
+            if (notificationTracker == null)
+                notificationTracker = new NotificationTracker(this.Services, remoteinstances, max_notification_batch_size, Host);
 
-            notificationtracker.BroadcastNotification(msg, exclude);
+            notificationTracker.BroadcastNotification(msg, exclude);
         }
     }
 
     /// <summary>
     /// Base class for submission entries stored in pending queue. 
     /// </summary>
-    /// <typeparam name="E"></typeparam>
-    public class SubmissionEntry<E>
+    /// <typeparam name="TLogEntry">The type of entry for this submission</typeparam>
+    public class SubmissionEntry<TLogEntry>
     {
-        public E Entry;
+        /// <summary> The log entry that is submitted. </summary>
+        public TLogEntry Entry;
+
+        /// <summary> A timestamp for this submission. </summary>
         public DateTime SubmissionTime;
+
+        /// <summary> For conditional updates, a promise that resolves once it is known whether the update was successful or not.</summary>
         public TaskCompletionSource<bool> ResultPromise;
+
+        /// <summary> For conditional updates, the log position at which this update is supposed to be applied. </summary>
         public int ConditionalPosition;
     }
 

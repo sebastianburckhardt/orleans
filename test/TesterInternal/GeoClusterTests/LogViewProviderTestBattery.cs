@@ -1,6 +1,7 @@
 ﻿using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
+using Orleans.LogViews;
 using Orleans.TestingHost;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using UnitTests.GrainInterfaces;
 using Xunit;
 using Xunit.Abstractions;
+using TestExtensions;
 
 namespace Tests.GeoClusterTests
 {
@@ -28,7 +30,7 @@ namespace Tests.GeoClusterTests
             public ClientWrapper(string name, int gatewayport, string clusterId, Action<ClientConfiguration> customizer)
                : base(name, gatewayport, clusterId, customizer)
             {
-                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
+                systemManagement = GrainClient.GrainFactory.GetGrain<IManagementGrain>(0);
             }
 
             public string GetGrainRef(string grainclass, int i)
@@ -39,85 +41,85 @@ namespace Tests.GeoClusterTests
             public void SetALocal(string grainclass, int i, int a)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.SetALocal(a).Wait();
+                grainRef.SetALocal(a).GetResult();
             }
 
             public void SetAGlobal(string grainclass, int i, int a)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.SetAGlobal(a).Wait();
+                grainRef.SetAGlobal(a).GetResult();
             }
 
             public Tuple<int, bool> SetAConditional(string grainclass, int i, int a)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.SetAConditional(a).Result;
+                return grainRef.SetAConditional(a).GetResult();
             }
 
             public void IncrementAGlobal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.IncrementAGlobal().Wait();
+                grainRef.IncrementAGlobal().GetResult();
             }
 
             public void IncrementALocal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.IncrementALocal().Wait();
+                grainRef.IncrementALocal().GetResult();
             }
 
             public int GetAGlobal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetAGlobal().Result;
+                return grainRef.GetAGlobal().GetResult();
             }
 
             public int GetALocal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetALocal().Result;
+                return grainRef.GetALocal().GetResult();
             }    
 
             public void AddReservationLocal(string grainclass, int i, int x)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.AddReservationLocal(x).Wait();
+                grainRef.AddReservationLocal(x).GetResult();
             }
 
             public void RemoveReservationLocal(string grainclass, int i, int x)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.RemoveReservationLocal(x).Wait();
+                grainRef.RemoveReservationLocal(x).GetResult();
             }
 
             public int[] GetReservationsGlobal(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetReservationsGlobal().Result;
+                return grainRef.GetReservationsGlobal().GetResult();
             }
 
             public void Synchronize(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                grainRef.SynchronizeGlobalState().Wait();
+                grainRef.SynchronizeGlobalState().GetResult();
             }
 
             public void InjectClusterConfiguration(params string[] clusters)
             {
-                systemManagement.InjectMultiClusterConfiguration(clusters).Wait();
+                systemManagement.InjectMultiClusterConfiguration(clusters).GetResult();
             }
             IManagementGrain systemManagement;
 
             public long GetConfirmedVersion(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetConfirmedVersion().Result;
+                return grainRef.GetConfirmedVersion().GetResult();
             }
 
-            public Exception GetLastException(string grainclass, int i)
+            public IEnumerable<ConnectionIssue> GetUnresolvedConnectionIssues(string grainclass, int i)
             {
                 var grainRef = GrainClient.GrainFactory.GetGrain<ISimpleLogViewGrain>(i, grainclass);
-                return grainRef.GetLastException().Result;
+                return grainRef.GetUnresolvedConnectionIssues().GetResult();
             }
 
         }
@@ -155,7 +157,8 @@ namespace Tests.GeoClusterTests
                 for (int i = 0; i < numclusters; i++)
                 {
                     var clustername = Cluster[i] = ((char)('A' + i)).ToString();
-                    NewGeoCluster(globalserviceid, clustername, 1, ReplicationProviderConfiguration.ConfigureLogViewProvidersForTesting);
+                    NewGeoCluster(globalserviceid, clustername, 1,
+                        cfg => LogViewProviderConfiguration.ConfigureLogViewProvidersForTesting(TestDefaultConfiguration.DataConnectionString, cfg));
                     Client[i] = NewClient<ClientWrapper>(clustername, 0);
                 }
 
@@ -187,6 +190,8 @@ namespace Tests.GeoClusterTests
         protected Random random;
         protected int numclusters;
 
+        private const int Xyz = 333;
+
         public async Task RunChecksOnGrainClass(string grainClass, bool may_update_in_all_clusters, int phases)
         {
             Random random = new Random();
@@ -205,16 +210,16 @@ namespace Tests.GeoClusterTests
                 for (int i = 0; i < numclusters; i++) 
                    AssertEqual(0, Client[i].GetALocal(grainClass, x), grainidentity); 
                 // write global on client 0
-                Client[0].SetAGlobal(grainClass, x, 333);
+                Client[0].SetAGlobal(grainClass, x, Xyz);
                 // read global on other clients
                 for (int i = 1; i < numclusters; i++)
                 {
                     int r = Client[i].GetAGlobal(grainClass, x);
-                    AssertEqual(333, r, grainidentity);
+                    AssertEqual(Xyz, r, grainidentity);
                 }
                 // check local stability
                 for (int i = 0; i < numclusters; i++)
-                    AssertEqual(333, Client[i].GetALocal(grainClass, x), grainidentity);
+                    AssertEqual(Xyz, Client[i].GetALocal(grainClass, x), grainidentity);
                 // check versions
                 for (int i = 0; i < numclusters; i++)
                     AssertEqual(1, Client[i].GetConfirmedVersion(grainClass, x), grainidentity);
@@ -342,10 +347,10 @@ namespace Tests.GeoClusterTests
                 for (int i = 1; i < numclusters; i++)
                 {
                     int c = i;
-                    t.Add(Task.Run(() =>
+                    t.Add(Task.Run(async () =>
                     {
                         while (Client[c].GetALocal(grainClass, x) != 1)
-                            System.Threading.Thread.Sleep(100);
+                            await Task.Delay(100);
                         done[c - 1] = true;
                     }));
                 }
@@ -361,7 +366,7 @@ namespace Tests.GeoClusterTests
                 AssertEqual(true, done.All(b => b), string.Format("checker6({0}): update did not propagate within 20 sec", preload));
             };
 
-            Func<int, Task> checker7 = (int variation) => Task.Run(() =>
+            Func<int, Task> checker7 = (int variation) => Task.Run(async () =>
             {
                 int x = GetRandom();
 
@@ -374,14 +379,14 @@ namespace Tests.GeoClusterTests
 
                 // write conditional on client 0, should always succeed
                 {
-                    var result = Client[0].SetAConditional(grainClass, x, 333);
+                    var result = Client[0].SetAConditional(grainClass, x, Xyz);
                     AssertEqual(0, result.Item1, grainidentity);
                     AssertEqual(true, result.Item2, grainidentity);
                     AssertEqual(1, Client[0].GetConfirmedVersion(grainClass, x), grainidentity);
                 }
 
                 if ((variation / 4) % 2 == 1)
-                    System.Threading.Thread.Sleep(100);
+                    await Task.Delay(100);
 
                 // write conditional on Client[1], may or may not succeed based on timing
                 {
@@ -392,10 +397,10 @@ namespace Tests.GeoClusterTests
                         // must have updated as a result
                         AssertEqual(1, Client[1].GetConfirmedVersion(grainClass, x), grainidentity);
                         // check stability
-                        AssertEqual(333, Client[0].GetALocal(grainClass, x), grainidentity);
-                        AssertEqual(333, Client[1].GetALocal(grainClass, x), grainidentity);
-                        AssertEqual(333, Client[0].GetAGlobal(grainClass, x), grainidentity);
-                        AssertEqual(333, Client[1].GetAGlobal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[0].GetALocal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[1].GetALocal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[0].GetAGlobal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[1].GetAGlobal(grainClass, x), grainidentity);
                     }
                     else // was up-to-date, thus succeeded
                     {

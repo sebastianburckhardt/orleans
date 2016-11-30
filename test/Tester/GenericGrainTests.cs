@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Runtime;
+using TestExtensions;
 using TestGrainInterfaces;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
 
 namespace UnitTests.General
@@ -676,6 +676,22 @@ namespace UnitTests.General
             await grain.Add(42);
             result = await grain.GetCount();
             Assert.Equal(1, result);
+        }
+
+        [Fact, TestCategory("Functional"), TestCategory("Persistence")]
+        public async Task Generic_GrainWithValueTypeState()
+        {
+            Guid id = Guid.NewGuid();
+            var grain = GrainClient.GrainFactory.GetGrain<IValueTypeTestGrain>(id);
+
+            var initial = await grain.GetStateData();
+            Assert.Equal(new ValueTypeTestData(0), initial);
+
+            var expectedValue = new ValueTypeTestData(42);
+
+            await grain.SetStateData(expectedValue);
+
+            Assert.Equal(expectedValue, await grain.GetStateData());
         }
 
         [Fact(Skip = "https://github.com/dotnet/orleans/issues/1655 Casting from non-generic to generic interface fails with an obscure error message"), TestCategory("Functional"), TestCategory("Cast"), TestCategory("Generics")]
