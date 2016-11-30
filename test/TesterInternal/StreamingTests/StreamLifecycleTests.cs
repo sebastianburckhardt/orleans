@@ -1,34 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Orleans;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace UnitTests.StreamingTests
 {
-    public class StreamLifecycleTests : HostedTestClusterPerTest
+    [TestCategory("Streaming"), TestCategory("Cleanup")]
+    public class StreamLifecycleTests : TestClusterPerTest
     {
-        protected static readonly TestingSiloOptions SiloRunOptions = new TestingSiloOptions
-        {
-            StartFreshOrleans = true,
-            SiloConfigFile = new FileInfo("Config_StreamProviders.xml"),
-            LivenessType = GlobalConfiguration.LivenessProviderType.MembershipTableGrain,
-            ReminderServiceType = GlobalConfiguration.ReminderServiceProviderType.ReminderTableGrain
-        };
-
-        protected static readonly TestingClientOptions ClientRunOptions = new TestingClientOptions
-        {
-            ClientConfigFile = new FileInfo("ClientConfig_StreamProviders.xml")
-        };
+        public const string AzureQueueStreamProviderName = StreamTestsConstants.AZURE_QUEUE_STREAM_PROVIDER_NAME;
+        public const string SmsStreamProviderName = StreamTestsConstants.SMS_STREAM_PROVIDER_NAME;
 
         protected Guid StreamId;
         protected string StreamProviderName;
@@ -36,12 +25,30 @@ namespace UnitTests.StreamingTests
 
         private readonly ITestOutputHelper output;
         private IActivateDeactivateWatcherGrain watcher;
-        
-        public override TestingSiloHost CreateSiloHost()
+
+        public override TestCluster CreateTestCluster()
         {
-            return new TestingSiloHost(SiloRunOptions, ClientRunOptions);
+            var options = new TestClusterOptions();
+
+            options.ClusterConfiguration.AddMemoryStorageProvider("MemoryStore", numStorageGrains: 1);
+
+            options.ClusterConfiguration.AddAzureTableStorageProvider("AzureStore", deleteOnClear: true);
+            options.ClusterConfiguration.AddAzureTableStorageProvider("PubSubStore", deleteOnClear: true, useJsonFormat: false);
+
+            options.ClusterConfiguration.AddSimpleMessageStreamProvider(SmsStreamProviderName, fireAndForgetDelivery: false);
+            options.ClusterConfiguration.AddSimpleMessageStreamProvider("SMSProviderDoNotOptimizeForImmutableData", fireAndForgetDelivery: false, optimizeForImmutableData: false);
+
+            options.ClusterConfiguration.AddAzureQueueStreamProvider(AzureQueueStreamProviderName);
+            options.ClusterConfiguration.AddAzureQueueStreamProvider("AzureQueueProvider2");
+
+            options.ClusterConfiguration.Globals.MaxMessageBatchingSize = 100;
+
+            options.ClientConfiguration.AddSimpleMessageStreamProvider(SmsStreamProviderName, fireAndForgetDelivery: false);
+            options.ClientConfiguration.AddAzureQueueStreamProvider(AzureQueueStreamProviderName);
+
+            return new TestCluster(options);
         }
-        
+
         public StreamLifecycleTests(ITestOutputHelper output)
         {
             this.output = output;
@@ -50,38 +57,38 @@ namespace UnitTests.StreamingTests
             StreamProviderName = StreamTestsConstants.SMS_STREAM_PROVIDER_NAME;
             StreamNamespace = StreamTestsConstants.StreamLifecycleTestsNamespace;
         }
-        
+
         public override void Dispose()
         {
             watcher.Clear().WaitWithThrow(TimeSpan.FromSeconds(15));
             base.Dispose();
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Cleanup")]
+        [Fact, TestCategory("Functional")]
         public async Task StreamCleanup_Deactivate()
         {
             await DoStreamCleanupTest_Deactivate(false, false);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Cleanup")]
+        [Fact, TestCategory("Functional")]
         public async Task StreamCleanup_BadDeactivate()
         {
             await DoStreamCleanupTest_Deactivate(true, false);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Cleanup")]
+        [Fact, TestCategory("Functional")]
         public async Task StreamCleanup_UseAfter_Deactivate()
         {
             await DoStreamCleanupTest_Deactivate(false, true);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Cleanup")]
+        [Fact, TestCategory("Functional")]
         public async Task StreamCleanup_UseAfter_BadDeactivate()
         {
             await DoStreamCleanupTest_Deactivate(true, true);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Cleanup")]
+        [Fact, TestCategory("Functional")]
         public async Task Stream_Lifecycle_AddRemoveProducers()
         {
             string testName = "Stream_Lifecycle_AddRemoveProducers";
@@ -103,7 +110,7 @@ namespace UnitTests.StreamingTests
             string when = "round 1";
             await IncrementalAddProducers(producers, when);
             expectedReceived += numProducers;
-            Assert.AreEqual(expectedReceived, await consumer.GetReceivedCount(), "ReceivedCount after " + when);
+            Assert.Equal(expectedReceived, await consumer.GetReceivedCount());
 
             for (int i = producers.Length; i > 0; i--)
             {
@@ -118,7 +125,7 @@ namespace UnitTests.StreamingTests
             when = "round 2";
             await IncrementalAddProducers(producers, when);
             expectedReceived += numProducers;
-            Assert.AreEqual(expectedReceived, await consumer.GetReceivedCount(), "ReceivedCount after " + when);
+            Assert.Equal(expectedReceived, await consumer.GetReceivedCount());
 
             List<Task> promises = new List<Task>();
             for (int i = producers.Length; i > 0; i--)
@@ -136,7 +143,7 @@ namespace UnitTests.StreamingTests
             when = "round 3";
             await IncrementalAddProducers(producers, when);
             expectedReceived += numProducers;
-            Assert.AreEqual(expectedReceived, await consumer.GetReceivedCount(), "ReceivedCount after " + when);
+            Assert.Equal(expectedReceived, await consumer.GetReceivedCount());
         }
 
         private async Task IncrementalAddProducers(IStreamLifecycleProducerGrain[] producers, string when)
@@ -149,7 +156,7 @@ namespace UnitTests.StreamingTests
 
                 // These Producers test grains always send first message when they register
                 await StreamTestUtils.CheckPubSubCounts(
-                    output, 
+                    output,
                     string.Format("producer #{0} create - {1}", i, when),
                     i, 1,
                     StreamId, StreamProviderName, StreamNamespace);
@@ -173,12 +180,12 @@ namespace UnitTests.StreamingTests
             await StreamTestUtils.CheckPubSubCounts(output, "after first producer added", 1, 1,
                 StreamId, StreamProviderName, StreamNamespace);
 
-            Assert.AreEqual(1, await producer1.GetSendCount(), "SendCount after first send");
+            Assert.Equal(1, await producer1.GetSendCount());  // "SendCount after first send"
 
             var activations = await watcher.GetActivateCalls();
             var deactivations = await watcher.GetDeactivateCalls();
-            Assert.AreEqual(2, activations.Count(), "Number of activations");
-            Assert.AreEqual(0, deactivations.Count(), "Number of deactivations");
+            Assert.Equal(2, activations.Length);
+            Assert.Equal(0, deactivations.Length);
 
             int expectedNumProducers;
             if (uncleanShutdown)
@@ -194,7 +201,7 @@ namespace UnitTests.StreamingTests
             await WaitForDeactivation();
 
             deactivations = await watcher.GetDeactivateCalls();
-            Assert.AreEqual(1, deactivations.Count(), "Number of deactivations");
+            Assert.Equal(1, deactivations.Length);
 
             // Test grains that did unclean shutdown will not have cleaned up yet, so PubSub counts are unchanged here for them
             await StreamTestUtils.CheckPubSubCounts(output, "after deactivate first producer", expectedNumProducers, 1,
@@ -214,18 +221,18 @@ namespace UnitTests.StreamingTests
                 // These Producer test grains always send first message when they BecomeProducer, so should be registered with PubSub
                 await StreamTestUtils.CheckPubSubCounts(output, "after add second producer", 1, 2,
                     StreamId, StreamProviderName, StreamNamespace);
-                Assert.AreEqual(1, await producer1.GetSendCount(), "SendCount (Producer#1) after second publisher added");
-                Assert.AreEqual(1, await producer2.GetSendCount(), "SendCount (Producer#2) after second publisher added");
+                Assert.Equal(1, await producer1.GetSendCount()); // "SendCount (Producer#1) after second publisher added");
+                Assert.Equal(1, await producer2.GetSendCount()); // "SendCount (Producer#2) after second publisher added");
 
-                Assert.AreEqual(2, await consumer1.GetReceivedCount(), "ReceivedCount (Consumer#1) after second publisher added");
-                Assert.AreEqual(1, await consumer2.GetReceivedCount(), "ReceivedCount (Consumer#2) after second publisher added");
+                Assert.Equal(2, await consumer1.GetReceivedCount()); // "ReceivedCount (Consumer#1) after second publisher added");
+                Assert.Equal(1, await consumer2.GetReceivedCount()); // "ReceivedCount (Consumer#2) after second publisher added");
 
                 await producer2.SendItem(3);
 
                 await StreamTestUtils.CheckPubSubCounts(output, "after second producer send", 1, 2,
                     StreamId, StreamProviderName, StreamNamespace);
-                Assert.AreEqual(3, await consumer1.GetReceivedCount(), "ReceivedCount (Consumer#1) after second publisher send");
-                Assert.AreEqual(2, await consumer2.GetReceivedCount(), "ReceivedCount (Consumer#2) after second publisher send");
+                Assert.Equal(3, await consumer1.GetReceivedCount()); // "ReceivedCount (Consumer#1) after second publisher send");
+                Assert.Equal(2, await consumer2.GetReceivedCount()); // "ReceivedCount (Consumer#2) after second publisher send");
             }
 
             StreamTestUtils.LogEndTest(testName, logger);

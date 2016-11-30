@@ -7,10 +7,9 @@ using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Orleans.TestingHost.Utils;
 using Tester;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace UnitTests.StreamingTests
 {
@@ -76,8 +75,8 @@ namespace UnitTests.StreamingTests
             var grain = GrainClient.GrainFactory.GetGrain<IMultipleImplicitSubscriptionGrain>(streamId);
             var counters = await grain.GetCounters();
 
-            Assert.AreEqual(nRedEvents, counters.Item1);
-            Assert.AreEqual(nBlueEvents, counters.Item2);
+            Assert.Equal(nRedEvents, counters.Item1);
+            Assert.Equal(nBlueEvents, counters.Item2);
         }
     }
 
@@ -99,7 +98,7 @@ namespace UnitTests.StreamingTests
         public override void Dispose()
         {
             var deploymentId = HostedCluster.DeploymentId;
-            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, StorageTestConstants.DataConnectionString).Wait();
+            AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, TestDefaultConfiguration.DataConnectionString).Wait();
         }
 
         [Fact, TestCategory("Functional")]
@@ -202,7 +201,7 @@ namespace UnitTests.StreamingTests
             logger.Info("CheckCounters: numProduced = {0}, numConsumed = {1}", numProduced, numConsumed);
             if (assertIsTrue)
             {
-                Assert.AreEqual(numProduced, numConsumed, String.Format("numProduced = {0}, numConsumed = {1}", numProduced, numConsumed));
+                Assert.Equal(numProduced, numConsumed);
                 return true;
             }
             else

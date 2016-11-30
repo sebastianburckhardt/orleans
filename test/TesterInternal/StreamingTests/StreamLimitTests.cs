@@ -1,41 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Streams;
 using Orleans.TestingHost;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
-using UnitTests.Tester;
 using Xunit;
 using Xunit.Abstractions;
 
-//using UnitTests.Streaming.Reliability;
-
 namespace UnitTests.StreamingTests
 {
-    public class StreamLimitTests : HostedTestClusterPerTest
+    [TestCategory("Streaming"), TestCategory("Limits")]
+    public class StreamLimitTests : TestClusterPerTest
     {
-        private static readonly TestingSiloOptions siloOptions = new TestingSiloOptions
-        {
-            StartFreshOrleans = true,
-            //StartSecondary = false,
-            //StartOutOfProcess = false,
-            SiloConfigFile = new FileInfo("Config_StreamProviders.xml"),
-            LivenessType = GlobalConfiguration.LivenessProviderType.MembershipTableGrain,
-            ReminderServiceType = GlobalConfiguration.ReminderServiceProviderType.ReminderTableGrain
-        };
-
-        private static readonly TestingClientOptions clientOptions = new TestingClientOptions
-        {
-            ClientConfigFile = new FileInfo("ClientConfigurationForTesting.xml")
-        };
+        public const string AzureQueueStreamProviderName = StreamTestsConstants.AZURE_QUEUE_STREAM_PROVIDER_NAME;
+        public const string SmsStreamProviderName = StreamTestsConstants.SMS_STREAM_PROVIDER_NAME;
 
         private static int MaxExpectedPerStream = 500;
         private static int MaxConsumersPerStream;
@@ -49,26 +34,40 @@ namespace UnitTests.StreamingTests
         private string StreamNamespace;
         private readonly ITestOutputHelper output;
 
-        public override TestingSiloHost CreateSiloHost()
+        public override TestCluster CreateTestCluster()
         {
-            //MaxConsumersPerStream = 509; // ~= 64 * 1024 / 128
-            return new TestingSiloHost(siloOptions, clientOptions);
+            var options = new TestClusterOptions();
+
+            options.ClusterConfiguration.AddMemoryStorageProvider("MemoryStore", numStorageGrains: 1);
+
+            options.ClusterConfiguration.AddAzureTableStorageProvider("AzureStore", deleteOnClear: true);
+            options.ClusterConfiguration.AddAzureTableStorageProvider("PubSubStore", deleteOnClear: true, useJsonFormat: false);
+
+            options.ClusterConfiguration.AddSimpleMessageStreamProvider(SmsStreamProviderName, fireAndForgetDelivery: false);
+            options.ClusterConfiguration.AddSimpleMessageStreamProvider("SMSProviderDoNotOptimizeForImmutableData", fireAndForgetDelivery: false, optimizeForImmutableData: false);
+
+            options.ClusterConfiguration.AddAzureQueueStreamProvider(AzureQueueStreamProviderName);
+            options.ClusterConfiguration.AddAzureQueueStreamProvider("AzureQueueProvider2");
+
+            options.ClusterConfiguration.Globals.MaxMessageBatchingSize = 100;
+
+            return new TestCluster(options);
         }
-        
+
         public StreamLimitTests(ITestOutputHelper output)
         {
             this.output = output;
             StreamNamespace = StreamTestsConstants.StreamLifecycleTestsNamespace;
-            mgmtGrain = GrainClient.GrainFactory.GetGrain<IManagementGrain>(RuntimeInterfaceConstants.SYSTEM_MANAGEMENT_ID);
+            mgmtGrain = GrainClient.GrainFactory.GetGrain<IManagementGrain>(0);
         }
         
-        [Fact, TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact]
         public async Task SMS_Limits_FindMax_Consumers()
         {
             // 1 Stream, 1 Producer, X Consumers
 
             Guid streamId = Guid.NewGuid();
-            string streamProviderName = StreamTestsConstants.SMS_STREAM_PROVIDER_NAME;
+            string streamProviderName = SmsStreamProviderName;
 
             output.WriteLine("Starting search for MaxConsumersPerStream value using stream {0}", streamId);
 
@@ -92,17 +91,17 @@ namespace UnitTests.StreamingTests
             }
             MaxConsumersPerStream = loopCount - 1;
             output.WriteLine("Finished search for MaxConsumersPerStream with value {0}", MaxConsumersPerStream);
-            Assert.AreNotEqual(0, MaxConsumersPerStream, "MaxConsumersPerStream should be greater than zero.");
+            Assert.NotEqual(0,  MaxConsumersPerStream);  // "MaxConsumersPerStream should be greater than zero."
             output.WriteLine("MaxConsumersPerStream={0}", MaxConsumersPerStream);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Functional")]
         public async Task SMS_Limits_FindMax_Producers()
         {
             // 1 Stream, X Producers, 1 Consumer
 
             Guid streamId = Guid.NewGuid();
-            string streamProviderName = StreamTestsConstants.SMS_STREAM_PROVIDER_NAME;
+            string streamProviderName = SmsStreamProviderName;
 
             output.WriteLine("Starting search for MaxProducersPerStream value using stream {0}", streamId);
 
@@ -125,48 +124,48 @@ namespace UnitTests.StreamingTests
             }
             MaxProducersPerStream = loopCount - 1;
             output.WriteLine("Finished search for MaxProducersPerStream with value {0}", MaxProducersPerStream);
-            Assert.AreNotEqual(0, MaxProducersPerStream, "MaxProducersPerStream should be greater than zero.");
+            Assert.NotEqual(0,  MaxProducersPerStream);  // "MaxProducersPerStream should be greater than zero."
             output.WriteLine("MaxProducersPerStream={0}", MaxProducersPerStream);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Functional")]
         public async Task SMS_Limits_P1_C128_S1()
         {
             // 1 Stream, 1 Producer, 128 Consumers
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 1, 1, 128);
         }
 
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Failures")]
         public async Task SMS_Limits_P128_C1_S1()
         {
             // 1 Stream, 128 Producers, 1 Consumer
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 1, 128, 1);
         }
 
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Failures")]
         public async Task SMS_Limits_P128_C128_S1()
         {
             // 1 Stream, 128 Producers, 128 Consumers
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 1, 128, 128);
         }
 
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Failures")]
         public async Task SMS_Limits_P1_C400_S1()
         {
             // 1 Stream, 1 Producer, 400 Consumers
             int numConsumers = 400;
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 1, 1, numConsumers);
         }
 
-        [Fact, TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact, TestCategory("Burst")]
         public async Task SMS_Limits_Max_Producers_Burst()
         {
             if (MaxProducersPerStream == 0) await SMS_Limits_FindMax_Producers();
@@ -175,11 +174,11 @@ namespace UnitTests.StreamingTests
 
             // 1 Stream, Max Producers, 1 Consumer
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 1, MaxProducersPerStream, 1, useFanOut: true);
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Functional")]
         public async Task SMS_Limits_Max_Producers_NoBurst()
         {
             if (MaxProducersPerStream == 0) await SMS_Limits_FindMax_Producers();
@@ -188,11 +187,11 @@ namespace UnitTests.StreamingTests
 
             // 1 Stream, Max Producers, 1 Consumer
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 1, MaxProducersPerStream, 1, useFanOut: false);
         }
 
-        [Fact, TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact, TestCategory("Burst")]
         public async Task SMS_Limits_Max_Consumers_Burst()
         {
             if (MaxConsumersPerStream == 0) await SMS_Limits_FindMax_Consumers();
@@ -201,10 +200,10 @@ namespace UnitTests.StreamingTests
 
             // 1 Stream, Max Producers, 1 Consumer
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 1, 1, MaxConsumersPerStream, useFanOut: true);
         }
-        [Fact, TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact]
         public async Task SMS_Limits_Max_Consumers_NoBurst()
         {
             if (MaxConsumersPerStream == 0) await SMS_Limits_FindMax_Consumers();
@@ -213,11 +212,11 @@ namespace UnitTests.StreamingTests
 
             // 1 Stream, Max Producers, 1 Consumer
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 1, 1, MaxConsumersPerStream, useFanOut: false);
         }
 
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact, TestCategory("Failures"), TestCategory("Burst")]
         public async Task SMS_Limits_P9_C9_S152_Burst()
         {
             // 152 * 9 ~= 1360 target per second
@@ -225,11 +224,11 @@ namespace UnitTests.StreamingTests
             // 152 Streams, x9 Producers, x9 Consumers
             int numStreams = 152;
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 numStreams, 9, 9, useFanOut: true);
         }
 
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Failures")]
         public async Task SMS_Limits_P9_C9_S152_NoBurst()
         {
             // 152 * 9 ~= 1360 target per second
@@ -237,11 +236,11 @@ namespace UnitTests.StreamingTests
             // 152 Streams, x9 Producers, x9 Consumers
             int numStreams = 152;
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME, 
+                SmsStreamProviderName, 
                 numStreams, 9, 9, useFanOut: false);
         }
 
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact, TestCategory("Failures"), TestCategory("Burst")]
         public async Task SMS_Limits_P1_C9_S152_Burst()
         {
             // 152 * 9 ~= 1360 target per second
@@ -249,10 +248,10 @@ namespace UnitTests.StreamingTests
             // 152 Streams, x1 Producer, x9 Consumers
             int numStreams = 152;
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 numStreams, 1, 9, useFanOut: true);
         }
-        [Fact, TestCategory("Failures"), TestCategory("Streaming"), TestCategory("Limits")]
+        [Fact, TestCategory("Failures")]
         public async Task SMS_Limits_P1_C9_S152_NoBurst()
         {
             // 152 * 9 ~= 1360 target per second
@@ -260,18 +259,18 @@ namespace UnitTests.StreamingTests
             // 152 Streams, x1 Producer, x9 Consumers
             int numStreams = 152;
             await Test_Stream_Limits(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 numStreams, 1, 9, useFanOut: false);
         }
 
-        [Fact(Skip = "Ignore"), TestCategory("Performance"), TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact(Skip = "Ignore"), TestCategory("Performance"), TestCategory("Burst")]
         public async Task SMS_Churn_Subscribers_P0_C10_ManyStreams()
         {
             int numStreams = 2000;
             int pipelineSize = 10000;
 
             await Test_Stream_Churn_NumStreams(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 pipelineSize,
                 numStreams,
                 numConsumers: 10,
@@ -279,7 +278,7 @@ namespace UnitTests.StreamingTests
             );
         }
 
-        //[Fact, TestCategory("Performance"), TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        //[Fact, TestCategory("Performance"), TestCategory("Burst")]
         //public async Task SMS_Churn_Subscribers_P1_C9_ManyStreams_TimePeriod()
         //{
         //    await Test_Stream_Churn_TimePeriod(
@@ -290,7 +289,7 @@ namespace UnitTests.StreamingTests
         //    );
         //}
 
-        [Fact, TestCategory("Performance"), TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact, TestCategory("Performance"), TestCategory("Burst")]
         public async Task SMS_Churn_FewPublishers_C9_ManyStreams()
         {
             int numProducers = 0;
@@ -298,7 +297,7 @@ namespace UnitTests.StreamingTests
             int pipelineSize = 100;
 
             await Test_Stream_Churn_NumStreams_FewPublishers(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 pipelineSize,
                 numStreams,
                 numProducers: numProducers,
@@ -306,7 +305,7 @@ namespace UnitTests.StreamingTests
             );
         }
 
-        [Fact, TestCategory("Performance"), TestCategory("Streaming"), TestCategory("Limits"), TestCategory("Burst")]
+        [Fact, TestCategory("Performance"), TestCategory("Burst")]
         public async Task SMS_Churn_FewPublishers_C9_ManyStreams_PubSubDirect()
         {
             int numProducers = 0;
@@ -314,7 +313,7 @@ namespace UnitTests.StreamingTests
             int pipelineSize = 100;
 
             await Test_Stream_Churn_NumStreams_FewPublishers(
-                StreamTestsConstants.SMS_STREAM_PROVIDER_NAME,
+                SmsStreamProviderName,
                 pipelineSize,
                 numStreams,
                 numProducers: numProducers,
@@ -348,9 +347,9 @@ namespace UnitTests.StreamingTests
             }
 
             int activeConsumerGrains = ActiveGrainCount(typeof(StreamLifecycleConsumerGrain).FullName);
-            Assert.AreEqual(0, activeConsumerGrains, "Initial Consumer count should be zero");
+            Assert.Equal(0,  activeConsumerGrains);  //  "Initial Consumer count should be zero"
             int activeProducerGrains = ActiveGrainCount(typeof(StreamLifecycleProducerGrain).FullName);
-            Assert.AreEqual(0, activeProducerGrains, "Initial Producer count should be zero");
+            Assert.Equal(0,  activeProducerGrains);  //  "Initial Producer count should be zero"
 
             if (warmUpPubSub)
             {
@@ -359,7 +358,7 @@ namespace UnitTests.StreamingTests
                 pipeline.Wait();
 
                 int activePubSubGrains = ActiveGrainCount(typeof(PubSubRendezvousGrain).FullName);
-                Assert.AreEqual(streamIds.Length, activePubSubGrains, "Initial PubSub count -- should all be warmed up");
+                Assert.Equal(streamIds.Length,  activePubSubGrains);  //  "Initial PubSub count -- should all be warmed up"
             }
 
             Guid[] producerIds = new Guid[numProducers];
@@ -378,7 +377,7 @@ namespace UnitTests.StreamingTests
                 pipeline.Wait();
 
                 int activePublisherGrains = ActiveGrainCount(typeof(StreamLifecycleProducerGrain).FullName);
-                Assert.AreEqual(numProducers, activePublisherGrains, "Initial Publisher count -- should all be warmed up");
+                Assert.Equal(numProducers,  activePublisherGrains);  //  "Initial Publisher count -- should all be warmed up"
             }
 
             var promises = new List<Task>();
@@ -417,19 +416,19 @@ namespace UnitTests.StreamingTests
             sw.Stop();
 
             int consumerCount = ActiveGrainCount(typeof(StreamLifecycleConsumerGrain).FullName);
-            Assert.AreEqual(activeConsumerGrains + (numStreams * numConsumers), consumerCount, "The right number of Consumer grains are active");
+            Assert.Equal(activeConsumerGrains + (numStreams * numConsumers),  consumerCount);  //  "The right number of Consumer grains are active"
 
             int producerCount = ActiveGrainCount(typeof(StreamLifecycleProducerGrain).FullName);
-            Assert.AreEqual(activeProducerGrains + (numStreams * numProducers), producerCount, "The right number of Producer grains are active");
+            Assert.Equal(activeProducerGrains + (numStreams * numProducers),  producerCount);  //  "The right number of Producer grains are active"
 
             int pubSubCount = ActiveGrainCount(typeof(PubSubRendezvousGrain).FullName);
-            Assert.AreEqual(streamIds.Length, pubSubCount, "Final PubSub count -- no more started");
+            Assert.Equal(streamIds.Length,  pubSubCount);  //  "Final PubSub count -- no more started"
 
             TimeSpan elapsed = sw.Elapsed;
             int totalSubscriptions = numStreams * numConsumers;
             double rps = totalSubscriptions / elapsed.TotalSeconds;
             output.WriteLine("Subscriptions-per-second = {0} during period {1}", rps, elapsed);
-            Assert.AreNotEqual(0.0, rps, "RPS greater than zero");
+            Assert.NotEqual(0.0,  rps);  // "RPS greater than zero"
             return TaskDone.Done;
         }
 
@@ -462,11 +461,11 @@ namespace UnitTests.StreamingTests
                 pipeline.Wait();
 
                 int activePubSubGrains = ActiveGrainCount(typeof(PubSubRendezvousGrain).FullName);
-                Assert.AreEqual(streamIds.Length, activePubSubGrains, "Initial PubSub count -- should all be warmed up");
+                Assert.Equal(streamIds.Length,  activePubSubGrains);  //  "Initial PubSub count -- should all be warmed up"
             }
             
             int activeConsumerGrains = ActiveGrainCount(typeof(StreamLifecycleConsumerGrain).FullName);
-            Assert.AreEqual(0, activeConsumerGrains, "Initial Consumer count should be zero");
+            Assert.Equal(0,  activeConsumerGrains);  //  "Initial Consumer count should be zero"
 
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -479,13 +478,13 @@ namespace UnitTests.StreamingTests
             sw.Stop();
 
             int consumerCount = ActiveGrainCount(typeof(StreamLifecycleConsumerGrain).FullName);
-            Assert.AreEqual(activeConsumerGrains + (numStreams * numConsumers), consumerCount, "The correct number of new Consumer grains are active");
+            Assert.Equal(activeConsumerGrains + (numStreams * numConsumers),  consumerCount);  //  "The correct number of new Consumer grains are active"
 
             TimeSpan elapsed = sw.Elapsed;
             int totalSubscriptions = numStreams * numConsumers;
             double rps = totalSubscriptions / elapsed.TotalSeconds;
             output.WriteLine("Subscriptions-per-second = {0} during period {1}", rps, elapsed);
-            Assert.AreNotEqual(0.0, rps, "RPS greater than zero");
+            Assert.NotEqual(0.0,  rps);  // "RPS greater than zero"
             return TaskDone.Done;
         }
 
@@ -516,7 +515,7 @@ namespace UnitTests.StreamingTests
         //    int totalSubscription = numSt* numConsumers);
         //    double rps = totalSubscription/elapsed.TotalSeconds;
         //    output.WriteLine("Subscriptions-per-second = {0} during period {1}", rps, elapsed);
-        //    Assert.AreNotEqual(0.0, rps, "RPS greater than zero");
+        //    Assert.NotEqual(0.0, rps, "RPS greater than zero");
         //}
 
         private void WarmUpPubSub(string streamProviderName, Guid[] streamIds, AsyncPipeline pipeline)
@@ -724,18 +723,18 @@ namespace UnitTests.StreamingTests
 
             // Check Consumer counts
             int consumerCount = await pubSub.ConsumerCount(streamId, streamProviderName, StreamNamespace);
-            Assert.AreEqual(numConsumers, consumerCount, "ConsumerCount for Stream {0}", streamId);
+            Assert.Equal(numConsumers,  consumerCount);  //  "ConsumerCount for Stream {0}", streamId
 
             // Check Producer counts
             int producerCount = await pubSub.ProducerCount(streamId, streamProviderName, StreamNamespace);
-            Assert.AreEqual(numProducers, producerCount, "ProducerCount for Stream {0}", streamId);
+            Assert.Equal(numProducers,  producerCount);  //  "ProducerCount for Stream {0}", streamId
 
             // Check message counts received by consumers
             int totalMessages = (numMessages + 1) * numProducers;
             foreach (var grain in consumers)
             {
                 int count = await grain.GetReceivedCount();
-                Assert.AreEqual(totalMessages, count, "ReceivedCount for Consumer grain {0}", grain.GetPrimaryKey());
+                Assert.Equal(totalMessages,  count); //  "ReceivedCount for Consumer grain {0}", grain.GetPrimaryKey());
             }
 
             double rps = totalMessages/sw.Elapsed.TotalSeconds;

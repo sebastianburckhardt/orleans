@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 namespace Orleans.LogViews
 {
     /// <summary>
-    /// A collection of statistics for log view grains
+    /// A collection of statistics for log view grains. See <see cref="ILogViewGrain"/>
     /// </summary>
     public class LogViewStatistics
     {
         /// <summary>
-        /// A map from event names to a count
+        /// A map from event names to event counts
         /// </summary>
         public Dictionary<String, long> EventCounters;
         /// <summary>

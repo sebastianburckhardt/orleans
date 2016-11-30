@@ -1,10 +1,11 @@
 ﻿
 using System;
 using System.Threading.Tasks;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using TestExtensions;
 using UnitTests.StreamingTests;
-using UnitTests.Tester;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,14 +35,14 @@ namespace Tester.StreamingTests
             return new TestCluster(options);
         }
 
-        [Fact, TestCategory("BVT"), TestCategory("Streaming")]
+        [Fact, TestCategory("SlowBVT"), TestCategory("Functional"), TestCategory("Streaming")]
         public async Task SMSStreamProducerOnDroppedClientTest()
         {
             logger.Info("************************ SMSStreamProducerOnDroppedClientTest *********************************");
             await runner.StreamProducerOnDroppedClientTest(SMSStreamProviderName, StreamNamespace);
         }
 
-        [Fact, TestCategory("BVT"), TestCategory("Streaming")]
+        [Fact, TestCategory("SlowBVT"), TestCategory("Functional"), TestCategory("Streaming")]
         public async Task SMSStreamConsumerOnDroppedClientTest()
         {
             logger.Info("************************ SMSStreamConsumerOnDroppedClientTest *********************************");

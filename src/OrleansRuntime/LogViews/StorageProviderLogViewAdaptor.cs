@@ -12,139 +12,116 @@ using Orleans.Storage;
 namespace Orleans.Runtime.LogViews
 {
     /// <summary>
-    /// A log view adaptor that wraps around a traditional storage adaptor
+    /// A log view adaptor that wraps around a traditional storage adaptor, and uses batching and e-tags
+    /// to append entries.
     ///<para>
     /// The log itself is transient, i.e. not actually saved to storage - only the latest view and some 
     /// metadata (the log position, and write flags) are stored. 
     /// </para>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class StorageProviderLogViewAdaptor<T,E> : PrimaryBasedLogViewAdaptor<T,E,SubmissionEntry<E>> where T : class,new() where E: class
+    /// <typeparam name="TLogView">Type of log view</typeparam>
+    /// <typeparam name="TLogEntry">Type of log entry</typeparam>
+    public class StorageProviderLogViewAdaptor<TLogView, TLogEntry> : PrimaryBasedLogViewAdaptor<TLogView, TLogEntry, SubmissionEntry<TLogEntry>> where TLogView : class, new() where TLogEntry : class
     {
-        public StorageProviderLogViewAdaptor(ILogViewHost<T,E> host, T initialstate, ILogViewProvider repprovider, IStorageProvider globalstorageprovider, string graintypename, IProtocolServices services)
-            : base(host, repprovider, initialstate, services)
+        /// <summary>
+        /// Initialize a StorageProviderLogViewAdaptor class
+        /// </summary>
+        public StorageProviderLogViewAdaptor(ILogViewHost<TLogView, TLogEntry> host, TLogView initialState, ILogViewProvider repProvider, IStorageProvider globalStorageProvider, string grainTypeName, IProtocolServices services)
+            : base(host, repProvider, initialState, services)
         {
-            this.globalstorageprovider = globalstorageprovider;
-            this.graintypename = graintypename;
+            this.globalStorageProvider = globalStorageProvider;
+            this.grainTypeName = grainTypeName;
         }
 
 
-        private const int max_entries_in_notifications = 200;
-        private const int slowpollinterval = 10000;
+        private const int maxEntriesInNotifications = 200;
 
 
-        IStorageProvider globalstorageprovider;
-        string graintypename;        // stores the confirmed state including metadata
-        GrainStateWithMetaDataAndETag<T> GlobalStateCache;
+        IStorageProvider globalStorageProvider;
+        string grainTypeName;        // stores the confirmed state including metadata
+        GrainStateWithMetaDataAndETag<TLogView> GlobalStateCache;
 
-        protected override T LastConfirmedView()
+        /// <inheritdoc/>
+        protected override TLogView LastConfirmedView()
         {
             return GlobalStateCache.StateAndMetaData.State;
         }
 
+        /// <inheritdoc/>
         protected override int GetConfirmedVersion()
         {
-           return GlobalStateCache.StateAndMetaData.GlobalVersion;
+            return GlobalStateCache.StateAndMetaData.GlobalVersion;
         }
 
-        protected override void InitializeConfirmedView(T initialstate)
+        /// <inheritdoc/>
+        protected override void InitializeConfirmedView(TLogView initialstate)
         {
-            GlobalStateCache = new GrainStateWithMetaDataAndETag<T>(initialstate);
+            GlobalStateCache = new GrainStateWithMetaDataAndETag<TLogView>(initialstate);
         }
 
         // no special tagging is required, thus we create a plain submission entry
-        protected override SubmissionEntry<E> MakeSubmissionEntry(E entry)
+        /// <inheritdoc/>
+        protected override SubmissionEntry<TLogEntry> MakeSubmissionEntry(TLogEntry entry)
         {
-            return new SubmissionEntry<E>() { Entry = entry } ;
+            return new SubmissionEntry<TLogEntry>() { Entry = entry };
         }
-      
 
+        /// <inheritdoc/>
         protected override async Task ReadAsync()
         {
             enter_operation("ReadAsync");
 
-            int backoff_msec = -1;
-
             while (true)
             {
-                if (backoff_msec > 0)
-                    await Task.Delay(backoff_msec);
-
                 try
                 {
                     // for manual testing
                     //await Task.Delay(5000);
 
-                    await globalstorageprovider.ReadStateAsync(graintypename, Services.GrainReference, GlobalStateCache);
+                    await globalStorageProvider.ReadStateAsync(grainTypeName, Services.GrainReference, GlobalStateCache);
 
-                    LastPrimaryException = null; // successful, so we clear stored exception
-                    
                     Services.Verbose("read success {0}", GlobalStateCache);
+
+                    LastPrimaryIssue.Resolve(Host, Services);
 
                     break; // successful
                 }
                 catch (Exception e)
                 {
-                    LastPrimaryException = e;
+                    LastPrimaryIssue.Record(new ReadFromStorageFailed() { Exception = e }, Host, Services);
                 }
 
-                Services.Verbose("read failed");
+                Services.Verbose("read failed {0}", LastPrimaryIssue);
 
-                increasebackoff(ref backoff_msec);
+                await LastPrimaryIssue.DelayBeforeRetry();
             }
 
             exit_operation("ReadAsync");
         }
 
 
-
-        Random random = null;
-
-        public void increasebackoff(ref int backoff)
-        {
-            // after first fail do not backoff yet... keep it at zero
-            if (backoff == -1) {  
-                backoff = 0; 
-                return;
-            }
-
-            if (random == null)
-                random = new Random();
-
-            // grows exponentially up to slowpoll interval
-            if (backoff < slowpollinterval)
-                backoff = (int)((backoff + random.Next(5, 15)) * 1.5);
-
-            // during slowpoll, slightly randomize
-            if (backoff > slowpollinterval)
-                   backoff = slowpollinterval + random.Next(1, 200);
-        }
-
+        /// <inheritdoc/>
         protected override async Task<int> WriteAsync()
         {
             enter_operation("WriteAsync");
-
-            int backoff_msec = -1;
 
             var state = CopyTentativeState();
             var updates = GetCurrentBatchOfUpdates();
             bool batchsuccessfullywritten = false;
 
-            var nextglobalstate = new GrainStateWithMetaDataAndETag<T>(state);
+            var nextglobalstate = new GrainStateWithMetaDataAndETag<TLogView>(state);
             nextglobalstate.StateAndMetaData.WriteVector = GlobalStateCache.StateAndMetaData.WriteVector;
             nextglobalstate.StateAndMetaData.GlobalVersion = GlobalStateCache.StateAndMetaData.GlobalVersion + updates.Length;
             nextglobalstate.ETag = GlobalStateCache.ETag;
 
-            var writebit = nextglobalstate.StateAndMetaData.ToggleBit(Services.MyClusterId);
+            var writebit = nextglobalstate.StateAndMetaData.FlipBit(Services.MyClusterId);
 
             try
             {
                 // for manual testing
                 //await Task.Delay(5000);
 
-                await globalstorageprovider.WriteStateAsync(graintypename, Services.GrainReference, nextglobalstate);
-
-                LastPrimaryException = null; // successful
+                await globalStorageProvider.WriteStateAsync(grainTypeName, Services.GrainReference, nextglobalstate);
 
                 batchsuccessfullywritten = true;
 
@@ -152,51 +129,43 @@ namespace Orleans.Runtime.LogViews
 
                 Services.Verbose("write ({0} updates) success {1}", updates.Length, GlobalStateCache);
 
+                LastPrimaryIssue.Resolve(Host, Services);
             }
             catch (Exception e)
             {
-                LastPrimaryException = e;
+                LastPrimaryIssue.Record(new UpdateStorageFailed() { Exception = e }, Host, Services);
             }
 
             if (!batchsuccessfullywritten)
             {
-                increasebackoff(ref backoff_msec);
-
-                Services.Verbose("write apparently failed {0}", nextglobalstate);
+                Services.Verbose("write apparently failed {0} {1}", nextglobalstate, LastPrimaryIssue);
 
                 while (true) // be stubborn until we can read what is there
                 {
 
-                    if (backoff_msec > 0)
-                    {
-                        Services.Verbose("backoff {0}", backoff_msec);
-
-                        await Task.Delay(backoff_msec);
-                    }
+                    await LastPrimaryIssue.DelayBeforeRetry();
 
                     try
                     {
-                        await globalstorageprovider.ReadStateAsync(graintypename, Services.GrainReference, GlobalStateCache);
-
-                        LastPrimaryException = null; // successful, so we clear stored exception
+                        await globalStorageProvider.ReadStateAsync(grainTypeName, Services.GrainReference, GlobalStateCache);
 
                         Services.Verbose("read success {0}", GlobalStateCache);
+
+                        LastPrimaryIssue.Resolve(Host, Services);
 
                         break;
                     }
                     catch (Exception e)
                     {
-                        LastPrimaryException = e;
+                        LastPrimaryIssue.Record(new ReadFromStorageFailed() { Exception = e }, Host, Services);
                     }
 
-                    Services.Verbose("read failed");
-
-                    increasebackoff(ref backoff_msec);
+                    Services.Verbose("read failed {0}", LastPrimaryIssue);
                 }
 
                 // check if last apparently failed write was in fact successful
 
-                if (writebit == GlobalStateCache.StateAndMetaData.ContainsBit(Services.MyClusterId))
+                if (writebit == GlobalStateCache.StateAndMetaData.GetBit(Services.MyClusterId))
                 {
                     GlobalStateCache = nextglobalstate;
 
@@ -224,33 +193,72 @@ namespace Orleans.Runtime.LogViews
 
             return updates.Length;
         }
-    
-        
+
+
+        /// <summary>
+        /// Describes a connection issue that occurred when updating the primary storage.
+        /// </summary>
         [Serializable]
-        protected class UpdateNotificationMessage : NotificationMessage 
+        public class UpdateStorageFailed : PrimaryOperationFailed
         {
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return $"update storage failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+        /// <summary>
+        /// Describes a connection issue that occurred when reading from the primary storage.
+        /// </summary>
+        [Serializable]
+        public class ReadFromStorageFailed : PrimaryOperationFailed
+        {
+            /// <inheritdoc/>
+            public override string ToString()
+            {
+                return $"read from storage failed: caught {Exception.GetType().Name}: {Exception.Message}";
+            }
+        }
+
+
+        /// <summary>
+        /// A notification message sent to remote instances after updating this grain in storage.
+        /// </summary>
+        [Serializable]
+        protected class UpdateNotificationMessage : INotificationMessage 
+        {
+            /// <inheritdoc/>
+            public int Version { get; set; }
+
+            /// <summary> The cluster that performed the update </summary>
             public string Origin { get; set; }
 
-            public List<E> Updates { get; set; }
+            /// <summary> The list of updates that were applied </summary>
+            public List<TLogEntry> Updates { get; set; }
 
+            /// <summary> The e-tag of the storage after applying the updates</summary>
             public string ETag { get; set; }
 
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return string.Format("v{0} ({1} updates by {2}) etag={2}", Version, Updates.Count, Origin, ETag);
             }
          }
 
-        protected override NotificationMessage Merge(NotificationMessage earliermessage, NotificationMessage latermessage)
+        /// <inheritdoc/>
+        protected override INotificationMessage Merge(INotificationMessage earlierMessage, INotificationMessage laterMessage)
         {
-            var earlier = earliermessage as UpdateNotificationMessage;
-            var later = latermessage as UpdateNotificationMessage;
+            var earlier = earlierMessage as UpdateNotificationMessage;
+            var later = laterMessage as UpdateNotificationMessage;
 
             if (earlier != null
                 && later != null
                 && earlier.Origin == later.Origin
                 && earlier.Version + later.Updates.Count == later.Version
-                && earlier.Updates.Count + later.Updates.Count < max_entries_in_notifications)
+                && earlier.Updates.Count + later.Updates.Count < maxEntriesInNotifications)
 
                 return new UpdateNotificationMessage()
                 {
@@ -261,24 +269,24 @@ namespace Orleans.Runtime.LogViews
                 };
 
             else
-                return base.Merge(earliermessage, latermessage); // keep only the version number
+                return base.Merge(earlierMessage, laterMessage); // keep only the version number
         }
 
         private SortedList<long, UpdateNotificationMessage> notifications = new SortedList<long,UpdateNotificationMessage>();
 
-        protected override void OnNotificationReceived(NotificationMessage payload)
+        /// <inheritdoc/>
+        protected override void OnNotificationReceived(INotificationMessage payload)
         {
-            var um = (UpdateNotificationMessage)payload;
+            var um = payload as UpdateNotificationMessage;
             if (um != null)
                 notifications.Add(um.Version - um.Updates.Count, um);
             else
                 base.OnNotificationReceived(payload);
         }
 
+        /// <inheritdoc/>
         protected override void ProcessNotifications()
         {
-            enter_operation("ProcessNotifications");
-
             // discard notifications that are behind our already confirmed state
             while (notifications.Count > 0 && notifications.ElementAt(0).Key < GlobalStateCache.StateAndMetaData.GlobalVersion)
             {
@@ -289,34 +297,33 @@ namespace Orleans.Runtime.LogViews
             // process notifications that reflect next global version
             while (notifications.Count > 0 && notifications.ElementAt(0).Key == GlobalStateCache.StateAndMetaData.GlobalVersion)
             {
-                var updatenotification = notifications.ElementAt(0).Value;
+                var updateNotification = notifications.ElementAt(0).Value;
                 notifications.RemoveAt(0);
 
                 // Apply all operations in pending 
-                foreach (var u in updatenotification.Updates)
+                foreach (var u in updateNotification.Updates)
                     try
                     {
                         Host.UpdateView(GlobalStateCache.StateAndMetaData.State, u);
                     }
                     catch (Exception e)
                     {
-                        Services.CaughtViewUpdateException("ProcessNotifications", e);
+                        Services.CaughtUserCodeException("UpdateView", nameof(ProcessNotifications), e);
                     }
 
-                GlobalStateCache.StateAndMetaData.GlobalVersion++;
+                GlobalStateCache.StateAndMetaData.GlobalVersion = updateNotification.Version;
 
-                GlobalStateCache.StateAndMetaData.ToggleBit(updatenotification.Origin);
+                GlobalStateCache.StateAndMetaData.FlipBit(updateNotification.Origin);
 
-                GlobalStateCache.ETag = updatenotification.ETag;         
+                GlobalStateCache.ETag = updateNotification.ETag;         
 
-                Services.Verbose("notification success ({0} updates) {1}", updatenotification.Updates.Count, GlobalStateCache);
+                Services.Verbose("notification success ({0} updates) {1}", updateNotification.Updates.Count, GlobalStateCache);
             }
 
             Services.Verbose2("unprocessed notifications in queue: {0}", notifications.Count);
 
             base.ProcessNotifications();
          
-            exit_operation("ProcessNotifications");
         }
 
 

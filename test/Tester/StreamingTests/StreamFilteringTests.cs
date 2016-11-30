@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Xunit;
 using Orleans;
 using Orleans.Providers.Streams.AzureQueue;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Orleans.TestingHost.Utils;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.StreamingTests;
-using UnitTests.Tester;
+using Xunit;
 
 namespace Tester.StreamingTests
 {
@@ -304,7 +304,7 @@ namespace Tester.StreamingTests
             {
                 var deploymentId = this.HostedCluster.DeploymentId;
                 base.Dispose();
-                AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, StorageTestConstants.DataConnectionString)
+                AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(StreamProvider, deploymentId, TestDefaultConfiguration.DataConnectionString)
                     .Wait();
             }
         }
@@ -320,7 +320,7 @@ namespace Tester.StreamingTests
                 AzureQueueStreamProviderUtils.ClearAllUsedAzureQueues(
                     streamProviderName,
                     this.deploymentId,
-                    StorageTestConstants.DataConnectionString).Wait();
+                    TestDefaultConfiguration.DataConnectionString).Wait();
             }
 
         [Fact, TestCategory("Functional"), TestCategory("Streaming"), TestCategory("Filters"), TestCategory("Azure")]

@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A9C8FFEC-4947-4F04-BA73-1F17B329A55A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Tester</RootNamespace>
+    <AssemblyName>Tester</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;NETSTANDARD;NETSTANDARD_TODO</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;NETSTANDARD;NETSTANDARD_TODO</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <WarningsAsErrors>4014</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="project.json" />
+    <None Include="..\..\..\test\Tester\Tester.xunit.runner.json">
+      <Link>Tester.xunit.runner.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OrleansTestingHost\OrleansTestingHost.csproj">
+      <Project>{40ee3b00-d381-485f-9c69-ff706837deed}</Project>
+      <Name>OrleansTestingHost</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\Orleans\Orleans.csproj">
+      <Project>{ac1bd60c-e7d8-4452-a21c-290aec8e2e7a}</Project>
+      <Name>Orleans</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestExtensions\TestExtensions.csproj">
+      <Project>{afd242b4-eda9-42cd-ba39-e410b98add2a}</Project>
+      <Name>TestExtensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestGrainInterfaces\TestGrainInterfaces.csproj">
+      <Project>{a972213f-189b-41d4-90fe-38d513c1106a}</Project>
+      <Name>TestGrainInterfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestGrains\TestGrains.csproj">
+      <Project>{aace28ae-f301-472a-b633-02b55434871a}</Project>
+      <Name>TestGrains</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestInternalGrains\TestInternalGrains.csproj">
+      <Project>{a682abc1-1a51-4794-8012-da8e59ebc72a}</Project>
+      <Name>TestInternalGrains</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\..\test\Tester\BasicActivationTests.cs">
+      <Link>BasicActivationTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\CollectionFixtures.cs">
+      <Link>CollectionFixtures.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ConcreteStateClassTests.cs">
+      <Link>ConcreteStateClassTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\DeactivationTests.cs">
+      <Link>DeactivationTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ExceptionPropagationTests.cs">
+      <Link>ExceptionPropagationTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ExternalTypesTests.cs">
+      <Link>ExternalTypesTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\General\JsonGrainTests.cs">
+      <Link>General\JsonGrainTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\GenericGrainTests.cs">
+      <Link>GenericGrainTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\GeoClusterTests\SimpleGlobalSingleInstanceGrainTests.cs">
+      <Link>GeoClusterTests\SimpleGlobalSingleInstanceGrainTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\GrainActivateDeactivateTests.cs">
+      <Link>GrainActivateDeactivateTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\GrainFactoryTests.cs">
+      <Link>GrainFactoryTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\GrainInterfaceHierarchyTests.cs">
+      <Link>GrainInterfaceHierarchyTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\KeyExtensionTests.cs">
+      <Link>KeyExtensionTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ManagementGrainTests.cs">
+      <Link>ManagementGrainTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\MemoryStorageProviderTests.cs">
+      <Link>MemoryStorageProviderTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\MethodInterceptionTests.cs">
+      <Link>MethodInterceptionTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ObserverTests.cs">
+      <Link>ObserverTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\TestUtils.cs">
+      <Link>TestUtils.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ProviderTests.cs">
+      <Link>ProviderTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\ReminderTest.cs">
+      <Link>ReminderTest.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\RequestContextTest.cs">
+      <Link>RequestContextTest.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\SimpleGrainTests.cs">
+      <Link>SimpleGrainTests.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\test\Tester\StatelessWorkerTests.cs">
+      <Link>StatelessWorkerTests.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

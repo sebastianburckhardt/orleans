@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Orleans;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace Tester.General
 {
@@ -40,7 +39,7 @@ namespace Tester.General
             JObject input = JObject.Parse(json);
             JObject output = await grain.EchoJson(input);
 
-            Assert.AreEqual(input.ToString(), output.ToString());
+            Assert.Equal(input.ToString(), output.ToString());
         }
     }
 }

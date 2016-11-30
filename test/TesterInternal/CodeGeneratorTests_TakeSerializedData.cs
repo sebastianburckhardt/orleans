@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestExtensions;
 using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
 using Xunit;
 
 namespace UnitTests.General
@@ -10,7 +9,6 @@ namespace UnitTests.General
     /// <summary>
     /// Unit tests for grains implementing generic interfaces
     /// </summary>
-    [TestClass]
     public class CodeGeneratorTests_TakeSerializedData : HostedTestClusterEnsureDefaultStarted
     {
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("CodeGen"), TestCategory("Serialization")]

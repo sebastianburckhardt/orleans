@@ -1,18 +1,18 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table;
 using Orleans;
 using Orleans.AzureUtils;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.ServiceBus.Providers;
 using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.TestingHost;
 using Tester;
-using UnitTests.Tester;
+using TestExtensions;
 using Xunit;
 
 namespace UnitTests.StreamingTests
@@ -26,15 +26,17 @@ namespace UnitTests.StreamingTests
         private const string EHCheckpointTable = "ehcheckpoint";
         private static readonly string CheckpointNamespace = Guid.NewGuid().ToString();
 
-        public static readonly EventHubStreamProviderConfig ProviderConfig =
-            new EventHubStreamProviderConfig(StreamProviderName);
+        public static readonly EventHubStreamProviderSettings ProviderSettings =
+            new EventHubStreamProviderSettings(StreamProviderName);
 
-        private static readonly EventHubSettings EventHubConfig = new EventHubSettings(StorageTestConstants.EventHubConnectionString,
-            EHConsumerGroup, EHPath);
+        private static readonly Lazy<EventHubSettings> EventHubConfig = new Lazy<EventHubSettings>(() =>
+            new EventHubSettings(
+                TestDefaultConfiguration.EventHubConnectionString,
+                EHConsumerGroup, EHPath));
 
         private static readonly EventHubCheckpointerSettings CheckpointerSettings =
-            new EventHubCheckpointerSettings(StorageTestConstants.DataConnectionString, EHCheckpointTable, CheckpointNamespace,
-                TimeSpan.FromSeconds(1));
+            new EventHubCheckpointerSettings(TestDefaultConfiguration.DataConnectionString,
+                EHCheckpointTable, CheckpointNamespace, TimeSpan.FromSeconds(1));
 
         private readonly SubscriptionMultiplicityTestRunner runner;
 
@@ -52,15 +54,15 @@ namespace UnitTests.StreamingTests
                 base.Dispose();
                 var dataManager = new AzureTableDataManager<TableEntity>(CheckpointerSettings.TableName, CheckpointerSettings.DataConnectionString);
                 dataManager.InitTableAsync().Wait();
-                dataManager.DeleteTableAsync().Wait();
+                dataManager.ClearTableAsync().Wait();
             }
 
             private static void AdjustClusterConfiguration(ClusterConfiguration config)
             {
                 var settings = new Dictionary<string, string>();
                 // get initial settings from configs
-                ProviderConfig.WriteProperties(settings);
-                EventHubConfig.WriteProperties(settings);
+                ProviderSettings.WriteProperties(settings);
+                EventHubConfig.Value.WriteProperties(settings);
                 CheckpointerSettings.WriteProperties(settings);
 
                 // add queue balancer setting

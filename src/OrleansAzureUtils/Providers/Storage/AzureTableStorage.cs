@@ -110,7 +110,7 @@ namespace Orleans.Storage
             if (config.Properties.ContainsKey(UseJsonFormatPropertyName))
                 useJsonFormat = "true".Equals(config.Properties[UseJsonFormatPropertyName], StringComparison.OrdinalIgnoreCase);
 
-            this.jsonSettings = SerializationManager.UpdateSerializerSettings(SerializationManager.GetDefaultJsonSerializerSettings(), config);
+            this.jsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(), config);
             initMsg = String.Format("{0} UseJsonFormat={1}", initMsg, useJsonFormat);
 
             Log.Info((int)AzureProviderErrorCode.AzureTableProvider_InitProvider, initMsg);
@@ -486,7 +486,7 @@ namespace Orleans.Storage
                 {
                     if (AzureStorageUtils.TableStorageDataNotFound(exc))
                     {
-                        if (logger.IsVerbose2) logger.Verbose2((int)AzureProviderErrorCode.AzureTableProvider_DataNotFound, "DataNotFound reading (exception): PartitionKey={0} RowKey={1} from Table={2} Exception={3}", partitionKey, rowKey, TableName, TraceLogger.PrintException(exc));
+                        if (logger.IsVerbose2) logger.Verbose2((int)AzureProviderErrorCode.AzureTableProvider_DataNotFound, "DataNotFound reading (exception): PartitionKey={0} RowKey={1} from Table={2} Exception={3}", partitionKey, rowKey, TableName, LogFormatter.PrintException(exc));
                         return null;  // No data
                     }
                     throw;

@@ -1,21 +1,20 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
-using Xunit;
 using Orleans;
 using Orleans.Providers.Streams.Generator;
+using Orleans.Runtime;
 using Orleans.Streams;
 using Orleans.TestingHost;
 using Orleans.TestingHost.Utils;
+using Tester;
+using TestExtensions;
 using TestGrainInterfaces;
 using TestGrains;
-using Tester;
 using UnitTests.Grains;
-using UnitTests.Tester;
+using Xunit;
 
 namespace UnitTests.StreamingTests
 {
@@ -75,10 +74,10 @@ namespace UnitTests.StreamingTests
             if (assertIsTrue)
             {
                 // one stream per queue
-                Assert.AreEqual(Fixture.AdapterConfig.TotalQueueCount, report.Count, "Stream count");
+                Assert.Equal(Fixture.AdapterConfig.TotalQueueCount, report.Count);
                 foreach (int eventsPerStream in report.Values)
                 {
-                    Assert.AreEqual(Fixture.GeneratorConfig.EventsInStream, eventsPerStream, "Events per stream");
+                    Assert.Equal(Fixture.GeneratorConfig.EventsInStream, eventsPerStream);
                 }
             }
             else if (Fixture.AdapterConfig.TotalQueueCount != report.Count ||

@@ -5,6 +5,9 @@ using Orleans.Streams;
 
 namespace Orleans.Providers.Streams.Common
 {
+    /// <summary>
+    /// Cursor into a simple queue cache
+    /// </summary>
     public class SimpleQueueCacheCursor : IQueueCacheCursor
     {
         private readonly IStreamIdentity streamIdentity;
@@ -19,10 +22,7 @@ namespace Orleans.Providers.Streams.Common
         internal LinkedListNode<SimpleQueueCacheItem> Element { get; private set; }
         internal StreamSequenceToken SequenceToken { get; private set; }
 
-        internal bool IsSet
-        {
-            get { return Element != null; }
-        }
+        internal bool IsSet => Element != null;
 
         internal void Reset(StreamSequenceToken token)
         {
@@ -36,6 +36,12 @@ namespace Orleans.Providers.Streams.Common
             SequenceToken = item.Value.SequenceToken;
         }
 
+        /// <summary>
+        /// Cursor into a simple queue cache
+        /// </summary>
+        /// <param name="cache"></param>
+        /// <param name="streamIdentity"></param>
+        /// <param name="logger"></param>
         public SimpleQueueCacheCursor(SimpleQueueCache cache, IStreamIdentity streamIdentity, Logger logger)
         {
             if (cache == null)
@@ -49,6 +55,15 @@ namespace Orleans.Providers.Streams.Common
             SimpleQueueCache.Log(logger, "SimpleQueueCacheCursor New Cursor for {0}, {1}", streamIdentity.Guid, streamIdentity.Namespace);
         }
 
+        /// <summary>
+        /// Get the current value.
+        /// </summary>
+        /// <param name="exception"></param>
+        /// <returns>
+        /// Returns the current batch container.
+        /// If null then the stream has completed or there was a stream error.  
+        /// If there was a stream error, an error exception will be provided in the output.
+        /// </returns>
         public virtual IBatchContainer GetCurrent(out Exception exception)
         {
             SimpleQueueCache.Log(logger, "SimpleQueueCacheCursor.GetCurrent: {0}", current);
@@ -57,6 +72,13 @@ namespace Orleans.Providers.Streams.Common
             return current;
         }
 
+        /// <summary>
+        /// Move to next message in the stream.
+        /// If it returns false, there are no more messages.  The enumerator is still
+        ///  valid howerver and can be called again when more data has come in on this
+        ///  stream.
+        /// </summary>
+        /// <returns></returns>
         public virtual bool MoveNext()
         {
             IBatchContainer next;
@@ -72,6 +94,10 @@ namespace Orleans.Providers.Streams.Common
             return true;
         }
 
+        /// <summary>
+        /// Refresh that cache cursor. Called when new data is added into a cache.
+        /// </summary>
+        /// <returns></returns>
         public virtual void Refresh()
         {
             if (!IsSet)
@@ -80,6 +106,9 @@ namespace Orleans.Providers.Streams.Common
             }
         }
 
+        /// <summary>
+        /// Record that delivery of the current event has failed
+        /// </summary>
         public void RecordDeliveryFailure()
         {
             if (IsSet && current != null)
@@ -92,16 +121,23 @@ namespace Orleans.Providers.Streams.Common
         {
             return batchContainer != null &&
                     batchContainer.StreamGuid.Equals(streamIdentity.Guid) &&
-                    String.Equals(batchContainer.StreamNamespace, streamIdentity.Namespace);
+                    string.Equals(batchContainer.StreamNamespace, streamIdentity.Namespace);
         }
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
         }
 
+        /// <summary>
+        /// Clean up cache data when done
+        /// </summary>
+        /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
@@ -112,10 +148,14 @@ namespace Orleans.Providers.Streams.Common
 
         #endregion
 
+        /// <summary>
+        /// Convert object to string
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
-            return string.Format("<SimpleQueueCacheCursor: Element={0}, SequenceToken={1}>",
-                Element != null ? Element.Value.Batch.ToString() : "null", SequenceToken != null ? SequenceToken.ToString() : "null");
+            return
+                $"<SimpleQueueCacheCursor: Element={Element?.Value.Batch.ToString() ?? "null"}, SequenceToken={SequenceToken?.ToString() ?? "null"}>";
         }
     }
 }

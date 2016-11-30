@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform>AnyCPU</Platform>
@@ -13,7 +13,6 @@
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -50,7 +49,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
@@ -60,13 +58,14 @@
     <Compile Include="AsyncSimpleGrain.cs" />
     <Compile Include="CatalogTestGrain.cs" />
     <Compile Include="ChainedGrain.cs" />
+    <Compile Include="ClusterTestGrains.cs" />
     <Compile Include="CircularStateTestGrain.cs" />
     <Compile Include="ActivateDeactivateWatcherGrain.cs" />
     <Compile Include="ConcurrentGrain.cs" />
     <Compile Include="ConsumerEventCountingGrain.cs" />
     <Compile Include="DeadlockGrain.cs" />
     <Compile Include="DerivedServiceType.cs" />
-    <Compile Include="EnumResultGrain.cs" />
+    <Compile Include="RoundtripSerializationGrain.cs" />
     <Compile Include="ExceptionGrain.cs" />
     <Compile Include="ExternalTypeGrain.cs" />
     <Compile Include="FaultableConsumerGrain.cs" />
@@ -101,12 +100,14 @@
     <Compile Include="ReminderTestGrain.cs" />
     <Compile Include="RequestContextTestGrain.cs" />
     <Compile Include="SerializationGenerationGrain.cs" />
+    <Compile Include="MessageSerializationGrain.cs" />
     <Compile Include="ServiceType.cs" />
     <Compile Include="SimpleGenericGrain.cs" />
     <Compile Include="MultipleSubscriptionConsumerGrain.cs" />
     <Compile Include="ConcreteGrainsWithGenericInterfaces.cs" />
     <Compile Include="SampleStreamingGrain.cs" />
     <Compile Include="SimpleDIGrain.cs" />
+    <Compile Include="MultipleConstructorsSimpleGrain.cs" />
     <Compile Include="SQLAdapter\CustomerGrain.cs" />
     <Compile Include="SQLAdapter\DeviceGrain.cs" />
     <Compile Include="SQLAdapter\ICustomerState.cs" />
@@ -123,7 +124,9 @@
     <Compile Include="LivenessTestGrain.cs" />
     <Compile Include="SimpleLogViewGrainImplementations.cs" />
     <Compile Include="SpecializedSimpleGenericGrain.cs" />
+    <Compile Include="StatsCollectorGrain.cs" />
     <Compile Include="StreamCheckpoint.cs" />
+    <Compile Include="StreamInterceptionGrain.cs" />
     <Compile Include="ValueTypeTestGrain.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -153,7 +156,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="project.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Begin Orleans: Without these lines the project won't build properly -->

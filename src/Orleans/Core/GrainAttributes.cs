@@ -1,5 +1,8 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using Orleans.GrainDirectory;
+using Orleans.Runtime;
 
 namespace Orleans
 {
@@ -75,6 +78,28 @@ namespace Orleans
         }
 
         /// <summary>
+        /// The MayInterleaveAttribute attribute is used to mark classes 
+        /// that want to control request interleaving via supplied method callback.
+        /// </summary>
+        /// <remarks>
+        /// The callback method name should point to a public static function declared on the same class 
+        /// and having the following signature: <c>public static bool MayInterleave(InvokeMethodRequest req)</c>
+        /// </remarks>
+        [AttributeUsage(AttributeTargets.Class)]
+        public sealed class MayInterleaveAttribute : Attribute
+        {
+            /// <summary>
+            /// The name of the callback method
+            /// </summary>
+            internal string CallbackMethodName { get; private set; }
+
+            public MayInterleaveAttribute(string callbackMethodName)
+            {
+                CallbackMethodName = callbackMethodName;
+            }
+        }
+
+        /// <summary>
         /// The Immutable attribute indicates that instances of the marked class or struct are never modified
         /// after they are created.
         /// </summary>
@@ -100,6 +125,17 @@ namespace Orleans
             internal RegistrationAttribute(MultiClusterRegistrationStrategy strategy)
             {
                 RegistrationStrategy = strategy ?? MultiClusterRegistrationStrategy.GetDefault();
+            }
+        }
+
+        /// <summary>
+        /// This attribute indicates that instances of the marked grain class will have a single instance across all available clusters. Any requests in any clusters will be forwarded to the single activation instance.
+        /// </summary>
+        public class GlobalSingleInstanceAttribute : RegistrationAttribute
+        {
+            public GlobalSingleInstanceAttribute()
+                : base(GlobalSingleInstanceRegistration.Singleton)
+            {
             }
         }
 
@@ -131,7 +167,9 @@ namespace Orleans
 
             internal PlacementAttribute(PlacementStrategy placement)
             {
-                PlacementStrategy = placement ?? PlacementStrategy.GetDefault();
+                if (placement == null) throw new ArgumentNullException(nameof(placement));
+
+                PlacementStrategy = placement;
             }
         }
 
@@ -236,7 +274,7 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class StorageProviderAttribute : ProviderAttribute
+        public sealed class StorageProviderAttribute : PersistenceProviderAttribute
         {
             public StorageProviderAttribute()
             {
@@ -247,28 +285,38 @@ namespace Orleans
        
 
         /// <summary>
-        /// The [Orleans.Providers.LogViewProvider] attribute is used to specify a log view provider for grains that extend LogViewGrain&lt;T&gt;.
+        /// The [Orleans.Providers.LogViewProvider] attribute is used to define which log view provider to use for persisting state for grain which extend LogViewGrain;.
         /// <para>
-        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute,
-        /// otherwise we try to find a storage provider as for all other grains. 
+        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute for that grain, 
+        /// Otherwise system will try to find a [Orleans.Providers.StorageProvider] for the grain, depends on its  [Orleans.Providers.StorageProviderAttributes] set up,
+        /// If a suitable storage provider cannot be located for this grain, then the grain will fail to load into the Silo.
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class LogViewProviderAttribute : ProviderAttribute
+        public sealed class LogViewProviderAttribute : PersistenceProviderAttribute
         {
             public LogViewProviderAttribute()
             {
+                // There is no default log view provider (because the default is to use the default storage provider),
+                // therefore we are not setting the string there.
             }
         }
 
 
         /// <summary>
-        /// The common superclass of storage and log view provider attributes.
+        /// The common superclass of [Orleans.Providers.StorageProviderAttributes] and [Orleans.Providers.LogViewProviderAttributes].
+        /// <para>
+        /// They inherit from this same base attribute because they are alternative ways to specify
+        /// a persistence mechanism for the grain. For log view grains, users can either specify a storage provider
+        /// or a log view provider. Those are different kinds of persistence providers, but they are somewhat interchangeable
+        /// (a standard storage provider can be used for log view grains). See the code inside Catalog.SetupPersistenceProvider
+        /// which first finds out what persistence attribute is specified, and then retrieves the appropriate type of provider.
+        /// </para>
         /// </summary>
-        public class ProviderAttribute : Attribute
+        public class PersistenceProviderAttribute : Attribute
         {
             /// <summary>
-            /// The name of the provider to ne used for persisting state for this grain.
+            /// The name of the provider to be used for persisting of grain state
             /// </summary>
             public string ProviderName { get; set; }
         }
@@ -293,7 +341,7 @@ namespace Orleans
 
         internal static FactoryTypes CollectFactoryTypesSpecified(Type type)
         {
-            var attribs = type.GetCustomAttributes(typeof(FactoryAttribute), inherit: true);
+            var attribs = type.GetTypeInfo().GetCustomAttributes(typeof(FactoryAttribute), inherit: true).ToArray();
 
             // if no attributes are specified, we default to FactoryTypes.Grain.
             if (0 == attribs.Length)

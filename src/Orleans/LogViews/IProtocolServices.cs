@@ -35,7 +35,8 @@ namespace Orleans.LogViews
         /// <summary>
         /// The multicluster registration strategy for this grain.
         /// </summary>
-        MultiClusterRegistrationStrategy RegistrationStrategy { get; }
+        IMultiClusterRegistrationStrategy RegistrationStrategy { get; }
+
 
         /// <summary>
         /// A user-specified stream name to use for event sourcing, or null if none is specified.
@@ -43,7 +44,14 @@ namespace Orleans.LogViews
         string StreamName { get;  }
 
         /// <summary>
-        /// The id of this cluster.
+        /// Whether this cluster is running in a multi-cluster network.
+        /// </summary>
+        /// <returns></returns>
+        bool MultiClusterEnabled { get; }
+
+
+        /// <summary>
+        /// The id of this cluster. Returns "I" if no multi-cluster network is present.
         /// </summary>
         /// <returns></returns>
         string MyClusterId { get; }
@@ -59,6 +67,7 @@ namespace Orleans.LogViews
         /// List of all clusters that currently appear to have at least one active
         /// gateway reporting to the multi-cluster network. 
         /// There are no guarantees that this membership view is complete or consistent.
+        /// If there is no multi-cluster network, returns a list containing the single element "I".
         /// </summary>
         /// <returns></returns>
         IEnumerable<string>  ActiveClusters { get; }
@@ -77,10 +86,12 @@ namespace Orleans.LogViews
         void CaughtException(string where, Exception e);
 
         /// <summary>
-        /// Log an exception that occurred when trying to update a view.
+        /// Log an exception that occurred in user code, for some callback
         /// </summary>
-        /// <param name="e"></param>
-        void CaughtViewUpdateException(string where, Exception e);
+        /// <param name="callback">The name of the callback</param>
+        /// <param name="where">The context from which the callback was called</param>
+        /// <param name="e">The caught exception</param>
+        void CaughtUserCodeException(string callback, string where, Exception e);
 
         /// <summary> Output the specified message at <c>Info</c> log level. </summary>
         void Info(string format, params object[] args);        
@@ -113,6 +124,14 @@ namespace Orleans.LogViews
         protected ProtocolTransportException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         { }
+
+        public override string ToString()
+        {
+            if (InnerException != null)
+                return $"ProtocolTransportException: {InnerException}";
+            else
+                return Message;
+        }
     }
 
   

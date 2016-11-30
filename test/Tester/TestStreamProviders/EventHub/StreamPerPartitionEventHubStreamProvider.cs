@@ -3,6 +3,7 @@ using System;
 using System.Text;
 using Microsoft.ServiceBus.Messaging;
 using Orleans.Providers.Streams.Common;
+using Orleans.Runtime;
 using Orleans.ServiceBus.Providers;
 using Orleans.Streams;
 
@@ -12,16 +13,22 @@ namespace Tester.TestStreamProviders.EventHub
     {
         public class AdapterFactory : EventHubAdapterFactory
         {
+            private TimePurgePredicate timePurgePredicate = null;
+
             public AdapterFactory()
             {
                 CacheFactory = CreateQueueCache;
             }
 
-            private IEventHubQueueCache CreateQueueCache(string partition, IStreamQueueCheckpointer<string> checkpointer)
+            private IEventHubQueueCache CreateQueueCache(string partition, IStreamQueueCheckpointer<string> checkpointer, Logger log)
             {
-                var bufferPool = new FixedSizeObjectPool<FixedSizeBuffer>(adapterConfig.CacheSizeMb, pool => new FixedSizeBuffer(1 << 20, pool));
-                var dataAdapter = new CachedDataAdapter(partition, bufferPool);
-                return new EventHubQueueCache(checkpointer, dataAdapter);
+                if (timePurgePredicate != null)
+                {
+                    timePurgePredicate = new TimePurgePredicate(adapterSettings.DataMinTimeInCache, adapterSettings.DataMaxAgeInCache);
+                }
+                var bufferPool = new FixedSizeObjectPool<FixedSizeBuffer>(adapterSettings.CacheSizeMb, () => new FixedSizeBuffer(1 << 20));
+                var dataAdapter = new CachedDataAdapter(partition, bufferPool, timePurgePredicate);
+                return new EventHubQueueCache(checkpointer, dataAdapter, EventHubDataComparer.Instance, log);
             }
         }
 
@@ -29,17 +36,16 @@ namespace Tester.TestStreamProviders.EventHub
         {
             private readonly Guid partitionStreamGuid;
 
-            public CachedDataAdapter(string partitionKey, IObjectPool<FixedSizeBuffer> bufferPool)
-                : base(bufferPool)
+            public CachedDataAdapter(string partitionKey, IObjectPool<FixedSizeBuffer> bufferPool, TimePurgePredicate timePurge)
+                : base(bufferPool, timePurge)
             {
                 partitionStreamGuid = GetPartitionGuid(partitionKey);
             }
 
-
             public override StreamPosition GetStreamPosition(EventData queueMessage)
             {
                 IStreamIdentity stremIdentity = new StreamIdentity(partitionStreamGuid, null);
-                StreamSequenceToken token = new EventSequenceToken(queueMessage.SequenceNumber, 0);
+                StreamSequenceToken token = new EventSequenceTokenV2(queueMessage.SequenceNumber, 0);
                 return new StreamPosition(stremIdentity, token);
             }
         }

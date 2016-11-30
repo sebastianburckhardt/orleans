@@ -2,8 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
-
 using Orleans.Runtime;
 
 namespace Orleans
@@ -52,10 +52,10 @@ namespace Orleans
     /// </summary>
     /// <typeparam name="K">Type of objects to be used for intern keys</typeparam>
     /// <typeparam name="T">Type of objects to be interned / cached</typeparam>
-    internal class Interner<K, T> where T : class
+    internal class Interner<K, T> : IDisposable where T : class
     {
         private static readonly string internCacheName = "Interner-" + typeof(T).Name;
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
         private readonly TimeSpan cacheCleanupInterval;
         private readonly SafeTimer cacheCleanupTimer;
 
@@ -75,7 +75,7 @@ namespace Orleans
             if (initialSize <= 0) initialSize = InternerConstants.SIZE_MEDIUM;
             int concurrencyLevel = Environment.ProcessorCount * 4; // Default from ConcurrentDictionary class in .NET 4.0
 
-            logger = TraceLogger.GetLogger(internCacheName, TraceLogger.LoggerType.Runtime);
+            logger = LogManager.GetLogger(internCacheName, LoggerType.Runtime);
 
             this.internCache = new ConcurrentDictionary<K, WeakReference>(concurrencyLevel, initialSize);
 
@@ -99,8 +99,9 @@ namespace Orleans
         public T FindOrCreate(K key, Func<T> creatorFunc)
         {
             T obj = null;
-            WeakReference cacheEntry = internCache.GetOrAdd(key, 
-                (k) => {
+            WeakReference cacheEntry = internCache.GetOrAdd(key,
+                (k) =>
+                {
                     obj = creatorFunc();
                     return new WeakReference(obj);
                 });
@@ -126,13 +127,12 @@ namespace Orleans
         /// Find cached copy of object with specified key, otherwise create new one using the supplied creator-function.
         /// </summary>
         /// <param name="key">key to find</param>
-        /// <param name="creatorFunc">function to create new object and store for this key if no cached copy exists</param>
-        /// <returns>Object with specified key - either previous cached copy or newly created</returns>
+        /// <param name="obj">The existing value if the key is found</param>
         public bool TryFind(K key, out T obj)
         {
             obj = null;
             WeakReference cacheEntry;
-            if(internCache.TryGetValue(key, out cacheEntry))
+            if (internCache.TryGetValue(key, out cacheEntry))
             {
                 if (cacheEntry != null)
                 {
@@ -205,7 +205,7 @@ namespace Orleans
         public void StopAndClear()
         {
             internCache.Clear();
-            if(cacheCleanupTimer != null)
+            if (cacheCleanupTimer != null)
             {
                 cacheCleanupTimer.Dispose();
             }
@@ -269,7 +269,7 @@ namespace Orleans
         private string PrintInternerContent()
         {
             StringBuilder s = new StringBuilder();
-          
+
             foreach (var e in internCache)
             {
                 if (e.Value != null && e.Value.IsAlive && e.Value.Target != null)
@@ -278,6 +278,11 @@ namespace Orleans
                 }
             }
             return s.ToString();
+        }
+
+        public void Dispose()
+        {
+            cacheCleanupTimer.Dispose();
         }
     }
 }

@@ -2,10 +2,11 @@
 using System;
 using System.Threading.Tasks;
 using Orleans.Providers.Streams.AzureQueue;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Tester.TestStreamProviders;
-using UnitTests.Tester;
+using TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -40,7 +41,7 @@ namespace Tester.StreamingTests
             var deploymentId = HostedCluster.DeploymentId;
             base.Dispose();
             AzureQueueStreamProviderUtils.DeleteAllUsedAzureQueues(AQStreamProviderName, deploymentId,
-                StorageTestConstants.DataConnectionString).Wait();
+                TestDefaultConfiguration.DataConnectionString).Wait();
             TestAzureTableStorageStreamFailureHandler.DeleteAll().Wait();
         }
 

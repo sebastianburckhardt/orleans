@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
 using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime
@@ -77,8 +76,11 @@ namespace Orleans.Runtime
         private readonly bool localTestMode;
         private readonly HashSet<string> loadedGrainAsemblies;
 
-        public GrainInterfaceMap(bool localTestMode)
+        private readonly PlacementStrategy defaultPlacementStrategy;
+
+        public GrainInterfaceMap(bool localTestMode, PlacementStrategy defaultPlacementStrategy)
         {
+            this.defaultPlacementStrategy = defaultPlacementStrategy;
             table = new Dictionary<int, GrainInterfaceData>();
             typeToInterfaceData = new Dictionary<string, GrainInterfaceData>();
             primaryImplementations = new Dictionary<string, string>();
@@ -176,14 +178,14 @@ namespace Orleans.Runtime
             lock (this)
             {
                 grainClass = null;
-                placement = null;
+                placement = this.defaultPlacementStrategy;
                 registrationStrategy = null;
                 if (!implementationIndex.ContainsKey(typeCode))
                     return false;
 
                 var implementation = implementationIndex[typeCode];
                 grainClass = implementation.GetClassName(genericArguments);
-                placement = implementation.PlacementStrategy;
+                placement = implementation.PlacementStrategy ?? this.defaultPlacementStrategy;
                 registrationStrategy = implementation.RegistrationStrategy;
                 return true;
             }
@@ -357,7 +359,7 @@ namespace Orleans.Runtime
         private readonly GrainInterfaceMap.GrainInterfaceData interfaceData;
         [NonSerialized]
         private readonly Dictionary<string, string> genericClassNames;
-        
+
         private readonly PlacementStrategy placementStrategy;
         private readonly MultiClusterRegistrationStrategy registrationStrategy;
         private readonly bool isGeneric;
@@ -376,7 +378,7 @@ namespace Orleans.Runtime
             this.isGeneric = isGeneric;
             this.interfaceData = interfaceData;
             genericClassNames = new Dictionary<string, string>(); // TODO: initialize only for generic classes
-            placementStrategy = placement ?? PlacementStrategy.GetDefault();
+            placementStrategy = placement;
             this.registrationStrategy = registrationStrategy ?? MultiClusterRegistrationStrategy.GetDefault();
         }
 

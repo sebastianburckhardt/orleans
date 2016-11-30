@@ -16,6 +16,8 @@ namespace Orleans.Runtime.LogViews
         private ProviderLoader<ILogViewProvider> logViewProviderLoader;
         private IProviderRuntime providerRuntime;
         private IStorageProviderManager storageProviderManager;
+        public IGrainFactory GrainFactory { get; private set; }
+        public IServiceProvider ServiceProvider { get; private set; }
 
         public LogViewProviderManager(IGrainFactory grainFactory, IServiceProvider serviceProvider, IStorageProviderManager storageProviderManager)
         {
@@ -46,9 +48,9 @@ namespace Orleans.Runtime.LogViews
             }
         }
 
-        public int GetNumLoadedProviders()
+        public int GetLoadedProvidersNum()
         {
-            return logViewProviderLoader.GetNumLoadedProviders();
+            return logViewProviderLoader.GetLoadedProvidersNum();
         }
 
         public IList<ILogViewProvider> GetProviders()
@@ -68,7 +70,7 @@ namespace Orleans.Runtime.LogViews
 
         public Logger GetLogger(string loggerName)
         {
-            return TraceLogger.GetLogger(loggerName, TraceLogger.LoggerType.Provider);
+            return LogManager.GetLogger(loggerName, LoggerType.Provider);
         }
 
         public Guid ServiceId
@@ -80,9 +82,6 @@ namespace Orleans.Runtime.LogViews
         {
             get { return providerRuntime.SiloIdentity; }
         }
-
-        public IGrainFactory GrainFactory { get; private set; }
-        public IServiceProvider ServiceProvider { get; private set; }
 
         /// <summary>
         /// Get list of providers loaded in this silo.
@@ -104,21 +103,18 @@ namespace Orleans.Runtime.LogViews
             return logViewProviderLoader.GetProvider(name, true);
         }
 
-        public ILogViewProvider WrapStorageProvider(IStorageProvider storageprovider)
-        {
-            // create a wrapping provider.
-            return new WrappedStorageProvider() { globalstorageprovider = storageprovider };
-        }
-
         public bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false)
         {
             return storageProviderManager.TryGetProvider(name, out provider, caseInsensitive);
         }
 
-
         // A log view provider that is really just a wrapper around the storage provider
-        private class WrappedStorageProvider : ILogViewProvider
+        internal class WrappedStorageProvider : ILogViewProvider
         {
+            public WrappedStorageProvider(IStorageProvider storageProvider)
+            {
+                globalstorageprovider = storageProvider;
+            }
             internal IStorageProvider globalstorageprovider;
 
             public ILogViewAdaptor<T, E> MakeLogViewAdaptor<T, E>(ILogViewHost<T, E> hostgrain, T initialstate, string graintypename, IProtocolServices services) 

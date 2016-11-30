@@ -2,24 +2,46 @@
 using System.Collections.Generic;
 using Orleans.MultiCluster;
 
-
 namespace Orleans.Runtime.MultiClusterNetwork
 {
-    internal class MultiClusterOracleData 
+    internal class MultiClusterOracleData
     {
         private volatile MultiClusterData localData;  // immutable, can read without lock
 
+        // for quick access, we precompute available gateways per cluster
+        public IReadOnlyDictionary<string, List<SiloAddress>> ActiveGatewaysByCluster
+        {
+            get { return activeGatewaysByCluster; }
+        }
+        private volatile IReadOnlyDictionary<string, List<SiloAddress>> activeGatewaysByCluster;
+
         private readonly HashSet<GrainReference> confListeners;
 
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
 
         internal MultiClusterData Current { get { return localData; } }
 
-        internal MultiClusterOracleData(TraceLogger log)
+        internal MultiClusterOracleData(Logger log)
         {
             logger = log;
             localData = new MultiClusterData();
+            activeGatewaysByCluster = new Dictionary<string, List<SiloAddress>>();
             confListeners = new HashSet<GrainReference>();
+        }
+
+        private void ComputeAvailableGatewaysPerCluster()
+        {
+            // organize active gateways by cluster
+            var gws = new Dictionary<string, List<SiloAddress>>();
+            foreach (var g in localData.Gateways)
+                if (g.Value.Status == GatewayStatus.Active)
+                {
+                    List<SiloAddress> list;
+                    if (!gws.TryGetValue(g.Value.ClusterId, out list))
+                        list = gws[g.Value.ClusterId] = new List<SiloAddress>();
+                    list.Add(g.Key);
+                }
+            activeGatewaysByCluster = gws;
         }
 
         internal bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer)
@@ -34,6 +56,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             return true;
         }
 
+        
         internal bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
         {
             if (logger.IsVerbose3)
@@ -58,6 +81,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
             if (delta.IsEmpty)
                 return delta;
+
+            if (delta.Gateways.Count > 0)
+            {
+                // some gateways have changed
+                ComputeAvailableGatewaysPerCluster();
+            }
 
             if (delta.Configuration != null)
             {

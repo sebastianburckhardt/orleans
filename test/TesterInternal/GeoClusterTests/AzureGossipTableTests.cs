@@ -2,21 +2,20 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Orleans.MultiCluster;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.MultiClusterNetwork;
-using Orleans.TestingHost;
+using Tester;
+using TestExtensions;
 using UnitTests.StorageTests;
-using Orleans.MultiCluster;
 using Xunit;
-using Assert = Xunit.Assert;
 
 namespace Tests.GeoClusterTests
 {
     public class AzureGossipTableTests : AzureStorageBasicTestFixture 
     {
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
 
         private Guid globalServiceId; //this should be the same for all clusters. Use this as partition key.
         //this should be unique per cluster. Can we use deployment id? 
@@ -29,7 +28,7 @@ namespace Tests.GeoClusterTests
 
         public AzureGossipTableTests()
         {
-            logger = TraceLogger.GetLogger("AzureGossipTableTests", TraceLogger.LoggerType.Application);
+            logger = LogManager.GetLogger("AzureGossipTableTests", LoggerType.Application);
         
             globalServiceId = Guid.NewGuid();
             deploymentId = "test-" + globalServiceId;
@@ -52,7 +51,7 @@ namespace Tests.GeoClusterTests
                 ServiceId = globalServiceId,
                 ClusterId = "0",
                 DeploymentId = deploymentId,
-                DataConnectionString = StorageTestConstants.DataConnectionString
+                DataConnectionString = TestDefaultConfiguration.DataConnectionString
             };
 
             gossipTable = new AzureTableBasedGossipChannel();

@@ -44,7 +44,7 @@ namespace Orleans.Runtime.Storage
 
         public int GetNumLoadedProviders()
         {
-            return storageProviderLoader.GetNumLoadedProviders();
+            return storageProviderLoader.GetLoadedProvidersNum();
         }
 
         public IList<IStorageProvider> GetProviders()
@@ -54,7 +54,7 @@ namespace Orleans.Runtime.Storage
 
         public Logger GetLogger(string loggerName)
         {
-            return TraceLogger.GetLogger(loggerName, TraceLogger.LoggerType.Provider);
+            return LogManager.GetLogger(loggerName, LoggerType.Provider);
         }
 
         public Guid ServiceId

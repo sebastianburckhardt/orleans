@@ -12,13 +12,9 @@ namespace Orleans.LogViews
 
         IEnumerable<string> GetProviderNames();
 
-        int GetNumLoadedProviders();
+        int GetLoadedProvidersNum();
 
-        bool TryGetProvider(string name, out ILogViewProvider provider, bool caseInsensitive = false);
-
-        ILogViewProvider WrapStorageProvider(Orleans.Storage.IStorageProvider provider);
-
-    
+        bool TryGetProvider(string name, out ILogViewProvider provider, bool caseInsensitive = false);    
     }
 
 

@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System;
 
 namespace Orleans.Runtime
 {
@@ -26,6 +26,8 @@ namespace Orleans.Runtime
 
         public const string ORLEANS_ZOOKEEPER_UTILS_DLL = "OrleansZooKeeperUtils";
 
+        public const string TroubleshootingHelpLink = "https://aka.ms/orleans-troubleshooting";
+
         public static readonly GrainId DirectoryServiceId = GrainId.GetSystemTargetGrainId(10);
         public static readonly GrainId DirectoryCacheValidatorId = GrainId.GetSystemTargetGrainId(11);
         public static readonly GrainId SiloControlId = GrainId.GetSystemTargetGrainId(12);
@@ -38,7 +40,9 @@ namespace Orleans.Runtime
         public static readonly GrainId DeploymentLoadPublisherSystemTargetId = GrainId.GetSystemTargetGrainId(22);
         public static readonly GrainId MultiClusterOracleId = GrainId.GetSystemTargetGrainId(23);
         public static readonly GrainId ClusterDirectoryServiceId = GrainId.GetSystemTargetGrainId(24);
-        public static readonly GrainId ProtocolGatewayId = GrainId.GetSystemTargetGrainId(25);
+        public static readonly GrainId StreamProviderManagerAgentSystemTargetId = GrainId.GetSystemTargetGrainId(25);
+        public static readonly GrainId TestHooksSystemTargetId = GrainId.GetSystemTargetGrainId(26);
+        public static readonly GrainId ProtocolGatewayId = GrainId.GetSystemTargetGrainId(27);
 
         public const int PULLING_AGENTS_MANAGER_SYSTEM_TARGET_TYPE_CODE = 254;
         public const int PULLING_AGENT_SYSTEM_TARGET_TYPE_CODE = 255;

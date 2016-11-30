@@ -13,14 +13,16 @@ using Orleans.ServiceBus.Providers;
 using Orleans.Streams;
 using Orleans.TestingHost;
 using Orleans.TestingHost.Utils;
+using Tester;
+using TestExtensions;
 using TestGrainInterfaces;
 using TestGrains;
 using UnitTests.Grains;
-using UnitTests.Tester;
 using Xunit;
 
 namespace UnitTests.StreamingTests
 {
+    [TestCategory("EventHub"), TestCategory("Streaming")]
     public class EHStreamProviderCheckpointTests : TestClusterPerTest
     {
         private static readonly string StreamProviderTypeName = typeof(EventHubStreamProvider).FullName;
@@ -30,15 +32,17 @@ namespace UnitTests.StreamingTests
         private const string EHCheckpointTable = "ehcheckpoint";
         private static readonly string CheckpointNamespace = Guid.NewGuid().ToString();
 
-        private static readonly EventHubSettings EventHubConfig = new EventHubSettings(StorageTestConstants.EventHubConnectionString,
-            EHConsumerGroup, EHPath);
-
-        private static readonly EventHubStreamProviderConfig ProviderConfig =
-            new EventHubStreamProviderConfig(StreamProviderName, 3);
+        private static readonly Lazy<EventHubSettings> EventHubConfig = new Lazy<EventHubSettings>(() =>
+            new EventHubSettings(
+                TestDefaultConfiguration.EventHubConnectionString,
+                EHConsumerGroup, EHPath));
 
         private static readonly EventHubCheckpointerSettings CheckpointerSettings =
-            new EventHubCheckpointerSettings(StorageTestConstants.DataConnectionString, EHCheckpointTable, CheckpointNamespace,
-                TimeSpan.FromSeconds(1));
+            new EventHubCheckpointerSettings(TestDefaultConfiguration.EventHubConnectionString,
+                EHCheckpointTable, CheckpointNamespace, TimeSpan.FromSeconds(1));
+
+        private static readonly EventHubStreamProviderSettings ProviderSettings =
+            new EventHubStreamProviderSettings(StreamProviderName) { CacheSizeMb = 3 };
 
         public override TestCluster CreateTestCluster()
         {
@@ -48,14 +52,14 @@ namespace UnitTests.StreamingTests
             return new TestCluster(options);
         }
 
-        [Fact, TestCategory("EventHub"), TestCategory("Streaming")]
+        [Fact]
         public async Task ReloadFromCheckpointTest()
         {
             logger.Info("************************ EHReloadFromCheckpointTest *********************************");
             await ReloadFromCheckpointTest(ImplicitSubscription_RecoverableStream_CollectorGrain.StreamNamespace, 1, 256);
         }
 
-        [Fact, TestCategory("EventHub"), TestCategory("Streaming")]
+        [Fact]
         public async Task RestartSiloAfterCheckpointTest()
         {
             logger.Info("************************ EHRestartSiloAfterCheckpointTest *********************************");
@@ -66,7 +70,7 @@ namespace UnitTests.StreamingTests
         {
             var dataManager = new AzureTableDataManager<TableEntity>(CheckpointerSettings.TableName, CheckpointerSettings.DataConnectionString);
             dataManager.InitTableAsync().Wait();
-            dataManager.DeleteTableAsync().Wait();
+            dataManager.ClearTableAsync().Wait();
             base.Dispose();
         }
 
@@ -76,12 +80,12 @@ namespace UnitTests.StreamingTests
             try
             {
                 await GenerateEvents(streamNamespace, streamGuids, eventsInStream, 4096);
-                await TestingUtils.WaitUntilAsync(assertIsTrue => CheckCounters(streamNamespace, streamCount, eventsInStream, assertIsTrue), TimeSpan.FromSeconds(30));
+                await TestingUtils.WaitUntilAsync(assertIsTrue => CheckCounters(streamNamespace, streamCount, eventsInStream, assertIsTrue), TimeSpan.FromSeconds(60));
 
                 await RestartAgents();
 
                 await GenerateEvents(streamNamespace, streamGuids, eventsInStream, 4096);
-                await TestingUtils.WaitUntilAsync(assertIsTrue => CheckCounters(streamNamespace, streamCount, eventsInStream * 2, assertIsTrue), TimeSpan.FromSeconds(30));
+                await TestingUtils.WaitUntilAsync(assertIsTrue => CheckCounters(streamNamespace, streamCount, eventsInStream * 2, assertIsTrue), TimeSpan.FromSeconds(90));
             }
             finally
             {
@@ -96,7 +100,7 @@ namespace UnitTests.StreamingTests
             try
             {
                 await GenerateEvents(streamNamespace, streamGuids, eventsInStream, 0);
-                await TestingUtils.WaitUntilAsync(assertIsTrue => CheckCounters(streamNamespace, streamCount, eventsInStream, assertIsTrue), TimeSpan.FromSeconds(30));
+                await TestingUtils.WaitUntilAsync(assertIsTrue => CheckCounters(streamNamespace, streamCount, eventsInStream, assertIsTrue), TimeSpan.FromSeconds(60));
 
                 HostedCluster.RestartSilo(HostedCluster.SecondarySilos[0]);
                 await HostedCluster.WaitForLivenessToStabilizeAsync();
@@ -180,8 +184,8 @@ namespace UnitTests.StreamingTests
             var settings = new Dictionary<string, string>();
 
             // get initial settings from configs
-            ProviderConfig.WriteProperties(settings);
-            EventHubConfig.WriteProperties(settings);
+            ProviderSettings.WriteProperties(settings);
+            EventHubConfig.Value.WriteProperties(settings);
             CheckpointerSettings.WriteProperties(settings);
 
             // add queue balancer setting

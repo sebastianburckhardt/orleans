@@ -3,6 +3,8 @@ using Orleans;
 using Orleans.Messaging;
 using Orleans.Runtime;
 using Orleans.TestingHost;
+using Tester;
+using TestExtensions;
 using Xunit;
 
 namespace UnitTests.MembershipTests
@@ -14,22 +16,22 @@ namespace UnitTests.MembershipTests
     {
         public ZookeeperMembershipTableTests(ConnectionStringFixture fixture) : base(fixture)
         {
-            TraceLogger.AddTraceLevelOverride(typeof (ZookeeperMembershipTableTests).Name, Severity.Verbose3);
+            LogManager.AddTraceLevelOverride(typeof (ZookeeperMembershipTableTests).Name, Severity.Verbose3);
         }
 
-        protected override IMembershipTable CreateMembershipTable(TraceLogger logger)
+        protected override IMembershipTable CreateMembershipTable(Logger logger)
         {
             return AssemblyLoader.LoadAndCreateInstance<IMembershipTable>(Constants.ORLEANS_ZOOKEEPER_UTILS_DLL, logger);
         }
 
-        protected override IGatewayListProvider CreateGatewayListProvider(TraceLogger logger)
+        protected override IGatewayListProvider CreateGatewayListProvider(Logger logger)
         {
             return AssemblyLoader.LoadAndCreateInstance<IGatewayListProvider>(Constants.ORLEANS_ZOOKEEPER_UTILS_DLL, logger);
         }
 
         protected override string GetConnectionString()
         {
-            return StorageTestConstants.GetZooKeeperConnectionString();
+            return TestDefaultConfiguration.ZooKeeperConnectionString;
         }
 
         [Fact, TestCategory("Membership"), TestCategory("ZooKeeper")]

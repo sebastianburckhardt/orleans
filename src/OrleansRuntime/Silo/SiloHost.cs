@@ -1,10 +1,8 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
-using System.Runtime;
 using System.Threading;
-using System.Globalization;
-using System.Threading.Tasks;
 using Orleans.Runtime.Configuration;
 
 
@@ -13,7 +11,11 @@ namespace Orleans.Runtime.Host
     /// <summary>
     /// Allows programmatically hosting an Orleans silo in the curent app domain.
     /// </summary>
-    public class SiloHost : MarshalByRefObject, IDisposable
+    public class SiloHost :
+#if !NETSTANDARD_TODO
+        MarshalByRefObject,
+# endif
+        IDisposable
     {
         /// <summary> Name of this silo. </summary>
         public string Name { get; set; }
@@ -72,7 +74,7 @@ namespace Orleans.Runtime.Host
         /// <summary> Whether this silo started successfully and is currently running. </summary>
         public bool IsStarted { get; private set; }
 
-        private TraceLogger logger;
+        private Logger logger;
         private Silo orleans;
         private EventWaitHandle startupEvent;
         private EventWaitHandle shutdownEvent;
@@ -114,7 +116,7 @@ namespace Orleans.Runtime.Host
         /// </summary>
         public void InitializeOrleansSilo()
         {
-#if DEBUG
+#if DEBUG && !NETSTANDARD
             AssemblyLoaderUtils.EnableAssemblyLoadTracing();
 #endif
 
@@ -122,6 +124,7 @@ namespace Orleans.Runtime.Host
             {
                 if (!ConfigLoaded) LoadOrleansConfig();
                 orleans = new Silo(Name, Type, Config);
+                logger.Info(ErrorCode.Runtime_Error_100288, "Successfully initialized Orleans silo '{0}' as a {1} node.", orleans.Name, orleans.Type);
             }
             catch (Exception exc)
             {
@@ -136,7 +139,8 @@ namespace Orleans.Runtime.Host
         public void UnInitializeOrleansSilo()
         {
             Utils.SafeExecute(UnobservedExceptionsHandlerClass.ResetUnobservedExceptionHandler);
-            Utils.SafeExecute(TraceLogger.UnInitialize);
+            Utils.SafeExecute(LogManager.UnInitialize);
+            Utils.SafeExecute(GrainTypeManager.Stop);
         }
 
         /// <summary>
@@ -395,7 +399,7 @@ namespace Orleans.Runtime.Host
             if (string.IsNullOrWhiteSpace(Name))
                 Name = "Silo";
 
-            var errMsg = "ERROR starting Orleans silo name=" + Name + " Exception=" + TraceLogger.PrintException(exc);
+            var errMsg = "ERROR starting Orleans silo name=" + Name + " Exception=" + LogFormatter.PrintException(exc);
             if (logger != null) logger.Error(ErrorCode.Runtime_Error_100105, errMsg, exc);
 
             // Dump Startup error to a log file
@@ -413,7 +417,7 @@ namespace Orleans.Runtime.Host
                 if (logger != null) logger.Error(ErrorCode.Runtime_Error_100106, "Error writing log file " + startupLog, exc2);
             }
 
-            TraceLogger.Flush();
+            LogManager.Flush();
         }
 
         /// <summary>
@@ -443,7 +447,7 @@ namespace Orleans.Runtime.Host
         /// <summary>
         /// Allows silo config to be programmatically set.
         /// </summary>
-        /// <param name="config">Configuration data for this silo & cluster.</param>
+        /// <param name="config">Configuration data for this silo and cluster.</param>
         private void SetSiloConfig(ClusterConfiguration config)
         {
             Config = config;
@@ -474,8 +478,8 @@ namespace Orleans.Runtime.Host
 
         private void InitializeLogger(NodeConfiguration nodeCfg)
         {
-            TraceLogger.Initialize(nodeCfg);
-            logger = TraceLogger.GetLogger("OrleansSiloHost", TraceLogger.LoggerType.Runtime);
+            LogManager.Initialize(nodeCfg);
+            logger = LogManager.GetLogger("OrleansSiloHost", LoggerType.Runtime);
         }
 
         /// <summary>
@@ -528,6 +532,8 @@ namespace Orleans.Runtime.Host
             GC.SuppressFinalize(this);
         }
 
+        /// <summary> Perform the Dispose / cleanup operation. </summary>
+        /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposed)

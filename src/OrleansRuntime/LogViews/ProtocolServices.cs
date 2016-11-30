@@ -25,14 +25,11 @@ namespace Orleans.Runtime.LogViews
 
         public ILogViewProvider Provider { get; private set; }
 
-        public MultiClusterRegistrationStrategy RegistrationStrategy { get; private set;  }
+        public IMultiClusterRegistrationStrategy RegistrationStrategy { get; private set; }
 
         private Grain grain;   // links to the grain that owns this service object
 
-        // cached 
-
-
-        internal ProtocolServices(Grain gr, ILogViewProvider provider, MultiClusterRegistrationStrategy strategy)
+        internal ProtocolServices(Grain gr, ILogViewProvider provider, IMultiClusterRegistrationStrategy strategy)
         {
             this.grain = gr;
             this.Provider = provider;
@@ -74,8 +71,10 @@ namespace Orleans.Runtime.LogViews
 
             var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
 
-            if (silo.TestHook.DropNotificationMessages && payload is NotificationMessage)
-               return null;
+            // test hook
+            if ((oracle as MultiClusterNetwork.MultiClusterOracle).DropNotificationMessagesForTesting
+                && payload is INotificationMessage)
+                return null;
 
             try
             {
@@ -92,6 +91,15 @@ namespace Orleans.Runtime.LogViews
         private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
         private static string PseudoReplicaId = "I";
 
+
+        public bool MultiClusterEnabled
+        {
+            get
+            {
+                return (PseudoMultiClusterConfiguration == null);
+            }
+        }
+    
         public string MyClusterId
         {
             get
@@ -121,6 +129,21 @@ namespace Orleans.Runtime.LogViews
                     return PseudoMultiClusterConfiguration;
                 else
                     return Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration();
+            }
+        }
+
+        public IEnumerable<string> GetRemoteInstances()
+        {
+            if (PseudoMultiClusterConfiguration == null
+                && RegistrationStrategy != ClusterLocalRegistration.Singleton)
+            {
+                var myclusterid = Silo.CurrentSilo.ClusterId;
+
+                foreach (var cluster in Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration().Clusters)
+                {
+                    if (cluster != myclusterid)
+                        yield return cluster;
+                }
             }
         }
 
@@ -163,14 +186,17 @@ namespace Orleans.Runtime.LogViews
         }
      
 
-        public void CaughtViewUpdateException(string where, Exception e)
+
+        public void CaughtUserCodeException(string callback, string where, Exception e)
         {
-            Provider.Log.Warn((int)ErrorCode.LogView_ViewUpdateException,  
-         string.Format("{0}{1} Exception Caught at {2}",
+            Provider.Log.Warn((int)ErrorCode.LogView_UserCodeException,
+                string.Format("{0}{1} Exception caught in user code for {2}, called from {3}",
                    grain.GrainReference,
                    PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
+                   callback,
                    where), e);
         }
+
 
         public void Info(string format, params object[] args)
         {

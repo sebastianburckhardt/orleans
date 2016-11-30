@@ -1,12 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.FSharp.Core;
-using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
+using TestExtensions;
 using UnitTests.FSharpTypes;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using UnitTests.GrainInterfaces;
 using Xunit;
-using Tester;
 
 namespace UnitTests.General
 {
@@ -20,7 +18,7 @@ namespace UnitTests.General
             var id = Guid.NewGuid();
             var grain = GrainFactory.GetGrain<IGeneric1Argument<T>>(id, "UnitTests.Grains.Generic1ArgumentGrain");
             var output = await grain.Ping(input);
-            Assert.AreEqual(input, output);
+            Assert.Equal(input, output);
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("Generics"), TestCategory("FSharp")]

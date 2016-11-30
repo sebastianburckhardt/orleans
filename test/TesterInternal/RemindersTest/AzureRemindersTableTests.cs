@@ -2,7 +2,8 @@
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Runtime.ReminderService;
-using Orleans.TestingHost;
+using Tester;
+using TestExtensions;
 using UnitTests.StorageTests;
 using Xunit;
 
@@ -15,9 +16,9 @@ namespace UnitTests.RemindersTest
     {
         public AzureRemindersTableTests(ConnectionStringFixture fixture) : base(fixture)
         {
-            TraceLogger.AddTraceLevelOverride("AzureTableDataManager", Severity.Verbose3);
-            TraceLogger.AddTraceLevelOverride("OrleansSiloInstanceManager", Severity.Verbose3);
-            TraceLogger.AddTraceLevelOverride("Storage", Severity.Verbose3);
+            LogManager.AddTraceLevelOverride("AzureTableDataManager", Severity.Verbose3);
+            LogManager.AddTraceLevelOverride("OrleansSiloInstanceManager", Severity.Verbose3);
+            LogManager.AddTraceLevelOverride("Storage", Severity.Verbose3);
         }
 
         protected override IReminderTable CreateRemindersTable()
@@ -27,7 +28,7 @@ namespace UnitTests.RemindersTest
 
         protected override string GetConnectionString()
         {
-            return StorageTestConstants.DataConnectionString;
+            return TestDefaultConfiguration.DataConnectionString;
         }
 
         [Fact, TestCategory("Reminders"), TestCategory("Azure")]

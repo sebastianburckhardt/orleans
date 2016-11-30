@@ -16,32 +16,37 @@ namespace Orleans.Runtime
         private static readonly TimeSpan EXP_BACKOFF_STEP = TimeSpan.FromSeconds(1);
 
         private readonly ILocalGrainDirectory grainDirectory;
-        private readonly ISiloMessageCenter messageCenter;
         private readonly SiloAddress myAddress;
         private readonly OrleansTaskScheduler scheduler;
         private readonly ClusterConfiguration orleansConfig;
-        private readonly TraceLogger logger;
+        private readonly Logger logger;
         private GrainTimer clientRefreshTimer;
         private Gateway gateway;
-       
 
-        internal ClientObserverRegistrar(SiloAddress myAddr, ISiloMessageCenter mc, ILocalGrainDirectory dir, OrleansTaskScheduler scheduler, ClusterConfiguration config)
-            : base(Constants.ClientObserverRegistrarId, myAddr)
+
+        public ClientObserverRegistrar(
+            SiloInitializationParameters initializationParameters,
+            ILocalGrainDirectory dir,
+            OrleansTaskScheduler scheduler,
+            ClusterConfiguration config)
+            : base(Constants.ClientObserverRegistrarId, initializationParameters.SiloAddress)
         {
             grainDirectory = dir;
-            messageCenter = mc;
-            myAddress = myAddr;
+            myAddress = initializationParameters.SiloAddress;
             this.scheduler = scheduler;
             orleansConfig = config;
-            logger = TraceLogger.GetLogger(typeof(ClientObserverRegistrar).Name);
+            logger = LogManager.GetLogger(typeof(ClientObserverRegistrar).Name);
         }
 
         internal void SetGateway(Gateway gateway)
         {
             this.gateway = gateway;
+            // Only start ClientRefreshTimer if this silo has a gateway.
+            // Need to start the timer in the system target context.
+            scheduler.QueueAction(Start, this.SchedulingContext).Ignore();
         }
 
-        public Task Start()
+        private void Start()
         {
             var random = new SafeRandom();
             var randomOffset = random.NextTimeSpan(orleansConfig.Globals.ClientRegistrationRefresh);
@@ -52,7 +57,7 @@ namespace Orleans.Runtime
                     orleansConfig.Globals.ClientRegistrationRefresh, 
                     "ClientObserverRegistrar.ClientRefreshTimer");
             clientRefreshTimer.Start();
-            return TaskDone.Done;
+            if (logger.IsVerbose) { logger.Verbose("Client registrar service started successfully."); }
         }
 
         internal void ClientAdded(GrainId clientId)
@@ -70,7 +75,7 @@ namespace Orleans.Runtime
         {
             var addr = GetClientActivationAddress(clientId);
             scheduler.QueueTask(
-                () => ExecuteWithRetries(() => grainDirectory.UnregisterAsync(addr, force:true), ErrorCode.ClientRegistrarFailedToUnregister, String.Format("Directory.UnRegisterAsync {0} failed.", addr)), 
+                () => ExecuteWithRetries(() => grainDirectory.UnregisterAsync(addr, Orleans.GrainDirectory.UnregistrationCause.Force), ErrorCode.ClientRegistrarFailedToUnregister, String.Format("Directory.UnRegisterAsync {0} failed.", addr)), 
                 this.SchedulingContext)
                         .Ignore();
         }
@@ -102,6 +107,7 @@ namespace Orleans.Runtime
 
         private async Task OnClientRefreshTimer(object data)
         {
+            if (gateway == null) return;
             try
             {
                 ICollection<GrainId> clients = gateway.GetConnectedClients().ToList();
@@ -117,16 +123,8 @@ namespace Orleans.Runtime
             }
             catch (Exception exc)
             {
-                int actualExceptions = 1;
-                if (exc is AggregateException)
-                {
-                    AggregateException aggregateException = exc as AggregateException;
-                    actualExceptions = aggregateException.InnerExceptions.Count;
-                    exc = aggregateException.InnerExceptions.First();
-                }
                 logger.Error(ErrorCode.ClientRegistrarTimerFailed, 
-                    String.Format("OnClientRefreshTimer has thrown {0} inner exceptions. Printing the first exception:", actualExceptions), 
-                    exc);
+                    String.Format("OnClientRefreshTimer has thrown an exceptions."), exc);
             }
         }
 

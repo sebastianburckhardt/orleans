@@ -3,12 +3,14 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
+
 using Orleans.CodeGeneration;
 using Orleans.Concurrency;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
-using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.ConsistentRing;
+using Orleans.Runtime.Scheduler;
 using Orleans.Streams;
 
 namespace Orleans.Runtime.Providers
@@ -71,13 +73,17 @@ namespace Orleans.Runtime.Providers
 
         public ImplicitStreamSubscriberTable ImplicitStreamSubscriberTable { get { return implicitStreamSubscriberTable; } }
 
-        public static void StreamingInitialize(IGrainFactory grainFactory, ImplicitStreamSubscriberTable implicitStreamSubscriberTable) 
+        public void StreamingInitialize()
         {
-            Instance.implicitStreamSubscriberTable = implicitStreamSubscriberTable;
-            Instance.grainBasedPubSub = new GrainBasedPubSubRuntime(grainFactory);
-            var tmp = new ImplicitStreamPubSub(implicitStreamSubscriberTable);
-            Instance.implictPubSub = tmp;
-            Instance.combinedGrainBasedAndImplicitPubSub = new StreamPubSubImpl(Instance.grainBasedPubSub, tmp);
+            this.implicitStreamSubscriberTable = new ImplicitStreamSubscriberTable();
+            this.grainBasedPubSub = new GrainBasedPubSubRuntime(this.GrainFactory);
+            var tmp = new ImplicitStreamPubSub(this.implicitStreamSubscriberTable);
+            this.implictPubSub = tmp;
+            this.combinedGrainBasedAndImplicitPubSub = new StreamPubSubImpl(this.grainBasedPubSub, tmp);
+
+            var typeManager = this.ServiceProvider.GetRequiredService<GrainTypeManager>();
+            Type[] types = typeManager.GrainClassTypeData.Select(t => t.Value.Type).ToArray();
+            this.ImplicitStreamSubscriberTable.InitImplicitStreamSubscribers(types);
         }
 
         public StreamDirectory GetStreamDirectory()
@@ -88,7 +94,7 @@ namespace Orleans.Runtime.Providers
 
         public Logger GetLogger(string loggerName)
         {
-            return TraceLogger.GetLogger(loggerName, TraceLogger.LoggerType.Provider);
+            return LogManager.GetLogger(loggerName, LoggerType.Provider);
         }
 
         public string ExecutingEntityIdentity()
@@ -160,7 +166,7 @@ namespace Orleans.Runtime.Providers
             var currentActivation = GetCurrentActivationData();
             var invoker = TryGetExtensionInvoker(handler.GetType());
             if (invoker == null)
-                throw new SystemException("Extension method invoker was not generated for an extension interface");
+                throw new InvalidOperationException("Extension method invoker was not generated for an extension interface");
             
             return currentActivation.TryAddExtension(invoker, handler);
         }

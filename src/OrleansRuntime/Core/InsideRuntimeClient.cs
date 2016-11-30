@@ -1,22 +1,20 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Data;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
-
 using Orleans.CodeGeneration;
 using Orleans.Runtime.Configuration;
-using Orleans.Runtime.GrainDirectory;
-using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.ConsistentRing;
+using Orleans.Runtime.GrainDirectory;
+using Orleans.Runtime.Providers;
+using Orleans.Runtime.Scheduler;
 using Orleans.Serialization;
 using Orleans.Storage;
 using Orleans.Streams;
-using Orleans.Runtime.Providers;
 
 
 namespace Orleans.Runtime
@@ -26,35 +24,36 @@ namespace Orleans.Runtime
     /// </summary>
     internal class InsideRuntimeClient : IRuntimeClient
     {
-        private static readonly TraceLogger logger = TraceLogger.GetLogger("InsideRuntimeClient", TraceLogger.LoggerType.Runtime);
-        private static readonly TraceLogger invokeExceptionLogger = TraceLogger.GetLogger("Grain.InvokeException", TraceLogger.LoggerType.Application);
-        private static readonly TraceLogger appLogger = TraceLogger.GetLogger("Application", TraceLogger.LoggerType.Application);
+        private static readonly Logger logger = LogManager.GetLogger("InsideRuntimeClient", LoggerType.Runtime);
+        private static readonly Logger invokeExceptionLogger = LogManager.GetLogger("Grain.InvokeException", LoggerType.Application);
+        private static readonly Logger appLogger = LogManager.GetLogger("Application", LoggerType.Application);
 
         private readonly Dispatcher dispatcher;
         private readonly ILocalGrainDirectory directory;
         private readonly List<IDisposable> disposables;
         private readonly ConcurrentDictionary<CorrelationId, CallbackData> callbacks;
         
-        private readonly InvocationMethodInfoMap invocationMethodInfoMap = new InvocationMethodInfoMap();
+        private readonly InterceptedMethodInvokerCache interceptedMethodInvokerCache = new InterceptedMethodInvokerCache();
         public TimeSpan ResponseTimeout { get; private set; }
         private readonly GrainTypeManager typeManager;
-        private GrainInterfaceMap grainInterfaceMap;
+        private readonly Lazy<ISiloStatusOracle> siloStatusOracle;
+        private IGrainTypeResolver grainInterfaceMap;
 
         internal readonly IConsistentRingProvider ConsistentRingProvider;
-        
-        
+
         public InsideRuntimeClient(
             Dispatcher dispatcher,
             Catalog catalog,
             ILocalGrainDirectory directory,
-            SiloAddress silo,
             ClusterConfiguration config,
             IConsistentRingProvider ring,
             GrainTypeManager typeManager,
-            GrainFactory grainFactory)
+            TypeMetadataCache typeMetadataCache,
+            Func<ISiloStatusOracle> siloStatusOracle,
+            OrleansTaskScheduler scheduler)
         {
             this.dispatcher = dispatcher;
-            MySilo = silo;
+            MySilo = catalog.LocalSilo;
             this.directory = directory;
             ConsistentRingProvider = ring;
             Catalog = catalog;
@@ -64,7 +63,10 @@ namespace Orleans.Runtime
             config.OnConfigChange("Globals/Message", () => ResponseTimeout = Config.Globals.ResponseTimeout);
             RuntimeClient.Current = this;
             this.typeManager = typeManager;
-            this.InternalGrainFactory = grainFactory;
+            this.Scheduler = scheduler;
+            this.siloStatusOracle = new Lazy<ISiloStatusOracle>(siloStatusOracle);
+            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache);
+            RuntimeClient.Current = this;
         }
 
         public static InsideRuntimeClient Current { get { return (InsideRuntimeClient)RuntimeClient.Current; } }
@@ -76,16 +78,16 @@ namespace Orleans.Runtime
         public Catalog Catalog { get; private set; }
 
         public SiloAddress MySilo { get; private set; }
-
-        public Dispatcher Dispatcher { get { return dispatcher; } }
-
+        
         public ClusterConfiguration Config { get; private set; }
 
-        public OrleansTaskScheduler Scheduler { get { return Dispatcher.Scheduler; } }
+        public OrleansTaskScheduler Scheduler { get; }
 
-        public IGrainFactory GrainFactory { get { return InternalGrainFactory; } }
+        public IGrainFactory GrainFactory => this.ConcreteGrainFactory;
 
-        public GrainFactory InternalGrainFactory { get; private set; }
+        public IInternalGrainFactory InternalGrainFactory => this.ConcreteGrainFactory;
+
+        public GrainFactory ConcreteGrainFactory { get; private set; }
 
 
         #region Implementation of IRuntimeClient
@@ -124,7 +126,7 @@ namespace Orleans.Runtime
             ActivationData sendingActivation = null;
             if (schedulingContext == null)
             {
-                throw new InvalidExpressionException(
+                throw new InvalidOperationException(
                     String.Format("Trying to send a message {0} on a silo not from within grain and not from within system target (RuntimeContext is not set to SchedulingContext) "
                         + "RuntimeContext.Current={1} TaskScheduler.Current={2}",
                         message,
@@ -170,7 +172,7 @@ namespace Orleans.Runtime
 
             var oneWay = (options & InvokeMethodOptions.OneWay) != 0;
             if (context == null && !oneWay)
-                logger.Warn(ErrorCode.IGC_SendRequest_NullContext, "Null context {0}: {1}", message, new StackTrace());
+                logger.Warn(ErrorCode.IGC_SendRequest_NullContext, "Null context {0}: {1}", message, Utils.GetStackTrace());
 
             if (message.IsExpirableMessage(Config.Globals))
                 message.Expiration = DateTime.UtcNow + ResponseTimeout + Constants.MAXIMUM_CLOCK_SKEW;
@@ -243,7 +245,7 @@ namespace Orleans.Runtime
         private void ResendMessageImpl(Message message, ActivationAddress forwardingAddress = null)
         {
             if (logger.IsVerbose) logger.Verbose("Resend {0}", message);
-            message.SetMetadata(Message.Metadata.TARGET_HISTORY, message.GetTargetHistory());
+            message.TargetHistory = message.GetTargetHistory();
 
             if (message.TargetGrain.IsSystemTarget)
             {
@@ -252,13 +254,14 @@ namespace Orleans.Runtime
             else if (forwardingAddress != null)
             {
                 message.TargetAddress = forwardingAddress;
-                message.RemoveHeader(Message.Header.IS_NEW_PLACEMENT);
+                message.IsNewPlacement = false;
                 dispatcher.Transport.SendMessage(message);
             }
             else
             {
-                message.RemoveHeader(Message.Header.TARGET_ACTIVATION);
-                message.RemoveHeader(Message.Header.TARGET_SILO);
+                message.TargetActivation = null;
+                message.TargetSilo = null;
+                message.ClearTargetAddress();
                 dispatcher.SendMessage(message);
             }
         }
@@ -277,13 +280,14 @@ namespace Orleans.Runtime
         {
             try
             {
-                if (message.ContainsHeader(Message.Header.CACHE_INVALIDATION_HEADER))
+                if (message.CacheInvalidationHeader != null)
                 {
                     foreach (ActivationAddress address in message.CacheInvalidationHeader)
                     {
-                        directory.InvalidateCacheEntry(address);
+                        directory.InvalidateCacheEntry(address, message.IsReturnedFromRemoteCluster);
                     }
                 }
+   
 #if false
                 //// 1:
                 //// Also record sending activation address for responses only in the cache.
@@ -336,6 +340,10 @@ namespace Orleans.Runtime
                 try
                 {
                     var request = (InvokeMethodRequest) message.BodyObject;
+                    if (request.Arguments != null)
+                    {
+                        CancellationSourcesExtension.RegisterCancellationTokens(target, request, logger);
+                    }
 
                     var invoker = invokable.GetInvoker(request.InterfaceId, message.GenericGrainType);
 
@@ -351,7 +359,7 @@ namespace Orleans.Runtime
                         var exc = new GrainExtensionNotInstalledException(error);
                         string extraDebugInfo = null;
 #if DEBUG
-                        extraDebugInfo = new StackTrace().ToString();
+                        extraDebugInfo = Utils.GetStackTrace();
 #endif
                         logger.Warn(ErrorCode.Stream_ExtensionNotInstalled, 
                             string.Format("{0} for message {1} {2}", error, message, extraDebugInfo), exc);
@@ -359,34 +367,7 @@ namespace Orleans.Runtime
                         throw exc;
                     }
 
-                    // If the target has a grain-level interceptor or there is a silo-level interceptor, intercept the call.
-                    var shouldCallSiloWideInterceptor = SiloProviderRuntime.Instance.GetInvokeInterceptor() != null && target is IGrain;
-                    var intercepted = target as IGrainInvokeInterceptor;
-                    if (intercepted != null || shouldCallSiloWideInterceptor)
-                    {
-                        // Fetch the method info for the intercepted call.
-                        var implementationInvoker =
-                            invocationMethodInfoMap.GetInterceptedMethodInvoker(target.GetType(), request.InterfaceId,
-                                invoker);
-                        var methodInfo = implementationInvoker.GetMethodInfo(request.MethodId);
-                        if (shouldCallSiloWideInterceptor)
-                        {
-                            // There is a silo-level interceptor and possibly a grain-level interceptor.
-                            var runtime = SiloProviderRuntime.Instance;
-                            resultObject =
-                                await runtime.CallInvokeInterceptor(methodInfo, request, target, implementationInvoker);
-                        }
-                        else
-                        {
-                            // The grain has an interceptor, but there is no silo-wide interceptor.
-                            resultObject = await intercepted.Invoke(methodInfo, request, invoker);
-                        }
-                    }
-                    else
-                    {
-                        // The call is not intercepted.
-                        resultObject = await invoker.Invoke(target, request);
-                    }
+                    resultObject = await InvokeWithInterceptors(target, request, invoker);
                 }
                 catch (Exception exc1)
                 {
@@ -414,6 +395,48 @@ namespace Orleans.Runtime
             }
         }
 
+        private Task<object> InvokeWithInterceptors(IAddressable target, InvokeMethodRequest request, IGrainMethodInvoker invoker)
+        {
+            // If the target has a grain-level interceptor or there is a silo-level interceptor, intercept the
+            // call.
+            var siloWideInterceptor = SiloProviderRuntime.Instance.GetInvokeInterceptor();
+            var grainWithInterceptor = target as IGrainInvokeInterceptor;
+            
+            // Silo-wide interceptors do not operate on system targets.
+            var hasSiloWideInterceptor = siloWideInterceptor != null && target is IGrain;
+            var hasGrainLevelInterceptor = grainWithInterceptor != null;
+            
+            if (!hasGrainLevelInterceptor && !hasSiloWideInterceptor)
+            {
+                // The call is not intercepted at either the silo or the grain level, so call the invoker
+                // directly.
+                return invoker.Invoke(target, request);
+            }
+
+            // Get an invoker which delegates to the grain's IGrainInvocationInterceptor implementation.
+            // If the grain does not implement IGrainInvocationInterceptor, then the invoker simply delegates
+            // calls to the provided invoker.
+            var interceptedMethodInvoker = interceptedMethodInvokerCache.GetOrCreate(
+                target.GetType(),
+                request.InterfaceId,
+                invoker);
+            var methodInfo = interceptedMethodInvoker.GetMethodInfo(request.MethodId);
+            if (hasSiloWideInterceptor)
+            {
+                // There is a silo-level interceptor and possibly a grain-level interceptor.
+                // As a minor optimization, only pass the intercepted invoker if there is a grain-level
+                // interceptor.
+                return siloWideInterceptor(
+                    methodInfo,
+                    request,
+                    (IGrain)target,
+                    hasGrainLevelInterceptor ? interceptedMethodInvoker : invoker);
+            }
+
+            // The grain has an invoke method, but there is no silo-wide interceptor.
+            return grainWithInterceptor.Invoke(methodInfo, request, invoker);
+        }
+
         private void SafeSendResponse(Message message, object resultObject)
         {
             try
@@ -428,11 +451,45 @@ namespace Orleans.Runtime
             }
         }
 
+        private static readonly Lazy<Func<Exception, Exception>> prepForRemotingLazy = 
+            new Lazy<Func<Exception, Exception>>(CreateExceptionPrepForRemotingMethod);
+
+        private static Func<Exception, Exception> CreateExceptionPrepForRemotingMethod()
+        {
+            var methodInfo = typeof(Exception).GetMethod(
+                "PrepForRemoting",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var method = new DynamicMethod(
+                "PrepForRemoting",
+                typeof(Exception),
+                new[] { typeof(Exception) },
+                typeof(SerializationManager).GetTypeInfo().Module,
+                true);
+            var il = method.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, methodInfo);
+            il.Emit(OpCodes.Ret);
+            return (Func<Exception, Exception>)method.CreateDelegate(typeof(Func<Exception, Exception>));
+        }
+
+        private static Exception PrepareForRemoting(Exception exception)
+        {
+            // Call the Exception.PrepForRemoting internal method, which preserves the original stack when the exception
+            // is rethrown at the remote site (and appends the call site stacktrace). If this is not done, then when the
+            // exception is rethrown the original stacktrace is entire replaced.
+            // Note: another commonly used approach since .NET 4.5 is to use ExceptionDispatchInfo.Capture(ex).Throw()
+            // but that involves rethrowing the exception in-place, which is not what we want here, but could in theory
+            // be done at the receiving end with some rework (could be tackled when we reopen #875 Avoid unnecessary use of TCS).
+            prepForRemotingLazy.Value.Invoke(exception);
+            return exception;
+        }
+
         private void SafeSendExceptionResponse(Message message, Exception ex)
         {
             try
             {
-                SendResponse(message, Response.ExceptionResponse((Exception)SerializationManager.DeepCopy(ex)));
+                var copiedException = PrepareForRemoting((Exception)SerializationManager.DeepCopy(ex));
+                SendResponse(message, Response.ExceptionResponse(copiedException));
             }
             catch (Exception exc1)
             {
@@ -492,7 +549,7 @@ namespace Orleans.Runtime
                     case Message.RejectionTypes.Unrecoverable:
                     // fall through & reroute
                     case Message.RejectionTypes.Transient:
-                        if (!message.ContainsHeader(Message.Header.CACHE_INVALIDATION_HEADER))
+                        if (message.CacheInvalidationHeader == null)
                         {
                             // Remove from local directory cache. Note that SendingGrain is the original target, since message is the rejection response.
                             // If CacheMgmtHeader is present, we already did this. Otherwise, we left this code for backward compatability. 
@@ -725,7 +782,7 @@ namespace Orleans.Runtime
 
         public string CaptureRuntimeEnvironment()
         {
-            var callStack = new System.Diagnostics.StackTrace(1); // Don't include this method in stack trace
+            var callStack = Utils.GetStackTrace(1); // Don't include this method in stack trace
             return String.Format(
                   "   TaskScheduler={0}" + Environment.NewLine 
                 + "   RuntimeContext={1}" + Environment.NewLine
@@ -745,12 +802,12 @@ namespace Orleans.Runtime
 
         public IGrainMethodInvoker GetInvoker(int interfaceId, string genericGrainType = null)
         {
-            return GrainTypeManager.Instance.GetInvoker(interfaceId, genericGrainType);
+            return this.typeManager.GetInvoker(interfaceId, genericGrainType);
         }
 
         public SiloStatus GetSiloStatus(SiloAddress siloAddress)
         {
-            return Silo.CurrentSilo.LocalSiloStatusOracle.GetApproximateSiloStatus(siloAddress);
+            return this.siloStatusOracle.Value.GetApproximateSiloStatus(siloAddress);
         }
 
         public void BreakOutstandingMessagesToDeadSilo(SiloAddress deadSilo)

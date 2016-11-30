@@ -1,10 +1,9 @@
-﻿using System.Threading.Tasks;
-using UnitTests.GrainInterfaces;
-using UnitTests.Tester;
-using System;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.FSharp.Core;
+using TestExtensions;
+using UnitTests.GrainInterfaces;
 using Xunit;
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace UnitTests.General
 {
@@ -18,12 +17,12 @@ namespace UnitTests.General
             var id = Guid.NewGuid();
             var grain = GrainFactory.GetGrain<ISerializerPresenceTest>(id);
             var serializerExists = await grain.SerializerExistsForType(t);
-            Assert.IsTrue(serializerExists);
+            Assert.True(serializerExists);
         }
 
         private void ClientSerializerExists(Type t)
         {
-            Assert.IsTrue(Orleans.Serialization.SerializationManager.HasSerializer(t));
+            Assert.True(Orleans.Serialization.SerializationManager.HasSerializer(t));
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("CodeGen"), TestCategory("Serialization")]
