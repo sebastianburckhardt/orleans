@@ -69,12 +69,11 @@ namespace Orleans.Providers
     }
 
     /// <summary>
-    /// Provider-facing interface for manager of log view providers
+    /// Provider-facing interface for manager of log-consistency providers
     /// </summary>
-    public interface ILogViewProviderRuntime : IProviderRuntime
+    public interface ILogConsistencyProviderRuntime : IProviderRuntime
     {
-        bool TryGetStorageProvider(string name, out IStorageProvider provider, bool caseInsensitive = false);
- 
+        // for now empty, later can add consistency-provider specific runtime capabilities.
     }
 
     /// <summary>
