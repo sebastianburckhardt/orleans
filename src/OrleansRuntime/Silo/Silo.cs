@@ -545,7 +545,7 @@ namespace Orleans.Runtime
                 () => logConsistencyProviderManager.LoadLogConsistencyProviders(GlobalConfig.ProviderConfigurations),
                 providerManagerSystemTarget.SchedulingContext)
                     .WaitWithThrow(initTimeout);
-            catalog.SetConsistencyManager(logConsistencyProviderManager);
+            catalog.SetLogConsistencyManager(logConsistencyProviderManager);
             if (logger.IsVerbose) { logger.Verbose("Log consistency provider manager created successfully."); }
 
             // Load and init stream providers before silo becomes active

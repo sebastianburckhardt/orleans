@@ -49,7 +49,7 @@ namespace Orleans.Runtime.LogConsistency
 
         public int GetLoadedProvidersNum()
         {
-            return providerLoader.GetLoadedProvidersNum();
+            return providerLoader.GetNumLoadedProviders();
         }
 
         public IList<ILogConsistencyProvider> GetProviders()

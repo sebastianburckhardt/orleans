@@ -207,7 +207,7 @@ namespace Orleans.Runtime
             storageProviderManager = storageManager;
         }
 
-        internal void SetConsistencyManager(ILogConsistencyProviderManager logConsistencyManager)
+        internal void SetLogConsistencyManager(ILogConsistencyProviderManager logConsistencyManager)
         {
             logConsistencyProviderManager = logConsistencyManager;
         } 
@@ -1263,8 +1263,9 @@ namespace Orleans.Runtime
                 }
 
                 if (activation.GrainInstance is IProtocolParticipant)
+                {
                     await ((IProtocolParticipant)activation.GrainInstance).DeactivateProtocolParticipant();
-
+                }
             }
             catch(Exception exc)
             {

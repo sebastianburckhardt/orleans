@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
-using Orleans.Storage;
 
 namespace Orleans.Providers
 {
@@ -69,12 +68,13 @@ namespace Orleans.Providers
     }
 
     /// <summary>
-    /// Provider-facing interface for manager of log-consistency providers
+    /// Provider-facing interface for log consistency
     /// </summary>
     public interface ILogConsistencyProviderRuntime : IProviderRuntime
     {
-        // for now empty, later can add consistency-provider specific runtime capabilities.
+        // for now empty, later can add provider specific runtime capabilities.
     }
+
 
     /// <summary>
     /// Handles the invocation of the provided <paramref name="request"/>.
