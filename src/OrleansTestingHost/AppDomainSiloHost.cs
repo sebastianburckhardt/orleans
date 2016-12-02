@@ -151,7 +151,7 @@ namespace Orleans.TestingHost
             }
             return x;
         }
-
+        
         // store silos for which we simulate faulty communication
         // number indicates how many percent of requests are lost
         private ConcurrentDictionary<IPEndPoint, double> simulatedMessageLoss;
