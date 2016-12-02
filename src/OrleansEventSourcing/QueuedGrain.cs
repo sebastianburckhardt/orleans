@@ -5,9 +5,10 @@ using Orleans.MultiCluster;
 using System;
 using System.Collections.Generic;
 using Orleans.Core;
-using Orleans.LogViews;
+using Orleans.LogConsistency;
+using Orleans.Storage;
 
-namespace Orleans.QueuedGrains
+namespace Orleans.EventSourcing
 {
 
     /// <summary>
@@ -16,10 +17,10 @@ namespace Orleans.QueuedGrains
     /// <typeparam name="TDelta">The type for objects that represent updates to the state.</typeparam>
     /// </summary>
     public abstract class QueuedGrain<TState,TDelta> : 
-        LogViewGrainBase<TState>,
-        ILogViewGrain, 
+        LogConsistentGrainBase<TState>,
+        ILogConsistentGrain, 
         IProtocolParticipant,
-        ILogViewHost<TState, TDelta>
+        ILogViewAdaptorHost<TState, TDelta>
         where TState : class,new()
         where TDelta : class
     {
@@ -45,10 +46,14 @@ namespace Orleans.QueuedGrains
         /// Called right after grain is constructed, to install the log view adaptor.
         /// The log view provider contains a factory method that constructs the adaptor with chosen types for this grain
         /// </summary>
-        void ILogViewGrain.InstallAdaptor(ILogViewProvider provider, object initialstate, string graintypename, IProtocolServices services)
+        void ILogConsistentGrain.InstallAdaptor(ILogViewAdaptorFactory provider, object initialstate, string graintypename, IStorageProvider storageProvider, IProtocolServices services)
         {
             // call the log view provider to construct the adaptor, passing the type argument
-            Adaptor = provider.MakeLogViewAdaptor<TState,TDelta>(this, (TState) initialstate, graintypename, services);            
+            Adaptor = provider.MakeLogViewAdaptor<TState,TDelta>(this, (TState) initialstate, graintypename, storageProvider, services);            
+        }
+        ILogViewAdaptorFactory ILogConsistentGrain.DefaultAdaptorFactory
+        {
+            get { return new VersionedStateStorage.DefaultAdaptorFactory(); }
         }
 
         /// <summary>
@@ -56,23 +61,15 @@ namespace Orleans.QueuedGrains
         /// </summary>
         /// <param name="view">log view</param>
         /// <param name="entry">log entry</param>
-        void ILogViewHost<TState, TDelta>.UpdateView(TState view, TDelta entry)
+        void ILogViewAdaptorHost<TState, TDelta>.UpdateView(TState view, TDelta entry)
         {
             ApplyDeltaToState(view, entry);
         }
 
         /// <summary>
-        /// called by adaptor to retrieve the identity of this grain, for tracing purposes.
-        /// </summary>
-        string ILogViewHost<TState, TDelta>.IdentityString
-        {
-            get { return Identity.IdentityString; }
-        }
-
-        /// <summary>
         /// called by adaptor on state change. 
         /// </summary>
-        void ILogViewHost<TState, TDelta>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
+        void ILogViewAdaptorHost<TState, TDelta>.OnViewChanged(bool TentativeStateChanged, bool ConfirmedStateChanged)
         {
             if (TentativeStateChanged)
                 OnTentativeStateChanged();
@@ -163,7 +160,7 @@ namespace Orleans.QueuedGrains
         /// Called when the underlying persistence or replication protocol is running into some sort of connection trouble.
         /// <para>Subclasses can override, to monitor the health of the persistence or replication algorithm and/or
         /// to customize retry delays.
-        /// Any exceptions thrown are caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// Any exceptions thrown are caught and logged by the <see cref="ILogConsistencyProvider"/>.</para>
         /// </summary>
         /// <returns>The time to wait before retrying</returns>
         protected virtual void OnConnectionIssue(ConnectionIssue issue)
@@ -173,7 +170,7 @@ namespace Orleans.QueuedGrains
         /// <summary>
         /// Called when a previously reported connection issue has been resolved.
         /// <para>Subclasses can override, to monitor the health of the persistence or replication algorithm. 
-        /// Any exceptions thrown will be caught and logged by the <see cref="ILogViewProvider"/>.</para>
+        /// Any exceptions thrown will be caught and logged by the <see cref="ILogConsistencyProvider"/>.</para>
         /// </summary>
         protected virtual void OnConnectionIssueResolved(ConnectionIssue issue)
         {
@@ -283,7 +280,7 @@ namespace Orleans.QueuedGrains
             get { return Adaptor.ConfirmedVersion; }
         }
 
-        /// <inheritdoc cref="ILogViewDiagnostics.UnresolvedConnectionIssues"/>
+        /// <inheritdoc cref="ILogConsistencyDiagnostics.UnresolvedConnectionIssues"/>
         protected IEnumerable<ConnectionIssue> UnresolvedConnectionIssues
         {
             get
@@ -292,20 +289,20 @@ namespace Orleans.QueuedGrains
             }
         }
 
-        /// <inheritdoc cref="ILogViewDiagnostics.EnableStatsCollection"/>
+        /// <inheritdoc cref="ILogConsistencyDiagnostics.EnableStatsCollection"/>
         public void EnableStatsCollection()
         {
             Adaptor.EnableStatsCollection();
         }
 
-        /// <inheritdoc cref="ILogViewDiagnostics.DisableStatsCollection"/>
+        /// <inheritdoc cref="ILogConsistencyDiagnostics.DisableStatsCollection"/>
         public void DisableStatsCollection()
         {
             Adaptor.DisableStatsCollection();
         }
 
-        /// <inheritdoc cref="ILogViewDiagnostics.GetStats"/>
-        public LogViewStatistics GetStats()
+        /// <inheritdoc cref="ILogConsistencyDiagnostics.GetStats"/>
+        public LogConsistencyStatistics GetStats()
         {
             return Adaptor.GetStats();
         }

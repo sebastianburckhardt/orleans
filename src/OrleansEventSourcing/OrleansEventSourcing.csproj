@@ -48,6 +48,8 @@
     <Compile Include="CustomVersionedStateStorage\LogViewAdaptor.cs" />
     <Compile Include="CustomVersionedStateStorage\LogConsistencyProvider.cs" />
     <Compile Include="CustomVersionedStateStorage\ICustomStorageInterface.cs" />
+    <Compile Include="QueuedGrain.cs" />
+    <Compile Include="QueuedGrainVariants.cs" />
     <Compile Include="VersionedStateStorage\DefaultAdaptorFactory.cs" />
     <Compile Include="VersionedStateStorage\LogConsistencyProvider.cs" />
     <Compile Include="JournaledGrain.cs" />
