@@ -46,9 +46,6 @@
   <ItemGroup>
     <Compile Include="BuiltInProvidersConfigurationExtensions.cs" />
     <Compile Include="Streams\Common\EventSequenceTokenV2.cs" />
-    <Compile Include="LogViews\CustomStorageProvider.cs" />
-    <Compile Include="LogViews\CustomStorageAdaptor.cs" />
-    <Compile Include="LogViews\ICustomStorageInterface.cs" />
     <Compile Include="Streams\Memory\IMemoryStreamQueueGrain.cs" />
     <Compile Include="Streams\Memory\MemoryAdapterConfig.cs" />
     <Compile Include="Streams\Memory\MemoryAdapterFactory.cs" />
@@ -64,7 +61,6 @@
     <Compile Include="Streams\Common\SimpleCache\SimpleQueueCache.cs" />
     <Compile Include="Streams\Common\SimpleCache\SimpleQueueCacheCursor.cs" />
     <Compile Include="Streams\Common\SimpleCache\SimpleQueueAdapterCache.cs" />
-    <Compile Include="LogViews\SharedStorageProvider.cs" />
     <Compile Include="Streams\Common\EventSequenceToken.cs" />
     <Compile Include="ProviderErrorCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
