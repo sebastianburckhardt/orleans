@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Orleans.MultiCluster;
+using System.Linq;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
@@ -41,6 +42,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                         list = gws[g.Value.ClusterId] = new List<SiloAddress>();
                     list.Add(g.Key);
                 }
+
             activeGatewaysByCluster = gws;
         }
 
@@ -49,22 +51,27 @@ namespace Orleans.Runtime.MultiClusterNetwork
             if (logger.IsVerbose2)
                 logger.Verbose2("SubscribeToMultiClusterConfigurationEvents: {0}", observer);
 
-            if (confListeners.Contains(observer))
-                return false;
+            lock (confListeners)
+            {
+                if (confListeners.Contains(observer))
+                    return false;
 
-            confListeners.Add(observer);
-            return true;
+                confListeners.Add(observer);
+                return true;
+            }
         }
 
-        
+
         internal bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
         {
             if (logger.IsVerbose3)
                 logger.Verbose3("UnSubscribeFromMultiClusterConfigurationEvents: {0}", observer);
 
-            return confListeners.Remove(observer);
+            lock (confListeners)
+            {
+                return confListeners.Remove(observer);
+            }
         }
-
 
         public MultiClusterData ApplyDataAndNotify(MultiClusterData data)
         {
@@ -91,7 +98,15 @@ namespace Orleans.Runtime.MultiClusterNetwork
             if (delta.Configuration != null)
             {
                 // notify configuration listeners of change
-                foreach (var listener in confListeners)
+
+                List<GrainReference> listenersToNotify;
+                lock (confListeners)
+                {
+                    // make a copy under the lock
+                    listenersToNotify = confListeners.ToList();
+                }
+               
+                foreach (var listener in listenersToNotify)
                 {
                     try
                     {
@@ -110,6 +125,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     }
                 }
             }
+
 
             return delta;
         }

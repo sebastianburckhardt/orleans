@@ -6,9 +6,10 @@ using System.Reflection;
 using System.Text;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
-using Orleans.LogViews;
+using Orleans.LogConsistency;
 using Orleans.Providers;
 using Orleans.Runtime.Configuration;
+
 
 namespace Orleans.Runtime
 {
@@ -96,7 +97,7 @@ namespace Orleans.Runtime
                     if (parentTypeInfo.IsGenericType)
                     {
                         var definition = parentTypeInfo.GetGenericTypeDefinition();
-                        if (definition == typeof(Grain<>) || definition == typeof(LogViewGrainBase<>))
+                        if (definition == typeof(Grain<>) || definition == typeof(LogConsistentGrainBase<>))
                         {
                             var stateArg = parentType.GetGenericArguments()[0];
                             if (stateArg.GetTypeInfo().IsClass || stateArg.GetTypeInfo().IsValueType)

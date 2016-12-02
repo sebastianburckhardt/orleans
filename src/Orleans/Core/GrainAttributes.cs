@@ -274,51 +274,44 @@ namespace Orleans
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class StorageProviderAttribute : PersistenceProviderAttribute
+        public sealed class StorageProviderAttribute : Attribute
         {
+            /// <summary>
+            /// The name of the provider to be used for persisting of grain state
+            /// </summary>
+            public string ProviderName { get; set; }
+
             public StorageProviderAttribute()
             {
                 ProviderName = Runtime.Constants.DEFAULT_STORAGE_PROVIDER_NAME;
             }
         }
 
-
         /// <summary>
-        /// The [Orleans.Providers.LogViewProvider] attribute is used to define which log view provider to use for persisting state for grain which extend LogViewGrain;.
+        /// The [Orleans.Providers.LogConsistencyProvider] attribute is used to define which consistency provider to use for grains using the log-view state abstraction.
         /// <para>
-        /// If present, the [Orleans.Providers.LogViewProvider] attribute overrides any [Orleans.Providers.StorageProvider] attribute for that grain, 
-        /// Otherwise system will try to find a [Orleans.Providers.StorageProvider] for the grain, depends on its  [Orleans.Providers.StorageProviderAttributes] set up,
-        /// If a suitable storage provider cannot be located for this grain, then the grain will fail to load into the Silo.
+        /// Specifying [Orleans.Providers.LogConsistencyProvider] property is recommended for all grains that derive
+        /// from ILogConsistentGrain, such as JournaledGrain.
+        /// If no [Orleans.Providers.LogConsistencyProvider] attribute is  specified, then the runtime tries to locate
+        /// one as follows. First, it looks for a 
+        /// "Default" provider in the configuration file, then it checks if the grain type defines a default.
+        /// If a consistency provider cannot be located for this grain, then the grain will fail to load into the Silo.
         /// </para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Class)]
-        public sealed class LogViewProviderAttribute : PersistenceProviderAttribute
+        public sealed class LogConsistencyProviderAttribute : Attribute
         {
-            public LogViewProviderAttribute()
+            /// <summary>
+            /// The name of the provider to be used for consistency
+            /// </summary>
+            public string ProviderName { get; set; }
+
+            public LogConsistencyProviderAttribute()
             {
-                // There is no default log view provider (because the default is to use the default storage provider),
-                // therefore we are not setting the string there.
+                ProviderName = Runtime.Constants.DEFAULT_LOG_CONSISTENCY_PROVIDER_NAME;
             }
         }
 
-
-        /// <summary>
-        /// The common superclass of [Orleans.Providers.StorageProviderAttributes] and [Orleans.Providers.LogViewProviderAttributes].
-        /// <para>
-        /// They inherit from this same base attribute because they are alternative ways to specify
-        /// a persistence mechanism for the grain. For log view grains, users can either specify a storage provider
-        /// or a log view provider. Those are different kinds of persistence providers, but they are somewhat interchangeable
-        /// (a standard storage provider can be used for log view grains). See the code inside Catalog.SetupPersistenceProvider
-        /// which first finds out what persistence attribute is specified, and then retrieves the appropriate type of provider.
-        /// </para>
-        /// </summary>
-        public class PersistenceProviderAttribute : Attribute
-        {
-            /// <summary>
-            /// The name of the provider to be used for persisting of grain state
-            /// </summary>
-            public string ProviderName { get; set; }
-        }
     }
 
     [AttributeUsage(AttributeTargets.Interface)]

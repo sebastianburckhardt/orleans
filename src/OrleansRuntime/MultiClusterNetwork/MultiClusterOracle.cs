@@ -126,7 +126,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
 
         /// <inheritdoc/>
-        public bool DropNotificationMessagesForTesting { get; set; }
+        public Func<IProtocolMessage, bool> ProtocolMessageFilterForTesting { get; set; }
 
 
         public async Task Start(ISiloStatusOracle oracle)

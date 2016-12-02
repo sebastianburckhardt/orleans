@@ -220,7 +220,7 @@ namespace Orleans.Runtime.MembershipService
             localTableCopy = GetSiloStatuses(status => true, true); // all the silos including me.
             localTableCopyOnlyActive = GetSiloStatuses(status => status == SiloStatus.Active, true);    // only active silos including me.
             localNamesTableCopy = localTable.ToDictionary(pair => pair.Key, pair => pair.Value.SiloName);   // all the silos excluding me.
-            
+
             if (this.multiClusterActive)
                 localMultiClusterGatewaysCopy = DetermineMultiClusterGateways();
 
