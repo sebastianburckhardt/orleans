@@ -48,7 +48,6 @@ namespace Orleans.Runtime.Messaging
             stopped = false;
         }
 
-
         public void SendMessage(Message msg)
         {
             if (msg == null) throw new ArgumentNullException("msg", "Can't send a null message.");

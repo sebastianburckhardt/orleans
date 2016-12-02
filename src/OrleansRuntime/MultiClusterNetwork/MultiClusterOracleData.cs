@@ -41,6 +41,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                         list = gws[g.Value.ClusterId] = new List<SiloAddress>();
                     list.Add(g.Key);
                 }
+
             activeGatewaysByCluster = gws;
         }
 

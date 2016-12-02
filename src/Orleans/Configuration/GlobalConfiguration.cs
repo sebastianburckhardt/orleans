@@ -105,7 +105,7 @@ namespace Orleans.Runtime.Configuration
             /// <summary>Gets or sets the credential information used by the channel implementation.</summary>
             public string ConnectionString { get; set; }
         }
-
+  
         /// <summary>
         /// Configuration type that controls the type of the grain directory caching algorithm that silo use.
         /// </summary>
@@ -265,7 +265,6 @@ namespace Orleans.Runtime.Configuration
         /// A list of connection strings for gossip channels.
         /// </summary>
         public IReadOnlyList<GossipChannelConfiguration> GossipChannels { get; set; }
-
 
         #endregion
 
