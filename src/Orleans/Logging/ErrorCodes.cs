@@ -973,9 +973,8 @@ namespace Orleans
         Provider_ProviderLoadedOk               = ProviderManagerBase + 14,
         Provider_ProviderNotFound               = ProviderManagerBase + 15,
         Provider_ProviderNotControllable        = ProviderManagerBase + 16,
-        Provider_CatalogNoLogViewProvider       = ProviderManagerBase + 17,
-        Provider_CatalogLogViewProviderAllocated = ProviderManagerBase + 18,
-        Provider_CatalogUnsupportedProviderAttribute = ProviderManagerBase + 19,
+        Provider_CatalogNoLogConsistencyProvider       = ProviderManagerBase + 17,
+        Provider_CatalogLogConsistencyProviderAllocated = ProviderManagerBase + 18,
 
         AzureQueueBase = Runtime + 3200,
         AzureQueue_01 = AzureQueueBase + 1,
@@ -1096,11 +1095,11 @@ namespace Orleans
         GlobalSingleInstance_MaintainerException = GlobalSingleInstanceBase + 3,
         GlobalSingleInstance_MultipleOwners = GlobalSingleInstanceBase + 4,
 
-        LogViewBase = Runtime + 4200,
-        LogView_UserCodeException = LogViewBase + 1,
-        LogView_CaughtException = LogViewBase + 2,
-        LogView_ProtocolError = LogViewBase + 3,
-        LogView_ProtocolFatalError = LogViewBase + 4,
+        LogConsistencyBase = Runtime + 4200,
+        LogConsistency_UserCodeException = LogConsistencyBase + 1,
+        LogConsistency_CaughtException = LogConsistencyBase + 2,
+        LogConsistency_ProtocolError = LogConsistencyBase + 3,
+        LogConsistency_ProtocolFatalError = LogConsistencyBase + 4,
 
     }
 }

@@ -13,6 +13,7 @@ using Tester;
 using TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
+using Orleans.MultiCluster;
 
 namespace Tests.GeoClusterTests
 {
@@ -414,18 +415,11 @@ namespace Tests.GeoClusterTests
             }
         }
   
-        public void BlockNotificationMessages(string origincluster)
+        public void SetProtocolMessageFilterForTesting(string origincluster, Func<IProtocolMessage,bool> filter)
         {
             var silos = Clusters[origincluster].Silos;
             foreach (var silo in silos)
-                silo.AppDomainTestHook.DropNotificationMessagesForTesting = true;
-
-        }
-        public void UnblockNotificationMessages(string origincluster)
-        {
-            var silos = Clusters[origincluster].Silos;
-            foreach (var silo in silos)
-                silo.AppDomainTestHook.DropNotificationMessagesForTesting = false;
+                silo.AppDomainTestHook.ProtocolMessageFilterForTesting = filter;
 
         }
   

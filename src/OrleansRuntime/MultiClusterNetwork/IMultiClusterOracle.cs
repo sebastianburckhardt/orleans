@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.MultiCluster;
+using System;
 
 namespace Orleans.Runtime.MultiClusterNetwork
 {
@@ -69,8 +70,8 @@ namespace Orleans.Runtime.MultiClusterNetwork
         bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer);
 
         /// <summary>
-        /// A test hook for disabling notification messages between replicated grain instances
+        /// A test hook for dropping protocol messages between replicated grain instances
         /// </summary>
-        bool DropNotificationMessagesForTesting { get; set; }
+        Func<IProtocolMessage, bool> ProtocolMessageFilterForTesting { get; set; }
     }
 }

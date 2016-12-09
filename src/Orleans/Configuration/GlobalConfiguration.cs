@@ -8,9 +8,9 @@ using System.Text;
 using System.Xml;
 using Orleans.GrainDirectory;
 using Orleans.Providers;
-using Orleans.LogViews;
 using Orleans.Storage;
 using Orleans.Streams;
+using Orleans.LogConsistency;
 
 namespace Orleans.Runtime.Configuration
 {
@@ -105,7 +105,7 @@ namespace Orleans.Runtime.Configuration
             /// <summary>Gets or sets the credential information used by the channel implementation.</summary>
             public string ConnectionString { get; set; }
         }
-
+  
         /// <summary>
         /// Configuration type that controls the type of the grain directory caching algorithm that silo use.
         /// </summary>
@@ -265,7 +265,6 @@ namespace Orleans.Runtime.Configuration
         /// A list of connection strings for gossip channels.
         /// </summary>
         public IReadOnlyList<GossipChannelConfiguration> GossipChannels { get; set; }
-
 
         #endregion
 
@@ -1073,32 +1072,33 @@ namespace Orleans.Runtime.Configuration
         }
 
         /// <summary>
-        /// Registers a given log view provider.
+        /// Registers a given log-consistency provider.
         /// </summary>
-        /// <param name="providerTypeFullName">Full name of the log view provider type</param>
-        /// <param name="providerName">Name of the log view provider</param>
-        /// <param name="properties">Properties that will be passed to the log view provider upon initialization </param>
-        public void RegisterLogViewProvider(string providerTypeFullName, string providerName, IDictionary<string, string> properties = null)
+        /// <param name="providerTypeFullName">Full name of the log-consistency provider type</param>
+        /// <param name="providerName">Name of the log-consistency provider</param>
+        /// <param name="properties">Properties that will be passed to the log-consistency provider upon initialization </param>
+        public void RegisterLogConsistencyProvider(string providerTypeFullName, string providerName, IDictionary<string, string> properties = null)
         {
-            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.LOG_VIEW_PROVIDER_CATEGORY_NAME, providerTypeFullName, providerName, properties);
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.LOG_CONSISTENCY_PROVIDER_CATEGORY_NAME, providerTypeFullName, providerName, properties);
         }
 
-        
+
         /// <summary>
-        /// Registers a given type of <typeparamref name="T"/> where <typeparamref name="T"/> is a log view provider
+        /// Registers a given type of <typeparamref name="T"/> where <typeparamref name="T"/> is a log-consistency provider
         /// </summary>
-        /// <typeparam name="T">Non-abstract type which implements <see cref="ILogViewProvider"/> a log view storage interface</typeparam>
-        /// <param name="providerName">Name of the log view provider</param>
-        /// <param name="properties">Properties that will be passed to log view provider upon initialization</param>
-       public void RegisterLogViewProvider<T>(string providerName, IDictionary<string, string> properties = null) where T : ILogViewProvider
+        /// <typeparam name="T">Non-abstract type which implements <see cref="ILogConsistencyProvider"/> a log-consistency storage interface</typeparam>
+        /// <param name="providerName">Name of the log-consistency provider</param>
+        /// <param name="properties">Properties that will be passed to log-consistency provider upon initialization</param>
+        public void RegisterLogConsistencyProvider<T>(string providerName, IDictionary<string, string> properties = null) where T : ILogConsistencyProvider
         {
             Type providerType = typeof(T);
-            if (providerType.IsAbstract ||
-                providerType.IsGenericType ||
-                !typeof(ILogViewProvider).IsAssignableFrom(providerType))
-                throw new ArgumentException("Expected non-generic, non-abstract type which implements ILogViewProvider interface", "typeof(T)");
+            var providerTypeInfo = providerType.GetTypeInfo();
+            if (providerTypeInfo.IsAbstract ||
+                providerTypeInfo.IsGenericType ||
+                !typeof(ILogConsistencyProvider).IsAssignableFrom(providerType))
+                throw new ArgumentException("Expected non-generic, non-abstract type which implements ILogConsistencyProvider interface", "typeof(T)");
 
-            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.LOG_VIEW_PROVIDER_CATEGORY_NAME, providerType.FullName, providerName, properties);
+            ProviderConfigurationUtility.RegisterProvider(ProviderConfigurations, ProviderCategoryConfiguration.LOG_CONSISTENCY_PROVIDER_CATEGORY_NAME, providerType.FullName, providerName, properties);
         } 
         
 

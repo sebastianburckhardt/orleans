@@ -105,8 +105,6 @@ namespace Orleans.Runtime.GrainDirectory
             router.HandoffManager.RemoveHandoffPartition(source);
             return TaskDone.Done;
         }
-
-
         
         /// <summary>
         /// This method is called before retrying to access the current owner of a grain, following

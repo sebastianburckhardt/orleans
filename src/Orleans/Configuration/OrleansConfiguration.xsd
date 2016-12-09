@@ -820,10 +820,10 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-      <xs:element name="LogViewProviders" minOccurs="0" maxOccurs="1">
+      <xs:element name="LogConsistencyProviders" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>
-            The optional LogViewProviders element contains configuration for log view provider instances used for grain persistence.
+            The optional LogConsistencyProviders element contains configuration for log-consistency provider instances.
           </xs:documentation>
         </xs:annotation>
         <xs:complexType>
