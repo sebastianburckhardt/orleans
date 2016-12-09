@@ -5,38 +5,38 @@ using System.Threading.Tasks;
 using QueuedGrainSample.Interfaces;
 using Orleans;
 using Orleans.Providers;
-using Orleans.QueuedGrains;
 using Orleans.Concurrency;
-
+using Orleans.EventSourcing;
 
 namespace QueuedGrainSample.Grains
 {
     [Serializable]
-    public class SampleGrainState
+    public class ChatState
     {
         public List<string> Messages { get; set; }
 
-        public SampleGrainState()
+        public ChatState()
         {
             Messages = new List<string>();
         }
-    }
 
-    public interface IDelta
-    {
-        void ApplyToState(SampleGrainState state);
+        public void Apply(AppendMessageEvent e)
+        {
+            Messages.Add(e.Message);
+        }
+
+        public void Apply(ClearAllMessagesEvent e)
+        {
+            Messages.Clear();
+        }
     }
 
  
     [Serializable]
-    public class AppendMessage : IDelta
+    public class AppendMessageEvent
     {
         public string Message { get; set; }
 
-        public void ApplyToState(SampleGrainState state)
-        {
-            state.Messages.Add(Message);
-        }
         public override string ToString()
         {
             return string.Format("[AppendMessage \"{0}\"]", Message);
@@ -44,32 +44,27 @@ namespace QueuedGrainSample.Grains
     }
 
     [Serializable]
-    public class ClearAll : IDelta
-    {
-
-        public void ApplyToState(SampleGrainState state)
-        {
-            state.Messages.Clear();
-        }
+    public class ClearAllMessagesEvent
+    {   
         public override string ToString()
         {
-            return string.Format("[ClearAll]");
+            return string.Format("[ClearAllMessages]");
         }
     }
 
 
     [StorageProvider(ProviderName = "GloballySharedAzureAccount")]
-    public class HelloGrain : QueuedGrain<SampleGrainState,IDelta>, IHelloGrainInterface
+    public class ChatGrain : JournaledGrain<ChatState>, IChatGrainInterface
     {
         public Task<LocalState> AppendMessage(string msg)
         {
-            EnqueueUpdate(new AppendMessage() { Message = msg });
+            RaiseEvent(new AppendMessageEvent() { Message = msg });
             return GetLocalState();
         }
 
         public Task<LocalState> ClearAll()
         {
-            EnqueueUpdate(new ClearAll());
+            RaiseEvent(new ClearAllMessagesEvent());
             return GetLocalState();
         }
 
@@ -77,16 +72,12 @@ namespace QueuedGrainSample.Grains
         {
             return Task.FromResult(new LocalState()
             {
-                TentativeState = this.TentativeState.Messages,
+                TentativeState = this.State.Messages,
                 ConfirmedState = this.ConfirmedState.Messages,
-                UnconfirmedUpdates = this.UnconfirmedUpdates.Select((u) => u.ToString()).ToList()
+                UnconfirmedEvents = this.UnconfirmedEvents.Select((u) => u.ToString()).ToList()
             });
         }
 
-        protected override void ApplyDeltaToState(SampleGrainState state, IDelta delta)
-        {
-            delta.ApplyToState(state);
-        }
     }
     
 }

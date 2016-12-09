@@ -72,7 +72,7 @@ namespace Orleans.Azure.Samples.Web
         {
             try
             {
-                IHelloGrainInterface grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrainInterface>(0);
+                IChatGrainInterface grainRef = GrainClient.GrainFactory.GetGrain<IChatGrainInterface>(0);
                 LocalState s = await grainRef.GetLocalState();
                 UpdateText(s);
             }
@@ -87,7 +87,7 @@ namespace Orleans.Azure.Samples.Web
            var confirmedstate = string.Join("\n", s.ConfirmedState);
            if (this.ConfirmedState.Text != confirmedstate)
                this.ConfirmedState.Text = confirmedstate;
-           var unconfirmedupdates = string.Join("\n", s.UnconfirmedUpdates);
+           var unconfirmedupdates = string.Join("\n", s.UnconfirmedEvents);
            if (this.UnconfirmedUpdates.Text != unconfirmedupdates)
                this.UnconfirmedUpdates.Text = unconfirmedupdates;
            var tentativestate = string.Join("\n", s.TentativeState);
@@ -107,7 +107,7 @@ namespace Orleans.Azure.Samples.Web
         {
             try
             {
-                IHelloGrainInterface grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrainInterface>(0);
+                IChatGrainInterface grainRef = GrainClient.GrainFactory.GetGrain<IChatGrainInterface>(0);
                 LocalState s = await grainRef.AppendMessage(NameTextBox.Text);
                 UpdateText(s);
                 UpdateMessageText();
@@ -122,7 +122,7 @@ namespace Orleans.Azure.Samples.Web
         {
             try
             {
-                IHelloGrainInterface grainRef = GrainClient.GrainFactory.GetGrain<IHelloGrainInterface>(0);
+                IChatGrainInterface grainRef = GrainClient.GrainFactory.GetGrain<IChatGrainInterface>(0);
                 LocalState s = await grainRef.ClearAll();
                 UpdateText(s);
             }

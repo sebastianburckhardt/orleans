@@ -15,10 +15,10 @@
         </Triggers>
         <ContentTemplate>
             <p id="InputSpace">
-                <p>The grain contains a list of messages, supporting two operations: AppendMessage and ClearAll.</p>
+                <p>The ChatGrain contains a list of messages. There are two kinds of events: AppendMessage and ClearAllMessages.</p>
                 <asp:TextBox runat="server" ID="NameTextBox"></asp:TextBox>
                 <asp:Button ID="ButtonAppendMessage" runat="server" Text="AppendMessage" OnClick="ButtonAppendMessage_Click" />
-                <asp:Button ID="ButtonClearAll" runat="server" Style="margin-left: 40px" Text="ClearAll" OnClick="ButtonClearAll_Click" />
+                <asp:Button ID="ButtonClearAll" runat="server" Style="margin-left: 40px" Text="ClearAllMessages" OnClick="ButtonClearAll_Click" />
            <asp:Timer ID="UpdateTimer" runat="server" Interval="5000" OnTick="Timer1_Tick" />
             <table>
                 <tr>
@@ -29,7 +29,7 @@
                     </td>
                     <td>
                                <p>
-                                    Queue of Unconfirmed Updates<p>
+                                    Queue of Unconfirmed Events<p>
                                         <asp:TextBox ID="UnconfirmedUpdates" runat="server" Height="110px" ReadOnly="true" TextMode="MultiLine" Width="340px">...Connecting...</asp:TextBox>
                         <p>
                             Last Confirmed state<p>
