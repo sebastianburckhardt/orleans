@@ -62,11 +62,7 @@ namespace Tests.GeoClusterTests
             await DoBasicLogConsistentGrainTest("UnitTests.Grains.GsiLogConsistentGrain");
         }
         [Fact, TestCategory("GeoCluster")]
-        public async Task BasicLogViewGrainTest_SingleInstance()
-        {
-            await DoBasicLogViewGrainTest("UnitTests.Grains.SimpleLogViewGrainSingleInstance");
-        }
-
+ 
         private int GetRandom()
         {
             lock (random)

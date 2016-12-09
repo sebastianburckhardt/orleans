@@ -49,17 +49,6 @@ namespace Tests.GeoClusterTests
         }
 
         [Fact, TestCategory("GeoCluster")]
-        public async Task TestBattery_SingleInstanceSharedStorage()
-        {
-            await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleLogViewGrainSingleInstance", true, phases);
-        }
-        [Fact, TestCategory("GeoCluster")]
-        public async Task TestBattery_SharedMemoryProvider()
-        {
-            await fixture.RunChecksOnGrainClass("UnitTests.Grains.SimpleLogViewGrainSharedMemory", true, phases);
-        }
-
-        [Fact, TestCategory("GeoCluster")]
         public async Task TestBattery_CustomStorageProvider()
         {
             await fixture.RunChecksOnGrainClass("UnitTests.Grains.LogConsistentGrainCustomStorage", true, phases);

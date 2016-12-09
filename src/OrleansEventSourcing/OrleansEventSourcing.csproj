@@ -55,10 +55,7 @@
     <Compile Include="StateStorage\DefaultAdaptorFactory.cs" />
     <Compile Include="StateStorage\GrainStateWithMetaData.cs" />
     <Compile Include="StateStorage\LogConsistencyProvider.cs" />
-	<Compile Include="QueuedGrain.cs" />
-    <Compile Include="QueuedGrainVariants.cs" />
     <Compile Include="JournaledGrain.cs" />
-    <Compile Include="LogViewGrain.cs" />
     <Compile Include="Common\ConnectionIssues.cs" />
     <Compile Include="LogStorage\LogStateWithMetaData.cs" />
     <Compile Include="Common\NotificationMessage.cs" />
