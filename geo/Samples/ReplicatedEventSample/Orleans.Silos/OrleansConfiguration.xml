@@ -4,9 +4,9 @@
     <Liveness LivenessType="AzureTable" />
      
     <!--Use a logview provider with custom storage interface-->
-    <LogViewProviders>
-      <Provider Type="Orleans.Providers.LogViews.CustomStorageProvider" Name="CustomStorage" PrimaryCluster="Back" />
-    </LogViewProviders>
+    <LogConsistencyProviders>
+      <Provider Type="Orleans.EventSourcing.CustomStorage.LogConsistencyProvider" Name="CustomStorage" PrimaryCluster="Back" />
+    </LogConsistencyProviders>
 
     <!--Use a unique GUID for this service-->
     <SystemStore ServiceId="b0470de7-3697-42d6-9934-8bbc966a6aeb"/>

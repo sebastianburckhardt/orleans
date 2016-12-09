@@ -5,20 +5,19 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using ReplicatedEventSample.Interfaces;
 using Orleans;
-using Orleans.Providers.LogViews;
-using Orleans.LogViews;
 using Orleans.Concurrency;
 using Orleans.Core;
 using Microsoft.WindowsAzure.Storage.Table;
 using Orleans.Providers;
-using Orleans.QueuedGrains;
 using Orleans.Runtime;
+using Orleans.EventSourcing;
+using Orleans.EventSourcing.CustomStorage;
 
 namespace ReplicatedEventSample.Grains
 {
-    [LogViewProvider(ProviderName = "CustomStorage")]
+    [LogConsistencyProvider(ProviderName = "CustomStorage")]
     public class EventGrain : 
-        QueuedGrain<EventState, Outcome>, 
+        JournaledGrain<EventState, Outcome>, 
         IEventGrain,
         ICustomStorageInterface<EventState,Outcome>
     {
@@ -34,10 +33,10 @@ namespace ReplicatedEventSample.Grains
         {
             logger.Info("{3} new outcome {0} {1} {2}", outcome.When, outcome.Name, outcome.Score, EventName);
 
-            EnqueueUpdate(outcome);
+            RaiseEvent(outcome);
 
             // optional: wait for the updates to be acked from storage
-            await this.ConfirmUpdates();
+            await this.ConfirmEvents();
         }
 
         public Task<List<KeyValuePair<string, int>>> GetTopThree()
@@ -51,7 +50,7 @@ namespace ReplicatedEventSample.Grains
             return Task.FromResult(result);
         }
 
-        protected override void ApplyDeltaToState(EventState state, Outcome delta)
+        protected override void TransitionState(EventState state, Outcome delta)
         {
             state.Apply(delta);
         }
@@ -69,7 +68,7 @@ namespace ReplicatedEventSample.Grains
 
             // read from storage NOW
             // (we want to ensure grain does not execute methods before reading from storage)
-            await SynchronizeNowAsync();
+            await RefreshNow();
         }
 
         Orleans.Runtime.Logger logger;
