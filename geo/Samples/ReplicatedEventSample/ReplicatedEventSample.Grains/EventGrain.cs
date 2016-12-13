@@ -12,9 +12,11 @@ using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.EventSourcing;
 using Orleans.EventSourcing.CustomStorage;
+using Orleans.MultiCluster;
 
 namespace ReplicatedEventSample.Grains
 {
+    [OneInstancePerCluster]
     [LogConsistencyProvider(ProviderName = "CustomStorage")]
     public class EventGrain : 
         JournaledGrain<EventState, Outcome>, 
