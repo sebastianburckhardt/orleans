@@ -28,7 +28,7 @@ namespace Orleans.EventSourcing
     public abstract class JournaledGrain<TGrainState,TEventBase> :
         LogConsistentGrainBase<TGrainState>,
         ILogConsistentGrain,
-        IProtocolParticipant,
+        ILogConsistencyProtocolParticipant,
         ILogViewAdaptorHost<TGrainState, TEventBase>
         where TGrainState : class, new()
         where TEventBase: class
@@ -146,22 +146,33 @@ namespace Orleans.EventSourcing
 
         /// <summary>
         /// Waits until all previously raised events have been confirmed. 
+        /// <para>await this after raising one or more events, to ensure events are persisted before proceeding, or to guarantee strong consistency (linearizability) even if there are multiple instances of this grain</para>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>a task that completes once the events have been confirmed.</returns>
         protected Task ConfirmEvents()
         {
-            return LogViewAdaptor.ConfirmSubmittedEntriesAsync();
+            return LogViewAdaptor.ConfirmSubmittedEntries();
 
         }
 
         /// <summary>
-        /// Retrieves all events now, and confirms all previously raised events. 
+        /// Retrieves the latest state now, and confirms all previously raised events. 
         /// Effectively, this enforces synchronization with the global state.
+        /// <para>Await this before reading the state to ensure strong consistency (linearizability) even if there are multiple instances of this grain</para>
         /// </summary>
-        /// <returns></returns>
-        protected Task FetchAllEventsNow()
+        /// <returns>a task that completes once the log has been refreshed and the events have been confirmed.</returns>
+        protected Task RefreshNow()
         {
-            return LogViewAdaptor.SynchronizeNowAsync();
+            return LogViewAdaptor.Synchronize();
+        }
+
+
+        /// <summary>
+        /// Returns the current queue of unconfirmed events.
+        /// </summary>
+        public IEnumerable<TEventBase> UnconfirmedEvents
+        {
+            get { return LogViewAdaptor.UnconfirmedSuffix; }
         }
 
 
@@ -244,7 +255,7 @@ namespace Orleans.EventSourcing
         /// Called right after grain is constructed, to install the adaptor.
         /// The log-consistency provider contains a factory method that constructs the adaptor with chosen types for this grain
         /// </summary>
-        void ILogConsistentGrain.InstallAdaptor(ILogViewAdaptorFactory factory, object initialState, string graintypename, IStorageProvider storageProvider, IProtocolServices services)
+        void ILogConsistentGrain.InstallAdaptor(ILogViewAdaptorFactory factory, object initialState, string graintypename, IStorageProvider storageProvider, ILogConsistencyProtocolServices services)
         {
             // call the log consistency provider to construct the adaptor, passing the type argument
             LogViewAdaptor = factory.MakeLogViewAdaptor<TGrainState, TEventBase>(this, (TGrainState)initialState, graintypename, storageProvider, services);
@@ -272,26 +283,34 @@ namespace Orleans.EventSourcing
         }
 
         /// <summary>
-        /// Notify log view adaptor of activation
+        /// Notify log view adaptor of activation (called before user-level OnActivate)
         /// </summary>
-        async Task IProtocolParticipant.ActivateProtocolParticipant()
+        async Task ILogConsistencyProtocolParticipant.PreActivateProtocolParticipant()
         {
-            await LogViewAdaptor.Activate();
+            await LogViewAdaptor.PreOnActivate();
+        }
+
+        /// <summary>
+        /// Notify log view adaptor of activation (called after user-level OnActivate)
+        /// </summary>
+        async Task ILogConsistencyProtocolParticipant.PostActivateProtocolParticipant()
+        {
+            await LogViewAdaptor.PostOnActivate();
         }
 
         /// <summary>
         /// Notify log view adaptor of deactivation
         /// </summary>
-        Task IProtocolParticipant.DeactivateProtocolParticipant()
+        Task ILogConsistencyProtocolParticipant.DeactivateProtocolParticipant()
         {
-            return LogViewAdaptor.Deactivate();
+            return LogViewAdaptor.PostOnDeactivate();
         }
 
         /// <summary>
         /// Receive a protocol message from other clusters, passed on to log view adaptor.
         /// </summary>
         [AlwaysInterleave]
-        Task<IProtocolMessage> IProtocolParticipant.OnProtocolMessageReceived(IProtocolMessage payload)
+        Task<ILogConsistencyProtocolMessage> ILogConsistencyProtocolParticipant.OnProtocolMessageReceived(ILogConsistencyProtocolMessage payload)
         {
             return LogViewAdaptor.OnProtocolMessageReceived(payload);
         }
@@ -300,7 +319,7 @@ namespace Orleans.EventSourcing
         /// Receive a configuration change, pass on to log view adaptor.
         /// </summary>
         [AlwaysInterleave]
-        Task IProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
+        Task ILogConsistencyProtocolParticipant.OnMultiClusterConfigurationChange(MultiCluster.MultiClusterConfiguration next)
         {
             return LogViewAdaptor.OnMultiClusterConfigurationChange(next);
         }
