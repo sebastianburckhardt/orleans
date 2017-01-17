@@ -62,8 +62,7 @@ namespace Tests.GeoClusterTests
         {
             await DoBasicLogConsistentGrainTest("UnitTests.Grains.GsiLogConsistentGrain");
         }
-        [Fact, TestCategory("GeoCluster")]
- 
+
         private int GetRandom()
         {
             lock (random)

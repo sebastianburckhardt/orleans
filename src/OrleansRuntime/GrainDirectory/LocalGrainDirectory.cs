@@ -23,7 +23,6 @@ namespace Orleans.Runtime.GrainDirectory
         
         private readonly HashSet<SiloAddress> membershipCache;
         private readonly AsynchAgent maintainer;
-        private readonly AsynchAgent globalSingleInstanceActivationMaintainer;
         private readonly Logger log;
         private readonly SiloAddress seed;
         private readonly RegistrarManager registrarManager;

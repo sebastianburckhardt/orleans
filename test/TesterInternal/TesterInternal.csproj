@@ -222,6 +222,7 @@
     <Content Include="..\..\src\OrleansTestingHost\ClientConfigurationForTesting.xml">
       <Link>ClientConfigurationForTesting.xml</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <Content Include="..\..\src\OrleansTestingHost\OrleansConfigurationForTesting.xml">
       <Link>OrleansConfigurationForTesting.xml</Link>
