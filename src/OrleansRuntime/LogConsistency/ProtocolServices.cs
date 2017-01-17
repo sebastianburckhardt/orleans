@@ -18,7 +18,7 @@ namespace Orleans.Runtime.LogConsistency
     /// This class allows access to these services to providers that cannot see runtime-internals.
     /// It also stores grain-specific information like the grain reference, and caches 
     /// </summary>
-    internal class ProtocolServices : IProtocolServices
+    internal class ProtocolServices : ILogConsistencyProtocolServices
     {
 
         public GrainReference GrainReference { get { return grain.GrainReference; } }
@@ -29,18 +29,24 @@ namespace Orleans.Runtime.LogConsistency
 
         private Grain grain;   // links to the grain that owns this service object
 
+        // pseudo-configuration to use if there is no actual multicluster network
+        private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
+
         internal ProtocolServices(Grain gr, Logger log, IMultiClusterRegistrationStrategy strategy)
         {
             this.grain = gr;
             this.log = log;
             this.RegistrationStrategy = strategy;
 
-            if (!Silo.CurrentSilo.GlobalConfig.HasMultiClusterNetwork)
-                PseudoMultiClusterConfiguration = new MultiClusterConfiguration(DateTime.UtcNow, new string[] { PseudoReplicaId }.ToList());
+            if (!Silo.CurrentSilo.HasMultiClusterNetwork)
+            {
+                // we are creating a default multi-cluster configuration containing exactly one cluster, this one.
+               PseudoMultiClusterConfiguration = new MultiClusterConfiguration(
+                   DateTime.UtcNow, new string[] { Silo.CurrentSilo.ClusterId }.ToList());
+            }
         }
 
-
-        public async Task<IProtocolMessage> SendMessage(IProtocolMessage payload, string clusterId)
+        public async Task<ILogConsistencyProtocolMessage> SendMessage(ILogConsistencyProtocolMessage payload, string clusterId)
         {
             var silo = Silo.CurrentSilo;
             var mycluster = silo.ClusterId;
@@ -48,11 +54,18 @@ namespace Orleans.Runtime.LogConsistency
 
             log?.Verbose3("SendMessage {0}->{1}: {2}", mycluster, clusterId, payload);
 
+            // send the message to ourself if we are the destination cluster
             if (mycluster == clusterId)
             {
-                var g = (IProtocolParticipant)grain;
+                var g = (ILogConsistencyProtocolParticipant)grain;
                 // we are on the same scheduler, so we can call the method directly
                 return await g.OnProtocolMessageReceived(payload);
+            }
+
+            // cannot send to remote instance if there is only one instance
+            if (RegistrationStrategy.Equals(GlobalSingleInstanceRegistration.Singleton))
+            {
+                throw new ProtocolTransportException("cannot send protocol message to remote instance because there is only one global instance");
             }
 
             if (PseudoMultiClusterConfiguration != null)
@@ -69,7 +82,7 @@ namespace Orleans.Runtime.LogConsistency
             if (clusterGateway == null)
                 throw new ProtocolTransportException("no active gateways found for cluster");
 
-            var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<IProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
+            var repAgent = InsideRuntimeClient.Current.InternalGrainFactory.GetSystemTarget<ILogConsistencyProtocolGateway>(Constants.ProtocolGatewayId, clusterGateway);
 
             // test hook
             var filter = (oracle as MultiClusterNetwork.MultiClusterOracle).ProtocolMessageFilterForTesting;
@@ -87,11 +100,6 @@ namespace Orleans.Runtime.LogConsistency
             }
         }
 
-        // pseudo-configuration to use if there is no actual multicluster network
-        private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
-        private static string PseudoReplicaId = "I";
-
-
         public bool MultiClusterEnabled
         {
             get
@@ -104,10 +112,7 @@ namespace Orleans.Runtime.LogConsistency
         {
             get
             {
-                if (PseudoMultiClusterConfiguration != null)
-                    return PseudoReplicaId;
-                else
-                    return Silo.CurrentSilo.ClusterId;
+                return Silo.CurrentSilo.ClusterId;
             }
         }
 
@@ -115,10 +120,7 @@ namespace Orleans.Runtime.LogConsistency
         {
             get
             {
-                if (PseudoMultiClusterConfiguration != null)
-                    return PseudoMultiClusterConfiguration;
-                else
-                    return Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration();
+                return PseudoMultiClusterConfiguration ?? Silo.CurrentSilo.LocalMultiClusterOracle.GetMultiClusterConfiguration();
             }
         }
 
@@ -194,8 +196,6 @@ namespace Orleans.Runtime.LogConsistency
                    PseudoMultiClusterConfiguration == null ? "" : (" " + Silo.CurrentSilo.ClusterId),
                    where),e);
         }
-     
-
 
         public void CaughtUserCodeException(string callback, string where, Exception e)
         {
@@ -207,50 +207,19 @@ namespace Orleans.Runtime.LogConsistency
                    where), e);
         }
 
-
-        public void Info(string format, params object[] args)
+        public void Log(Severity severity, string format, params object[] args)
         {
-            log?.Info("{0}{1} {2}",
-                    grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
-                    string.Format(format, args));
-        }
-
-        public void Verbose(string format, params object[] args)
-        {
-            if (log != null && log.IsVerbose)
+            if (log != null && log.SeverityLevel >= severity)
             {
-                log.Verbose("{0}{1} {2}",
-                    grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
-                    string.Format(format, args));
+                var msg = string.Format("{0}{1} {2}",
+                        grain.GrainReference,
+                        PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
+                        string.Format(format, args));
+                log.Log(0, severity, msg, EmptyObjectArray, null);
             }
         }
 
-        /// <summary> Output the specified message at <c>Verbose2</c> log level. </summary>
-        public void Verbose2(string format, params object[] args)
-        {
-            if (log != null && log.IsVerbose2)
-            {
-                log.Verbose2("{0}{1} {2}",
-                    grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
-                    string.Format(format, args));
-            }
-        }
-
-        /// <summary> Output the specified message at <c>Verbose3</c> log level. </summary>
-        public void Verbose3(string format, params object[] args)
-        {
-            if (log != null && log.IsVerbose3)
-            {
-                log.Verbose3("{0}{1} {2}",
-                    grain.GrainReference,
-                    PseudoMultiClusterConfiguration != null ? "" : (" " + Silo.CurrentSilo.ClusterId),
-                    string.Format(format, args));
-            }
-        }
-
+        private static readonly object[] EmptyObjectArray = new object[0];
     }
 
 }

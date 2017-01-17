@@ -1,4 +1,5 @@
 ﻿using Orleans.LogConsistency;
+using Orleans.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,13 +14,13 @@ namespace Orleans.EventSourcing.Common
     /// </summary>
     internal class NotificationTracker
     {
-        internal IProtocolServices services;
+        internal ILogConsistencyProtocolServices services;
         internal IConnectionIssueListener listener;
         internal int maxNotificationBatchSize;
 
         private Dictionary<string, NotificationWorker> sendWorkers;
 
-        public NotificationTracker(IProtocolServices services, IEnumerable<string> remoteInstances, int maxNotificationBatchSize, IConnectionIssueListener listener)
+        public NotificationTracker(ILogConsistencyProtocolServices services, IEnumerable<string> remoteInstances, int maxNotificationBatchSize, IConnectionIssueListener listener)
         {
             this.services = services;
             this.listener = listener;
@@ -28,7 +29,7 @@ namespace Orleans.EventSourcing.Common
 
             foreach (var x in remoteInstances)
             {
-                services.Verbose("Now sending notifications to {0}", x);
+                services.Log(Severity.Verbose, "Now sending notifications to {0}", x);
                 sendWorkers.Add(x, new NotificationWorker(this, x));
             }
         }
@@ -64,7 +65,7 @@ namespace Orleans.EventSourcing.Common
             var removed = sendWorkers.Keys.Except(remoteInstances);
             foreach (var x in removed)
             {
-                services.Verbose("No longer sending notifications to {0}", x);
+                services.Log(Severity.Verbose, "No longer sending notifications to {0}", x);
                 sendWorkers[x].Done = true;
                 sendWorkers.Remove(x);
             }
@@ -74,7 +75,7 @@ namespace Orleans.EventSourcing.Common
             {
                 if (x != services.MyClusterId)
                 {
-                    services.Verbose("Now sending notifications to {0}", x);
+                    services.Log(Severity.Verbose, "Now sending notifications to {0}", x);
                     sendWorkers.Add(x, new NotificationWorker(this, x));
                 }
             }
@@ -100,19 +101,15 @@ namespace Orleans.EventSourcing.Common
             /// <summary>
             /// Queue messages
             /// </summary>
-            public INotificationMessage QueuedMessage = null;
+            private INotificationMessage QueuedMessage = null;
             /// <summary>
             /// Queue state
             /// </summary>
-            public NotificationQueueState QueueState = NotificationQueueState.Empty;
+            private NotificationQueueState QueueState = NotificationQueueState.Empty;
             /// <summary>
             /// Last exception
             /// </summary>
             public RecordedConnectionIssue LastConnectionIssue;
-            /// <summary>
-            /// Number of consecutive failures
-            /// </summary>
-            public int NumConsecutiveFailures;
             /// <summary>
             /// Is current task done or not
             /// </summary>
@@ -202,13 +199,13 @@ namespace Orleans.EventSourcing.Common
                     await tracker.services.SendMessage(msg, clusterId);
 
                     // notification was successful
-                    tracker.services.Verbose("Sent notification to cluster {0}: {1}", clusterId, msg);
+                    tracker.services.Log(Severity.Verbose, "Sent notification to cluster {0}: {1}", clusterId, msg);
 
                     LastConnectionIssue.Resolve(tracker.listener, tracker.services);
                 }
                 catch (Exception e)
                 {
-                    tracker.services.Info("Could not send notification to cluster {0}: {1}", clusterId, e);
+                    tracker.services.Log(Severity.Info, "Could not send notification to cluster {0}: {1}", clusterId, e);
 
                     LastConnectionIssue.Record(
                         new NotificationFailed() { RemoteCluster = clusterId, Exception = e },

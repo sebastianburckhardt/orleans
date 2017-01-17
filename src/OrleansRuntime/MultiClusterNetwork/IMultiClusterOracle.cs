@@ -9,8 +9,11 @@ namespace Orleans.Runtime.MultiClusterNetwork
     // A local interface for local communication between in-silo runtime components and this ISiloStatusOracle.
     internal interface IMultiClusterOracle
     {
-      
-        Task Start(ISiloStatusOracle silostatusoracle);
+        /// <summary>
+        /// Starts this instance.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the work performed.</returns>
+        Task Start();
 
         /// <summary>
         /// Get the latest multicluster configuration.
@@ -72,6 +75,6 @@ namespace Orleans.Runtime.MultiClusterNetwork
         /// <summary>
         /// A test hook for dropping protocol messages between replicated grain instances
         /// </summary>
-        Func<IProtocolMessage, bool> ProtocolMessageFilterForTesting { get; set; }
+        Func<ILogConsistencyProtocolMessage, bool> ProtocolMessageFilterForTesting { get; set; }
     }
 }

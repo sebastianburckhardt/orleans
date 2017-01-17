@@ -21,14 +21,17 @@ namespace Orleans.LogConsistency
           ILogConsistencyDiagnostics
         where TLogView : new()
     {
-        /// <summary>Called during activation, right before the user grain activation code is run.</summary>
-        Task Activate();
+        /// <summary>Called during activation, right before the user-defined <see cref="Grain.OnActivateAsync"/>.</summary>
+        Task PreOnActivate();
 
-        /// <summary>Called during deactivation, right after the user grain deactivation code is run.</summary>
-        Task Deactivate();
+        /// <summary>Called during activation, right after the user-defined <see cref="Grain.OnActivateAsync"/>..</summary>
+        Task PostOnActivate();
+
+        /// <summary>Called during deactivation, right after the user-defined <see cref="Grain.OnDeactivateAsync"/>.</summary>
+        Task PostOnDeactivate();
 
         /// <summary>Called when a grain receives a message from a remote instance.</summary>
-        Task<IProtocolMessage> OnProtocolMessageReceived(IProtocolMessage payload);
+        Task<ILogConsistencyProtocolMessage> OnProtocolMessageReceived(ILogConsistencyProtocolMessage payload);
 
         /// <summary>Called after the silo receives a new multi-cluster configuration.</summary>
         Task OnMultiClusterConfigurationChange(MultiClusterConfiguration next);
@@ -101,13 +104,14 @@ namespace Orleans.LogConsistency
         /// Confirm all submitted entries.
         ///<para>Waits until all previously submitted entries appear in the confirmed prefix of the log.</para>
         /// </summary>
-        Task ConfirmSubmittedEntriesAsync();
+        /// <returns>A task that completes after all entries are confirmed.</returns>
+        Task ConfirmSubmittedEntries();
 
         /// <summary>
-        /// Confirm all submitted entries and get the latest log view.
+        /// Get the latest log view and confirm all submitted entries.
         ///<para>Waits until all previously submitted entries appear in the confirmed prefix of the log, and forces a refresh of the confirmed prefix.</para>
         /// </summary>
-        /// <returns></returns>
-        Task SynchronizeNowAsync();
+        /// <returns>A task that completes after getting the latest version and confirming all entries.</returns>
+        Task Synchronize();
     }
 }
