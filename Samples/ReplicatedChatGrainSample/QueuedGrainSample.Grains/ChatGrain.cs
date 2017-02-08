@@ -8,7 +8,6 @@ using ReplicatedChatGrainSample.Interfaces;
 
 namespace ReplicatedChatGrainSample.Grains
 {
-    [Serializable]
     public class ChatState
     {
         public ChatState()
