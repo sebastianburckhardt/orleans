@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Orleans.Concurrency;
 using Orleans.Runtime;
+using Orleans.Transactions;
 
 namespace Orleans.CodeGeneration
 {
@@ -109,6 +110,28 @@ namespace Orleans.CodeGeneration
                 (declaringTypeInfo.GetInterfaces().Any(
                     i => i.GetTypeInfo().GetCustomAttributes(typeof(StatelessWorkerAttribute), true).Any()
                         && declaringTypeInfo.GetRuntimeInterfaceMap(i).TargetMethods.Contains(methodInfo)));
+        }
+
+        public static bool IsNewTransactionRequired(MethodInfo methodInfo)
+        {
+            var a = methodInfo.GetCustomAttributes(typeof(TransactionAttribute), true);
+
+            if (a.Length > 0)
+            {
+                return ((TransactionAttribute)a[0]).Requirement == TransactionOption.RequiresNew;
+            }
+            return false;
+        }
+
+        public static bool IsTransactionRequired(MethodInfo methodInfo)
+        {
+            var a = methodInfo.GetCustomAttributes(typeof(TransactionAttribute), true);
+            if (a.Length > 0)
+            {
+                return ((TransactionAttribute)a[0]).Requirement == TransactionOption.Required;
+            }
+
+            return methodInfo.DeclaringType.GetInterfaces().Any(i => (i == typeof(ITransactionalGrain)));
         }
 
         public static Dictionary<int, Type> GetRemoteInterfaces(Type type, bool checkIsGrainInterface = true)

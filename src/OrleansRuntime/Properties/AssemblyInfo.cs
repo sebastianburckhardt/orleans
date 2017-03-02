@@ -22,6 +22,7 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("UnitTests")]
 [assembly: InternalsVisibleTo("OrleansCounterControl")]
 [assembly: InternalsVisibleTo("OrleansTelemetryConsumers.Counters")]
+[assembly: InternalsVisibleTo("OrleansTransactionManager")] // for the logger
 [assembly: InternalsVisibleTo("TesterInternal")]
 [assembly: InternalsVisibleTo("TestInternalGrains")]
 [assembly: InternalsVisibleTo("NonSilo.Tests")]

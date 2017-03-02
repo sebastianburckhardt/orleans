@@ -12,6 +12,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.Serialization;
 using Orleans.Streams;
 using Orleans.TestingHost.Utils;
+using Orleans.Transactions;
 
 namespace Orleans.TestingHost
 {

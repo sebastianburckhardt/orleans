@@ -59,7 +59,7 @@ namespace Orleans
         {
             if (!IsInitialized)
             {
-                throw new OrleansException("You must initialize the Grain Client before accessing the GrainFactory");
+                //throw new OrleansException("You must initialize the Grain Client before accessing the GrainFactory");
             }
 
             return client;

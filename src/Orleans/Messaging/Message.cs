@@ -4,6 +4,7 @@ using System.Text;
 using Orleans.CodeGeneration;
 using Orleans.Runtime.Configuration;
 using Orleans.Serialization;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -140,6 +141,12 @@ namespace Orleans.Runtime
         {
             get { return Headers.IsReturnedFromRemoteCluster; }
             set { Headers.IsReturnedFromRemoteCluster = value; }
+        }
+
+        public bool IsTransactionRequired
+        {
+            get { return Headers.IsTransactionRequired; }
+            set { Headers.IsTransactionRequired = value; }
         }
 
         public CorrelationId Id
@@ -288,6 +295,12 @@ namespace Orleans.Runtime
             return Direction != Directions.OneWay && !id.IsSystemTarget && !Constants.IsSystemGrain(id);
         }
 
+        public TransactionInfo TransactionInfo
+        {
+            get { return Headers.TransactionInfo; }
+            set { Headers.TransactionInfo = value; }
+        }
+
         public string DebugContext
         {
             get { return GetNotNullString(Headers.DebugContext); }
@@ -427,7 +440,6 @@ namespace Orleans.Runtime
         {
             // Dispose of the current body.
             this.BodyObject = null;
-
             this.bodyBytes = body;
         }
 
@@ -741,6 +753,10 @@ namespace Orleans.Runtime
                 IS_UNORDERED = 1 << 23,
                 REQUEST_CONTEXT = 1 << 24,
                 IS_RETURNED_FROM_REMOTE_CLUSTER = 1 << 25,
+
+                // transactions
+                TRANSACTION_INFO = 1 << 26,
+                IS_TRANSACTION_REQUIRED = 1 << 27,
                 // Do not add over int.MaxValue of these.
             }
 
@@ -750,6 +766,7 @@ namespace Orleans.Runtime
             private bool _isAlwaysInterleave;
             private bool _isUnordered;
             private bool _isReturnedFromRemoteCluster;
+            private bool _isTransactionRequired;
             private CorrelationId _id;
             private int _resendCount;
             private int _forwardCount;
@@ -762,6 +779,7 @@ namespace Orleans.Runtime
             private ActivationId _sendingActivation;
             private bool _isNewPlacement;
             private ResponseTypes _result;
+            private TransactionInfo _transactionInfo;
             private DateTime? _expiration;
             private string _debugContext;
             private List<ActivationAddress> _cacheInvalidationHeader;
@@ -822,6 +840,15 @@ namespace Orleans.Runtime
                 set
                 {
                     _isReturnedFromRemoteCluster = value;
+                }
+            }
+
+            public bool IsTransactionRequired
+            {
+                get { return _isTransactionRequired; }
+                set
+                {
+                    _isTransactionRequired = value;
                 }
             }
 
@@ -930,6 +957,15 @@ namespace Orleans.Runtime
                 set
                 {
                     _result = value;
+                }
+            }
+
+            public TransactionInfo TransactionInfo
+            {
+                get { return _transactionInfo; }
+                set
+                {
+                    _transactionInfo = value;
                 }
             }
 
@@ -1051,6 +1087,8 @@ namespace Orleans.Runtime
                 headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
                 headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
                 headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
+                headers = IsTransactionRequired ? headers | Headers.IS_TRANSACTION_REQUIRED : headers & ~Headers.IS_TRANSACTION_REQUIRED;
+                headers = _transactionInfo == null ? headers & ~Headers.TRANSACTION_INFO : headers | Headers.TRANSACTION_INFO;
                 return headers;
             }
 
@@ -1173,6 +1211,9 @@ namespace Orleans.Runtime
                 {
                     writer.Write(input.TargetSilo);
                 }
+
+                if ((headers & Headers.TRANSACTION_INFO) != Headers.NONE)
+                    SerializationManager.SerializeInner(input.TransactionInfo, context, typeof(TransactionInfo));
             }
 
             [DeserializerMethod]
@@ -1276,7 +1317,12 @@ namespace Orleans.Runtime
                 if ((headers & Headers.TARGET_SILO) != Headers.NONE)
                     result.TargetSilo = reader.ReadSiloAddress();
 
-                return (HeadersContainer)result;
+                result.IsTransactionRequired = (headers & Headers.IS_TRANSACTION_REQUIRED) != Headers.NONE;
+
+                if ((headers & Headers.TRANSACTION_INFO) != Headers.NONE)
+                    result.TransactionInfo = SerializationManager.DeserializeInner<TransactionInfo>(context);
+
+                return result;
             }
 
             private static bool ReadBool(BinaryTokenStreamReader stream)
