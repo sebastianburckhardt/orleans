@@ -13,6 +13,7 @@ using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost.Extensions;
 using Orleans.TestingHost.Utils;
+using Orleans.Transactions;
 
 namespace Orleans.TestingHost
 {
@@ -44,7 +45,7 @@ namespace Orleans.TestingHost
 
         /// <summary> List of handles to the secondary silos </summary>
         public SiloHandle Secondary { get; private set; }
-
+        
         private readonly List<SiloHandle> additionalSilos = new List<SiloHandle>();
         private readonly Dictionary<string, GeneratedAssembly> additionalAssemblies = new Dictionary<string, GeneratedAssembly>();
 
@@ -558,6 +559,7 @@ namespace Orleans.TestingHost
         {
             bool doStartPrimary = false;
             bool doStartSecondary = false;
+            bool doStartTransactionService = false;
 
             if (options.StartFreshOrleans)
             {
@@ -571,6 +573,10 @@ namespace Orleans.TestingHost
                 if (options.StartSecondary)
                 {
                     doStartSecondary = true;
+                }
+                if (options.StartTransactionService)
+                {
+                    doStartTransactionService = true;
                 }
             }
             else

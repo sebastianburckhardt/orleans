@@ -337,6 +337,16 @@ namespace Orleans.Runtime
         public static readonly StatisticName MESSAGE_ACCEPTOR_CHECKED_IN_SOCKET_EVENT_ARGS = new StatisticName("Messaging.Acceptor.CheckedInSocketEventArgs");
         public static readonly StatisticName MESSAGE_ACCEPTOR_CHECKED_OUT_SOCKET_EVENT_ARGS = new StatisticName("Messaging.Acceptor.CheckedOutSocketEventArgs");
         public static readonly StatisticName MESSAGE_ACCEPTOR_IN_USE_SOCKET_EVENT_ARGS = new StatisticName("Messaging.Acceptor.InUseSocketEventArgs");
+
+        // Transactions
+        public static readonly StatisticName TRANSACTIONS_START_QUEUE_LENGTH = new StatisticName("Transactions.Start.QueueLength");
+        public static readonly StatisticName TRANSACTIONS_START_REQUEST = new StatisticName("Transactions.Start.Request");
+        public static readonly StatisticName TRANSACTIONS_START_COMPLETED = new StatisticName("Transactions.Start.Completed");
+        public static readonly StatisticName TRANSACTIONS_COMMIT_QUEUE_LENGTH = new StatisticName("Transactions.Commit.QueueLength");
+        public static readonly StatisticName TRANSACTIONS_COMMIT_REQUEST = new StatisticName("Transactions.Commit.Request");
+        public static readonly StatisticName TRANSACTIONS_COMMIT_COMPLETED = new StatisticName("Transactions.Commit.Completed");
+        public static readonly StatisticName TRANSACTIONS_COMMIT_IN_DOUBT = new StatisticName("Transactions.Commit.InDoubt");
+        public static readonly StatisticName TRANSACTIONS_ABORT_TOTAL = new StatisticName("Transactions.Abort.Total");
     }
 }
  

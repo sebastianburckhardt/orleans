@@ -55,6 +55,7 @@
     <Compile Include="IClientAddressableTestRendezvousGrain.cs" />
     <Compile Include="IMultifacetFactoryTestGrain.cs" />
     <Compile Include="IMultifacetTestGrain.cs" />
+    <Compile Include="ISimpleTransactionalGrain.cs" />
     <Compile Include="ISerializerPresenceTest.cs" />
     <Compile Include="IPlacementTestGrain.cs" />
     <Compile Include="IStressTestGrain.cs" />

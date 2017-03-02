@@ -14,23 +14,6 @@ namespace Orleans
         private readonly ConcurrentQueue<Tuple<TaskCompletionSource<bool>, Func<Task>>> actions = new ConcurrentQueue<Tuple<TaskCompletionSource<bool>, Func<Task>>>();
         private readonly InterlockedExchangeLock locker = new InterlockedExchangeLock();
 
-        private class InterlockedExchangeLock
-        {
-            private const int Locked = 1;
-            private const int Unlocked = 0;
-            private int lockState = Unlocked;
-
-            public bool TryGetLock()
-            {
-                return Interlocked.Exchange(ref lockState, Locked) != Locked;
-            }
-
-            public void ReleaseLock()
-            {
-                Interlocked.Exchange(ref lockState, Unlocked);
-            }
-        }
-
         /// <summary>
         /// Submit the next function for execution. It will execute after all previously submitted functions have finished, without interleaving their executions.
         /// Returns a promise that represents the execution of this given function. 

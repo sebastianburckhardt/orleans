@@ -64,6 +64,7 @@
     <Compile Include="ReentrantTestSupportGrain.cs" />
     <Compile Include="ReminderTestGrain2.cs" />
     <Compile Include="SerializerPresenceTestGrain.cs" />
+    <Compile Include="SimpleTransactionalGrain.cs" />
     <Compile Include="StreamingGrain.cs" />
     <Compile Include="StreamingImmutabilityTestGrain.cs" />
     <Compile Include="StreamLifecycleTestGrains.cs" />

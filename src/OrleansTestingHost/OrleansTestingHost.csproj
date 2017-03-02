@@ -80,6 +80,10 @@
       <Project>{6ff2004c-cdf8-479c-bf27-c6bfe8ef93e0}</Project>
       <Name>OrleansRuntime</Name>
     </ProjectReference>
+    <ProjectReference Include="..\OrleansTransactionManager\OrleansTransactionManager.csproj">
+      <Project>{eb6c8208-2ad0-4c8b-840e-92c7b9e69d19}</Project>
+      <Name>OrleansTransactionManager</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Orleans\Orleans.csproj">
       <Project>{bc1bd60c-e7d8-4452-a21c-290aec8e2e74}</Project>
       <Name>Orleans</Name>

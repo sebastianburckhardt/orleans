@@ -1111,6 +1111,16 @@ namespace Orleans
         // Note: individual Service Fabric error codes are defined in
         // Microsoft.Orleans.ServiceFabric.Utilities.ErrorCode.
         ServiceFabricBase = Runtime + 4400,
+
+        TransactionsBase = Runtime + 4500,
+        Transactions_SendingTMRequest = TransactionsBase + 1,
+        Transactions_ReceivedTMResponse = TransactionsBase + 2,
+        Transactions_TMError = TransactionsBase + 3,
+        Transactions_GetTMProxy = TransactionsBase + 4,
+
+        TransactionManagerBase = Runtime + 4600,
+        TransactionManager_TMEndpointConfigError = TransactionManagerBase + 1,
+        TransactionManager_TMFailedToStart = TransactionManagerBase + 2
     }
 }
 // ReSharper restore InconsistentNaming

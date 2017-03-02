@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 using Orleans.Core;
+using Orleans.Factory;
 using Orleans.GrainDirectory;
 using Orleans.LogConsistency;
 using Orleans.Providers;
@@ -38,6 +39,7 @@ using Orleans.Storage;
 using Orleans.Streams;
 using Orleans.Timers;
 using Orleans.MultiCluster;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -102,6 +104,9 @@ namespace Orleans.Runtime
         internal ClusterConfiguration OrleansConfig => this.initializationParams.ClusterConfig;
         internal GlobalConfiguration GlobalConfig => this.initializationParams.GlobalConfig;
         internal NodeConfiguration LocalConfig => this.initializationParams.NodeConfig;
+        private readonly ITransactionAgent localTransactionAgent;
+        internal readonly string SiloIdentity;
+        internal ISiloMessageCenter LocalMessageCenter { get { return messageCenter; } }
         internal OrleansTaskScheduler LocalScheduler { get { return scheduler; } }
         internal GrainTypeManager LocalGrainTypeManager { get { return grainTypeManager; } }
         internal ILocalGrainDirectory LocalGrainDirectory { get { return localGrainDirectory; } }
@@ -112,6 +117,7 @@ namespace Orleans.Runtime
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
         internal IStreamProviderManager StreamProviderManager { get { return grainRuntime.StreamProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
+        internal ITransactionAgent LocalTransactionAgent { get { return localTransactionAgent; } }
         internal ISiloPerformanceMetrics Metrics { get { return siloStatistics.MetricsTable; } }
         internal static Silo CurrentSilo { get; private set; }
         internal IReadOnlyCollection<IProvider> AllSiloProviders 
@@ -283,6 +289,14 @@ namespace Orleans.Runtime
             services.AddSingleton<Func<IGrainRuntime>>(sp => () => sp.GetRequiredService<IGrainRuntime>());
             services.AddSingleton<GrainCreator>();
 
+            // transactions
+            services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
+            services.AddSingleton<IFactoryBuilder<string, ITransactionServiceFactory>, TransactionServiceFactoryBuilder>();
+            services.AddSingleton(sp => sp.GetRequiredService<IFactoryBuilder<string, ITransactionServiceFactory>>().Build());
+            services.AddSingleton(sp => sp.GetRequiredService<IFactory<string, ITransactionServiceFactory>>().Create(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType) );
+            services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
+            services.AddTransient<InClusterTransactionManager>();
+
             if (initializationParams.GlobalConfig.UseVirtualBucketsConsistentRing)
             {
                 services.AddSingleton<IConsistentRingProvider>(
@@ -342,9 +356,12 @@ namespace Orleans.Runtime
             // This has to come after the message center //; note that it then gets injected back into the message center.;
             localGrainDirectory = Services.GetRequiredService<LocalGrainDirectory>(); 
             
-            // Now the activation directory.
             activationDirectory = Services.GetRequiredService<ActivationDirectory>();
-            
+
+            // Initialize Transaction Agent
+            localTransactionAgent = new TransactionAgent(Constants.TransactionAgentSystemTargetId, SiloAddress, Services.GetRequiredService<ITransactionServiceFactory>());
+            runtimeClient.TransactionAgent = localTransactionAgent;
+
             // Now the consistent ring provider
             RingProvider = Services.GetRequiredService<IConsistentRingProvider>();
 
@@ -422,6 +439,9 @@ namespace Orleans.Runtime
                 logger.Verbose("Creating {0} System Target", "MultiClusterOracle");
                 RegisterSystemTarget((SystemTarget)multiClusterOracle);
             }
+
+            logger.Verbose("Creating {0} System Target", "TransactionAgent");
+            RegisterSystemTarget((SystemTarget)localTransactionAgent);
 
             logger.Verbose("Finished creating System Targets for this silo.");
         }
@@ -541,7 +561,17 @@ namespace Orleans.Runtime
 
             // Validate the configuration.
             GlobalConfig.Application.ValidateConfiguration(logger);
-            
+
+            ISchedulingContext transactionAgentContext = ((SystemTarget)localTransactionAgent).SchedulingContext;
+            scheduler.QueueTask(LocalTransactionAgent.Start, transactionAgentContext)
+                .WaitWithThrow(initTimeout);
+
+            // ensure this runs in the grain context, wait for it to complete
+// TODO - jbragg- wtf?
+//            scheduler.QueueTask(CreateSystemGrains, catalog.SchedulingContext)
+//                .WaitWithThrow(initTimeout);
+//            if (logger.IsVerbose) {  logger.Verbose("System grains created successfully."); }
+
             // Initialize storage providers once we have a basic silo runtime environment operating
             storageProviderManager = new StorageProviderManager(grainFactory, Services, siloProviderRuntime);
             scheduler.QueueTask(

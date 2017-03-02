@@ -9,10 +9,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 using Orleans.Runtime.Configuration;
+using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Scheduler;
 using Orleans.Serialization;
 using Orleans.Streams;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -38,6 +40,10 @@ namespace Orleans.Runtime
         public TimeSpan ResponseTimeout { get; private set; }
         private readonly GrainTypeManager typeManager;
         private readonly MessageFactory messageFactory;
+
+        internal ITransactionAgent TransactionAgent { get; set; }
+
+        internal readonly IConsistentRingProvider ConsistentRingProvider;
 
         public InsideRuntimeClient(
             ILocalSiloDetails siloDetails,
@@ -283,6 +289,21 @@ namespace Orleans.Runtime
                     // in RuntimeClient.CreateMessage -> RequestContext.ExportToMessage(message);
                 }
 
+                bool startNewTransaction = false;
+                var transactionInfo = message.TransactionInfo;
+
+                if (message.IsTransactionRequired && message.TransactionInfo == null)
+                {
+                    // Start a new transaction
+                    transactionInfo = await this.TransactionAgent.StartTransaction(message.IsReadOnly, TimeSpan.FromSeconds(10));
+                    startNewTransaction = true;
+                }
+
+                if (transactionInfo != null)
+                {
+                    TransactionContext.SetTransactionInfo(transactionInfo);
+                }
+
                 object resultObject;
                 try
                 {
@@ -323,11 +344,39 @@ namespace Orleans.Runtime
                         invokeExceptionLogger.Warn(ErrorCode.GrainInvokeException,
                             "Exception during Grain method call of message: " + message, exc1);
                     }
+
+                    if (TransactionContext.GetTransactionInfo() != null)
+                    {
+                        // Must abort the transaction on exceptions
+                        this.TransactionAgent.Abort(TransactionContext.GetTransactionInfo());
+                        TransactionContext.GetTransactionInfo().IsAborted = true;
+                    }
+
                     if (message.Direction != Message.Directions.OneWay)
                     {
                         SafeSendExceptionResponse(message, exc1);
                     }
                     return;
+                }
+
+                if (transactionInfo != null && transactionInfo.PendingCalls > 0)
+                {
+                    // Can't exit before the transaction completes.
+                    this.TransactionAgent.Abort(TransactionContext.GetTransactionInfo());
+                    TransactionContext.GetTransactionInfo().IsAborted = true;
+
+                    if (message.Direction != Message.Directions.OneWay)
+                    {
+                        SafeSendExceptionResponse(message, new OrleansOrphanCallException(transactionInfo.TransactionId, transactionInfo.PendingCalls));
+                    }
+
+                    return;
+                }
+
+                if (startNewTransaction)
+                {
+                    // This request started the transaction, so we try to commit before returning.
+                    await this.TransactionAgent.Commit(transactionInfo);
                 }
 
                 if (message.Direction == Message.Directions.OneWay) return;
@@ -339,6 +388,21 @@ namespace Orleans.Runtime
                 logger.Warn(ErrorCode.Runtime_Error_100329, "Exception during Invoke of message: " + message, exc2);
                 if (message.Direction != Message.Directions.OneWay)
                     SafeSendExceptionResponse(message, exc2);
+
+                if (exc2 is OrleansTransactionInDoubtException)
+                {
+                    // TODO: log an error message?
+                }
+                else if (TransactionContext.GetTransactionInfo() != null)
+                {
+                    // Must abort the transaction on exceptions
+                    this.TransactionAgent.Abort(TransactionContext.GetTransactionInfo());
+                    TransactionContext.GetTransactionInfo().IsAborted = true;
+                }
+            }
+            finally
+            {
+                TransactionContext.Clear();
             }
         }
 
@@ -535,6 +599,12 @@ namespace Orleans.Runtime
             bool found = callbacks.TryGetValue(message.Id, out callbackData);
             if (found)
             {
+                if (message.TransactionInfo != null)
+                {
+                    // NOTE: Not clear if thread-safe, revise
+                    callbackData.TransactionInfo.Union(message.TransactionInfo);
+                    callbackData.TransactionInfo.PendingCalls--;
+                }
                 // IMPORTANT: we do not schedule the response callback via the scheduler, since the only thing it does
                 // is to resolve/break the resolver. The continuations/waits that are based on this resolution will be scheduled as work items. 
                 callbackData.DoCallback(message);

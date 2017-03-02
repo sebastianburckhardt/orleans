@@ -95,6 +95,7 @@
     <Compile Include="TestStreamProviders\FailureInjectionStreamProvider.cs" />
     <Compile Include="TestStreamProviders\TestAzureTableStorageStreamFailureHandler.cs" />
     <Compile Include="TestUtils.cs" />
+    <Compile Include="TransactionsTests\BasicTransactionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\src\Build\Version.txt">
