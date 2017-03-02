@@ -230,6 +230,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consul.Tests", "..\test\Consul.Tests\Consul.Tests.csproj", "{D964FE9E-008A-4EDB-BBD7-8C57185C7A18}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansTransactionManager", "OrleansTransactionManager\OrleansTransactionManager.csproj", "{EB6C8208-2AD0-4C8B-840E-92C7B9E69D19}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E782DD19-51F7-4F66-8217-BACAC33767E4} = {E782DD19-51F7-4F66-8217-BACAC33767E4}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
