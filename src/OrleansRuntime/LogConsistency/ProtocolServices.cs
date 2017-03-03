@@ -11,6 +11,7 @@ using Orleans.Runtime;
 using Orleans.SystemTargetInterfaces;
 using Orleans.GrainDirectory;
 using Orleans.Serialization;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime.LogConsistency
 {
@@ -34,13 +35,14 @@ namespace Orleans.Runtime.LogConsistency
         // pseudo-configuration to use if there is no actual multicluster network
         private static MultiClusterConfiguration PseudoMultiClusterConfiguration;
 
-        internal ProtocolServices(Grain gr, Logger log, IMultiClusterRegistrationStrategy strategy, SerializationManager serializationManager, IInternalGrainFactory grainFactory)
+        internal ProtocolServices(Grain gr, Logger log, IMultiClusterRegistrationStrategy strategy, SerializationManager serializationManager, TransactionAgent transactionAgent, IInternalGrainFactory grainFactory)
         {
             this.grain = gr;
             this.log = log;
             this.grainFactory = grainFactory;
             this.RegistrationStrategy = strategy;
             this.SerializationManager = serializationManager;
+            this.TransactionAgent = transactionAgent;
 
             if (!Silo.CurrentSilo.HasMultiClusterNetwork)
             {
@@ -106,6 +108,18 @@ namespace Orleans.Runtime.LogConsistency
 
         /// <inheritdoc />
         public SerializationManager SerializationManager { get; }
+
+        /// <inheritdoc />
+        public ITransactionAgent TransactionAgent { get; }
+
+        public TransactionInfo TransactionInfo
+        {
+            get
+            {
+                { return TransactionContext.GetTransactionInfo(); }
+            }
+        }
+
 
         public bool MultiClusterEnabled
         {

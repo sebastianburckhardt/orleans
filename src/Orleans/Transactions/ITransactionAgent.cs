@@ -11,7 +11,7 @@ namespace Orleans.Transactions
     /// There is one Transaction Agent per silo.
     /// TODO: does this belong in Runtime instead?
     /// </remarks>
-    internal interface ITransactionAgent
+    public interface ITransactionAgent
     {
         /// <summary>
         /// Starts the Transaction Agent

@@ -9,6 +9,7 @@ using Orleans.Runtime;
 using Orleans.MultiCluster;
 using Orleans.GrainDirectory;
 using Orleans.Serialization;
+using Orleans.Transactions;
 
 namespace Orleans.LogConsistency
 {
@@ -81,6 +82,9 @@ namespace Orleans.LogConsistency
 
         void UnsubscribeFromMultiClusterConfigurationChanges();
 
+        ITransactionAgent TransactionAgent { get; }
+
+        TransactionInfo TransactionInfo { get; }
 
         #region Logging Functionality
 

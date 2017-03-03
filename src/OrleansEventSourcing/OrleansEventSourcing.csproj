@@ -65,6 +65,7 @@
     <Compile Include="Common\RecordedConnectionIssue.cs" />
     <Compile Include="StateStorage\LogViewAdaptor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TransactionalJournaledGrain.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Orleans\Orleans.csproj">

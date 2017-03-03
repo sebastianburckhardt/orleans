@@ -7,6 +7,7 @@ using Orleans.Storage;
 using Orleans.Runtime.LogConsistency;
 using Orleans.GrainDirectory;
 using Orleans.Serialization;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -24,6 +25,8 @@ namespace Orleans.Runtime
         private readonly ConcurrentDictionary<Type, ObjectFactory> typeActivatorCache = new ConcurrentDictionary<Type, ObjectFactory>();
 
         private readonly SerializationManager serializationManager;
+        private readonly TransactionAgent  transactionAgent;
+
         private readonly IInternalGrainFactory grainFactory;
 
         /// <summary>
@@ -33,10 +36,11 @@ namespace Orleans.Runtime
         /// <param name="getGrainRuntime">The delegate used to get the grain runtime.</param>
         /// <param name="serializationManager">The serialization manager.</param>
         /// <param name="grainFactory"></param>
-        public GrainCreator(IServiceProvider services, Func<IGrainRuntime> getGrainRuntime, SerializationManager serializationManager, IInternalGrainFactory grainFactory)
+        public GrainCreator(IServiceProvider services, Func<IGrainRuntime> getGrainRuntime, SerializationManager serializationManager, TransactionAgent transactionAgent, IInternalGrainFactory grainFactory)
         {
             this.services = services;
             this.serializationManager = serializationManager;
+            this.transactionAgent = transactionAgent;
             this.grainFactory = grainFactory;
             this.grainRuntime = new Lazy<IGrainRuntime>(getGrainRuntime);
             this.createFactory = type => ActivatorUtilities.CreateFactory(type, Type.EmptyTypes);
@@ -104,7 +108,7 @@ namespace Orleans.Runtime
             var logger = (factory as ILogConsistencyProvider)?.Log ?? storageProvider?.Log;
            
             // encapsulate runtime services used by consistency adaptors
-            var svc = new ProtocolServices(grain, logger, mcRegistrationStrategy, this.serializationManager, this.grainFactory);
+            var svc = new ProtocolServices(grain, logger, mcRegistrationStrategy, this.serializationManager, this.transactionAgent, this.grainFactory);
 
             var state = Activator.CreateInstance(stateType);
 
