@@ -176,6 +176,7 @@
     <Compile Include="Transactions\Transaction.cs" />
     <Compile Include="Transactions\TransactionManager.cs" />
     <Compile Include="Transactions\TransactionManagerService.cs" />
+    <Compile Include="Transactions\TransactionOptions.cs" />
     <Compile Include="Transactions\TrasactionLog.cs" />
     <Compile Include="Utils\ReferenceEqualsComparer.cs" />
     <Compile Include="Serialization\ReflectedSerializationMethodInfo.cs" />

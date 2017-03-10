@@ -8,6 +8,7 @@ using Orleans.Core;
 using Orleans.Runtime;
 using Orleans.Storage;
 using Orleans.Streams;
+using Orleans.Transactions;
 
 namespace Orleans
 {
@@ -212,6 +213,44 @@ namespace Orleans
             EnsureRuntime();
             Runtime.DelayDeactivation(this, timeSpan);
         }
+
+
+        #region transaction overloads
+
+        protected Task RunTransaction(TransactionOptions options, Func<Task> transaction)
+        {
+            EnsureRuntime();
+            // use the typed version with a dummy type of int, and a wrapper returning a dummy value 0. 
+            return Runtime.RunTransaction<int>(options,
+                async () =>
+                {
+                    await transaction().ConfigureAwait(false);
+                    return 0;
+                });
+        }
+        protected Task<T> RunTransaction<T>(TransactionOptions options, Func<Task<T>> transaction)
+        {
+            EnsureRuntime();
+            return Runtime.RunTransaction(options, transaction);
+        }
+        protected Task RunTransaction(Func<Task> transaction)
+        {
+            EnsureRuntime();
+            // use the typed version with a dummy type of int, and a wrapper returning a dummy value 0. 
+            return Runtime.RunTransaction<int>(null,
+                async () =>
+                {
+                    await transaction().ConfigureAwait(false);
+                    return 0;
+                });
+        }
+        protected Task<T> RunTransaction<T>(Func<Task<T>> transaction)
+        {
+            EnsureRuntime();
+            return Runtime.RunTransaction(null, transaction);
+        }
+
+        #endregion
 
         /// <summary>
         /// This method is called at the end of the process of activating a grain.

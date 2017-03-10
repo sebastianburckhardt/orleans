@@ -41,7 +41,7 @@ namespace Orleans.Runtime
         private readonly GrainTypeManager typeManager;
         private readonly MessageFactory messageFactory;
 
-        internal ITransactionAgent TransactionAgent { get; set; }
+        public ITransactionAgent TransactionAgent { get; internal set; }
 
         internal readonly IConsistentRingProvider ConsistentRingProvider;
 

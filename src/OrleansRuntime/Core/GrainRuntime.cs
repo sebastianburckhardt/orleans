@@ -2,6 +2,9 @@
 using Orleans.Runtime.Configuration;
 using Orleans.Streams;
 using Orleans.Timers;
+using Orleans.Transactions;
+using System.Threading.Tasks;
+using Orleans.Runtime.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -57,5 +60,11 @@ namespace Orleans.Runtime
         {
             grain.Data.DelayDeactivation(timeSpan);
         }
+
+        public Task<T> RunTransaction<T>(TransactionOptions options, Func<Task<T>> transaction)
+        {
+            return ExplicitTransaction.RunTransaction(runtimeClient.TransactionAgent, options, transaction);
+        }
+
     }
 }

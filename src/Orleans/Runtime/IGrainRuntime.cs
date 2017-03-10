@@ -1,6 +1,8 @@
 ﻿using System;
 using Orleans.Streams;
 using Orleans.Timers;
+using Orleans.Transactions;
+using System.Threading.Tasks;
 
 namespace Orleans.Runtime
 {
@@ -38,5 +40,7 @@ namespace Orleans.Runtime
         void DeactivateOnIdle(Grain grain);
 
         void DelayDeactivation(Grain grain, TimeSpan timeSpan);
+
+        Task<T> RunTransaction<T>(TransactionOptions options, Func<Task<T>> transaction);
     }
 }

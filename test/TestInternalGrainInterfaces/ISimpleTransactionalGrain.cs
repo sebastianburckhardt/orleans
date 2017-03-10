@@ -20,6 +20,8 @@ namespace UnitTests.GrainInterfaces
 
     public interface ITransactionCoordinatorGrain : IGrainWithIntegerKey
     {
+        // the following tests start transactions via declarative transaction attributes
+
         [Transaction(TransactionOption.RequiresNew)]
         Task MultiGrainTransaction(List<ISimpleTransactionalGrain> grains, int numberToAdd);
 
@@ -32,6 +34,27 @@ namespace UnitTests.GrainInterfaces
         [ReadOnly]
         [Transaction(TransactionOption.RequiresNew)]
         Task WriteInReadOnlyTransaction(ISimpleTransactionalGrain grain);
+
+
+        // the following tests start transactions explicitly, calling RunTransaction during execution
+
+        Task ExplicitlyScopedMultiGrainTransaction(List<ISimpleTransactionalGrain> grains, int numberToAdd);
+
+        Task ExplicitlyScopedOrphanCallTransaction(ISimpleTransactionalGrain grain);
+
+        Task ExplicitlyScopedExceptionThrowingTransaction(ISimpleTransactionalGrain grain);
+
+        Task ExplicitlyScopedWriteInReadOnlyTransaction(ISimpleTransactionalGrain grain);
+
+        Task<int> ExplicitlyScopedReadOnlyTransaction(List<ISimpleTransactionalGrain> grains);
+
+        Task NestedScopes(List<ISimpleTransactionalGrain> grains, int numberToAdd);
+
+        Task NestedScopesInnerAbort(ISimpleTransactionalGrain grain);
+
+        Task NestedScopesOuterAbort(ISimpleTransactionalGrain grain);
+
+        Task NestedScopesRejection(ISimpleTransactionalGrain grain);
 
     }
 }

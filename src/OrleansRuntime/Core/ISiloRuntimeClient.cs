@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Orleans.Runtime.Scheduler;
 using Orleans.Streams;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -55,5 +56,9 @@ namespace Orleans.Runtime
 
         OrleansTaskScheduler Scheduler { get; }
         Task Invoke(IAddressable target, IInvokable invokable, Message message);
+
+        /// <summary> The transaction agent coordinates transactions that can span multiple grains </summary>
+        ITransactionAgent TransactionAgent { get; }
+
     }
 }
