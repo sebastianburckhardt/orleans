@@ -104,7 +104,6 @@ namespace Orleans.Runtime
         internal ClusterConfiguration OrleansConfig => this.initializationParams.ClusterConfig;
         internal GlobalConfiguration GlobalConfig => this.initializationParams.GlobalConfig;
         internal NodeConfiguration LocalConfig => this.initializationParams.NodeConfig;
-        private readonly ITransactionAgent localTransactionAgent;
         internal readonly string SiloIdentity;
         internal ISiloMessageCenter LocalMessageCenter { get { return messageCenter; } }
         internal OrleansTaskScheduler LocalScheduler { get { return scheduler; } }
@@ -117,7 +116,6 @@ namespace Orleans.Runtime
         internal IProviderManager StatisticsProviderManager { get { return statisticsProviderManager; } }
         internal IStreamProviderManager StreamProviderManager { get { return grainRuntime.StreamProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
-        internal ITransactionAgent LocalTransactionAgent { get { return localTransactionAgent; } }
         internal ISiloPerformanceMetrics Metrics { get { return siloStatistics.MetricsTable; } }
         internal static Silo CurrentSilo { get; private set; }
         internal IReadOnlyCollection<IProvider> AllSiloProviders 
@@ -300,8 +298,9 @@ namespace Orleans.Runtime
             services.AddSingleton<IFactoryBuilder<string, ITransactionServiceFactory>, TransactionServiceFactoryBuilder>();
             services.AddSingleton(sp => sp.GetRequiredService<IFactoryBuilder<string, ITransactionServiceFactory>>().Build());
             services.AddSingleton(sp => sp.GetRequiredService<IFactory<string, ITransactionServiceFactory>>().Create(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType) );
-            services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
             services.AddTransient<InClusterTransactionManager>();
+            services.AddSingleton<ITransactionAgent, TransactionAgent>();
+            services.AddSingleton<Lazy<ITransactionAgent>>(sp => new Lazy<ITransactionAgent>(sp.GetRequiredService<ITransactionAgent>));
 
             if (initializationParams.GlobalConfig.UseVirtualBucketsConsistentRing)
             {
@@ -367,10 +366,6 @@ namespace Orleans.Runtime
             localGrainDirectory = Services.GetRequiredService<LocalGrainDirectory>(); 
             
             activationDirectory = Services.GetRequiredService<ActivationDirectory>();
-
-            // Initialize Transaction Agent
-            localTransactionAgent = new TransactionAgent(Constants.TransactionAgentSystemTargetId, SiloAddress, Services.GetRequiredService<ITransactionServiceFactory>());
-            runtimeClient.TransactionAgent = localTransactionAgent;
 
             // Now the consistent ring provider
             RingProvider = Services.GetRequiredService<IConsistentRingProvider>();
@@ -451,8 +446,12 @@ namespace Orleans.Runtime
                 RegisterSystemTarget((SystemTarget)multiClusterOracle);
             }
 
-            logger.Verbose("Creating {0} System Target", "TransactionAgent");
-            RegisterSystemTarget((SystemTarget)localTransactionAgent);
+            var transactionAgent = this.Services.GetRequiredService<ITransactionAgent>() as SystemTarget;
+            if (transactionAgent != null)
+            {
+                logger.Verbose("Creating {0} System Target", "TransactionAgent");
+                RegisterSystemTarget(transactionAgent);
+            }
 
             logger.Verbose("Finished creating System Targets for this silo.");
         }
@@ -573,9 +572,10 @@ namespace Orleans.Runtime
             // Validate the configuration.
             GlobalConfig.Application.ValidateConfiguration(logger);
 
-            ISchedulingContext transactionAgentContext = ((SystemTarget)localTransactionAgent).SchedulingContext;
-            scheduler.QueueTask(LocalTransactionAgent.Start, transactionAgentContext)
-                .WaitWithThrow(initTimeout);
+            var transactionAgent = this.Services.GetRequiredService<ITransactionAgent>();
+            ISchedulingContext transactionAgentContext = (transactionAgent as SystemTarget)?.SchedulingContext;
+            scheduler.QueueTask(transactionAgent.Start, transactionAgentContext)
+                        .WaitWithThrow(initTimeout);
 
             // ensure this runs in the grain context, wait for it to complete
 // TODO - jbragg- wtf?

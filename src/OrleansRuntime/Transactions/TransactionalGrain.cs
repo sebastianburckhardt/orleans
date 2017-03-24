@@ -70,7 +70,7 @@ namespace Orleans.Transactions
 
         public override Task OnActivateAsync()
         {
-            this.transactionAgent = Silo.CurrentSilo.LocalTransactionAgent;
+            this.transactionAgent = ServiceProvider.GetRequiredService<ITransactionAgent>();
             this.serializationManager = ServiceProvider.GetRequiredService<SerializationManager>();
 
             Recovery();
