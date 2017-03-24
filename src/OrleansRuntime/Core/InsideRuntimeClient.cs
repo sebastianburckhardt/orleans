@@ -41,10 +41,9 @@ namespace Orleans.Runtime
         private readonly GrainTypeManager typeManager;
         private readonly MessageFactory messageFactory;
 
-        internal ITransactionAgent TransactionAgent { get; set; }
-
-        internal readonly IConsistentRingProvider ConsistentRingProvider;
-
+        private readonly Lazy<ITransactionAgent> getTransactionAgent;
+        private ITransactionAgent transactionAgent;
+        
         public InsideRuntimeClient(
             ILocalSiloDetails siloDetails,
             ClusterConfiguration config,
@@ -53,7 +52,8 @@ namespace Orleans.Runtime
             OrleansTaskScheduler scheduler,
             IServiceProvider serviceProvider,
             SerializationManager serializationManager,
-            MessageFactory messageFactory)
+            MessageFactory messageFactory,
+            Lazy<ITransactionAgent> getTransactionAgent)
         {
             this.ServiceProvider = serviceProvider;
             this.SerializationManager = serializationManager;
@@ -64,6 +64,7 @@ namespace Orleans.Runtime
             config.OnConfigChange("Globals/Message", () => ResponseTimeout = Config.Globals.ResponseTimeout);
             this.typeManager = typeManager;
             this.messageFactory = messageFactory;
+            this.getTransactionAgent = getTransactionAgent;
             this.Scheduler = scheduler;
             this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache);
             tryResendMessage = msg => this.Dispatcher.TryResendMessage(msg);
@@ -297,7 +298,7 @@ namespace Orleans.Runtime
                 if (message.IsTransactionRequired && message.TransactionInfo == null)
                 {
                     // Start a new transaction
-                    transactionInfo = await this.TransactionAgent.StartTransaction(message.IsReadOnly, TimeSpan.FromSeconds(10));
+                    transactionInfo = await this.transactionAgent.StartTransaction(message.IsReadOnly, TimeSpan.FromSeconds(10));
                     startNewTransaction = true;
                 }
 
@@ -350,7 +351,7 @@ namespace Orleans.Runtime
                     if (TransactionContext.GetTransactionInfo() != null)
                     {
                         // Must abort the transaction on exceptions
-                        this.TransactionAgent.Abort(TransactionContext.GetTransactionInfo());
+                        this.transactionAgent.Abort(TransactionContext.GetTransactionInfo());
                         TransactionContext.GetTransactionInfo().IsAborted = true;
                     }
 
@@ -364,7 +365,7 @@ namespace Orleans.Runtime
                 if (transactionInfo != null && transactionInfo.PendingCalls > 0)
                 {
                     // Can't exit before the transaction completes.
-                    this.TransactionAgent.Abort(TransactionContext.GetTransactionInfo());
+                    this.transactionAgent.Abort(TransactionContext.GetTransactionInfo());
                     TransactionContext.GetTransactionInfo().IsAborted = true;
 
                     if (message.Direction != Message.Directions.OneWay)
@@ -378,7 +379,7 @@ namespace Orleans.Runtime
                 if (startNewTransaction)
                 {
                     // This request started the transaction, so we try to commit before returning.
-                    await this.TransactionAgent.Commit(transactionInfo);
+                    await this.transactionAgent.Commit(transactionInfo);
                 }
 
                 if (message.Direction == Message.Directions.OneWay) return;
@@ -398,7 +399,7 @@ namespace Orleans.Runtime
                 else if (TransactionContext.GetTransactionInfo() != null)
                 {
                     // Must abort the transaction on exceptions
-                    this.TransactionAgent.Abort(TransactionContext.GetTransactionInfo());
+                    this.transactionAgent.Abort(TransactionContext.GetTransactionInfo());
                     TransactionContext.GetTransactionInfo().IsAborted = true;
                 }
             }
@@ -708,6 +709,7 @@ namespace Orleans.Runtime
 
         internal void Start()
         {
+            this.transactionAgent = this.getTransactionAgent.Value;
             GrainTypeResolver = typeManager.GetTypeCodeMap();
         }
 
