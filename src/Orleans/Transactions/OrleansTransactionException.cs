@@ -40,6 +40,13 @@ namespace Orleans.Transactions
         public OrleansTransactionInDoubtException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
+            this.TransactionId = info.GetInt64(nameof(this.TransactionId));
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue(nameof(this.TransactionId), this.TransactionId);
         }
     }
 
@@ -70,6 +77,13 @@ namespace Orleans.Transactions
         public OrleansTransactionAbortedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
+            this.TransactionId = info.GetInt64(nameof(this.TransactionId));
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue(nameof(this.TransactionId), this.TransactionId);
         }
     }
 
@@ -106,6 +120,13 @@ namespace Orleans.Transactions
         public OrleansCascadingAbortException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
+            this.DependentTransactionId = info.GetInt64(nameof(this.DependentTransactionId));
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue(nameof(this.DependentTransactionId), this.DependentTransactionId);
         }
     }
 
