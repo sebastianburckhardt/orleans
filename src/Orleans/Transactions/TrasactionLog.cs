@@ -36,7 +36,7 @@ namespace Orleans.Transactions
         /// is called on the log.
         /// </summary>
         /// <returns></returns>
-        public abstract void Initialize();
+        public abstract Task Initialize();
 
         /// <summary>
         /// Gets the first CommitRecord in the log.
@@ -58,9 +58,9 @@ namespace Orleans.Transactions
         /// <summary>
         /// Exit recovery and enter Append Mode.
         /// </summary>
-        public abstract void EndRecovery();
+        public abstract Task EndRecovery();
 
-        public abstract long GetStartRecord();
+        public abstract Task<long> GetStartRecord();
 
         public abstract Task UpdateStartRecord(long transactionId);
 

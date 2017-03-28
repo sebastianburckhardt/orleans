@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Orleans.Transactions
@@ -21,9 +19,11 @@ namespace Orleans.Transactions
             log = new List<CommitRecord>();
         }
 
-        public override void Initialize()
+        public override Task Initialize()
         {
             mode = LogMode.RecoveryMode;
+
+            return TaskDone.Done;
         }
 
         public override Task<CommitRecord> GetFirstCommitRecord()
@@ -34,7 +34,7 @@ namespace Orleans.Transactions
             if (log.Count == 0)
                 return Task.FromResult<CommitRecord>(null);
 
-            return Task.FromResult<CommitRecord>(log[nextLogRecordIndex++]);
+            return Task.FromResult(log[nextLogRecordIndex++]);
         }
 
         public override Task<CommitRecord> GetNextCommitRecord()
@@ -44,20 +44,22 @@ namespace Orleans.Transactions
             if (log.Count <= nextLogRecordIndex)
                 return Task.FromResult<CommitRecord>(null);
 
-            return Task.FromResult<CommitRecord>(log[nextLogRecordIndex++]);
+            return Task.FromResult(log[nextLogRecordIndex++]);
         }
 
-        public override void EndRecovery()
+        public override Task EndRecovery()
         {
             ThrowIfNotInMode(LogMode.RecoveryMode);
             mode = LogMode.AppendMode;
+
+            return TaskDone.Done;
         }
 
-        public override long GetStartRecord()
+        public override Task<long> GetStartRecord()
         {
             ThrowIfNotInMode(LogMode.AppendMode);
 
-            return startedTransactionsCount;
+            return Task.FromResult(startedTransactionsCount);
         }
 
         public override Task UpdateStartRecord(long transactionCount)
@@ -77,6 +79,7 @@ namespace Orleans.Transactions
             lock (this)
             {
                 log.AddRange(transactions);
+
                 foreach (var rec in transactions)
                 {
                     rec.LSN = ++logSequenceNumber;

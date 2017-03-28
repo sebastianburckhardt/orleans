@@ -1,13 +1,10 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table;
 using Orleans.Serialization;
-using CloudStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount;
+using Microsoft.WindowsAzure.Storage;
 
 namespace Orleans.Transactions
 {
@@ -51,22 +48,23 @@ namespace Orleans.Transactions
             clearOnInitialize = clear;
         }
 
-        public override void Initialize()
+        public override async Task Initialize()
         {
             CloudTable table = azTableClient.GetTableReference(tableName);
 
             if (clearOnInitialize)
             {
-                table.DeleteIfExists();
-                Thread.Sleep(1000);
+                await table.DeleteIfExistsAsync().ConfigureAwait(false);
+
+                await Task.Delay(1000);
             }
 
-            table.CreateIfNotExists();
+            await table.CreateIfNotExistsAsync().ConfigureAwait(false);
 
             TableQuery<StartRow> query =
                 new TableQuery<StartRow>().Where(TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, "0"));
             var continuation = new TableContinuationToken();
-            var result = table.ExecuteQuerySegmented(query, continuation);
+            var result = await table.ExecuteQuerySegmentedAsync(query, continuation).ConfigureAwait(false);
 
             if (result.Results.Count == 0)
             {
@@ -75,7 +73,7 @@ namespace Orleans.Transactions
                 var row = new StartRow(0);
                 var operation = TableOperation.Insert(row);
 
-                table.Execute(operation);
+                await table.ExecuteAsync(operation).ConfigureAwait(false);
             }
             else
             {
@@ -146,17 +144,19 @@ namespace Orleans.Transactions
             return currentRowTransactions[recordInCurrentRow++];
         }
 
-        public override void EndRecovery()
+        public override Task EndRecovery()
         {
             ThrowIfNotInMode(LogMode.RecoveryMode);
             mode = LogMode.AppendMode;
+
+            return TaskDone.Done;
         }
 
-        public override long GetStartRecord()
+        public override Task<long> GetStartRecord()
         {
             ThrowIfNotInMode(LogMode.AppendMode);
 
-            return startedTransactionsCount;
+            return Task.FromResult(startedTransactionsCount);
         }
 
         public override async Task UpdateStartRecord(long transactionCount)
@@ -167,7 +167,7 @@ namespace Orleans.Transactions
             {
                 CloudTable table = azTableClient.GetTableReference(tableName);
                 var op = TableOperation.Replace(new StartRow(transactionCount));
-                await table.ExecuteAsync(op);
+                await table.ExecuteAsync(op).ConfigureAwait(false);
                 startedTransactionsCount = transactionCount;
             }
 
@@ -195,14 +195,14 @@ namespace Orleans.Transactions
 
                 if (batchOperation.Count == 100)
                 {
-                    await table.ExecuteBatchAsync(batchOperation);
+                    await table.ExecuteBatchAsync(batchOperation).ConfigureAwait(false);
                     batchOperation = new TableBatchOperation();
                 }
             }
 
             if (batchOperation.Count > 0)
             {
-                await table.ExecuteBatchAsync(batchOperation);
+                await table.ExecuteBatchAsync(batchOperation).ConfigureAwait(false);
             }
         }
 
@@ -220,7 +220,7 @@ namespace Orleans.Transactions
                         TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, CommitPartitionKey.ToString()),
                         TableOperators.And,
                         TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.LessThanOrEqual, ToRowKey(LSN))));
-                var logSegment = await table.ExecuteQuerySegmentedAsync(query, null);
+                var logSegment = await table.ExecuteQuerySegmentedAsync(query, null).ConfigureAwait(false);
                 token = logSegment.ContinuationToken;
 
                 if (logSegment.Results.Count > 0)
@@ -229,29 +229,25 @@ namespace Orleans.Transactions
                     foreach (var row in logSegment)
                     {
                         List<CommitRecord> transactions = DeserializeCommitRecords(row.Transactions);
-                        if (transactions.Last().LSN <= LSN)
+                        if (transactions.Count > 0 && transactions[transactions.Count-1].LSN <= LSN)
                         {
                             batchOperation.Delete(row);
                             if (batchOperation.Count == 100)
                             {
                                 // Azure has a limit of 100 operations per batch
-                                await table.ExecuteBatchAsync(batchOperation);
+                                await table.ExecuteBatchAsync(batchOperation).ConfigureAwait(false);
                                 batchOperation = new TableBatchOperation();
                             }
                         }
                         else
                         {
-                            if (batchOperation.Count > 0)
-                            {
-                                await table.ExecuteBatchAsync(batchOperation);
-                            }
-                            return;
+                            break;
                         }
                     }
 
                     if (batchOperation.Count > 0)
                     {
-                        await table.ExecuteBatchAsync(batchOperation);
+                        await table.ExecuteBatchAsync(batchOperation).ConfigureAwait(false);
                     }
                 }
 
@@ -267,7 +263,7 @@ namespace Orleans.Transactions
                     TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, CommitPartitionKey.ToString()),
                     TableOperators.And,
                     TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.GreaterThanOrEqual, keyLowerBound)));
-            currentLogQuerySegment = await table.ExecuteQuerySegmentedAsync(query, continuationToken);
+            currentLogQuerySegment = await table.ExecuteQuerySegmentedAsync(query, continuationToken).ConfigureAwait(false);
 
             // reset the indexes
             rowInCurrentSegment = 0;
@@ -316,7 +312,7 @@ namespace Orleans.Transactions
 
         private string SerializeCommitRecords(List<CommitRecord> records)
         {
-            var serializableList = new List<Tuple<long, long, HashSet<ITransactionalGrain>>>();
+            var serializableList = new List<Tuple<long, long, HashSet<ITransactionalGrain>>>(records.Count);
 
             foreach (var r in records)
             {
@@ -334,11 +330,13 @@ namespace Orleans.Transactions
             var bytes = Convert.FromBase64String(base64);
             var sr = new BinaryTokenStreamReader(bytes);
             var l = this.serializationManager.Deserialize<List<Tuple<long, long, HashSet<ITransactionalGrain>>>>(sr);
-            var list = new List<CommitRecord>();
+            var list = new List<CommitRecord>(l.Count);
+
             foreach (var r in l)
             {
                 list.Add(new CommitRecord() { LSN = r.Item1, TransactionId = r.Item2, Grains = r.Item3 });
             }
+
             return list;
         }
 

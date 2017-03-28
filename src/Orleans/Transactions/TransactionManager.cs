@@ -75,7 +75,7 @@ namespace Orleans.Transactions
 
         public async Task StartAsync()
         {
-            log.Initialize();
+            await log.Initialize();
             CommitRecord record = await log.GetFirstCommitRecord();
             long prevLSN = 0;
             while (record != null)
@@ -105,8 +105,8 @@ namespace Orleans.Transactions
                 record = await log.GetNextCommitRecord();
             }
 
-            log.EndRecovery();
-            var maxAllocatedTransactionId = log.GetStartRecord();
+            await log.EndRecovery();
+            var maxAllocatedTransactionId = await log.GetStartRecord();
             activeTransactionsTracker.Start(maxAllocatedTransactionId);
 
             this.BeginDependencyCompletionLoop();
@@ -123,7 +123,7 @@ namespace Orleans.Transactions
             Transaction tx = new Transaction(transactionId)
             {
                 State = TransactionState.Started,
-                ExpirationTime = DateTime.Now.Ticks + timeout.Ticks,
+                ExpirationTime = DateTime.UtcNow.Ticks + timeout.Ticks,
                 Completion = new TaskCompletionSource<bool>()
             };
 
@@ -138,6 +138,7 @@ namespace Orleans.Transactions
             if (transactionsTable.TryGetValue(transactionId, out tx))
             {
                 bool justAborted = false;
+
                 lock (tx)
                 {
                     if (tx.State == TransactionState.Started ||
@@ -428,7 +429,7 @@ namespace Orleans.Transactions
             //
             // Timeout expired transactions
             //
-            long now = DateTime.Now.Ticks;
+            long now = DateTime.UtcNow.Ticks;
             foreach (var txRecord in transactionsTable)
             {
                 if (txRecord.Value.State == TransactionState.Started &&

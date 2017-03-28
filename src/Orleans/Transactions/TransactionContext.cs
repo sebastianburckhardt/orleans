@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.Remoting.Messaging;
 
 namespace Orleans.Transactions
@@ -146,6 +147,7 @@ namespace Orleans.Transactions
     }
 
     [Serializable]
+    [DebuggerDisplay("Id={TransactionId} WriteNumber={WriteNumber}")]
     public struct GrainVersion : IEquatable<GrainVersion>
     {
         public long TransactionId;
