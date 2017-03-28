@@ -213,6 +213,7 @@
     <Compile Include="Transactions\TransactionServiceGrainFactory.cs" />
     <Compile Include="Transactions\TransactionServiceProxyFactory.cs" />
     <Compile Include="Timers\TimerRegistry.cs" />
+    <Compile Include="Utilities\FactoryUtility.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Orleans\Orleans.csproj">

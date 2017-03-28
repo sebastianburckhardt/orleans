@@ -33,6 +33,7 @@ using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.Startup;
 using Orleans.Runtime.Storage;
 using Orleans.Runtime.TestHooks;
+using Orleans.Runtime.Utilities;
 using Orleans.Serialization;
 using Orleans.Services;
 using Orleans.Storage;
@@ -40,6 +41,7 @@ using Orleans.Streams;
 using Orleans.Timers;
 using Orleans.MultiCluster;
 using Orleans.Transactions;
+using Orleans.Streams.Core;
 
 namespace Orleans.Runtime
 {
@@ -117,7 +119,6 @@ namespace Orleans.Runtime
         internal IStreamProviderManager StreamProviderManager { get { return grainRuntime.StreamProviderManager; } }
         internal IList<IBootstrapProvider> BootstrapProviders { get; private set; }
         internal ISiloPerformanceMetrics Metrics { get { return siloStatistics.MetricsTable; } }
-        internal static Silo CurrentSilo { get; private set; }
         internal IReadOnlyCollection<IProvider> AllSiloProviders 
         {
             get { return allSiloProviders.AsReadOnly();  }
@@ -127,24 +128,6 @@ namespace Orleans.Runtime
         internal SystemStatus SystemStatus { get; set; }
 
         internal IServiceProvider Services { get; }
-
-
-        /// <summary> Gets whether this cluster is configured to be part of a multicluster. </summary>
-        public bool HasMultiClusterNetwork
-        {
-            get { return GlobalConfig.HasMultiClusterNetwork; }
-        }
-
-        /// <summary> Get the id of the cluster this silo is part of. </summary>
-        public string ClusterId
-        {
-            get {
-                var configuredId = GlobalConfig.HasMultiClusterNetwork ? GlobalConfig.ClusterId : GlobalConfig.DeploymentId;
-                return string.IsNullOrEmpty(configuredId) ? CLUSTER_ID_DEFAULT : configuredId; 
-            } 
-        }
-
-        private const string CLUSTER_ID_DEFAULT = "DefaultClusterID"; // if no id is configured, we pick a nonempty default.
 
         /// <summary> SiloAddress for this silo. </summary>
         public SiloAddress SiloAddress => this.initializationParams.SiloAddress;
@@ -186,9 +169,7 @@ namespace Orleans.Runtime
 
             this.SystemStatus = SystemStatus.Creating;
             AsynchAgent.IsStarting = true;
-
-            CurrentSilo = this;
-
+            
             var startTime = DateTime.UtcNow;
             
             siloTerminatedEvent = new ManualResetEvent(false);
@@ -230,6 +211,7 @@ namespace Orleans.Runtime
             services.AddSingleton(initializationParams.ClusterConfig);
             services.AddSingleton(initializationParams.GlobalConfig);
             services.AddTransient(sp => initializationParams.NodeConfig);
+            services.AddTransient<Func<NodeConfiguration>>(sp => () => initializationParams.NodeConfig);
             services.AddFromExisting<IMessagingConfiguration, GlobalConfiguration>();
             services.AddFromExisting<ITraceConfiguration, NodeConfiguration>();
             services.AddSingleton<SerializationManager>();
@@ -248,14 +230,17 @@ namespace Orleans.Runtime
             services.AddSingleton<ActivationDirectory>();
             services.AddSingleton<LocalGrainDirectory>();
             services.AddFromExisting<ILocalGrainDirectory, LocalGrainDirectory>();
+            services.AddSingleton(sp => sp.GetRequiredService<LocalGrainDirectory>().GsiActivationMaintainer);
             services.AddSingleton<SiloStatisticsManager>();
             services.AddSingleton<ISiloPerformanceMetrics>(sp => sp.GetRequiredService<SiloStatisticsManager>().MetricsTable);
+            services.AddFromExisting<ICorePerformanceMetrics, ISiloPerformanceMetrics>();
             services.AddSingleton<SiloAssemblyLoader>();
             services.AddSingleton<GrainTypeManager>();
             services.AddFromExisting<IMessagingConfiguration, GlobalConfiguration>();
             services.AddSingleton<MessageCenter>();
             services.AddFromExisting<IMessageCenter, MessageCenter>();
             services.AddFromExisting<ISiloMessageCenter, MessageCenter>();
+            services.AddSingleton(FactoryUtility.Create<MessageCenter, Gateway>);
             services.AddSingleton<Catalog>();
             services.AddSingleton<Dispatcher>(sp => sp.GetRequiredService<Catalog>().Dispatcher);
             services.AddSingleton<InsideRuntimeClient>();
@@ -278,8 +263,14 @@ namespace Orleans.Runtime
             services.AddFromExisting<IStreamProviderRuntime, SiloProviderRuntime>();
             services.AddSingleton<ImplicitStreamSubscriberTable>();
             services.AddSingleton<MessageFactory>();
-            services.AddSingleton<Func<string, Logger>>(LogManager.GetLogger);
+            services.AddSingleton<Factory<string, Logger>>(LogManager.GetLogger);
             services.AddSingleton<CodeGeneratorManager>();
+
+            services.AddSingleton<IGrainRegistrar<GlobalSingleInstanceRegistration>, GlobalSingleInstanceRegistrar>();
+            services.AddSingleton<IGrainRegistrar<ClusterLocalRegistration>, ClusterLocalRegistrar>();
+            services.AddSingleton<RegistrarManager>();
+            services.AddSingleton(FactoryUtility.Create<Grain, IMultiClusterRegistrationStrategy, ProtocolServices>);
+            services.AddSingleton(FactoryUtility.Create<GrainDirectoryPartition>);
 
             // Placement
             services.AddSingleton<PlacementDirectorsManager>();
@@ -301,6 +292,8 @@ namespace Orleans.Runtime
             services.AddTransient<InClusterTransactionManager>();
             services.AddSingleton<ITransactionAgent, TransactionAgent>();
             services.AddSingleton<Lazy<ITransactionAgent>>(sp => new Lazy<ITransactionAgent>(sp.GetRequiredService<ITransactionAgent>));
+
+            services.AddSingleton<IStreamSubscriptionManagerAdmin>(sp => new StreamSubscriptionManagerAdmin(sp.GetRequiredService<IStreamProviderRuntime>()));
 
             if (initializationParams.GlobalConfig.UseVirtualBucketsConsistentRing)
             {
@@ -963,9 +956,10 @@ namespace Orleans.Runtime
             UnobservedExceptionsHandlerClass.ResetUnobservedExceptionHandler();
 
             SafeExecute(() => this.SystemStatus = SystemStatus.Terminated);
-            SafeExecute(LogManager.Close);
             SafeExecute(() => AppDomain.CurrentDomain.UnhandledException -= this.DomainUnobservedExceptionHandler);
             SafeExecute(() => this.assemblyProcessor?.Dispose());
+            SafeExecute(() => (this.Services as IDisposable)?.Dispose());
+            SafeExecute(LogManager.Close);
 
             // Setting the event should be the last thing we do.
             // Do nothijng after that!
