@@ -150,18 +150,8 @@ namespace Orleans.Transactions
 
             while (transactionCommitQueue.Count > 0 || transactionStartQueue.Count > 0)
             {
-                if (tmStartProxy == null)
-                {
-                    tmStartProxy = await this.serviceFactory.GetTransactionStartService();
-                }
-
-                if (tmCommitProxy == null)
-                {
-                    tmCommitProxy = await this.serviceFactory.GetTransactionCommitService();
-                }
-
                 await WaitForWork();
-
+                
                 int startCount = transactionStartQueue.Count;
                 while (startCount > 0 && startTransactionsTask.IsCompleted)
                 {
@@ -188,7 +178,9 @@ namespace Orleans.Transactions
                 if (startingTransactions.Count > 0 && startTransactionsTask.IsCompleted)
                 {
                     logger.Verbose(ErrorCode.Transactions_SendingTMRequest, "Calling TM to start {0} transactions", startingTransactions.Count);
-                    startTransactionsTask = tmStartProxy.StartTransactions(startingTransactions).ContinueWith(
+
+                    var startProxy = tmStartProxy ?? (tmStartProxy = await this.serviceFactory.GetTransactionStartService());
+                    startTransactionsTask = startProxy.StartTransactions(startingTransactions).ContinueWith(
                         async startRequest =>
                         {
                             try
@@ -230,7 +222,9 @@ namespace Orleans.Transactions
                 if (committingTransactions.Count > 0 && commitTransactionsTask.IsCompleted)
                 {
                     logger.Verbose(ErrorCode.Transactions_SendingTMRequest, "Calling TM to commit {0} transactions", committingTransactions.Count);
-                    commitTransactionsTask = tmCommitProxy.CommitTransactions(committingTransactions).ContinueWith(
+
+                    var commitProxy = tmCommitProxy ?? (tmCommitProxy = await this.serviceFactory.GetTransactionCommitService());
+                    commitTransactionsTask = commitProxy.CommitTransactions(committingTransactions).ContinueWith(
                         async commitRequest =>
                         {
                             try
