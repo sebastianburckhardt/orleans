@@ -216,7 +216,7 @@ namespace Orleans.Transactions
                                 foreach (var completion in startCompletions)
                                 {
                                     TransactionsStatisticsGroup.OnTransactionStartFailed();
-                                    completion.SetException(new OrleansException("Failed to start transaction. Check InnerException for details", e));
+                                    completion.SetException(new OrleansStartTransactionFailedException(e));
                                 }
 
                                 tmStartProxy = null; // Force refreshing the reference.

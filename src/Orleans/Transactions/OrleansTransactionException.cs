@@ -24,6 +24,23 @@ namespace Orleans.Transactions
     }
 
     /// <summary>
+    /// Signifies that the runtime was unable to start a transaction.
+    /// </summary>
+    [Serializable]
+    public class OrleansStartTransactionFailedException : OrleansTransactionException
+    {
+        public OrleansStartTransactionFailedException(Exception innerException)
+            : base("Failed to start transaction. Check InnerException for details", innerException)
+        {
+        }
+
+        public OrleansStartTransactionFailedException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
+    /// <summary>
     /// Signifies that the runtime is unable to determine whether a transaction
     /// has committed.
     /// </summary>
