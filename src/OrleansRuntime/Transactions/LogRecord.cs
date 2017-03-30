@@ -6,6 +6,6 @@ namespace Orleans.Transactions
     public class LogRecord<T>
     {
         public T NewVal { get; set; }
-        public GrainVersion Version { get; set; }
+        public TransactionalUnitVersion Version { get; set; }
     }
 }

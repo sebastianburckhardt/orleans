@@ -1,14 +1,11 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Text;
-using Orleans;
 using Orleans.Serialization;
 using System.Diagnostics;
-using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using Orleans.Runtime;
 
 namespace Orleans.Transactions
 {
@@ -16,7 +13,7 @@ namespace Orleans.Transactions
     public class TransactionalGrainState<T>
     {
         // The transactionId of the transaction that wrote the current value
-        public GrainVersion Version { get; set; }
+        public TransactionalUnitVersion Version { get; set; }
 
         // The last known committed version
         public long StableVersion { get; set; }
@@ -40,6 +37,7 @@ namespace Orleans.Transactions
         new protected TGrainState State { get { return GetState(); } }
 
         private ITransactionAgent transactionAgent;
+        private ITransactionalUnit transactionalUnit;
 
         // For each transaction, the copy of the state it is currently acting upon.
         private readonly Dictionary<long, TGrainState> transactionCopy;
@@ -54,7 +52,7 @@ namespace Orleans.Transactions
         // In-memory version of the persistent state.
         private SortedDictionary<long, LogRecord<TGrainState>> log { get; set; }
         private TGrainState value;
-        private GrainVersion version;
+        private TransactionalUnitVersion version;
         private long lastPrepared;
         private long stableVersion;
 
@@ -70,6 +68,7 @@ namespace Orleans.Transactions
 
         public override Task OnActivateAsync()
         {
+            this.transactionalUnit = this.AsReference<ITransactionalGrain>().AsUnit();
             this.transactionAgent = ServiceProvider.GetRequiredService<ITransactionAgent>();
             this.serializationManager = ServiceProvider.GetRequiredService<SerializationManager>();
 
@@ -82,7 +81,7 @@ namespace Orleans.Transactions
         /// <summary>
         /// Implementation of ITransactionalGrain Prepare method. See interface documentation for more details.
         /// </summary>
-        public async Task<bool> Prepare(long transactionId, GrainVersion? writeVersion, GrainVersion? readVersion)
+        public async Task<bool> Prepare(long transactionId, TransactionalUnitVersion? writeVersion, TransactionalUnitVersion? readVersion)
         {
             if (this.transactionCopy.ContainsKey(transactionId))
             {
@@ -213,7 +212,6 @@ namespace Orleans.Transactions
             Restore();
 
             var info = TransactionContext.GetTransactionInfo();
-            var thisRef = this.AsReference<ITransactionalGrain>();
 
             if (this.transactionCopy.ContainsKey(info.TransactionId))
             {
@@ -255,7 +253,7 @@ namespace Orleans.Transactions
             {
                 // Just reading our own write here.
                 // Sanity check to see if there's a lost write.
-                if (info.WriteSet.ContainsKey(thisRef) && info.WriteSet[thisRef] > readVersion.WriteNumber)
+                if (info.WriteSet.ContainsKey(transactionalUnit) && info.WriteSet[transactionalUnit] > readVersion.WriteNumber)
                 {
                     // Context has record of more writes than we have, some writes must be lost.
                     throw new OrleansTransactionAbortedException(info.TransactionId, "Lost Write");
@@ -263,13 +261,13 @@ namespace Orleans.Transactions
             }
             else
             {
-                if (info.ReadSet.ContainsKey(thisRef) && info.ReadSet[thisRef] != readVersion)
+                if (info.ReadSet.ContainsKey(transactionalUnit) && info.ReadSet[transactionalUnit] != readVersion)
                 {
                     // Uh-oh. Read two different versions of the grain.
                     throw new OrleansValidationFailedException(info.TransactionId);
                 }
 
-                info.ReadSet[thisRef] = readVersion;
+                info.ReadSet[transactionalUnit] = readVersion;
 
                 if (readVersion.TransactionId != info.TransactionId && readVersion.TransactionId > base.State.StableVersion)
                 {
@@ -304,7 +302,6 @@ namespace Orleans.Transactions
             Restore();
 
             var value = this.transactionCopy[info.TransactionId];
-            ITransactionalGrain thisRef = this.AsReference<ITransactionalGrain>();
             
             //
             // Validation
@@ -316,7 +313,7 @@ namespace Orleans.Transactions
                 throw new OrleansTransactionWaitDieException(info.TransactionId);
             }
 
-            GrainVersion version;
+            TransactionalUnitVersion version;
             version.TransactionId = info.TransactionId;
             version.WriteNumber = 1;
             if (this.version.TransactionId == info.TransactionId)
@@ -327,11 +324,11 @@ namespace Orleans.Transactions
             //
             // Update Transaction Context
             //
-            if (!info.WriteSet.ContainsKey(thisRef))
+            if (!info.WriteSet.ContainsKey(this.transactionalUnit))
             {
-                info.WriteSet.Add(thisRef, 0);
+                info.WriteSet.Add(this.transactionalUnit, 0);
             }
-            info.WriteSet[thisRef]++;
+            info.WriteSet[this.transactionalUnit]++;
 
             if (this.version.TransactionId != info.TransactionId && this.version.TransactionId > this.stableVersion)
             {
@@ -378,7 +375,7 @@ namespace Orleans.Transactions
             }
             else
             {
-                GrainVersion initialVersion;
+                TransactionalUnitVersion initialVersion;
                 initialVersion.TransactionId = 0;
                 initialVersion.WriteNumber = 0;
 
@@ -431,7 +428,7 @@ namespace Orleans.Transactions
                 LogRecord<TGrainState> record = new LogRecord<TGrainState>();
                 record.NewVal = base.State.Logs[key];
 
-                GrainVersion version;
+                TransactionalUnitVersion version;
                 version.TransactionId = key;
                 version.WriteNumber = 1;
                 record.Version = version;
@@ -472,7 +469,7 @@ namespace Orleans.Transactions
             }
         }
 
-        private bool ValidateWrite(GrainVersion? version)
+        private bool ValidateWrite(TransactionalUnitVersion? version)
         {
             if (!version.HasValue)
                 return true;
@@ -487,7 +484,7 @@ namespace Orleans.Transactions
             return false;
         }
 
-        private bool ValidateRead(long transactionId, GrainVersion? version)
+        private bool ValidateRead(long transactionId, TransactionalUnitVersion? version)
         {
             if (!version.HasValue)
                 return true;
@@ -505,26 +502,9 @@ namespace Orleans.Transactions
                 }
             }
 
-            if (version.Value.TransactionId == 0)
-            {
-                Debug.Assert(version.Value.WriteNumber == 0);
-                return true;
-            }
-            else if (this.log.ContainsKey(version.Value.TransactionId))
-            {
-                if (this.log[version.Value.TransactionId].Version != version.Value)
-                {
-                    // Version read was overriden by the same transaction that originally wrote it.
-                    return false;
-                }
-
-                return true;
-            }
-            else
-            {
-                // Version read by the transaction is lost.
-                return false;
-            }
+            if (version.Value.TransactionId == 0) return version.Value.WriteNumber == 0;
+            if (!this.log.ContainsKey(version.Value.TransactionId)) return false;
+            return this.log[version.Value.TransactionId].Version == version.Value;
         }
 
         private void Recovery()

@@ -186,6 +186,7 @@
     <Compile Include="Streams\Core\SubscriptionChangeHandler.cs" />
     <Compile Include="Streams\Providers\StreamProviderManagerExtensions.cs" />
     <Compile Include="Transactions\ActiveTransactionsTracker.cs" />
+    <Compile Include="Transactions\ITransactionalUnit.cs" />
     <Compile Include="Transactions\ITransactionManager.cs" />
     <Compile Include="Transactions\MemoryTransactionLog.cs" />
     <Compile Include="Transactions\Transaction.cs" />

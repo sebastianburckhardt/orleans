@@ -77,7 +77,7 @@ namespace Orleans.Transactions
 
         private void CheckpointLoop()
         {
-            Dictionary<ITransactionalGrain, long> grains = new Dictionary<ITransactionalGrain, long>();
+            Dictionary<ITransactionalUnit, long> grains = new Dictionary<ITransactionalUnit, long>();
             List<Transaction> transactions = new List<Transaction>();
             while (true)
             {

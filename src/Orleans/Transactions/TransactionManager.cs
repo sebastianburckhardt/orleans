@@ -353,7 +353,7 @@ namespace Orleans.Transactions
             return processed;
         }
 
-        internal async Task<bool> Checkpoint(Dictionary<ITransactionalGrain, long> grains, List<Transaction> transactions)
+        internal async Task<bool> Checkpoint(Dictionary<ITransactionalUnit, long> grains, List<Transaction> transactions)
         {
             bool processed = false;
             int batchSize = checkpointQueue.Count;

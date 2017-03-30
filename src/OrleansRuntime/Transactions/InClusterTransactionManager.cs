@@ -10,7 +10,7 @@ namespace Orleans.Transactions
         private readonly InterlockedExchangeLock dependencyLock;
         private readonly InterlockedExchangeLock commitLock;
         private readonly InterlockedExchangeLock checkpointLock;
-        private readonly Dictionary<ITransactionalGrain, long> grains;
+        private readonly Dictionary<ITransactionalUnit, long> grains;
         private readonly List<Transaction> transactions;
 
         public InClusterTransactionManager(TransactionsConfiguration config)
@@ -19,7 +19,7 @@ namespace Orleans.Transactions
             this.dependencyLock = new InterlockedExchangeLock();
             this.commitLock = new InterlockedExchangeLock();
             this.checkpointLock = new InterlockedExchangeLock();
-            this.grains = new Dictionary<ITransactionalGrain, long>();
+            this.grains = new Dictionary<ITransactionalUnit, long>();
             this.transactions = new List<Transaction>();
         }
 

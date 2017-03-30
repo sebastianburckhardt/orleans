@@ -10,7 +10,7 @@ namespace Orleans.Transactions
     {
         public long TransactionId;
         public long LSN;
-        public HashSet<ITransactionalGrain> Grains = new HashSet<ITransactionalGrain>();
+        public HashSet<ITransactionalUnit> Grains = new HashSet<ITransactionalUnit>();
     }
 
     /// <summary>
