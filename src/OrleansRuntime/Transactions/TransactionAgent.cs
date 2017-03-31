@@ -83,11 +83,11 @@ namespace Orleans.Transactions
             List<Task<bool>> prepareTasks = new List<Task<bool>>(transactionInfo.WriteSet.Count);
             foreach (var g in transactionInfo.WriteSet.Keys)
             {
-                TransactionalUnitVersion write;
+                TransactionalResourceVersion write;
                 write.TransactionId = transactionInfo.TransactionId;
                 write.WriteNumber = transactionInfo.WriteSet[g];
 
-                TransactionalUnitVersion? read = null;
+                TransactionalResourceVersion? read = null;
                 if (transactionInfo.ReadSet.ContainsKey(g))
                 {
                     read = transactionInfo.ReadSet[g];
@@ -98,7 +98,7 @@ namespace Orleans.Transactions
 
             foreach (var g in transactionInfo.ReadSet.Keys)
             {
-                TransactionalUnitVersion read = transactionInfo.ReadSet[g];
+                TransactionalResourceVersion read = transactionInfo.ReadSet[g];
                 prepareTasks.Add(g.Prepare(transactionInfo.TransactionId, null, read));
             }
 

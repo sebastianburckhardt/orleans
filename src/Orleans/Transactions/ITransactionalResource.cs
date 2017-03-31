@@ -6,10 +6,10 @@ namespace Orleans.Transactions
     /// <summary>
     /// Interface that allows a component to take part in transaction orchestration.
     /// </summary>
-    public interface ITransactionalUnit
+    public interface ITransactionalResource
     {
         /// <summary>
-        /// Perform the prepare phase of the commit protocol. To succeed the grain
+        /// Perform the prepare phase of the commit protocol. To succeed the resource
         /// must have all the writes that were part of the transaction and is able
         /// to persist these writes to persistent storage.
         /// <param name="transactionId">Id of the transaction to prepare</param>
@@ -18,12 +18,13 @@ namespace Orleans.Transactions
         /// </summary>
         /// <returns>Whether prepare was performed successfully</returns>
         /// <remarks>
-        /// It is possible for the unit to abort the transaction even after
-        /// this call returns true, but only if it can determine that the
-        /// coordinator is going to abort the transaction anyway (e.g. a
-        /// dependent transaction aborts)
+        /// The resource cannot abort the transaction after it has returned true from
+        /// Prepare.  However, if it can infer that the transaction will definitely
+        /// be aborted (e.g., because it learns that the transaction depends on another
+        /// transaction which has aborted) then it can proceed to rollback the aborted
+        /// transaction.
         /// </remarks>
-        Task<bool> Prepare(long transactionId, TransactionalUnitVersion? writeVersion, TransactionalUnitVersion? readVersion);
+        Task<bool> Prepare(long transactionId, TransactionalResourceVersion? writeVersion, TransactionalResourceVersion? readVersion);
 
         /// <summary>
         /// Notification of a transaction abort.
@@ -37,7 +38,7 @@ namespace Orleans.Transactions
         /// <param name="transactionId">Id of the committed transaction</param>
         /// <remarks>
         /// If this method returns without throwing an exception the manager is
-        /// allowed to forget about the transaction. This means that the unit
+        /// allowed to forget about the transaction. This means that the resource
         /// must durably remember that this transaction committed so that it does
         /// not query for its status.
         /// </remarks>

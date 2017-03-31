@@ -48,4 +48,4 @@ using Orleans.Transactions;
 [assembly: InternalsVisibleTo("Tester.SQLUtils")]
 [assembly: InternalsVisibleTo("Tester.ZooKeeperUtils")]
 [assembly: InternalsVisibleTo("AWSUtils.Tests")]
-[assembly: GenerateSerializer(typeof(TransactionalGrainExtensions.TransactionalUnitGrainWrapper))]
+[assembly: GenerateSerializer(typeof(TransactionalGrainExtensions.TransactionalResourceGrainWrapper))]

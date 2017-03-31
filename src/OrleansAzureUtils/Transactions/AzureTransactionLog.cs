@@ -312,11 +312,11 @@ namespace Orleans.Transactions
 
         private string SerializeCommitRecords(List<CommitRecord> records)
         {
-            var serializableList = new List<Tuple<long, long, HashSet<ITransactionalUnit>>>(records.Count);
+            var serializableList = new List<Tuple<long, long, HashSet<ITransactionalResource>>>(records.Count);
 
             foreach (var r in records)
             {
-                serializableList.Add(new Tuple<long, long, HashSet<ITransactionalUnit>>(r.LSN, r.TransactionId, r.Grains));
+                serializableList.Add(new Tuple<long, long, HashSet<ITransactionalResource>>(r.LSN, r.TransactionId, r.Grains));
             }
 
             var sw = new BinaryTokenStreamWriter();
@@ -329,7 +329,7 @@ namespace Orleans.Transactions
         {
             var bytes = Convert.FromBase64String(base64);
             var sr = new BinaryTokenStreamReader(bytes);
-            var l = this.serializationManager.Deserialize<List<Tuple<long, long, HashSet<ITransactionalUnit>>>>(sr);
+            var l = this.serializationManager.Deserialize<List<Tuple<long, long, HashSet<ITransactionalResource>>>>(sr);
             var list = new List<CommitRecord>(l.Count);
 
             foreach (var r in l)

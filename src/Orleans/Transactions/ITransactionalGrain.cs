@@ -20,14 +20,15 @@ namespace Orleans.Transactions
         /// </summary>
         /// <returns>Whether prepare was performed successfully</returns>
         /// <remarks>
-        /// It is possible for the grain to abort the transaction even after
-        /// this call returns true, but only if it can determine that the
-        /// coordinator is going to abort the transaction anyway (e.g. a
-        /// dependent transaction aborts)
+        /// The grain cannot abort the transaction after it has returned true from
+        /// Prepare.  However, if it can infer that the transaction will definitely
+        /// be aborted (e.g., because it learns that the transaction depends on another
+        /// transaction which has aborted) then it can proceed to rollback the aborted
+        /// transaction.
         /// </remarks>
         [AlwaysInterleave]
         [Transaction(TransactionOption.NotSupported)]
-        Task<bool> Prepare(long transactionId, TransactionalUnitVersion? writeVersion, TransactionalUnitVersion? readVersion);
+        Task<bool> Prepare(long transactionId, TransactionalResourceVersion? writeVersion, TransactionalResourceVersion? readVersion);
 
         /// <summary>
         /// Notification of a transaction abort.
@@ -54,23 +55,23 @@ namespace Orleans.Transactions
 
     internal static class TransactionalGrainExtensions
     {
-        public static ITransactionalUnit AsUnit(this ITransactionalGrain grain)
+        public static ITransactionalResource AsTransactionalResource(this ITransactionalGrain grain)
         {
-            return new TransactionalUnitGrainWrapper(grain);
+            return new TransactionalResourceGrainWrapper(grain);
         }
 
         [Serializable]
         [Immutable]
-        internal class TransactionalUnitGrainWrapper : ITransactionalUnit
+        internal class TransactionalResourceGrainWrapper : ITransactionalResource
         {
             private readonly ITransactionalGrain grain;
 
-            public TransactionalUnitGrainWrapper(ITransactionalGrain grain)
+            public TransactionalResourceGrainWrapper(ITransactionalGrain grain)
             {
                 this.grain = grain;
             }
 
-            public Task<bool> Prepare(long transactionId, TransactionalUnitVersion? writeVersion, TransactionalUnitVersion? readVersion)
+            public Task<bool> Prepare(long transactionId, TransactionalResourceVersion? writeVersion, TransactionalResourceVersion? readVersion)
             {
                 return this.grain.Prepare(transactionId, writeVersion, readVersion);
             }

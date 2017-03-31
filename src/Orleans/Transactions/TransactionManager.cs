@@ -93,9 +93,9 @@ namespace Orleans.Transactions
                 }
                 prevLSN = record.LSN;
 
-                foreach (var grain in record.Grains)
+                foreach (var resource in record.Resources)
                 {
-                    tx.Info.WriteSet.Add(grain, 1);
+                    tx.Info.WriteSet.Add(resource, 1);
                 }
 
                 transactionsTable[record.TransactionId] = tx;
@@ -270,9 +270,9 @@ namespace Orleans.Transactions
             {
                 processed = true;
                 CommitRecord commitRecord = new CommitRecord();
-                foreach (var grain in tx.Info.WriteSet.Keys)
+                foreach (var resource in tx.Info.WriteSet.Keys)
                 {
-                    commitRecord.Grains.Add(grain);
+                    commitRecord.Resources.Add(resource);
                 }
                 groupCommitQueue.Enqueue(new Tuple<CommitRecord, Transaction>(commitRecord, tx));
                 this.SignalGroupCommitEnqueued();
@@ -353,12 +353,12 @@ namespace Orleans.Transactions
             return processed;
         }
 
-        internal async Task<bool> Checkpoint(Dictionary<ITransactionalUnit, long> grains, List<Transaction> transactions)
+        internal async Task<bool> Checkpoint(Dictionary<ITransactionalResource, long> resources, List<Transaction> transactions)
         {
             bool processed = false;
             int batchSize = checkpointQueue.Count;
             long lsn = 0;
-            grains.Clear();
+            resources.Clear();
             transactions.Clear();
 
             while (batchSize > 0)
@@ -366,20 +366,20 @@ namespace Orleans.Transactions
                 processed = true;
                 Transaction tx;
                 checkpointQueue.TryDequeue(out tx);
-                foreach (var grain in tx.Info.WriteSet.Keys)
+                foreach (var resource in tx.Info.WriteSet.Keys)
                 {
-                    grains[grain] = tx.Info.TransactionId;
+                    resources[resource] = tx.Info.TransactionId;
                 }
                 lsn = tx.LSN;
                 transactions.Add(tx);
                 batchSize--;
             }
 
-            Task[] tasks = new Task[grains.Count];
+            Task[] tasks = new Task[resources.Count];
             int i = 0;
-            foreach (var g in grains)
+            foreach (var resource in resources)
             {
-                tasks[i++] = g.Key.Commit(g.Value);
+                tasks[i++] = resource.Key.Commit(resource.Value);
             }
 
             try
