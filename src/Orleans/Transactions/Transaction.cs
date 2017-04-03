@@ -27,9 +27,12 @@ namespace Orleans.Transactions
         // Number of transactions this transaction is waiting for their outcome.
         public int PendingCount { get; set; }
 
-        public TaskCompletionSource<bool> Completion { get; set; }
-
         public long HighestActiveTransactionIdAtCheckpoint { get; set; }
+
+        // Time the transaction was completed (i.e. either committed or aborted)
+        public long CompletionTime { get; set; }
+
+        public OrleansTransactionAbortedException AbortingException { get; set; }
 
         public Transaction(long transactionId)
         {
@@ -37,8 +40,7 @@ namespace Orleans.Transactions
             WaitingTransactions = new HashSet<Transaction>();
             PendingCount = 0;
             LSN = 0;
-            HighestActiveTransactionIdAtCheckpoint = 0;
-            Completion = null; 
+            HighestActiveTransactionIdAtCheckpoint = 0; 
         }
     }
 }

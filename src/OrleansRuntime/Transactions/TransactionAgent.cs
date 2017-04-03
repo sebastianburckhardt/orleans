@@ -22,8 +22,10 @@ namespace Orleans.Transactions
         private long abortLowerBound;
         private readonly ConcurrentDictionary<long, long> abortedTransactions;
 
-        private readonly ConcurrentQueue<Tuple<TransactionInfo, TaskCompletionSource<bool>>> transactionCommitQueue;
         private readonly ConcurrentQueue<Tuple<TimeSpan, TaskCompletionSource<long>>> transactionStartQueue;
+        private readonly ConcurrentQueue<TransactionInfo> transactionCommitQueue;
+        private readonly ConcurrentDictionary<long, TaskCompletionSource<bool>> commitCompletions;
+        private readonly HashSet<long> outstandingCommits;
 
         private readonly Logger logger;
 
@@ -46,8 +48,10 @@ namespace Orleans.Transactions
 
 
             abortedTransactions = new ConcurrentDictionary<long, long>();
-            transactionCommitQueue = new ConcurrentQueue<Tuple<TransactionInfo, TaskCompletionSource<bool>>>();
             transactionStartQueue = new ConcurrentQueue<Tuple<TimeSpan, TaskCompletionSource<long>>>();
+            transactionCommitQueue = new ConcurrentQueue<TransactionInfo>();
+            commitCompletions = new ConcurrentDictionary<long, TaskCompletionSource<bool>>();
+            outstandingCommits = new HashSet<long>();
         }
 
         #region ITransactionAgent
@@ -116,7 +120,8 @@ namespace Orleans.Transactions
                 abortedTransactions.TryAdd(transactionInfo.TransactionId, 0);
                 throw new OrleansPrepareFailedException(transactionInfo.TransactionId);
             }
-            transactionCommitQueue.Enqueue(new Tuple<TransactionInfo, TaskCompletionSource<bool>>(transactionInfo, completion));
+            commitCompletions.TryAdd(transactionInfo.TransactionId, completion);
+            transactionCommitQueue.Enqueue(transactionInfo);
             await completion.Task;
         }
 
@@ -144,7 +149,6 @@ namespace Orleans.Transactions
             // if we can register a separate timer for start and commit.
 
             List<TransactionInfo> committingTransactions = new List<TransactionInfo>();
-            List<TaskCompletionSource<bool>> commitCompletions = new List<TaskCompletionSource<bool>>();
             List<TimeSpan> startingTransactions = new List<TimeSpan>();
             List<TaskCompletionSource<long>> startCompletions = new List<TaskCompletionSource<long>>();
 
@@ -166,10 +170,10 @@ namespace Orleans.Transactions
                 int commitCount = transactionCommitQueue.Count;
                 while (commitCount > 0 && commitTransactionsTask.IsCompleted)
                 {
-                    Tuple<TransactionInfo, TaskCompletionSource<bool>> elem;
+                    TransactionInfo elem;
                     transactionCommitQueue.TryDequeue(out elem);
-                    committingTransactions.Add(elem.Item1);
-                    commitCompletions.Add(elem.Item2);
+                    committingTransactions.Add(elem);
+                    outstandingCommits.Add(elem.TransactionId);
 
                     commitCount--;
                 }
@@ -224,27 +228,40 @@ namespace Orleans.Transactions
                     logger.Verbose(ErrorCode.Transactions_SendingTMRequest, "Calling TM to commit {0} transactions", committingTransactions.Count);
 
                     var commitProxy = tmCommitProxy ?? (tmCommitProxy = await this.serviceFactory.GetTransactionCommitService());
-                    commitTransactionsTask = commitProxy.CommitTransactions(committingTransactions).ContinueWith(
+                    commitTransactionsTask = commitProxy.CommitTransactions(committingTransactions, outstandingCommits).ContinueWith(
                         async commitRequest =>
                         {
                             try
                             {
                                 var commitResponse = await commitRequest;
                                 var commitResults = commitResponse.CommitResult;
-                                Debug.Assert(commitResults.Count == commitCompletions.Count);
 
-                                // reply to clients with results
-                                for (int i = 0; i < commitCompletions.Count; i++)
+                                // reply to clients with the outcomes we received from the TM.
+                                foreach (var completedId in commitResults.Keys)
                                 {
-                                    if (commitResults[i].Success)
+                                    outstandingCommits.Remove(completedId);
+
+                                    TaskCompletionSource<bool> completion;
+                                    if (commitCompletions.TryRemove(completedId, out completion))
                                     {
-                                        TransactionsStatisticsGroup.OnTransactionCommitted();
-                                        commitCompletions[i].SetResult(true);
-                                    }
-                                    else
-                                    {
-                                        TransactionsStatisticsGroup.OnTransactionAborted();
-                                        commitCompletions[i].SetException(commitResults[i].AbortingException);
+                                        if (commitResults[completedId].Success)
+                                        {
+                                            TransactionsStatisticsGroup.OnTransactionCommitted();
+                                            completion.SetResult(true);
+                                        }
+                                        else
+                                        {
+                                            if (commitResults[completedId].AbortingException != null)
+                                            {
+                                                TransactionsStatisticsGroup.OnTransactionAborted();
+                                                completion.SetException(commitResults[completedId].AbortingException);
+                                            }
+                                            else
+                                            {
+                                                TransactionsStatisticsGroup.OnTransactionInDoubt();
+                                                completion.SetException(new OrleansTransactionInDoubtException(completedId));
+                                            }
+                                        }
                                     }
                                 }
 
@@ -267,7 +284,6 @@ namespace Orleans.Transactions
                             }
 
                             committingTransactions.Clear();
-                            commitCompletions.Clear();
                         });
                 }
             }

@@ -12,7 +12,7 @@ namespace Orleans.Transactions
 
     public interface ITransactionCommitService
     {
-        Task<CommitTransactionsResponse> CommitTransactions(List<TransactionInfo> transactions);
+        Task<CommitTransactionsResponse> CommitTransactions(List<TransactionInfo> transactions, HashSet<long> queries);
     }
 
     public interface ITransactionManagerService : ITransactionStartService , ITransactionCommitService
@@ -43,7 +43,7 @@ namespace Orleans.Transactions
     [Serializable]
     public class CommitTransactionsResponse : TransactionManagerResponse
     {
-        public List<CommitResult> CommitResult { get; set; }
+        public Dictionary<long, CommitResult> CommitResult { get; set; }
     }
 
     [Serializable]

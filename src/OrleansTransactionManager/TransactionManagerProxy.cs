@@ -23,9 +23,9 @@ namespace Orleans.Transactions
             return this.transactionManagerService.StartTransactions(timeouts);
         }
 
-        public Task<CommitTransactionsResponse> CommitTransactions(List<TransactionInfo> transactions)
+        public Task<CommitTransactionsResponse> CommitTransactions(List<TransactionInfo> transactions, HashSet<long> queries)
         {
-            return this.transactionManagerService.CommitTransactions(transactions);
+            return this.transactionManagerService.CommitTransactions(transactions, queries);
         }
     }
 }

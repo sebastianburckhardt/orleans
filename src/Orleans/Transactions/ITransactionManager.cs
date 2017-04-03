@@ -24,14 +24,14 @@ namespace Orleans.Transactions
         long StartTransaction(TimeSpan timeout);
 
         /// <summary>
-        /// Commit Transaction.
+        /// Initiates Transaction Commit.
         /// </summary>
         /// <param name="transactionInfo"></param>
-        /// <returns>
-        /// Transaction is committed if this method returns with no exception.
-        /// </returns>
+        /// <remarks>
+        /// Use GetTransactionState to poll for the outcome.
+        /// </remarks>
         /// <exception cref="OrleansTransactionAbortedException"></exception>
-        Task CommitTransaction(TransactionInfo transactionInfo);
+        void CommitTransaction(TransactionInfo transactionInfo);
 
         /// <summary>
         /// Abort Transaction.
@@ -45,9 +45,25 @@ namespace Orleans.Transactions
         void AbortTransaction(long transactionId, OrleansTransactionAbortedException reason);
 
         /// <summary>
+        /// Get the state of the transaction.
+        /// </summary>
+        /// <param name="transactionId"></param>
+        /// <param name="abortingException">If the transaction aborted, returns the exception that caused the abort</param>
+        /// <returns>Transaction state</returns>
+        TransactionStatus GetTransactionStatus(long transactionId, out OrleansTransactionAbortedException abortingException);
+
+        /// <summary>
         /// Return a safe TransactionId for read-only snapshot isolation.
         /// </summary>
         long GetReadOnlyTransactionId();
 
+    }
+
+   public enum TransactionStatus
+    {
+        InProgress = 0,
+        Committed = 1,
+        Aborted = 2,
+        Unknown = 3,
     }
 }

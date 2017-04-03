@@ -30,34 +30,63 @@ namespace Orleans.Transactions
             return Task.FromResult(result);
         }
 
-        public async Task<CommitTransactionsResponse> CommitTransactions(List<TransactionInfo> transactions)
+        public Task<CommitTransactionsResponse> CommitTransactions(List<TransactionInfo> transactions, HashSet<long> queries)
         {
             List<Task> tasks = new List<Task>();
 
-            var result = new CommitTransactionsResponse { CommitResult = new List<CommitResult>() };
+            var result = new CommitTransactionsResponse { CommitResult = new Dictionary<long, CommitResult>() };
 
             foreach (var ti in transactions)
             {
-                tasks.Add(tm.CommitTransaction(ti));
-            }
-
-            foreach (var t in tasks)
-            {
                 try
                 {
-                    await t;
-                    result.CommitResult.Add(new CommitResult() { Success = true });
+                    tm.CommitTransaction(ti);
                 }
                 catch (OrleansTransactionAbortedException e)
                 {
-                    result.CommitResult.Add(new CommitResult() { Success = false, AbortingException = e });
+                    var cr = new CommitResult()
+                    {
+                        Success = false,
+                        AbortingException = e,
+                    };
+                    result.CommitResult[ti.TransactionId] = cr;
                 }
+            }
+
+            foreach (var q in queries)
+            {
+                OrleansTransactionAbortedException abortingException;
+                var status = tm.GetTransactionStatus(q, out abortingException);
+                if (status == TransactionStatus.InProgress)
+                {
+                    continue;
+                }
+
+                var cr = new CommitResult();
+                if (status == TransactionStatus.Aborted)
+                {
+                    cr.Success = false;
+                    cr.AbortingException = abortingException;
+                }
+                else if (status == TransactionStatus.Committed)
+                {
+                    cr.Success = true;
+                }
+                else if (status == TransactionStatus.Unknown)
+                {
+                    // Note that the way we communicate an unknown transaction is a false Success
+                    // and a null aborting exception.
+                    // TODO: make this more explicit?
+                    cr.Success = false;
+                }
+
+                result.CommitResult[q] = cr;
             }
 
             result.ReadOnlyTransactionId = tm.GetReadOnlyTransactionId();
             result.AbortLowerBound = result.ReadOnlyTransactionId;
 
-            return result;
+            return Task.FromResult(result);
         }
     }
 }

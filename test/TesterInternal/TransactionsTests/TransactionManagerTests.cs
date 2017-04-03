@@ -21,13 +21,15 @@ namespace UnitTests.TransactionsTests
         }
 
         [Fact, TestCategory("Transactions")]
-        public async Task StartCommitTransactionTest()
+        public void StartCommitTransactionTest()
         {
             var id = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var info = new TransactionInfo(id);
-            await tm.CommitTransaction(info);
+            tm.CommitTransaction(info);
+            WaitForTransactionCommit(id);
         }
 
+        
         [Fact, TestCategory("Transactions")]
         public async Task TransactionTimeoutTest()
         {
@@ -37,7 +39,8 @@ namespace UnitTests.TransactionsTests
 
             try
             {
-                await tm.CommitTransaction(info);
+                tm.CommitTransaction(info);
+                WaitForTransactionCommit(id);
                 Assert.True(false, "Transaction commit succeeded when it should have timed out");
             }
             catch (OrleansTransactionAbortedException e)
@@ -47,34 +50,38 @@ namespace UnitTests.TransactionsTests
         }
 
         [Fact, TestCategory("Transactions")]
-        public async Task DependentTransactionTest()
+        public void DependentTransactionTest()
         {
             var id1 = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var id2 = tm.StartTransaction(TimeSpan.FromMinutes(2));
 
             var info = new TransactionInfo(id1);
-            await tm.CommitTransaction(info);
+            tm.CommitTransaction(info);
+            WaitForTransactionCommit(id1);
 
             var info2 = new TransactionInfo(id2);
             info2.DependentTransactions.Add(id1);
-            await tm.CommitTransaction(info2);
+            tm.CommitTransaction(info2);
+            WaitForTransactionCommit(id2);
         }
 
         [Fact, TestCategory("Transactions")]
-        public async Task OutOfOrderCommitTransactionTest()
+        public void OutOfOrderCommitTransactionTest()
         {
             var id1 = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var id2 = tm.StartTransaction(TimeSpan.FromMinutes(2));
 
             var info2 = new TransactionInfo(id2);
             info2.DependentTransactions.Add(id1);
-            Task t = tm.CommitTransaction(info2);
-            Assert.False(t.IsCompleted);
+
+            tm.CommitTransaction(info2);
+            OrleansTransactionAbortedException e;
+            Assert.True(tm.GetTransactionStatus(id2, out e) == TransactionStatus.InProgress);
 
             var info = new TransactionInfo(id1);
-            await tm.CommitTransaction(info);
+            tm.CommitTransaction(info);
 
-            await t;
+            WaitForTransactionCommit(id2);
         }
 
         [Fact, TestCategory("Transactions")]
@@ -85,20 +92,45 @@ namespace UnitTests.TransactionsTests
 
             var info2 = new TransactionInfo(id2);
             info2.DependentTransactions.Add(id1);
-            Task t = tm.CommitTransaction(info2);
-            Assert.False(t.IsCompleted);
+
+            tm.CommitTransaction(info2);
+            OrleansTransactionAbortedException abort;
+            Assert.True(tm.GetTransactionStatus(id2, out abort) == TransactionStatus.InProgress);
 
             tm.AbortTransaction(id1, new OrleansTransactionAbortedException(id1));
 
             try
             {
-                await t;
+                WaitForTransactionCommit(id2);
                 Assert.True(false, "Transaction was not aborted");
             }
             catch (OrleansCascadingAbortException e)
             {
                 Assert.True(e.TransactionId == id2);
                 Assert.True(e.DependentTransactionId == id1);
+            }
+        }
+
+        private void WaitForTransactionCommit(long transactionId)
+        {
+            while (true)
+            {
+                OrleansTransactionAbortedException e;
+                var result = tm.GetTransactionStatus(transactionId, out e);
+                if (result == TransactionStatus.Committed)
+                {
+                    return;
+                }
+                else if (result == TransactionStatus.Aborted)
+                {
+                    throw e;
+                }
+                else if (result == TransactionStatus.Unknown)
+                {
+                    throw new OrleansTransactionInDoubtException(transactionId);
+                }
+                Assert.True(result == TransactionStatus.InProgress);
+                Thread.Sleep(100);
             }
         }
     }

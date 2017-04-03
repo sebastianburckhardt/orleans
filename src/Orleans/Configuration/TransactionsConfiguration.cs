@@ -76,6 +76,12 @@ namespace Orleans.Transactions
         /// </summary>
         public string DataConnectionString { get; set; }
 
+        /// <summary>
+        /// How long to preserve a transaction record in the TM memory after the transaction has completed.
+        /// This is used to answer queries about the outcome of the transaction.
+        /// </summary>
+        public TimeSpan TransactionRecordPreservationDuration { get; set; }
+
         public string TransactionManagerType { get; set; } = DefaultOrleansTransactionManagerType;
 
         /// <summary>
@@ -88,6 +94,7 @@ namespace Orleans.Transactions
             TransactionManagerProxyCount = 1;
             TransactionIdAllocationBatchSize = 50000;
             AvailableTransactionIdThreshold = 20000;
+            TransactionRecordPreservationDuration = TimeSpan.FromMinutes(1);
         }
 
         /// <summary>
@@ -123,6 +130,12 @@ namespace Orleans.Transactions
             {
                 this.TransactionManagerProxyCount = ConfigUtilities.ParseInt(child.GetAttribute("TransactionManagerProxyCount"),
                     "Invalid boolean value for the TransactionManagerProxyCount element");
+            }
+
+            if (child.HasAttribute("TransactionRecordPreservationDuration"))
+            {
+                this.TransactionRecordPreservationDuration = ConfigUtilities.ParseTimeSpan(child.GetAttribute("TransactionRecordPreservationDuration"),
+                    "Invalid TimeSpan value for the TransactionRecordPreservationDuration element");
             }
 
             if (child.HasAttribute("DataConnectionString"))
