@@ -77,13 +77,13 @@ namespace Orleans.Transactions
 
         private void CheckpointLoop()
         {
-            Dictionary<ITransactionalGrain, long> grains = new Dictionary<ITransactionalGrain, long>();
+            Dictionary<ITransactionalResource, long> resources = new Dictionary<ITransactionalResource, long>();
             List<Transaction> transactions = new List<Transaction>();
             while (true)
             {
                 // Maybe impose a max per batch to decrease latency?
                 checkpointEvent.WaitOne();
-                base.Checkpoint(grains, transactions).Wait();
+                base.Checkpoint(resources, transactions).Wait();
             }
         }
     }

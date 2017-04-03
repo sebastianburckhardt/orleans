@@ -1,4 +1,5 @@
 ﻿
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -86,11 +87,11 @@ namespace Orleans.Transactions
             List<Task<bool>> prepareTasks = new List<Task<bool>>(transactionInfo.WriteSet.Count);
             foreach (var g in transactionInfo.WriteSet.Keys)
             {
-                GrainVersion write;
+                TransactionalResourceVersion write;
                 write.TransactionId = transactionInfo.TransactionId;
                 write.WriteNumber = transactionInfo.WriteSet[g];
 
-                GrainVersion? read = null;
+                TransactionalResourceVersion? read = null;
                 if (transactionInfo.ReadSet.ContainsKey(g))
                 {
                     read = transactionInfo.ReadSet[g];
@@ -101,7 +102,7 @@ namespace Orleans.Transactions
 
             foreach (var g in transactionInfo.ReadSet.Keys)
             {
-                GrainVersion read = transactionInfo.ReadSet[g];
+                TransactionalResourceVersion read = transactionInfo.ReadSet[g];
                 prepareTasks.Add(g.Prepare(transactionInfo.TransactionId, null, read));
             }
 

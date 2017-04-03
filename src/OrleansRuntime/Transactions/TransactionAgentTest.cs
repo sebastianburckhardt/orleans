@@ -34,7 +34,7 @@ namespace Orleans.Transactions
             Task<bool>[] prepareTasks = new Task<bool>[transactionInfo.WriteSet.Count];
             foreach (var g in transactionInfo.WriteSet.Keys)
             {
-                GrainVersion write;
+                TransactionalResourceVersion write;
                 write.TransactionId = transactionInfo.TransactionId;
                 write.WriteNumber = transactionInfo.WriteSet[g];
                 prepareTasks[index++] = g.Prepare(transactionInfo.TransactionId, write, null);
