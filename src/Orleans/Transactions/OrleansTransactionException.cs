@@ -238,6 +238,21 @@ namespace Orleans.Transactions
         }
     }
 
+    /// <summary>
+    /// Signifies that the transaction references a version of the state that is not yet stable.
+    /// </summary>
+    [Serializable]
+    public class OrleansTransactionUnstableVersionException : OrleansTransactionAbortedException
+    {
+        public OrleansTransactionUnstableVersionException(long transactionId)
+            : base(transactionId, $"Transaction {transactionId} references not yet stable data.") { }
+
+        public OrleansTransactionUnstableVersionException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
     [Serializable]
     public class OrleansTransactionServiceNotAvailableException : OrleansTransactionException
     {

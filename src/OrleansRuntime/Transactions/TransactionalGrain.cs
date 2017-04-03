@@ -34,7 +34,7 @@ namespace Orleans.Transactions
     /// </summary>
     public abstract class TransactionalGrain<TGrainState> : Grain<TransactionalGrainState<TGrainState>>, ITransactionalGrain where TGrainState : new()
     {
-        new protected TGrainState State { get { return GetState(); } }
+        protected new TGrainState State => GetState();
 
         private ITransactionAgent transactionAgent;
         private ITransactionalResource grainAsTransactionalResource;
@@ -53,7 +53,6 @@ namespace Orleans.Transactions
         private SortedDictionary<long, LogRecord<TGrainState>> log { get; set; }
         private TGrainState value;
         private TransactionalResourceVersion version;
-        private long lastPrepared;
         private long stableVersion;
 
         private long writeLowerBound;
@@ -243,10 +242,9 @@ namespace Orleans.Transactions
                 throw new OrleansTransactionVersionDeletedException(info.TransactionId);
             }
 
-            if (info.IsReadOnly)
+            if (info.IsReadOnly && readVersion.TransactionId > this.stableVersion)
             {
-                // Sanity check to make sure this is indeed a stable version.
-                Debug.Assert(readVersion.TransactionId <= this.stableVersion);
+                throw new OrleansTransactionUnstableVersionException(info.TransactionId);
             }
 
             if (readVersion.TransactionId == info.TransactionId)
@@ -301,7 +299,7 @@ namespace Orleans.Transactions
 
             Restore();
 
-            var value = this.transactionCopy[info.TransactionId];
+            var transactionValue = this.transactionCopy[info.TransactionId];
             
             //
             // Validation
@@ -313,12 +311,12 @@ namespace Orleans.Transactions
                 throw new OrleansTransactionWaitDieException(info.TransactionId);
             }
 
-            TransactionalResourceVersion version;
-            version.TransactionId = info.TransactionId;
-            version.WriteNumber = 1;
+            TransactionalResourceVersion newVersion;
+            newVersion.TransactionId = info.TransactionId;
+            newVersion.WriteNumber = 1;
             if (this.version.TransactionId == info.TransactionId)
             {
-                version.WriteNumber = this.version.WriteNumber + 1;
+                newVersion.WriteNumber = this.version.WriteNumber + 1;
             }
 
             //
@@ -344,10 +342,10 @@ namespace Orleans.Transactions
                 this.log[info.TransactionId] = r;
             }
 
-            this.log[info.TransactionId].NewVal = value;
-            this.log[info.TransactionId].Version = version;
-            this.value = value;
-            this.version = version;
+            this.log[info.TransactionId].NewVal = transactionValue;
+            this.log[info.TransactionId].Version = newVersion;
+            this.value = transactionValue;
+            this.version = newVersion;
 
             this.transactionCopy.Remove(info.TransactionId);
         }
@@ -360,7 +358,6 @@ namespace Orleans.Transactions
             while (this.log.Count > 0 && this.log.Keys.Last() >= transactionId)
             {
                 long tId = this.log.Keys.Last();
-                LogRecord<TGrainState> log = this.log[tId];
 
                 this.log.Remove(tId);
 
@@ -425,18 +422,17 @@ namespace Orleans.Transactions
 
             foreach (var key in base.State.Logs.Keys)
             {
-                LogRecord<TGrainState> record = new LogRecord<TGrainState>();
-                record.NewVal = base.State.Logs[key];
+                LogRecord<TGrainState> record = new LogRecord<TGrainState> {NewVal = base.State.Logs[key]};
 
-                TransactionalResourceVersion version;
-                version.TransactionId = key;
-                version.WriteNumber = 1;
-                record.Version = version;
+                TransactionalResourceVersion recordVersion;
+                recordVersion.TransactionId = key;
+                recordVersion.WriteNumber = 1;
+                record.Version = recordVersion;
                 this.log[key] = record;
             }
         }
 
-        private async Task Persist(long stableVersion, long writeLowerBound)
+        private async Task Persist(long persistVersion, long persistWriteLowerBound)
         {
             Exception error = null;
 
@@ -446,13 +442,12 @@ namespace Orleans.Transactions
                 base.State.Value = this.value;
                 base.State.Version = this.version;
                 base.State.LastPrepared = base.State.Version.TransactionId;
-                base.State.StableVersion = stableVersion;
-                base.State.WriteLowerBound = writeLowerBound;
+                base.State.StableVersion = persistVersion;
+                base.State.WriteLowerBound = persistWriteLowerBound;
 
                 await base.WriteStateAsync();
 
-                this.lastPrepared = base.State.LastPrepared;
-                this.stableVersion = stableVersion;
+                this.stableVersion = persistVersion;
             }
             catch (Exception e)
             {
@@ -469,24 +464,24 @@ namespace Orleans.Transactions
             }
         }
 
-        private bool ValidateWrite(TransactionalResourceVersion? version)
+        private bool ValidateWrite(TransactionalResourceVersion? writeVersion)
         {
-            if (!version.HasValue)
+            if (!writeVersion.HasValue)
                 return true;
 
             // Validate that we still have all of the transaction's writes.
-            var transactionId = version.Value.TransactionId;
+            var transactionId = writeVersion.Value.TransactionId;
             if (this.log.ContainsKey(transactionId))
             {
-                return this.log[transactionId].Version == version.Value;
+                return this.log[transactionId].Version == writeVersion.Value;
             }
 
             return false;
         }
 
-        private bool ValidateRead(long transactionId, TransactionalResourceVersion? version)
+        private bool ValidateRead(long transactionId, TransactionalResourceVersion? readVersion)
         {
-            if (!version.HasValue)
+            if (!readVersion.HasValue)
                 return true;
 
             foreach (var key in this.log.Keys)
@@ -496,17 +491,17 @@ namespace Orleans.Transactions
                     break;
                 }
 
-                if (key > version.Value.TransactionId && key < transactionId)
+                if (key > readVersion.Value.TransactionId && key < transactionId)
                 {
                     return false;
                 }
             }
 
-            if (version.Value.TransactionId == 0) return version.Value.WriteNumber == 0;
+            if (readVersion.Value.TransactionId == 0) return readVersion.Value.WriteNumber == 0;
             // Version read by the transaction is lost.
-            if (!this.log.ContainsKey(version.Value.TransactionId)) return false;
+            if (!this.log.ContainsKey(readVersion.Value.TransactionId)) return false;
             // If version is not same it was overridden by the same transaction that originally wrote it.
-            return this.log[version.Value.TransactionId].Version == version.Value;
+            return this.log[readVersion.Value.TransactionId].Version == readVersion.Value;
         }
 
         private void Recovery()
@@ -516,7 +511,6 @@ namespace Orleans.Transactions
                 base.State.Value = new TGrainState();
             }
 
-            this.lastPrepared = base.State.LastPrepared;
             this.stableVersion = base.State.StableVersion;
             this.writeLowerBound = base.State.WriteLowerBound;
             this.version = base.State.Version;

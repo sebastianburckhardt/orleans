@@ -1,6 +1,6 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table;
 using Orleans.Serialization;
@@ -23,7 +23,6 @@ namespace Orleans.Transactions
 
         // Azure Tables objects for persistent storage
         private readonly string tableName;
-        private readonly CloudStorageAccount storageAccount;
         private readonly CloudTableClient azTableClient;
 
         // Log iteration indexes
@@ -38,7 +37,7 @@ namespace Orleans.Transactions
         {
             this.serializationManager = serializationManager;
             // Retrieve the storage account from the connection string.
-            storageAccount = CloudStorageAccount.Parse(connectionString);
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
 
             // Create the table client.
             azTableClient = storageAccount.CreateCloudTableClient();
@@ -344,7 +343,6 @@ namespace Orleans.Transactions
         {
             // Azure Table's keys are strings which complicate integer comparison
             string lsnStr = lsn.ToString();
-            Debug.Assert(lsnStr.Length <= 26);
             char prefix = (char)('a' + lsnStr.Length);
             return prefix + lsnStr;
         }

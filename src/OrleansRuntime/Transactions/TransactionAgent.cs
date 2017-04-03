@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Orleans.Runtime;
-using Orleans.Runtime.Configuration;
 using Orleans.Concurrency;
 
 namespace Orleans.Transactions
@@ -69,7 +68,7 @@ namespace Orleans.Transactions
             transactionStartQueue.Enqueue(new Tuple<TimeSpan, TaskCompletionSource<long>>(timeout, completion));
 
             long id = await completion.Task;
-            return new TransactionInfo(id, false);
+            return new TransactionInfo(id);
         }
 
         public async Task Commit(TransactionInfo transactionInfo)
@@ -192,7 +191,6 @@ namespace Orleans.Transactions
                             {
                                 var startResponse = await startRequest;
                                 var startedIds = startResponse.TransactionId;
-                                Debug.Assert(startedIds.Count == startCompletions.Count);
 
                                 // reply to clients with results
                                 for (int i = 0; i < startCompletions.Count; i++)
