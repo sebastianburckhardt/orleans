@@ -315,7 +315,7 @@ namespace Orleans.Transactions
 
             foreach (var r in records)
             {
-                serializableList.Add(new Tuple<long, long, HashSet<ITransactionalResource>>(r.LSN, r.TransactionId, r.Grains));
+                serializableList.Add(new Tuple<long, long, HashSet<ITransactionalResource>>(r.LSN, r.TransactionId, r.Resources));
             }
 
             var sw = new BinaryTokenStreamWriter();
@@ -333,7 +333,7 @@ namespace Orleans.Transactions
 
             foreach (var r in l)
             {
-                list.Add(new CommitRecord() { LSN = r.Item1, TransactionId = r.Item2, Grains = r.Item3 });
+                list.Add(new CommitRecord() { LSN = r.Item1, TransactionId = r.Item2, Resources = r.Item3 });
             }
 
             return list;
