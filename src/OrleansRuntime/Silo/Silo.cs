@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 using Orleans.Core;
-using Orleans.Factory;
 using Orleans.GrainDirectory;
 using Orleans.LogConsistency;
 using Orleans.Providers;
@@ -286,9 +285,8 @@ namespace Orleans.Runtime
 
             // transactions
             services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
-            services.AddSingleton<IFactoryBuilder<string, ITransactionServiceFactory>, TransactionServiceFactoryBuilder>();
-            services.AddSingleton(sp => sp.GetRequiredService<IFactoryBuilder<string, ITransactionServiceFactory>>().Build());
-            services.AddSingleton(sp => sp.GetRequiredService<IFactory<string, ITransactionServiceFactory>>().Create(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType) );
+            services.AddSingleton<IKeyedServiceCollection<string, ITransactionServiceFactory>, TransactionServiceFactoryCollection>();
+            services.AddSingleton< ITransactionServiceFactory>(sp => sp.GetServiceByName<ITransactionServiceFactory>(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType));
             services.AddTransient<InClusterTransactionManager>();
             services.AddSingleton<ITransactionAgent, TransactionAgent>();
             services.AddSingleton<Lazy<ITransactionAgent>>(sp => new Lazy<ITransactionAgent>(sp.GetRequiredService<ITransactionAgent>));

@@ -91,10 +91,6 @@
     <Compile Include="Core\IInternalClusterClient.cs" />
     <Compile Include="Core\IClusterClient.cs" />
     <Compile Include="Core\ClusterClient.cs" />
-    <Compile Include="Factory\FactoryBuilder.cs" />
-    <Compile Include="Factory\FactoryExtensions.cs" />
-    <Compile Include="Factory\IFactory.cs" />
-    <Compile Include="Factory\IFactoryBuilder.cs" />
     <Compile Include="Facet\FacetAttribute.cs" />
     <Compile Include="Facet\FacetConfiguration.cs" />
     <Compile Include="Facet\IGrainBinder.cs" />

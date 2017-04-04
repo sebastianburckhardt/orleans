@@ -210,7 +210,7 @@
     <Compile Include="Transactions\TransactionAgentTest.cs" />
     <Compile Include="Transactions\TransactionalGrain.cs" />
     <Compile Include="Transactions\TransactionManagerGrain.cs" />
-    <Compile Include="Transactions\TransactionServiceFactoryBuilder.cs" />
+    <Compile Include="Transactions\TransactionServiceFactoryCollection.cs" />
     <Compile Include="Transactions\TransactionServiceGrainFactory.cs" />
     <Compile Include="Transactions\TransactionServiceProxyFactory.cs" />
     <Compile Include="Timers\TimerRegistry.cs" />
