@@ -95,6 +95,10 @@
     <Compile Include="Factory\FactoryExtensions.cs" />
     <Compile Include="Factory\IFactory.cs" />
     <Compile Include="Factory\IFactoryBuilder.cs" />
+    <Compile Include="Facet\FacetAttribute.cs" />
+    <Compile Include="Facet\FacetConfiguration.cs" />
+    <Compile Include="Facet\IGrainBinder.cs" />
+    <Compile Include="Facet\IGrainFacet.cs" />
     <Compile Include="LogConsistency\ILogConsistencyDiagnostics.cs" />
     <Compile Include="Configuration\TransactionsConfiguration.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />

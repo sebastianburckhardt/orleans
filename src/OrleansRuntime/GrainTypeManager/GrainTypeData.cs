@@ -5,10 +5,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 using Orleans.CodeGeneration;
-using Orleans.Core;
 using Orleans.Concurrency;
+using Orleans.Facet;
 using Orleans.GrainDirectory;
-using Orleans.MultiCluster;
 using Orleans.Placement;
 
 namespace Orleans.Runtime
@@ -21,13 +20,42 @@ namespace Orleans.Runtime
     {
         internal Type Type { get; private set; }
         internal string GrainClass { get; private set; }
+
+        private sealed class TypeEqualityComparer : IEqualityComparer<GrainTypeData>
+        {
+            public bool Equals(GrainTypeData x, GrainTypeData y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (ReferenceEquals(x, null)) return false;
+                if (ReferenceEquals(y, null)) return false;
+                if (x.GetType() != y.GetType()) return false;
+                return Equals(x.Type, y.Type);
+            }
+
+            public int GetHashCode(GrainTypeData obj)
+            {
+                return (obj.Type != null ? obj.Type.GetHashCode() : 0);
+            }
+        }
+
+        private static readonly IEqualityComparer<GrainTypeData> TypeComparerInstance = new TypeEqualityComparer();
+
+        public static IEqualityComparer<GrainTypeData> TypeComparer
+        {
+            get { return TypeComparerInstance; }
+        }
+
         internal List<Type> RemoteInterfaceTypes { get; private set; }
         internal Type StateObjectType { get; private set; }
         internal bool IsReentrant { get; private set; }
         internal bool IsStatelessWorker { get; private set; }
         internal Func<InvokeMethodRequest, bool> MayInterleave { get; private set; }
         internal MultiClusterRegistrationStrategy MultiClusterRegistrationStrategy { get; private set; }
-   
+
+        [NonSerialized]
+        private readonly FacetedConstructorInfo constructorInfo;
+        internal FacetedConstructorInfo ConstructorInfo => constructorInfo;
+
         public GrainTypeData(Type type, Type stateObjectType, MultiClusterRegistrationStrategyManager registrationManager)
         {
             var typeInfo = type.GetTypeInfo();
@@ -40,6 +68,7 @@ namespace Orleans.Runtime
             StateObjectType = stateObjectType;
             MayInterleave = GetMayInterleavePredicate(typeInfo) ?? (_ => false);
             MultiClusterRegistrationStrategy = registrationManager?.GetMultiClusterRegistrationStrategy(type);
+            constructorInfo = new FacetedConstructorInfo(type);
         }
 
         /// <summary>

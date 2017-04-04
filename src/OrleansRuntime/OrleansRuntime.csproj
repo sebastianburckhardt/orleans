@@ -62,6 +62,7 @@
     <Compile Include="Core\GrainRuntime.cs" />
     <Compile Include="Core\IInvokable.cs" />
     <Compile Include="Core\ISiloRuntimeClient.cs" />
+    <Compile Include="Facet\FacetedConstructorInfo.cs" />
     <Compile Include="Messaging\ObjectPool.cs" />
     <Compile Include="ReminderService\ReminderRegistry.cs" />
     <Compile Include="Services\GrainService.cs" />

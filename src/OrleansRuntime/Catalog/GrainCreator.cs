@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Core;
@@ -17,13 +18,16 @@ namespace Orleans.Runtime
     /// </summary>
     internal class GrainCreator
     {
+        private static readonly Func<GrainTypeData, ObjectFactory> createFactory = CreateFactory;
+
         private readonly Lazy<IGrainRuntime> grainRuntime;
 
         private readonly IServiceProvider services;
 
-        private readonly Func<Type, ObjectFactory> createFactory;
+        private readonly ConcurrentDictionary<GrainTypeData, ObjectFactory> typeActivatorCache = new ConcurrentDictionary<GrainTypeData, ObjectFactory>(GrainTypeData.TypeComparer);
 
-        private readonly ConcurrentDictionary<Type, ObjectFactory> typeActivatorCache = new ConcurrentDictionary<Type, ObjectFactory>();
+        private readonly SerializationManager serializationManager;
+        private readonly IInternalGrainFactory grainFactory;
         
         private readonly Factory<Grain, IMultiClusterRegistrationStrategy, ProtocolServices> protocolServicesFactory;
 
@@ -41,7 +45,6 @@ namespace Orleans.Runtime
             this.services = services;
             this.protocolServicesFactory = protocolServicesFactory;
             this.grainRuntime = new Lazy<IGrainRuntime>(getGrainRuntime);
-            this.createFactory = type => ActivatorUtilities.CreateFactory(type, Type.EmptyTypes);
         }
 
         /// <summary>
@@ -49,11 +52,12 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="grainType">The grain type.</param>
         /// <param name="identity">Identity for the new grain</param>
+        /// <param name="arguments">Arguments available for grain construction</param>
         /// <returns>The newly created grain.</returns>
-        public Grain CreateGrainInstance(Type grainType, IGrainIdentity identity)
+        public Grain CreateGrainInstance(GrainTypeData grainType, IGrainIdentity identity, object[] arguments)
         {
-            var activator = this.typeActivatorCache.GetOrAdd(grainType, this.createFactory);
-            var grain = (Grain)activator(this.services, arguments: null);
+            var activator = this.typeActivatorCache.GetOrAdd(grainType, createFactory);
+            var grain = (Grain)activator(this.services, arguments);
 
             // Inject runtime hooks into grain instance
             grain.Runtime = this.grainRuntime.Value;
@@ -69,11 +73,12 @@ namespace Orleans.Runtime
         /// <param name="identity">Identity for the new grain</param>
         /// <param name="stateType">If the grain is a stateful grain, the type of the state it persists.</param>
         /// <param name="storage">If the grain is a stateful grain, the storage used to persist the state.</param>
+        /// <param name="arguments">Arguments available for grain construction</param>
         /// <returns></returns>
-        public Grain CreateGrainInstance(Type grainType, IGrainIdentity identity, Type stateType, IStorage storage)
+        public Grain CreateGrainInstance(GrainTypeData grainType, IGrainIdentity identity, Type stateType, IStorage storage, object[] arguments)
 		{
             //Create a new instance of the grain
-            var grain = CreateGrainInstance(grainType, identity);
+            var grain = CreateGrainInstance(grainType, identity, arguments);
 
             var statefulGrain = grain as IStatefulGrain;
 
@@ -86,8 +91,7 @@ namespace Orleans.Runtime
 
             return grain;
         }
-
-
+        
         /// <summary>
         /// Install the log-view adaptor into a log-consistent grain.
         /// </summary>
@@ -108,6 +112,11 @@ namespace Orleans.Runtime
             var state = Activator.CreateInstance(stateType);
 
             ((ILogConsistentGrain)grain).InstallAdaptor(factory, state, grainType.FullName, storageProvider, svc);
+        }
+
+        private static ObjectFactory CreateFactory(GrainTypeData grainTypeData)
+        {
+            return ActivatorUtilities.CreateFactory(grainTypeData.Type, grainTypeData.ConstructorInfo.FacetParameters);
         }
     }
 }

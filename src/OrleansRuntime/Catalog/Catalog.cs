@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using Orleans.CodeGeneration;
 using Orleans.Core;
+using Orleans.Facet;
 using Orleans.GrainDirectory;
 using Orleans.MultiCluster;
 using Orleans.Providers;
@@ -149,10 +150,12 @@ namespace Orleans.Runtime
         private readonly TimeSpan maxRequestProcessingTime;
         private readonly TimeSpan maxWarningRequestProcessingTime;
         private readonly SerializationManager serializationManager;
+        private readonly IServiceProvider services;
 
         private readonly MultiClusterRegistrationStrategyManager multiClusterRegistrationStrategyManager;
 
         public Catalog(
+            IServiceProvider services,
             ILocalSiloDetails localSiloDetails,
             ILocalGrainDirectory grainDirectory,
             GrainTypeManager typeManager,
@@ -168,6 +171,7 @@ namespace Orleans.Runtime
             MultiClusterRegistrationStrategyManager multiClusterRegistrationStrategyManager)
             : base(Constants.CatalogId, messageCenter.MyAddress)
         {
+            this.services = services;
             LocalSilo = localSiloDetails.SiloAddress;
             localSiloName = localSiloDetails.Name;
             directory = grainDirectory;
@@ -716,6 +720,9 @@ namespace Orleans.Runtime
             {
                 Grain grain;
 
+                object[] parameters = grainTypeData.ConstructorInfo.CreateConstructorParameterFacets(this.services);
+                IGrainBinder[] binders = parameters.OfType<IGrainBinder>().ToArray();
+
                 if (typeof(IStatefulGrain).IsAssignableFrom(grainType))
                 {
                     //for stateful grains, install storage bridge
@@ -723,27 +730,27 @@ namespace Orleans.Runtime
 
                     var storage = new GrainStateStorageBridge(grainType.FullName, data.StorageProvider);
 
-                    grain = grainCreator.CreateGrainInstance(grainType, data.Identity, stateObjectType, storage);
+                    grain = grainCreator.CreateGrainInstance(grainTypeData, data.Identity, stateObjectType, storage, parameters);
 
                     storage.SetGrain(grain);
                 }
                 else
-                { 
-                    // Create a new instance of the given grain type
-                    grain = grainCreator.CreateGrainInstance(grainType, data.Identity);
-                    
-                    // for log-view grains, install log-view adaptor
-                    if (grain is ILogConsistentGrain)
-                    {
-                        var consistencyProvider = SetupLogConsistencyProvider(grain, grainType, data);
-                        grainCreator.InstallLogViewAdaptor(grain, grainType,
-                            grainTypeData.StateObjectType, grainTypeData.MultiClusterRegistrationStrategy ?? this.multiClusterRegistrationStrategyManager.DefaultStrategy,
-                            consistencyProvider, data.StorageProvider);
-                    }
+                {
+                    //Create a new instance of the given grain type
+                    grain = grainCreator.CreateGrainInstance(grainTypeData, data.Identity, parameters);
                 }
-             
+
+                if (grain is ILogConsistentGrain)
+                {
+                    var consistencyProvider = SetupLogConsistencyProvider(grain, grainType, data);
+                    grainCreator.InstallLogViewAdaptor(grain, grainType,
+                        grainTypeData.StateObjectType, grainTypeData.MultiClusterRegistrationStrategy ?? this.multiClusterRegistrationStrategyManager.DefaultStrategy,
+                        consistencyProvider, data.StorageProvider);
+                }
+
                 grain.Data = data;
                 data.SetGrainInstance(grain);
+                data.Binders = binders;
             }
 
 
@@ -865,6 +872,13 @@ namespace Orleans.Runtime
 
         private async Task SetupActivationState(ActivationData result, string grainType)
         {
+            // bind all facets to grain.
+            if (result.Binders.Length != 0)
+            {
+                await Task.WhenAll(result.Binders
+                    .Select( binder => scheduler.RunOrQueueTask(() => binder.BindAsync(result.GrainInstance), result.SchedulingContext)));
+            }
+
             var statefulGrain = result.GrainInstance as IStatefulGrain;
             if (statefulGrain == null)
             {

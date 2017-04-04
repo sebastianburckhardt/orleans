@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
+using Orleans.Facet;
 using Orleans.GrainDirectory;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
@@ -246,6 +247,8 @@ namespace Orleans.Runtime
         #endregion
 
         public ISchedulingContext SchedulingContext { get; }
+
+        public IGrainBinder[] Binders { get; set; }
 
         public string GrainTypeName
         {
