@@ -311,13 +311,8 @@ namespace Orleans.Transactions
                 throw new OrleansTransactionWaitDieException(info.TransactionId);
             }
 
-            TransactionalResourceVersion newVersion;
-            newVersion.TransactionId = info.TransactionId;
-            newVersion.WriteNumber = 1;
-            if (this.version.TransactionId == info.TransactionId)
-            {
-                newVersion.WriteNumber = this.version.WriteNumber + 1;
-            }
+            TransactionalResourceVersion newVersion = TransactionalResourceVersion.Create(info.TransactionId,
+                this.version.TransactionId == info.TransactionId ? this.version.WriteNumber + 1 : 1);
 
             //
             // Update Transaction Context
@@ -372,11 +367,7 @@ namespace Orleans.Transactions
             }
             else
             {
-                TransactionalResourceVersion initialVersion;
-                initialVersion.TransactionId = 0;
-                initialVersion.WriteNumber = 0;
-
-                this.version = initialVersion;
+                this.version = TransactionalResourceVersion.Create(0,0);
                 this.value = new TGrainState();
             }
         }
@@ -422,13 +413,11 @@ namespace Orleans.Transactions
 
             foreach (var key in base.State.Logs.Keys)
             {
-                LogRecord<TGrainState> record = new LogRecord<TGrainState> {NewVal = base.State.Logs[key]};
-
-                TransactionalResourceVersion recordVersion;
-                recordVersion.TransactionId = key;
-                recordVersion.WriteNumber = 1;
-                record.Version = recordVersion;
-                this.log[key] = record;
+                this.log[key] = new LogRecord<TGrainState>
+                {
+                    NewVal = base.State.Logs[key],
+                    Version = TransactionalResourceVersion.Create(key, 1)
+                };
             }
         }
 

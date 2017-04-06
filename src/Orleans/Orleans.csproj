@@ -91,6 +91,7 @@
     <Compile Include="Core\IInternalClusterClient.cs" />
     <Compile Include="Core\IClusterClient.cs" />
     <Compile Include="Core\ClusterClient.cs" />
+    <Compile Include="Core\StateStorageBridge.cs" />
     <Compile Include="Facet\FacetAttribute.cs" />
     <Compile Include="Facet\FacetConfiguration.cs" />
     <Compile Include="Facet\IGrainBinder.cs" />
@@ -186,10 +187,17 @@
     <Compile Include="Streams\Core\SubscriptionChangeHandler.cs" />
     <Compile Include="Streams\Providers\StreamProviderManagerExtensions.cs" />
     <Compile Include="Transactions\ActiveTransactionsTracker.cs" />
+    <Compile Include="Transactions\ITransactionalExtension.cs" />
     <Compile Include="Transactions\ITransactionalResource.cs" />
+    <Compile Include="Transactions\ITransactionalState.cs" />
     <Compile Include="Transactions\ITransactionManager.cs" />
+    <Compile Include="Transactions\LogRecord.cs" />
     <Compile Include="Transactions\MemoryTransactionLog.cs" />
     <Compile Include="Transactions\Transaction.cs" />
+    <Compile Include="Transactions\TransactionalExtension.cs" />
+    <Compile Include="Transactions\TransactionalState.cs" />
+    <Compile Include="Transactions\TransactionalStateAttribute.cs" />
+    <Compile Include="Transactions\TransactionalStateConfiguration.cs" />
     <Compile Include="Transactions\TransactionManager.cs" />
     <Compile Include="Transactions\TransactionManagerService.cs" />
     <Compile Include="Transactions\TrasactionLog.cs" />

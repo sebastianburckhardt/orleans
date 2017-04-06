@@ -15,7 +15,6 @@ namespace UnitTests.GrainInterfaces
         Task<int> GetLatest();
         [ReadOnly]
         Task<int> Get();
-        
     }
 
     public interface ITransactionCoordinatorGrain : IGrainWithIntegerKey
@@ -33,5 +32,11 @@ namespace UnitTests.GrainInterfaces
         [Transaction(TransactionOption.RequiresNew)]
         Task WriteInReadOnlyTransaction(ISimpleTransactionalGrain grain);
 
+    }
+
+    public interface IFacetedTransactionCoordinatorGrain : IGrainWithIntegerKey
+    {
+        [Transaction(TransactionOption.RequiresNew)]
+        Task MultiGrainTransaction(List<ISimpleTransactionalGrain> grains, int numberToAdd);
     }
 }

@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Threading.Tasks;
 
 namespace Orleans.Transactions
@@ -6,7 +7,7 @@ namespace Orleans.Transactions
     /// <summary>
     /// Interface that allows a component to take part in transaction orchestration.
     /// </summary>
-    public interface ITransactionalResource
+    public interface ITransactionalResource : IEquatable<ITransactionalResource>
     {
         /// <summary>
         /// Perform the prepare phase of the commit protocol. To succeed the resource

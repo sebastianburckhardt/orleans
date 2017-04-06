@@ -23,4 +23,10 @@ namespace Orleans.Core
         /// </summary>
         Task ReadStateAsync();
     }
+
+    internal interface IStorage<out TState> : IStorage
+        where TState : class, new()
+    {
+        TState State { get; }
+    }
 }

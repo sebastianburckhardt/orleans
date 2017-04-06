@@ -86,10 +86,7 @@ namespace Orleans.Transactions
             List<Task<bool>> prepareTasks = new List<Task<bool>>(transactionInfo.WriteSet.Count);
             foreach (var g in transactionInfo.WriteSet.Keys)
             {
-                TransactionalResourceVersion write;
-                write.TransactionId = transactionInfo.TransactionId;
-                write.WriteNumber = transactionInfo.WriteSet[g];
-
+                TransactionalResourceVersion write = TransactionalResourceVersion.Create(transactionInfo.TransactionId, transactionInfo.WriteSet[g]);
                 TransactionalResourceVersion? read = null;
                 if (transactionInfo.ReadSet.ContainsKey(g))
                 {

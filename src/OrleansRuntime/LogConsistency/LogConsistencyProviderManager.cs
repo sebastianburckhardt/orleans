@@ -67,6 +67,11 @@ namespace Orleans.Runtime.LogConsistency
             return runtime.GetInvokeInterceptor();
         }
 
+        public Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc) where TExtension : IGrainExtension where TExtensionInterface : IGrainExtension
+        {
+            return runtime.BindExtension<TExtension, TExtensionInterface>(newExtensionFunc);
+        }
+
         public Logger GetLogger(string loggerName)
         {
             return LogManager.GetLogger(loggerName, LoggerType.Provider);

@@ -8,7 +8,7 @@ using Orleans.Storage;
 
 namespace Orleans.Runtime.Storage
 {
-    internal class StorageProviderManager : IStorageProviderManager, IStorageProviderRuntime
+    internal class StorageProviderManager : IStorageProviderManager, IStorageProviderRuntime, IKeyedServiceCollection<string,IStorageProvider>
     {
         private readonly IProviderRuntime providerRuntime;
         private ProviderLoader<IStorageProvider> storageProviderLoader;
@@ -72,6 +72,11 @@ namespace Orleans.Runtime.Storage
             return providerRuntime.GetInvokeInterceptor();
         }
 
+        public Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc) where TExtension : IGrainExtension where TExtensionInterface : IGrainExtension
+        {
+            return providerRuntime.BindExtension<TExtension, TExtensionInterface>(newExtensionFunc);
+        }
+
         /// <summary>
         /// Get list of providers loaded in this silo.
         /// </summary>
@@ -111,6 +116,12 @@ namespace Orleans.Runtime.Storage
         {
             await provider.Init(name, this, config);
             storageProviderLoader.AddProvider(name, provider, config);
+        }
+
+        public IStorageProvider GetService(string key)
+        {
+            IStorageProvider provider;
+            return TryGetProvider(key, out provider) ? provider : default(IStorageProvider);
         }
     }
 }

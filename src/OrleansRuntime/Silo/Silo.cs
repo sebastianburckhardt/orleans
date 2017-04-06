@@ -260,10 +260,16 @@ namespace Orleans.Runtime
             services.AddSingleton<ClientObserverRegistrar>();
             services.AddSingleton<SiloProviderRuntime>();
             services.AddFromExisting<IStreamProviderRuntime, SiloProviderRuntime>();
+            services.AddFromExisting<IProviderRuntime, SiloProviderRuntime>();
             services.AddSingleton<ImplicitStreamSubscriberTable>();
             services.AddSingleton<MessageFactory>();
             services.AddSingleton<Factory<string, Logger>>(LogManager.GetLogger);
             services.AddSingleton<CodeGeneratorManager>();
+            services.AddSingleton<StorageProviderManager>();
+            services.AddFromExisting<IStorageProviderManager, StorageProviderManager>();
+            services.AddFromExisting<IKeyedServiceCollection<string,IStorageProvider>, StorageProviderManager>();
+            services.AddSingleton<IStorageProvider>(sp => sp.GetRequiredService<IStorageProviderManager>().GetDefaultProvider());
+
 
             services.AddSingleton<IGrainRegistrar<GlobalSingleInstanceRegistration>, GlobalSingleInstanceRegistrar>();
             services.AddSingleton<IGrainRegistrar<ClusterLocalRegistration>, ClusterLocalRegistrar>();
@@ -286,8 +292,9 @@ namespace Orleans.Runtime
             // transactions
             services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
             services.AddSingleton<IKeyedServiceCollection<string, ITransactionServiceFactory>, TransactionServiceFactoryCollection>();
-            services.AddSingleton< ITransactionServiceFactory>(sp => sp.GetServiceByName<ITransactionServiceFactory>(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType));
+            services.AddSingleton<ITransactionServiceFactory>(sp => sp.GetServiceByName<ITransactionServiceFactory>(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType));
             services.AddTransient<InClusterTransactionManager>();
+            services.AddTransient(typeof(ITransactionalState<>), typeof(TransactionalState<>));
             services.AddSingleton<ITransactionAgent, TransactionAgent>();
             services.AddSingleton<Lazy<ITransactionAgent>>(sp => new Lazy<ITransactionAgent>(sp.GetRequiredService<ITransactionAgent>));
 
@@ -575,7 +582,7 @@ namespace Orleans.Runtime
 //            if (logger.IsVerbose) {  logger.Verbose("System grains created successfully."); }
 
             // Initialize storage providers once we have a basic silo runtime environment operating
-            storageProviderManager = new StorageProviderManager(grainFactory, Services, siloProviderRuntime);
+            storageProviderManager = Services.GetRequiredService<StorageProviderManager>();
             scheduler.QueueTask(
                 () => storageProviderManager.LoadStorageProviders(GlobalConfig.ProviderConfigurations),
                 providerManagerSystemTarget.SchedulingContext)

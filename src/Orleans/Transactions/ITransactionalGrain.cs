@@ -53,7 +53,7 @@ namespace Orleans.Transactions
         Task Commit(long transactionId);
     }
 
-    internal static class TransactionalGrainExtensions
+    public static class TransactionalGrainExtensions
     {
         public static ITransactionalResource AsTransactionalResource(this ITransactionalGrain grain)
         {
@@ -62,7 +62,7 @@ namespace Orleans.Transactions
 
         [Serializable]
         [Immutable]
-        internal class TransactionalResourceGrainWrapper : ITransactionalResource
+        internal sealed class TransactionalResourceGrainWrapper : ITransactionalResource
         {
             private readonly ITransactionalGrain grain;
 
@@ -84,6 +84,29 @@ namespace Orleans.Transactions
             public Task Commit(long transactionId)
             {
                 return this.grain.Commit(transactionId);
+            }
+
+            public bool Equals(ITransactionalResource other)
+            {
+                return Equals((object) other);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != this.GetType()) return false;
+                return Equals((TransactionalResourceGrainWrapper)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return grain?.GetHashCode() ?? 0;
+            }
+
+            private bool Equals(TransactionalResourceGrainWrapper other)
+            {
+                return Equals(grain, other.grain);
             }
         }
     }

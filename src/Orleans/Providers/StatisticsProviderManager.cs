@@ -31,6 +31,11 @@ namespace Orleans.Providers
             return runtime.GetInvokeInterceptor();
         }
 
+        public Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc) where TExtension : IGrainExtension where TExtensionInterface : IGrainExtension
+        {
+            return runtime.BindExtension<TExtension, TExtensionInterface>(newExtensionFunc);
+        }
+
         public async Task<string> LoadProvider(IDictionary<string, ProviderCategoryConfiguration> configs)
         {
             statisticsProviderLoader = new ProviderLoader<IProvider>();

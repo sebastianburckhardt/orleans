@@ -12,6 +12,6 @@ namespace Orleans.Facet
         /// <summary>
         /// Aquires factory deligate for the type of facet being created.
         /// </summary>
-        public abstract Factory<object> GetFactory(IServiceProvider serviceProvider, Type propertyType, string propertyName);
+        public abstract Factory<object> GetFactory(IServiceProvider serviceProvider, Type parameterType, string parameterName);
     }
 }

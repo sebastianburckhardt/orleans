@@ -51,6 +51,26 @@ namespace UnitTests.TransactionsTests
         }
 
         [Fact, TestCategory("Transactions")]
+        public async Task MultiGrainFacetedTransactionTest()
+        {
+            List<ISimpleTransactionalGrain> grains = new List<ISimpleTransactionalGrain>();
+
+            for (int i = 0; i < 5; i++)
+            {
+                grains.Add(GrainFactory.GetGrain<ISimpleTransactionalGrain>(i));
+            }
+
+            IFacetedTransactionCoordinatorGrain coordinator = GrainFactory.GetGrain<IFacetedTransactionCoordinatorGrain>(0);
+
+            await coordinator.MultiGrainTransaction(grains, 5);
+
+            foreach (var g in grains)
+            {
+                Assert.Equal(5, await g.GetLatest());
+            }
+        }
+
+        [Fact, TestCategory("Transactions")]
         public async Task MultiWriteToSingleGrainTransactionTest()
         {
             List<ISimpleTransactionalGrain> grains = new List<ISimpleTransactionalGrain>();

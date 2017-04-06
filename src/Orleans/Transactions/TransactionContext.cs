@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Messaging;
+using Orleans.Concurrency;
+using Orleans.Serialization;
 
 namespace Orleans.Transactions
 {
@@ -134,11 +137,21 @@ namespace Orleans.Transactions
     }
 
     [Serializable]
+    [Immutable]
     [DebuggerDisplay("Id={TransactionId} WriteNumber={WriteNumber}")]
     public struct TransactionalResourceVersion : IEquatable<TransactionalResourceVersion>
     {
-        public long TransactionId;
-        public int WriteNumber;
+        public long TransactionId { get; private set; }
+        public int WriteNumber { get; private set; }
+
+        public static TransactionalResourceVersion Create(long transactionId, int writeNumber)
+        {
+            return new TransactionalResourceVersion
+            {
+                TransactionId = transactionId,
+                WriteNumber = writeNumber
+            };
+        }
 
         #region operators
         public static bool operator ==(TransactionalResourceVersion v1, TransactionalResourceVersion v2)
