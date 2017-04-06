@@ -65,10 +65,7 @@ namespace Orleans.Transactions
             // NOTE: this result is not strictly correct if there are NO active transactions
             // but for all purposes in which this is used it is still valid.
             // TODO: consider renaming this or handling the no active transactions case.
-            lock (lockObj)
-            {
-                return smallestActiveTransactionId;
-            }
+            return Interlocked.Read(ref smallestActiveTransactionId);
         }
 
         public long GetHighestActiveTransactionId()
@@ -85,10 +82,7 @@ namespace Orleans.Transactions
 
         public void PopSmallestActiveTransactionId()
         {
-            lock (lockObj)
-            {
-                smallestActiveTransactionId++;
-            }
+            Interlocked.Increment(ref smallestActiveTransactionId);
         }
 
         private void AllocateTransactionId(object args)
