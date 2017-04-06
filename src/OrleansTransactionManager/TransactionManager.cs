@@ -1,6 +1,8 @@
 ﻿
+using System;
 using System.Collections.Generic;
 using System.Threading;
+using Orleans.Runtime;
 
 namespace Orleans.Transactions
 {
@@ -61,8 +63,15 @@ namespace Orleans.Transactions
         {
             while (true)
             {
-                dependencyEvent.WaitOne();
-                base.CheckDependenciesCompleted();
+                try
+                {
+                    dependencyEvent.WaitOne();
+                    base.CheckDependenciesCompleted();
+                }
+                catch (Exception exception)
+                {
+                    this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.DependencyCompletionLoop), exception);
+                }
             }
         }
 
@@ -70,8 +79,15 @@ namespace Orleans.Transactions
         {
             while (true)
             {
-                commitEvent.WaitOne();
-                base.GroupCommit();
+                try
+                {
+                    commitEvent.WaitOne();
+                    base.GroupCommit();
+                }
+                catch (Exception exception)
+                {
+                    this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.GroupCommitLoop), exception);
+                }
             }
         }
 
@@ -81,9 +97,16 @@ namespace Orleans.Transactions
             List<Transaction> transactions = new List<Transaction>();
             while (true)
             {
-                // Maybe impose a max per batch to decrease latency?
-                checkpointEvent.WaitOne();
-                base.Checkpoint(resources, transactions).Wait();
+                try
+                {
+                    // Maybe impose a max per batch to decrease latency?
+                    checkpointEvent.WaitOne();
+                    base.Checkpoint(resources, transactions).Wait();
+                }
+                catch(Exception exception)
+                {
+                    this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.CheckpointLoop), exception);
+                }
             }
         }
     }

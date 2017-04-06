@@ -41,7 +41,7 @@ namespace Orleans.Transactions
 
         private readonly Timer gcTimer;
 
-        private readonly Logger logger;
+        protected readonly Logger Logger;
 
         protected TransactionManagerBase(TransactionsConfiguration config)
         {
@@ -69,7 +69,7 @@ namespace Orleans.Transactions
 
             gcTimer = new Timer(GC);
             
-            logger = LogManager.GetLogger("TransactionManager");
+            this.Logger = LogManager.GetLogger("TransactionManager");
         }
 
         #region ITransactionManager
@@ -356,7 +356,7 @@ namespace Orleans.Transactions
             }
             catch (Exception e)
             {
-                logger.Error(0, "Group Commit error", e);
+                this.Logger.Error(0, "Group Commit error", e);
                 // Failure to get an acknowledgment of the commits from the log (e.g. timeout exception)
                 // will put the transactions in doubt. We crash and let this be handled in recovery.
                 // TODO: handle other exceptions more gracefuly
@@ -416,7 +416,7 @@ namespace Orleans.Transactions
             }
             catch (Exception e)
             {
-                logger.Error(0, "Failure during checkpoint", e);
+                this.Logger.Error(0, "Failure during checkpoint", e);
                 throw;
             }
 
@@ -449,7 +449,7 @@ namespace Orleans.Transactions
                 }
                 catch (Exception e)
                 {
-                    logger.Error(0, $"Failed to truncate log. LSN: {checkpointedLSN}", e);
+                    this.Logger.Error(0, $"Failed to truncate log. LSN: {checkpointedLSN}", e);
                 }
             }
 
