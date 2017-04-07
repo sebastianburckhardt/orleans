@@ -7,13 +7,12 @@ using System.Linq;
 using System.Net;
 using System.Runtime.Remoting.Messaging;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost.Extensions;
 using Orleans.TestingHost.Utils;
-using Orleans.Transactions;
+using System.Collections.Concurrent;
 
 namespace Orleans.TestingHost
 {
@@ -35,6 +34,7 @@ namespace Orleans.TestingHost
     /// Also make sure that your test project references your test grains and test grain interfaces 
     /// projects, and has CopyLocal=True set on those references [which should be the default].
     /// </remarks>
+    [Obsolete("Use TestCluster", false)]
     public class TestingSiloHost
     {
         /// <summary> Single instance of TestingSiloHost </summary>
@@ -47,7 +47,7 @@ namespace Orleans.TestingHost
         public SiloHandle Secondary { get; private set; }
         
         private readonly List<SiloHandle> additionalSilos = new List<SiloHandle>();
-        private readonly Dictionary<string, GeneratedAssembly> additionalAssemblies = new Dictionary<string, GeneratedAssembly>();
+        private readonly IDictionary<string, GeneratedAssembly> additionalAssemblies = new ConcurrentDictionary<string, GeneratedAssembly>();
 
         private TestingSiloOptions siloInitOptions { get; set; }
 

@@ -64,6 +64,7 @@
     <Compile Include="Core\ISiloRuntimeClient.cs" />
     <Compile Include="Facet\FacetedConstructorInfo.cs" />
     <Compile Include="Messaging\ObjectPool.cs" />
+    <Compile Include="Placement\PlacementTarget.cs" />
     <Compile Include="ReminderService\ReminderRegistry.cs" />
     <Compile Include="Services\GrainService.cs" />
     <Compile Include="Services\GrainServiceClient.cs" />
@@ -207,7 +208,6 @@
     <Compile Include="Transactions\TMProxyDirectoryGrain.cs" />
     <Compile Include="Transactions\TransactionAgent.cs" />
     <Compile Include="Transactions\TransactionAgentTest.cs" />
-    <Compile Include="Transactions\TransactionalGrain.cs" />
     <Compile Include="Transactions\TransactionManagerGrain.cs" />
     <Compile Include="Transactions\TransactionServiceFactoryCollection.cs" />
     <Compile Include="Transactions\TransactionServiceGrainFactory.cs" />

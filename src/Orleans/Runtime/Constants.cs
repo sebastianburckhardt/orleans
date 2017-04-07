@@ -99,6 +99,8 @@ namespace Orleans.Runtime
             {PULLING_AGENTS_MANAGER_SYSTEM_TARGET_TYPE_CODE, "PullingAgentsManagerSystemTarget"},
         };
 
+        public static ushort DefaultInterfaceVersion = 1;
+
         public static string SystemTargetName(GrainId id)
         {
             string name;

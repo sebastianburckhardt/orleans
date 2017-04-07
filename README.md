@@ -48,7 +48,7 @@ PM> Install-Package Microsoft.Orleans.Client
 
 The stable production-quality release is located [here](https://github.com/dotnet/orleans/releases/latest).
 
-The latest clean development branch build from CI is located: [here](https://ci.dot.net/job/dotnet_orleans/job/master/job/netfx/lastStableBuild/artifact/)
+The latest clean development branch build from CI is located: [here](https://ci.dot.net/job/dotnet_orleans/job/master/job/netfx-bvt/lastStableBuild/artifact/)
 
 ### Building From Source
 
@@ -92,6 +92,11 @@ var friend = GrainClient.GrainFactory.GetGrain<IHello>(0);
 // Send a greeting to the grain and await the response.
 Console.WriteLine(await friend.SayHello("Good morning, my friend!"));
 ```
+
+Blog
+=========
+[Orleans Blog](https://blogs.msdn.microsoft.com/orleans/) is a place to share our thoughts, plans, learnings, tips and tricks, and ideas, crazy and otherwise, which don’t easily fit the documentation format. We would also like to see here posts from the community members, sharing their experiences, ideas, and wisdom. 
+So, welcome to Orleans Blog, both as a reader and as a blogger!
 
 Community
 =========

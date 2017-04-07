@@ -107,6 +107,7 @@
     <Compile Include="ISimpleGenericGrain.cs" />
     <Compile Include="CodegenTestInterfaces.cs" />
     <Compile Include="ISimpleGrainWithAsyncMethods.cs" />
+    <Compile Include="ISimpleTransactionalGrain.cs" />
     <Compile Include="IStatelessWorkerGrain.cs" />
     <Compile Include="ISimpleObserverableGrain.cs" />
     <Compile Include="IObserverGrain.cs" />
@@ -132,6 +133,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializerExclusions.cs" />
     <Compile Include="SerializerTestTypes.cs" />
+    <Compile Include="SlowConsumingGrains\ISlowConsumingGrain.cs" />
     <Compile Include="SQLAdapter\ICustomerGrain.cs" />
     <Compile Include="SQLAdapter\IDeviceGrain.cs" />
     <Compile Include="UnitTestGrainInterfaces.cs" />

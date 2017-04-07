@@ -28,7 +28,8 @@ namespace Orleans.Runtime
                 IsReadOnly = (options & InvokeMethodOptions.ReadOnly) != 0,
                 IsUnordered = (options & InvokeMethodOptions.Unordered) != 0,
                 IsTransactionRequired = (options & InvokeMethodOptions.TransactionRequiresNew) != 0 || (options & InvokeMethodOptions.TransactionRequired) != 0,
-                BodyObject = request
+                BodyObject = request,
+                IsUsingInterfaceVersions = request.InterfaceVersion > 0,
             };
 
             TransactionInfo transactionInfo = message.IsTransactionRequired ? TransactionContext.GetTransactionInfo() : null;
