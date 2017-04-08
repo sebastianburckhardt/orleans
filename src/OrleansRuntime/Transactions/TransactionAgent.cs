@@ -269,11 +269,18 @@ namespace Orleans.Transactions
                             catch (Exception e)
                             {
                                 logger.Error(ErrorCode.Transactions_TMError, "", e);
-
-                                for (int i = 0; i < commitCompletions.Count; i++)
+                                
+                                // Propagate the exception to every transaction in the request.
+                                foreach (var tx in committingTransactions)
                                 {
                                     TransactionsStatisticsGroup.OnTransactionInDoubt();
-                                    commitCompletions[i].SetException(new OrleansTransactionInDoubtException(committingTransactions[i].TransactionId));
+                                    
+                                    TaskCompletionSource<bool> completion;
+                                    if (commitCompletions.TryRemove(tx.TransactionId, out completion))
+                                    {
+                                        outstandingCommits.Remove(tx.TransactionId);
+                                        completion.SetException(new OrleansTransactionInDoubtException(tx.TransactionId));
+                                    }
                                 }
 
                                 tmCommitProxy = null; // Force refreshing the reference.
