@@ -130,8 +130,7 @@ namespace Orleans.CodeGeneration
             {
                 return ((TransactionAttribute)a[0]).Requirement == TransactionOption.Required;
             }
-
-            return methodInfo.DeclaringType.GetInterfaces().Any(i => (i == typeof(ITransactionalGrain)));
+            return false;
         }
 
         public static Dictionary<int, Type> GetRemoteInterfaces(Type type, bool checkIsGrainInterface = true)

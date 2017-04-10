@@ -195,7 +195,6 @@
     <Compile Include="Transactions\MemoryTransactionLog.cs" />
     <Compile Include="Transactions\Transaction.cs" />
     <Compile Include="Transactions\TransactionalExtension.cs" />
-    <Compile Include="Transactions\TransactionalGrain.cs" />
     <Compile Include="Transactions\TransactionalState.cs" />
     <Compile Include="Transactions\TransactionalStateAttribute.cs" />
     <Compile Include="Transactions\TransactionalStateConfiguration.cs" />
@@ -447,7 +446,6 @@
     <Compile Include="Utils\Utils.cs" />
     <Compile Include="Transactions\ITMProxyDirectoryGrain.cs" />
     <Compile Include="Transactions\ITransactionAgent.cs" />
-    <Compile Include="Transactions\ITransactionalGrain.cs" />
     <Compile Include="Transactions\ITransactionManagerService.cs" />
     <Compile Include="Transactions\OrleansTransactionException.cs" />
     <Compile Include="Transactions\TransactionContext.cs" />

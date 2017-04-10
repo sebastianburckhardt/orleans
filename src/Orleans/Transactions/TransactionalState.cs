@@ -505,10 +505,6 @@ namespace Orleans.Transactions
         /// <returns></returns>
         public async Task BindAsync(Grain containerGrain)
         {
-            if (grain is ITransactionalGrain)
-            {
-                throw new InvalidOperationException("Transactional State facets cannot be used in transactional grains.");
-            }
             this.grain = containerGrain;
             this.logger = LogManager.GetLogger(grain.GetType().Name).GetSubLogger(GetType().Name);
 
