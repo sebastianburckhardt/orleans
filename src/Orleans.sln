@@ -233,12 +233,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansTransactionManager",
 	ProjectSection(ProjectDependencies) = postProject
 		{E782DD19-51F7-4F66-8217-BACAC33767E4} = {E782DD19-51F7-4F66-8217-BACAC33767E4}
 	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Versions", "Versions", "{2C188181-1B01-4E77-A83D-F6A2EA855BE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestVersionGrains", "..\test\Versions\TestVersionGrains\TestVersionGrains.csproj", "{668AC915-7C11-4EC7-A899-BB49011E529A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestVersionGrains2", "..\test\Versions\TestVersionGrains2\TestVersionGrains2.csproj", "{40FF243D-DF4D-4299-B3CF-C50DC089DBF4}"
->>>>>>> bb1db69b907aa5da93370fb868a77b55bba1e627
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
