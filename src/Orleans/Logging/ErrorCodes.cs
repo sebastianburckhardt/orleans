@@ -1118,6 +1118,7 @@ namespace Orleans
         Transactions_TMError = TransactionsBase + 3,
         Transactions_GetTMProxy = TransactionsBase + 4,
         Transactions_PrepareFailed = TransactionsBase + 5,
+        Transactions_IdAllocationFailed = TransactionsBase + 6,
 
         TransactionManagerBase = Runtime + 4600,
         TransactionManager_TMEndpointConfigError = TransactionManagerBase + 1,

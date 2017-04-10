@@ -57,7 +57,7 @@ namespace Orleans.Transactions
                 log = new MemoryTransactionLog();
             }
 
-            activeTransactionsTracker = new ActiveTransactionsTracker(config, log);
+            activeTransactionsTracker = new ActiveTransactionsTracker(config, log, LogManager.GetLogger);
 
             transactionsTable = new ConcurrentDictionary<long, Transaction>(2, 1000000);
 

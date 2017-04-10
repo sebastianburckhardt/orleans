@@ -1,26 +1,28 @@
 ﻿using System;
 using System.Threading;
+using Orleans.Runtime;
 
 namespace Orleans.Transactions
 {
-    class ActiveTransactionsTracker
+    internal class ActiveTransactionsTracker
     {
-        private TransactionsConfiguration config;
-        private TransactionLog log;
+        private readonly TransactionsConfiguration config;
+        private readonly TransactionLog log;
+        private readonly Logger logger;
+        private readonly object lockObj;
 
         private long smallestActiveTransactionId;
         private long highestActiveTransactionId;
 
-        private object lockObj;
-
         private long maxAllocatedTransactionId;
-        private Thread allocationThread;
-        private AutoResetEvent allocationEvent;
+        private readonly Thread allocationThread;
+        private readonly AutoResetEvent allocationEvent;
 
-        public ActiveTransactionsTracker(TransactionsConfiguration config, TransactionLog log)
+        public ActiveTransactionsTracker(TransactionsConfiguration config, TransactionLog log, Factory<string, Logger> logFactory)
         {
             this.config = config;
             this.log = log;
+            this.logger = logFactory(nameof(ActiveTransactionsTracker));
             lockObj = new object();
             allocationEvent = new AutoResetEvent(true);
 
@@ -89,17 +91,27 @@ namespace Orleans.Transactions
         {
             while (true)
             {
-                allocationEvent.WaitOne();
-
-                lock (lockObj)
+                try
                 {
-                    if (maxAllocatedTransactionId - highestActiveTransactionId <= config.AvailableTransactionIdThreshold)
-                    {
-                        var batchSize = config.TransactionIdAllocationBatchSize;
-                        log.UpdateStartRecord(maxAllocatedTransactionId + batchSize).Wait();
+                    allocationEvent.WaitOne();
 
-                        maxAllocatedTransactionId += batchSize;
+                    lock (lockObj)
+                    {
+                        if (maxAllocatedTransactionId - highestActiveTransactionId <= config.AvailableTransactionIdThreshold)
+                        {
+                            var batchSize = config.TransactionIdAllocationBatchSize;
+                            log.UpdateStartRecord(maxAllocatedTransactionId + batchSize).GetAwaiter().GetResult();
+
+                            maxAllocatedTransactionId += batchSize;
+                        }
                     }
+                }
+                catch (Exception exception)
+                {
+                    this.logger.Warn(
+                        ErrorCode.Transactions_IdAllocationFailed,
+                        "Ignoring exception in " + nameof(this.AllocateTransactionId),
+                        exception);
                 }
             }
         }
