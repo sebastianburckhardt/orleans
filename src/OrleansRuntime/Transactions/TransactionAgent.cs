@@ -149,8 +149,9 @@ namespace Orleans.Transactions
             List<TimeSpan> startingTransactions = new List<TimeSpan>();
             List<TaskCompletionSource<long>> startCompletions = new List<TaskCompletionSource<long>>();
 
-            while (transactionCommitQueue.Count > 0 || transactionStartQueue.Count > 0)
+            while (transactionCommitQueue.Count > 0 || transactionStartQueue.Count > 0 || outstandingCommits.Count > 0)
             {
+                await Task.Yield();
                 await WaitForWork();
                 
                 int startCount = transactionStartQueue.Count;
@@ -219,7 +220,7 @@ namespace Orleans.Transactions
                         });
                 }
 
-                if (committingTransactions.Count > 0 && commitTransactionsTask.IsCompleted)
+                if ((committingTransactions.Count > 0 || outstandingCommits.Count > 0) && commitTransactionsTask.IsCompleted)
                 {
                     logger.Verbose(ErrorCode.Transactions_SendingTMRequest, "Calling TM to commit {0} transactions", committingTransactions.Count);
 
