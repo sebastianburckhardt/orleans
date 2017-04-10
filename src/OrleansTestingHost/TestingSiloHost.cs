@@ -578,7 +578,6 @@ namespace Orleans.TestingHost
         {
             bool doStartPrimary = false;
             bool doStartSecondary = false;
-            bool doStartTransactionService = false;
 
             if (options.StartFreshOrleans)
             {
@@ -592,10 +591,6 @@ namespace Orleans.TestingHost
                 if (options.StartSecondary)
                 {
                     doStartSecondary = true;
-                }
-                if (options.StartTransactionService)
-                {
-                    doStartTransactionService = true;
                 }
             }
             else

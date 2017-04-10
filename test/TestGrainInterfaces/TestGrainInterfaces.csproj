@@ -136,6 +136,8 @@
     <Compile Include="SlowConsumingGrains\ISlowConsumingGrain.cs" />
     <Compile Include="SQLAdapter\ICustomerGrain.cs" />
     <Compile Include="SQLAdapter\IDeviceGrain.cs" />
+    <Compile Include="Transactions\ISingleStateTransactionalGrain.cs" />
+    <Compile Include="Transactions\TransactionTestConstants.cs" />
     <Compile Include="UnitTestGrainInterfaces.cs" />
   </ItemGroup>
   <ItemGroup>

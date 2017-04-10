@@ -92,7 +92,6 @@ namespace Orleans.TestingHost
             this.BaseSiloPort = basePorts.Item1;
             this.BaseGatewayPort = basePorts.Item2;
             this.ExtendedFallbackOptions = extendedFallbackOptions;
-            this.EnableTransactions = false;
         }
 
         private static FallbackOptions BindExtendedOptions(IConfiguration extendedConfiguration)
@@ -115,8 +114,6 @@ namespace Orleans.TestingHost
         public int BaseSiloPort { get; set; }
 
         public short InitialSilosCount { get; set; }
-
-        public bool EnableTransactions { get; set; }
 
         /// <summary>Gets or sets the cluster configuration. If no value is specified when getting the configuration, a new one will be built with <see cref="BuildClusterConfiguration()"/></summary>
         public ClusterConfiguration ClusterConfiguration

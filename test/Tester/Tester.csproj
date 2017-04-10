@@ -101,7 +101,12 @@
     <Compile Include="TestStreamProviders\FailureInjectionStreamProvider.cs" />
     <Compile Include="TestStreamProviders\TestAzureTableStorageStreamFailureHandler.cs" />
     <Compile Include="TestUtils.cs" />
-    <Compile Include="TransactionsTests\BasicTransactionsTests.cs" />
+    <Compile Include="TransactionsTests\Azure\GoldenPathTransactionAzureTests.cs" />
+    <Compile Include="TransactionsTests\Runners\GrainFaultSingleStateTransactionTestRunner.cs" />
+    <Compile Include="TransactionsTests\Runners\GoldenPathSingleStateTransactionTestRunner.cs" />
+    <Compile Include="TransactionsTests\Memory\GoldenPathTransactionMemoryTests.cs" />
+    <Compile Include="TransactionsTests\Azure\GrainFaultTransactionAzureTests.cs" />
+    <Compile Include="TransactionsTests\Memory\GrainFaultTransactionMemoryTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\src\Build\Version.txt">

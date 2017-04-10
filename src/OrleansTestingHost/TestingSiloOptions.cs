@@ -23,7 +23,6 @@ namespace Orleans.TestingHost
 
         /// <summary> If set to true, will start the client </summary>
         public bool StartClient { get; set; }
-        public bool StartTransactionService { get; set; }
 
         /// <summary> Get or set the cluster config file </summary>
         public FileInfo SiloConfigFile { get; set; }
@@ -69,7 +68,6 @@ namespace Orleans.TestingHost
             StartPrimary = true;
             StartSecondary = true;
             StartClient = true;
-            StartTransactionService = false;
             PickNewDeploymentId = true;
             // BasePort = -1; // use default from configuration file
             BasePort = ThreadSafeRandom.Next(2000, 9999);
@@ -91,7 +89,6 @@ namespace Orleans.TestingHost
                 StartPrimary = StartPrimary,
                 StartSecondary = StartSecondary,
                 StartClient = StartClient,
-                StartTransactionService = StartTransactionService,
                 SiloConfigFile = SiloConfigFile,
                 PickNewDeploymentId = PickNewDeploymentId,
                 BasePort = BasePort,
