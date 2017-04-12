@@ -19,7 +19,7 @@ namespace Orleans.Transactions
         Unknown
     };
 
-    public abstract class TransactionManagerBase : ITransactionManager
+    public abstract class TransactionManagerBase : ITransactionManager, IDisposable
     {
         private TransactionsConfiguration config;
 
@@ -522,6 +522,21 @@ namespace Orleans.Transactions
             // Schedule next GC cycle
             //
             gcTimer.Change(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(-1));
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            System.GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this.activeTransactionsTracker.Dispose();
+                this.gcTimer.Dispose();
+            }
         }
     }
 }

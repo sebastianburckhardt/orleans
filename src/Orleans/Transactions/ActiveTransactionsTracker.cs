@@ -4,19 +4,20 @@ using Orleans.Runtime;
 
 namespace Orleans.Transactions
 {
-    internal class ActiveTransactionsTracker
+    internal class ActiveTransactionsTracker : IDisposable
     {
         private readonly TransactionsConfiguration config;
         private readonly TransactionLog log;
         private readonly Logger logger;
         private readonly object lockObj;
+        private readonly Thread allocationThread;
+        private readonly AutoResetEvent allocationEvent;
 
         private long smallestActiveTransactionId;
         private long highestActiveTransactionId;
 
         private long maxAllocatedTransactionId;
-        private readonly Thread allocationThread;
-        private readonly AutoResetEvent allocationEvent;
+        private volatile bool disposed;
 
         public ActiveTransactionsTracker(TransactionsConfiguration config, TransactionLog log, Factory<string, Logger> logFactory)
         {
@@ -25,7 +26,6 @@ namespace Orleans.Transactions
             this.logger = logFactory(nameof(ActiveTransactionsTracker));
             lockObj = new object();
             allocationEvent = new AutoResetEvent(true);
-
             allocationThread = new Thread(AllocateTransactionId);
         }
 
@@ -89,11 +89,12 @@ namespace Orleans.Transactions
 
         private void AllocateTransactionId(object args)
         {
-            while (true)
+            while (!this.disposed)
             {
                 try
                 {
                     allocationEvent.WaitOne();
+                    if (this.disposed) return;
 
                     lock (lockObj)
                     {
@@ -106,6 +107,12 @@ namespace Orleans.Transactions
                         }
                     }
                 }
+#if !NETSTANDARD
+                catch (ThreadAbortException)
+                {
+                    throw;
+                }
+#endif
                 catch (Exception exception)
                 {
                     this.logger.Warn(
@@ -113,6 +120,16 @@ namespace Orleans.Transactions
                         "Ignoring exception in " + nameof(this.AllocateTransactionId),
                         exception);
                 }
+            }
+        }
+
+        public void Dispose()
+        {
+            if (!this.disposed)
+            {
+                this.disposed = true;
+                this.allocationEvent.Set();
+                this.allocationEvent.Dispose();
             }
         }
     }
