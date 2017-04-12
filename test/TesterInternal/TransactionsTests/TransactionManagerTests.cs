@@ -9,38 +9,40 @@ namespace UnitTests.TransactionsTests
     /// <summary>
     /// Tests for operation of Orleans Transaction Manager
     /// </summary>
+    [TestCategory("Transactions")]
     public class TransactionManagerTests
     {
         private ITransactionManager tm;
 
         public TransactionManagerTests()
         {
+            // TODO: need to clean up the Transaction Manager after the test finishes
             tm = new TransactionManager(new TransactionsConfiguration());
             CancellationTokenSource cts = new CancellationTokenSource();
             tm.StartAsync().Wait(cts.Token);
         }
 
-        [Fact, TestCategory("Transactions")]
-        public void StartCommitTransactionTest()
+        [Fact]
+        public async Task StartCommitTransaction()
         {
             var id = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var info = new TransactionInfo(id);
             tm.CommitTransaction(info);
-            WaitForTransactionCommit(id);
+            await WaitForTransactionCommit(id);
         }
 
         
-        [Fact, TestCategory("Transactions")]
-        public async Task TransactionTimeoutTest()
+        [Fact]
+        public async Task TransactionTimeout()
         {
             var id = tm.StartTransaction(TimeSpan.FromSeconds(1));
             var info = new TransactionInfo(id);
-            Thread.Sleep(3000);
+            await Task.Delay(3000);
 
             try
             {
                 tm.CommitTransaction(info);
-                WaitForTransactionCommit(id);
+                await WaitForTransactionCommit(id);
                 Assert.True(false, "Transaction commit succeeded when it should have timed out");
             }
             catch (OrleansTransactionAbortedException e)
@@ -49,24 +51,24 @@ namespace UnitTests.TransactionsTests
             }
         }
 
-        [Fact, TestCategory("Transactions")]
-        public void DependentTransactionTest()
+        [Fact]
+        public async Task DependentTransaction()
         {
             var id1 = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var id2 = tm.StartTransaction(TimeSpan.FromMinutes(2));
 
             var info = new TransactionInfo(id1);
             tm.CommitTransaction(info);
-            WaitForTransactionCommit(id1);
+            await WaitForTransactionCommit(id1);
 
             var info2 = new TransactionInfo(id2);
             info2.DependentTransactions.Add(id1);
             tm.CommitTransaction(info2);
-            WaitForTransactionCommit(id2);
+            await WaitForTransactionCommit(id2);
         }
 
-        [Fact, TestCategory("Transactions")]
-        public void OutOfOrderCommitTransactionTest()
+        [Fact]
+        public async Task OutOfOrderCommitTransaction()
         {
             var id1 = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var id2 = tm.StartTransaction(TimeSpan.FromMinutes(2));
@@ -81,11 +83,11 @@ namespace UnitTests.TransactionsTests
             var info = new TransactionInfo(id1);
             tm.CommitTransaction(info);
 
-            WaitForTransactionCommit(id2);
+            await WaitForTransactionCommit(id2);
         }
 
-        [Fact, TestCategory("Transactions")]
-        public async Task CascadingAbortTransactionTest()
+        [Fact]
+        public async Task CascadingAbortTransaction()
         {
             var id1 = tm.StartTransaction(TimeSpan.FromMinutes(1));
             var id2 = tm.StartTransaction(TimeSpan.FromMinutes(2));
@@ -101,7 +103,7 @@ namespace UnitTests.TransactionsTests
 
             try
             {
-                WaitForTransactionCommit(id2);
+                await WaitForTransactionCommit(id2);
                 Assert.True(false, "Transaction was not aborted");
             }
             catch (OrleansCascadingAbortException e)
@@ -111,27 +113,31 @@ namespace UnitTests.TransactionsTests
             }
         }
 
-        private void WaitForTransactionCommit(long transactionId)
+        private async Task WaitForTransactionCommit(long transactionId)
         {
-            while (true)
+            TimeSpan timeout = TimeSpan.FromSeconds(15);
+
+            var endTime = DateTime.UtcNow + timeout;
+            while (DateTime.UtcNow < endTime)
             {
                 OrleansTransactionAbortedException e;
                 var result = tm.GetTransactionStatus(transactionId, out e);
-                if (result == TransactionStatus.Committed)
+                switch (result)
                 {
-                    return;
+                    case TransactionStatus.Committed:
+                        return;
+                    case TransactionStatus.Aborted:
+                        throw e;
+                    case TransactionStatus.Unknown:
+                        throw new OrleansTransactionInDoubtException(transactionId);
+                    default:
+                        Assert.True(result == TransactionStatus.InProgress);
+                        await Task.Delay(100);
+                        break;
                 }
-                else if (result == TransactionStatus.Aborted)
-                {
-                    throw e;
-                }
-                else if (result == TransactionStatus.Unknown)
-                {
-                    throw new OrleansTransactionInDoubtException(transactionId);
-                }
-                Assert.True(result == TransactionStatus.InProgress);
-                Thread.Sleep(100);
             }
+
+            throw new TimeoutException("Timed out waiting for the transaction to complete");
         }
     }
 }
