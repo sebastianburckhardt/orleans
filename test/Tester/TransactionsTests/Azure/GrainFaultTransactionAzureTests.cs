@@ -12,7 +12,7 @@ namespace Tester.TransactionsTests
     [TestCategory("Functional"), TestCategory("Transactions"), TestCategory("Azure")]
     public class GrainFaultTransactionAzureTests : OrleansTestingBase, IClassFixture<GrainFaultTransactionAzureTests.Fixture>
     {
-        private readonly GrainFaultSingleStateTransactionTestRunner singleStateRunner;
+        private readonly GrainFaultTransactionTestRunner grainFaultTestRunner;
 
         public class Fixture : BaseAzureTestClusterFixture
         {
@@ -27,25 +27,25 @@ namespace Tester.TransactionsTests
         public GrainFaultTransactionAzureTests(Fixture fixture, ITestOutputHelper output)
         {
             fixture.EnsurePreconditionsMet();
-            this.singleStateRunner = new GrainFaultSingleStateTransactionTestRunner(fixture.GrainFactory, output);
+            this.grainFaultTestRunner = new GrainFaultTransactionTestRunner(fixture.GrainFactory, output);
         }
 
         [SkippableFact]
         public Task AbortTransactionOnExceptions()
         {
-            return singleStateRunner.AbortTransactionOnExceptions();
+            return grainFaultTestRunner.AbortTransactionOnExceptions();
         }
 
         [SkippableFact]
         public Task MultiGrainAbortTransactionOnExceptions()
         {
-            return singleStateRunner.MultiGrainAbortTransactionOnExceptions();
+            return grainFaultTestRunner.MultiGrainAbortTransactionOnExceptions();
         }
 
         [SkippableFact]
         public Task AbortTransactionOnOrphanCalls()
         {
-            return singleStateRunner.AbortTransactionOnOrphanCalls();
+            return grainFaultTestRunner.AbortTransactionOnOrphanCalls();
         }
     }
 }

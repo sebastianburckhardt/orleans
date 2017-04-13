@@ -1,26 +1,20 @@
 ﻿
-using System;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Transactions;
 using Test.TransactionsTests;
+using Tester.TransactionsTests;
 using UnitTests.GrainInterfaces;
 
 namespace UnitTests.Grains
 {
-    [Serializable]
-    public class GrainData
+    public class SingleStateDeactivatingTransactionalGrain : Grain, IDeactivatingTransactionTestGrain
     {
-        public int Value { get; set; }
-    }
+        private readonly IDeactivatingTransactionState<GrainData> data;
 
-    public class SingleStateTransactionalGrain : Grain, ITransactionTestGrain
-    {
-        private readonly ITransactionalState<GrainData> data;
-
-        public SingleStateTransactionalGrain(
+        public SingleStateDeactivatingTransactionalGrain(
             [TransactionalState(TransactionTestConstants.TransactionStore)]
-            ITransactionalState<GrainData> data)
+            IDeactivatingTransactionState<GrainData> data)
         {
             this.data = data;
         }
@@ -32,8 +26,9 @@ namespace UnitTests.Grains
             return TaskDone.Done;
         }
 
-        public Task Add(int numberToAdd)
+        public Task Add(int numberToAdd, TransactionDeactivationPhase deactivationPhase = TransactionDeactivationPhase.None)
         {
+            this.data.DeactivationPhase = deactivationPhase;
             this.data.State.Value += numberToAdd;
             this.data.Save();
             return TaskDone.Done;
@@ -44,11 +39,10 @@ namespace UnitTests.Grains
             return Task.FromResult<int>(this.data.State.Value);
         }
 
-        public Task<int> AddAndThrow(int numberToAdd)
+        public Task Deactivate()
         {
-            this.data.State.Value += numberToAdd;
-            this.data.Save();
-            throw new Exception($"{GetType().Name} test exception");
+            this.DeactivateOnIdle();
+            return TaskDone.Done;
         }
     }
 }

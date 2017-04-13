@@ -3,7 +3,7 @@ using Orleans.Facet;
 
 namespace Orleans.Transactions
 {
-    internal class TransactionalStateConfiguration
+    public class TransactionalStateConfiguration
     {
         public TransactionalStateConfiguration(FacetConfiguration facetConfig)
         {
@@ -20,7 +20,7 @@ namespace Orleans.Transactions
         public string StateName { get; }
     }
 
-    internal interface IConfigurableTransactionalState : IConfigurableFacet
+    public interface IConfigurableTransactionalState : IConfigurableFacet
     {
         void Configure(TransactionalStateConfiguration config);
     }

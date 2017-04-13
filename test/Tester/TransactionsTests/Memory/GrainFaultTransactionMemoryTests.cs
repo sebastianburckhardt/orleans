@@ -12,7 +12,7 @@ namespace Tester.TransactionsTests
     [TestCategory("BVT"), TestCategory("Transactions")]
     public class GrainFaultTransactionMemoryTests : OrleansTestingBase, IClassFixture<GrainFaultTransactionMemoryTests.Fixture>
     {
-        private readonly GrainFaultSingleStateTransactionTestRunner singleStateRunner;
+        private readonly GrainFaultTransactionTestRunner grainFaultTestRunner;
 
         public class Fixture : BaseTestClusterFixture
         {
@@ -26,25 +26,25 @@ namespace Tester.TransactionsTests
 
         public GrainFaultTransactionMemoryTests(Fixture fixture, ITestOutputHelper output)
         {
-            this.singleStateRunner = new GrainFaultSingleStateTransactionTestRunner(fixture.GrainFactory, output);
+            this.grainFaultTestRunner = new GrainFaultTransactionTestRunner(fixture.GrainFactory, output);
         }
 
         [Fact]
         public Task AbortTransactionOnExceptions()
         {
-            return singleStateRunner.AbortTransactionOnExceptions();
+            return grainFaultTestRunner.AbortTransactionOnExceptions();
         }
 
         [Fact]
         public Task MultiGrainAbortTransactionOnExceptions()
         {
-            return singleStateRunner.MultiGrainAbortTransactionOnExceptions();
+            return grainFaultTestRunner.MultiGrainAbortTransactionOnExceptions();
         }
 
         [Fact]
         public Task AbortTransactionOnOrphanCalls()
         {
-            return singleStateRunner.AbortTransactionOnOrphanCalls();
+            return grainFaultTestRunner.AbortTransactionOnOrphanCalls();
         }
     }
 }

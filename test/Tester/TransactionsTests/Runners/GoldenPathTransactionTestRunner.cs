@@ -11,12 +11,12 @@ using Xunit.Abstractions;
 
 namespace Tester.TransactionsTests
 {
-    public class GoldenPathSingleStateTransactionTestRunner
+    public class GoldenPathTransactionTestRunner
     {
         private readonly IGrainFactory grainFactory;
         private readonly ITestOutputHelper output;
 
-        public GoldenPathSingleStateTransactionTestRunner(IGrainFactory grainFactory, ITestOutputHelper output)
+        public GoldenPathTransactionTestRunner(IGrainFactory grainFactory, ITestOutputHelper output)
         {
             this.output = output;
             this.grainFactory = grainFactory;
@@ -24,19 +24,17 @@ namespace Tester.TransactionsTests
 
         public async Task SingleGrainReadTransaction()
         {
-            output.WriteLine("************************ SingleGrainReadTransaction *********************************");
             const int expected = 0;
 
-            ISingleStateTransactionalGrain grain = grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid());
+            ITransactionTestGrain grain = grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
             int actual = await grain.Get();
             Assert.Equal(expected, actual);
         }
 
         public async Task SingleGrainWriteTransaction()
         {
-            this.output.WriteLine("************************ SingleGrainWriteTransaction *********************************");
             const int delta = 5;
-            ISingleStateTransactionalGrain grain = this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid());
+            ITransactionTestGrain grain = this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
             int original = await grain.Get();
             await grain.Add(delta);
             int expected = original + delta;
@@ -46,16 +44,15 @@ namespace Tester.TransactionsTests
 
         public async Task MultiGrainWriteTransaction()
         {
-            this.output.WriteLine("************************ MultiGrainWriteTransaction *********************************");
             const int expected = 5;
             const int grainCount = TransactionTestConstants.MaxCoordinatedTransactions;
 
-            List<ISingleStateTransactionalGrain> grains =
+            List<ITransactionTestGrain> grains =
                 Enumerable.Range(0, grainCount)
-                    .Select(i => this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid()))
+                    .Select(i => this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid()))
                     .ToList();
 
-            ISingleStateTransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ISingleStateTransactionCoordinatorGrain>(Guid.NewGuid());
+            ITransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ITransactionCoordinatorGrain>(Guid.NewGuid());
 
             await coordinator.MultiGrainAdd(grains, expected);
 
@@ -68,16 +65,15 @@ namespace Tester.TransactionsTests
 
         public async Task MultiGrainReadWriteTransaction()
         {
-            this.output.WriteLine("************************ MultiGrainReadWriteTransaction *********************************");
             const int delta = 5;
             const int grainCount = TransactionTestConstants.MaxCoordinatedTransactions;
 
-            List<ISingleStateTransactionalGrain> grains =
+            List<ITransactionTestGrain> grains =
                 Enumerable.Range(0, grainCount)
-                    .Select(i => this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid()))
+                    .Select(i => this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid()))
                     .ToList();
 
-            ISingleStateTransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ISingleStateTransactionCoordinatorGrain>(Guid.NewGuid());
+            ITransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ITransactionCoordinatorGrain>(Guid.NewGuid());
 
             await coordinator.MultiGrainSet(grains, delta);
             await coordinator.MultiGrainDouble(grains);
@@ -92,14 +88,13 @@ namespace Tester.TransactionsTests
 
         public async Task MultiWriteToSingleGrainTransaction()
         {
-            this.output.WriteLine("************************ MultiWriteToSingleGrainTransaction *********************************");
             const int delta = 5;
             const int concurrentWrites = 3;
 
-            ISingleStateTransactionalGrain grain = this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid());
-            List<ISingleStateTransactionalGrain> grains = Enumerable.Repeat(grain, concurrentWrites).ToList();
+            ITransactionTestGrain grain = this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
+            List<ITransactionTestGrain> grains = Enumerable.Repeat(grain, concurrentWrites).ToList();
 
-            ISingleStateTransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ISingleStateTransactionCoordinatorGrain>(Guid.NewGuid());
+            ITransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ITransactionCoordinatorGrain>(Guid.NewGuid());
 
             await coordinator.MultiGrainAdd(grains, delta);
 

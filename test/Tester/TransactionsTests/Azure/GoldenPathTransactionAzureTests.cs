@@ -4,6 +4,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Test.TransactionsTests;
 using TestExtensions;
+using UnitTests.Grains;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,7 +13,7 @@ namespace Tester.TransactionsTests
     [TestCategory("Functional"), TestCategory("Transactions"), TestCategory("Azure")]
     public class GoldenPathTransactionAzureTests : OrleansTestingBase, IClassFixture<GoldenPathTransactionAzureTests.Fixture>
     {
-        private readonly GoldenPathSingleStateTransactionTestRunner singleStateRunner;
+        private readonly GoldenPathTransactionTestRunner goldenPathTestRunner;
 
         public class Fixture : BaseAzureTestClusterFixture
         {
@@ -27,37 +28,37 @@ namespace Tester.TransactionsTests
         public GoldenPathTransactionAzureTests(Fixture fixture, ITestOutputHelper output)
         {
             fixture.EnsurePreconditionsMet();
-            this.singleStateRunner = new GoldenPathSingleStateTransactionTestRunner(fixture.GrainFactory, output);
+            this.goldenPathTestRunner = new GoldenPathTransactionTestRunner(fixture.GrainFactory, output);
         }
 
         [SkippableFact]
         public Task SingleGrainReadTransaction()
         {
-            return singleStateRunner.SingleGrainReadTransaction();
+            return goldenPathTestRunner.SingleGrainReadTransaction();
         }
 
         [SkippableFact]
         public Task SingleGrainWriteTransaction()
         {
-            return singleStateRunner.SingleGrainWriteTransaction();
+            return goldenPathTestRunner.SingleGrainWriteTransaction();
         }
 
         [SkippableFact]
         public Task MultiGrainWriteTransaction()
         {
-            return singleStateRunner.MultiGrainWriteTransaction();
+            return goldenPathTestRunner.MultiGrainWriteTransaction();
         }
 
         [SkippableFact]
         public Task MultiGrainReadWriteTransaction()
         {
-            return singleStateRunner.MultiGrainReadWriteTransaction();
+            return goldenPathTestRunner.MultiGrainReadWriteTransaction();
         }
 
         [SkippableFact]
         public Task MultiWriteToSingleGrainTransaction()
         {
-            return singleStateRunner.MultiWriteToSingleGrainTransaction();
+            return goldenPathTestRunner.MultiWriteToSingleGrainTransaction();
         }
     }
 }

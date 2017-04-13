@@ -17,7 +17,7 @@ namespace Orleans.Transactions
     /// Stateful facet that respects Orleans transaction semantics
     /// </summary>
     /// <typeparam name="TState"></typeparam>
-    internal class TransactionalState<TState> : ITransactionalState<TState>, IConfigurableTransactionalState, ITransactionalResource, IGrainBinder
+    public class TransactionalState<TState> : ITransactionalState<TState>, IConfigurableTransactionalState, ITransactionalResource, IGrainBinder
         where TState : class, new()
     {
         private readonly ITransactionAgent transactionAgent;
@@ -440,6 +440,7 @@ namespace Orleans.Transactions
                 }
                 catch (Exception)
                 {
+                    //TODO: can't call deactivate on idle here, need to throw exception that triggers deactivation. - jbragg
                     grain.Runtime.DeactivateOnIdle(grain);
                     throw;
                 }

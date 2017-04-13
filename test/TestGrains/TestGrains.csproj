@@ -138,7 +138,12 @@
     <Compile Include="StreamCheckpoint.cs" />
     <Compile Include="StreamInterceptionGrain.cs" />
     <Compile Include="StuckGrain.cs" />
+    <Compile Include="Transactions\DeactivatingTransactionCoordinatorGrain.cs" />
+    <Compile Include="Transactions\DeactivatingTransactionState.cs" />
+    <Compile Include="Transactions\IDeactivatingTransactionState.cs" />
+    <Compile Include="Transactions\SingleStateDeactivatingTransactionalGrain.cs" />
     <Compile Include="Transactions\SingleStateTransactionalGrain.cs" />
+    <Compile Include="Transactions\TransactionCoordinatorGrain.cs" />
     <Compile Include="ValueTypeTestGrain.cs" />
   </ItemGroup>
   <ItemGroup>

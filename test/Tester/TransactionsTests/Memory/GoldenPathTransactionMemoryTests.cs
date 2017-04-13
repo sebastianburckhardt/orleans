@@ -12,7 +12,7 @@ namespace Tester.TransactionsTests
     [TestCategory("BVT"), TestCategory("Transactions")]
     public class GoldenPathTransactionMemoryTests : OrleansTestingBase, IClassFixture<GoldenPathTransactionMemoryTests.Fixture>
     {
-        private readonly GoldenPathSingleStateTransactionTestRunner singleStateRunner;
+        private readonly GoldenPathTransactionTestRunner goldenPathTestRunner;
 
         public class Fixture : BaseTestClusterFixture
         {
@@ -26,37 +26,37 @@ namespace Tester.TransactionsTests
 
         public GoldenPathTransactionMemoryTests(Fixture fixture, ITestOutputHelper output)
         {
-            this.singleStateRunner = new GoldenPathSingleStateTransactionTestRunner(fixture.GrainFactory, output);
+            this.goldenPathTestRunner = new GoldenPathTransactionTestRunner(fixture.GrainFactory, output);
         }
 
         [Fact]
-        public Task SingleGrainReadTransaction()
+        public Task SingleState_SingleGrainReadTransaction()
         {
-            return singleStateRunner.SingleGrainReadTransaction();
+            return goldenPathTestRunner.SingleGrainReadTransaction();
         }
 
         [Fact]
-        public Task SingleGrainWriteTransaction()
+        public Task SingleState_SingleGrainWriteTransaction()
         {
-            return singleStateRunner.SingleGrainWriteTransaction();
+            return goldenPathTestRunner.SingleGrainWriteTransaction();
         }
 
         [Fact]
-        public Task MultiGrainWriteTransaction()
+        public Task SingleState_MultiGrainWriteTransaction()
         {
-            return singleStateRunner.MultiGrainWriteTransaction();
+            return goldenPathTestRunner.MultiGrainWriteTransaction();
         }
 
         [Fact]
-        public Task MultiGrainReadWriteTransaction()
+        public Task SingleState_MultiGrainReadWriteTransaction()
         {
-            return singleStateRunner.MultiGrainReadWriteTransaction();
+            return goldenPathTestRunner.MultiGrainReadWriteTransaction();
         }
 
         [Fact]
-        public Task MultiWriteToSingleGrainTransaction()
+        public Task SingleState_MultiWriteToSingleGrainTransaction()
         {
-            return singleStateRunner.MultiWriteToSingleGrainTransaction();
+            return goldenPathTestRunner.MultiWriteToSingleGrainTransaction();
         }
     }
 }

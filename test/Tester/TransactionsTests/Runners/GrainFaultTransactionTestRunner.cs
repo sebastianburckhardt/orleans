@@ -12,12 +12,12 @@ using Xunit.Abstractions;
 
 namespace Tester.TransactionsTests
 {
-    public class GrainFaultSingleStateTransactionTestRunner
+    public class GrainFaultTransactionTestRunner
     {
         private readonly IGrainFactory grainFactory;
         private readonly ITestOutputHelper output;
 
-        public GrainFaultSingleStateTransactionTestRunner(IGrainFactory grainFactory, ITestOutputHelper output)
+        public GrainFaultTransactionTestRunner(IGrainFactory grainFactory, ITestOutputHelper output)
         {
             this.grainFactory = grainFactory;
             this.output = output;
@@ -25,13 +25,12 @@ namespace Tester.TransactionsTests
         
         public async Task AbortTransactionOnExceptions()
         {
-            this.output.WriteLine("************************ AbortTransactionOnExceptions *********************************");
             const int expected = 5;
 
-            ISingleStateTransactionalGrain grain = this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid());
-            ISingleStateTransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ISingleStateTransactionCoordinatorGrain>(Guid.NewGuid());
+            ITransactionTestGrain grain = this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
+            ITransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ITransactionCoordinatorGrain>(Guid.NewGuid());
 
-            await coordinator.MultiGrainSet(new List<ISingleStateTransactionalGrain> { grain }, expected);
+            await coordinator.MultiGrainSet(new List<ITransactionTestGrain> { grain }, expected);
             await Assert.ThrowsAsync<Exception>(() => coordinator.AddAndThrow(grain, expected));
 
             int actual = await grain.Get();
@@ -40,16 +39,15 @@ namespace Tester.TransactionsTests
 
         public async Task MultiGrainAbortTransactionOnExceptions()
         {
-            this.output.WriteLine("************************ AbortTransactionOnExceptions *********************************");
             const int grainCount = TransactionTestConstants.MaxCoordinatedTransactions-1;
             const int expected = 5;
 
-            ISingleStateTransactionalGrain throwGrain = this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid());
-            List<ISingleStateTransactionalGrain> grains =
+            ITransactionTestGrain throwGrain = this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
+            List<ITransactionTestGrain> grains =
                 Enumerable.Range(0, grainCount)
-                    .Select(i => this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid()))
+                    .Select(i => this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid()))
                     .ToList();
-            ISingleStateTransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ISingleStateTransactionCoordinatorGrain>(Guid.NewGuid());
+            ITransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ITransactionCoordinatorGrain>(Guid.NewGuid());
 
             await throwGrain.Set(expected);
             await coordinator.MultiGrainSet(grains, expected);
@@ -65,11 +63,10 @@ namespace Tester.TransactionsTests
 
         public async Task AbortTransactionOnOrphanCalls()
         {
-            this.output.WriteLine("************************ AbortTransactionOnExceptions *********************************");
             const int expected = 5;
 
-            ISingleStateTransactionalGrain grain = this.grainFactory.GetGrain<ISingleStateTransactionalGrain>(Guid.NewGuid());
-            ISingleStateTransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ISingleStateTransactionCoordinatorGrain>(Guid.NewGuid());
+            ITransactionTestGrain grain = this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
+            ITransactionCoordinatorGrain coordinator = this.grainFactory.GetGrain<ITransactionCoordinatorGrain>(Guid.NewGuid());
 
             await grain.Set(expected);
             await Assert.ThrowsAsync<OrleansOrphanCallException>(() => coordinator.OrphanCallTransaction(grain));

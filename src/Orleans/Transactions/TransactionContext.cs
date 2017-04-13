@@ -14,7 +14,7 @@ namespace Orleans.Transactions
         internal const string TransactionInfoHeader = "#TC_TI";
         internal const string Orleans_TransactionContext_Key = "#ORL_TC";
 
-        internal static TransactionInfo GetTransactionInfo()
+        public static TransactionInfo GetTransactionInfo()
         {
             Dictionary<string, object> values = GetContextData();
             object result;
