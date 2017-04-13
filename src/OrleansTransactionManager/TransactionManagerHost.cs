@@ -202,11 +202,16 @@ namespace Orleans.Transactions.Host
         /// such as the cluster membership table..
         /// </summary>
         /// <param name="deploymentId">DeploymentId this silo is part of.</param>
-        /// <param name="connectionString">Azure connection string to use the silo system data.</param>
-        public void SetDeploymentId(string deploymentId, string connectionString)
+        /// <param name="connectionString">Azure storage connection string to use for transaction log.</param>
+        /// <param name="tableName">Azure storage table name for transaction log.</param>
+        public void SetDeploymentId(string deploymentId, string connectionString, string tableName)
         {
             Config.Globals.DeploymentId = deploymentId;
-            Config.Globals.Transactions.DataConnectionString = connectionString;
+            Config.Globals.Transactions.TableBasedLogOptions = new AzureTableTransactionLogOptions
+            {
+                ConnectionString = connectionString,
+                TableName = tableName
+            };
         }
 
         /// <summary>

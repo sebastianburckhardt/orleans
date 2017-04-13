@@ -1,18 +1,9 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Orleans.Transactions
 {
-    [Serializable]
-    public class CommitRecord
-    {
-        public long TransactionId;
-        public long LSN;
-        public HashSet<ITransactionalResource> Resources = new HashSet<ITransactionalResource>();
-    }
-
     /// <summary>
     /// This class represents the durable Transaction Log.
     /// Olreans Transaction Log has 2 types of entries:
@@ -29,14 +20,32 @@ namespace Orleans.Transactions
     ///         This is the normal mode of operation in which the caller can modify the log by
     ///         appending entries and removing entries that are no longer necessary.
     /// </summary>
-    public abstract class TransactionLog
+    public sealed class TransactionLog
     {
+        private readonly ITransactionLogStorage transactionLogStorage;
+
+        private TransactionLogOperatingMode currentLogMode;
+
+        private long lastStartRecordValue;
+
+        public TransactionLog(ITransactionLogStorage transactionLogStorage)
+        {
+            this.transactionLogStorage = transactionLogStorage;
+
+            currentLogMode = TransactionLogOperatingMode.Uninitialized;
+        }
+
         /// <summary>
         /// Initialize the log (in Recovery Mode). This method must be called before any other method
         /// is called on the log.
         /// </summary>
         /// <returns></returns>
-        public abstract Task Initialize();
+        public Task Initialize()
+        {
+            currentLogMode = TransactionLogOperatingMode.RecoveryMode;
+
+            return transactionLogStorage.Initialize();
+        }
 
         /// <summary>
         /// Gets the first CommitRecord in the log.
@@ -44,7 +53,12 @@ namespace Orleans.Transactions
         /// <returns>
         /// The CommitRecord with the lowest LSN in the log, or null if there is none.
         /// </returns>
-        public abstract Task<CommitRecord> GetFirstCommitRecord();
+        public Task<CommitRecord> GetFirstCommitRecord()
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.RecoveryMode);
+
+            return transactionLogStorage.GetFirstCommitRecord();
+        }
 
         /// <summary>
         /// Returns the CommitRecord with LSN following the LSN of record returned by the last
@@ -53,30 +67,78 @@ namespace Orleans.Transactions
         /// <returns>
         /// The next CommitRecord, or null if there is none.
         /// </returns>
-        public abstract Task<CommitRecord> GetNextCommitRecord();
+        public Task<CommitRecord> GetNextCommitRecord()
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.RecoveryMode);
+
+            return transactionLogStorage.GetNextCommitRecord();
+        }
 
         /// <summary>
         /// Exit recovery and enter Append Mode.
         /// </summary>
-        public abstract Task EndRecovery();
+        public Task EndRecovery()
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.RecoveryMode);
 
-        public abstract Task<long> GetStartRecord();
+            currentLogMode = TransactionLogOperatingMode.AppendMode;
 
-        public abstract Task UpdateStartRecord(long transactionId);
+            return TaskDone.Done;
+        }
+
+        public async Task<long> GetStartRecord()
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.AppendMode);
+
+            lastStartRecordValue = await transactionLogStorage.GetStartRecord();
+
+            return lastStartRecordValue;
+        }
+
+        public Task UpdateStartRecord(long transactionId)
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.AppendMode);
+
+            if (transactionId > lastStartRecordValue)
+            {
+                return transactionLogStorage.UpdateStartRecord(transactionId);
+            }
+
+            throw new InvalidOperationException($"UpdateStartRecord was called in an invalid state. TransactionId: {transactionId}, lastStartRecordValue: {lastStartRecordValue}.");
+        }
 
         /// <summary>
         /// Append the given records to the log in order
         /// </summary>
-        /// <param name="transactions">Commit Records</param>
+        /// <param name="commitRecords">Commit Records</param>
         /// <remarks>
         /// If an exception is thrown it is possible that a prefix of the records are persisted
         /// to the log.
         /// </remarks>
-        public abstract Task Append(List<CommitRecord> transactions);
+        public Task Append(IEnumerable<CommitRecord> commitRecords)
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.AppendMode);
 
-        public abstract Task TruncateLog(long LSN);
 
-        protected enum LogMode
+            return transactionLogStorage.Append(commitRecords);
+        }
+
+        public Task TruncateLog(long lsn)
+        {
+            ThrowIfNotInMode(TransactionLogOperatingMode.AppendMode);
+
+            return transactionLogStorage.TruncateLog(lsn);
+        }
+
+        private void ThrowIfNotInMode(TransactionLogOperatingMode expectedLogMode)
+        {
+            if (currentLogMode != expectedLogMode)
+            {
+                new InvalidOperationException($"Log has to be in {expectedLogMode} mode, but it is in {currentLogMode} mode.");
+            }
+        }
+
+        private enum TransactionLogOperatingMode
         {
             Uninitialized = 0,
             RecoveryMode,

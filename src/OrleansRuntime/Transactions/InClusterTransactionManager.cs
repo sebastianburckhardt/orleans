@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,8 +12,8 @@ namespace Orleans.Transactions
         private readonly Dictionary<ITransactionalResource, long> resources;
         private readonly List<Transaction> transactions;
 
-        public InClusterTransactionManager(TransactionsConfiguration config)
-            : base(config)
+        public InClusterTransactionManager(TransactionLog transactionLog, TransactionsConfiguration config)
+            : base(transactionLog, config)
         {
             this.dependencyLock = new InterlockedExchangeLock();
             this.commitLock = new InterlockedExchangeLock();

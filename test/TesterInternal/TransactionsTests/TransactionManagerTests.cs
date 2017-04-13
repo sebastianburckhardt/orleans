@@ -16,8 +16,9 @@ namespace UnitTests.TransactionsTests
 
         public TransactionManagerTests()
         {
-            // TODO: need to clean up the Transaction Manager after the test finishes
-            tm = new TransactionManager(new TransactionsConfiguration());
+            var transactionConfiguration = new TransactionsConfiguration();
+            tm = new TransactionManager(new TransactionLog(new MemoryTransactionLogStorage()), transactionConfiguration);
+
             CancellationTokenSource cts = new CancellationTokenSource();
             tm.StartAsync().Wait(cts.Token);
         }
@@ -31,7 +32,6 @@ namespace UnitTests.TransactionsTests
             await WaitForTransactionCommit(id);
         }
 
-        
         [Fact]
         public async Task TransactionTimeout()
         {

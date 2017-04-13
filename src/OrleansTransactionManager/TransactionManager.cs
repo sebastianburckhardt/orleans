@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using Orleans.Runtime;
@@ -17,8 +16,8 @@ namespace Orleans.Transactions
         private readonly Thread checkpointThread;
         private readonly AutoResetEvent checkpointEvent;
 
-        public TransactionManager(TransactionsConfiguration config)
-            : base(config)
+        public TransactionManager(TransactionLog transactionLog, TransactionsConfiguration config)
+            : base(transactionLog, config)
         {
             dependencyEvent = new AutoResetEvent(false);
             commitEvent = new AutoResetEvent(false);
@@ -65,13 +64,13 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                    dependencyEvent.WaitOne();
-                    base.CheckDependenciesCompleted();
-                }
+                dependencyEvent.WaitOne();
+                base.CheckDependenciesCompleted();
+            }
                 catch (Exception exception)
                 {
                     this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.DependencyCompletionLoop), exception);
-                }
+        }
             }
         }
 
@@ -81,13 +80,13 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                    commitEvent.WaitOne();
-                    base.GroupCommit();
-                }
+                commitEvent.WaitOne();
+                base.GroupCommit();
+            }
                 catch (Exception exception)
                 {
                     this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.GroupCommitLoop), exception);
-                }
+        }
             }
         }
 
@@ -99,15 +98,15 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                    // Maybe impose a max per batch to decrease latency?
-                    checkpointEvent.WaitOne();
-                    base.Checkpoint(resources, transactions).Wait();
-                }
+                // Maybe impose a max per batch to decrease latency?
+                checkpointEvent.WaitOne();
+                base.Checkpoint(resources, transactions).Wait();
+            }
                 catch(Exception exception)
                 {
                     this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.CheckpointLoop), exception);
-                }
-            }
         }
+    }
+}
     }
 }

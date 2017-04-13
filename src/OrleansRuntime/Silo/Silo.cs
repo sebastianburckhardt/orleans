@@ -165,7 +165,7 @@ namespace Orleans.Runtime
             string name = initializationParams.Name;
             ClusterConfiguration config = initializationParams.ClusterConfig;
             this.initializationParams = initializationParams;
-
+            
             this.SystemStatus = SystemStatus.Creating;
             AsynchAgent.IsStarting = true;
             
@@ -290,6 +290,9 @@ namespace Orleans.Runtime
             services.AddSingleton<GrainCreator>();
 
             // transactions
+            services.AddSingleton<TransactionLog>();
+            //TODO: Refactor to TM config
+            services.AddSingleton<ITransactionLogStorage, MemoryTransactionLogStorage>();
             services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
             services.AddSingleton<IKeyedServiceCollection<string, ITransactionServiceFactory>, TransactionServiceFactoryCollection>();
             services.AddSingleton<ITransactionServiceFactory>(sp => sp.GetServiceByName<ITransactionServiceFactory>(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType));

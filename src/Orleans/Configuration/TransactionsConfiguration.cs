@@ -54,6 +54,11 @@ namespace Orleans.Transactions
         public bool ClearLogOnStartup { get; set; }
 
         /// <summary>
+        /// Provides configuration options for an external transaction log provider.
+        /// </summary>
+        public AzureTableTransactionLogOptions TableBasedLogOptions { get; set; }
+
+        /// <summary>
         /// The number of new Transaction Ids allocated on every write to the log.
         /// To avoid writing to log on every transaction start, transaction Ids are allocated in batches.
         /// </summary>
@@ -70,11 +75,6 @@ namespace Orleans.Transactions
         /// Agents to communicate with the Transaction Manager.
         /// </summary>
         public int TransactionManagerProxyCount { get; set; }
-
-        /// <summary>
-        /// Azure DataConnectionString for storage connection.
-        /// </summary>
-        public string DataConnectionString { get; set; }
 
         /// <summary>
         /// How long to preserve a transaction record in the TM memory after the transaction has completed.
@@ -138,10 +138,24 @@ namespace Orleans.Transactions
                     "Invalid TimeSpan value for the TransactionRecordPreservationDuration element");
             }
 
+            var logConnectionString = default(string);
+            var logTableName = default(string);
+
             if (child.HasAttribute("DataConnectionString"))
             {
-                this.DataConnectionString = child.GetAttribute("DataConnectionString");
+                logConnectionString = child.GetAttribute("DataConnectionString");
             }
+
+            if (child.HasAttribute("LogTableName"))
+            {
+                logTableName = child.GetAttribute("LogTableName");
+            }
+
+            TableBasedLogOptions = new AzureTableTransactionLogOptions
+            {
+                ConnectionString = logConnectionString,
+                TableName = logTableName
+            };
 
             if (child.HasAttribute("TransactionManagerType"))
             {

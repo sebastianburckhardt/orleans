@@ -7,7 +7,7 @@ namespace Orleans.Transactions
     internal class ActiveTransactionsTracker : IDisposable
     {
         private readonly TransactionsConfiguration config;
-        private readonly TransactionLog log;
+        private readonly TransactionLog transactionLog;
         private readonly Logger logger;
         private readonly object lockObj;
         private readonly Thread allocationThread;
@@ -19,12 +19,13 @@ namespace Orleans.Transactions
         private long maxAllocatedTransactionId;
         private volatile bool disposed;
 
-        public ActiveTransactionsTracker(TransactionsConfiguration config, TransactionLog log, Factory<string, Logger> logFactory)
+        public ActiveTransactionsTracker(TransactionsConfiguration config, TransactionLog transactionLog, Factory<string, Logger> logFactory)
         {
             this.config = config;
-            this.log = log;
+            this.transactionLog = transactionLog;
             this.logger = logFactory(nameof(ActiveTransactionsTracker));
             lockObj = new object();
+
             allocationEvent = new AutoResetEvent(true);
             allocationThread = new Thread(AllocateTransactionId);
         }
@@ -35,7 +36,6 @@ namespace Orleans.Transactions
             highestActiveTransactionId = initialTransactionId;
             maxAllocatedTransactionId = initialTransactionId;
 
-            allocationEvent.Set();
             allocationThread.Start();
         }
 
@@ -101,7 +101,7 @@ namespace Orleans.Transactions
                         if (maxAllocatedTransactionId - highestActiveTransactionId <= config.AvailableTransactionIdThreshold)
                         {
                             var batchSize = config.TransactionIdAllocationBatchSize;
-                            log.UpdateStartRecord(maxAllocatedTransactionId + batchSize).GetAwaiter().GetResult();
+                            transactionLog.UpdateStartRecord(maxAllocatedTransactionId + batchSize).GetAwaiter().GetResult();
 
                             maxAllocatedTransactionId += batchSize;
                         }

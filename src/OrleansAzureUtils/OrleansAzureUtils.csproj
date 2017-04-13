@@ -96,7 +96,7 @@
     <Compile Include="Hosting\ServiceRuntimeWrapper.cs" />
     <Compile Include="Storage\StorageExceptionExtensions.cs" />
     <Compile Include="Storage\TableQueryFilterBuilder.cs" />
-    <Compile Include="Transactions\AzureTransactionLog.cs" />
+    <Compile Include="Transactions\AzureTransactionLogStorage.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OrleansProviders\OrleansProviders.csproj">

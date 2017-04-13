@@ -81,6 +81,7 @@
     <Compile Include="Async\TaskExtensions.cs" />
     <Compile Include="CodeGeneration\GeneratedAssembly.cs" />
     <Compile Include="CodeGeneration\GenericMethodInvoker.cs" />
+    <Compile Include="Configuration\AzureTransactionLogOptions.cs" />
     <Compile Include="Configuration\GrainServiceConfiguration.cs" />
     <Compile Include="Core\ClientBuilder.cs" />
     <Compile Include="Core\ClientBuilderExtensions.cs" />
@@ -189,10 +190,12 @@
     <Compile Include="Transactions\ActiveTransactionsTracker.cs" />
     <Compile Include="Transactions\ITransactionalExtension.cs" />
     <Compile Include="Transactions\ITransactionalResource.cs" />
+    <Compile Include="Transactions\CommitRecord.cs" />
+    <Compile Include="Transactions\ITransactionLogStorage.cs" />
     <Compile Include="Transactions\ITransactionalState.cs" />
     <Compile Include="Transactions\ITransactionManager.cs" />
     <Compile Include="Transactions\LogRecord.cs" />
-    <Compile Include="Transactions\MemoryTransactionLog.cs" />
+    <Compile Include="Transactions\MemoryTransactionLogStorage.cs" />
     <Compile Include="Transactions\Transaction.cs" />
     <Compile Include="Transactions\TransactionalExtension.cs" />
     <Compile Include="Transactions\TransactionalState.cs" />

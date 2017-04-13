@@ -21,9 +21,9 @@ namespace Orleans.Transactions
 
     public abstract class TransactionManagerBase : ITransactionManager, IDisposable
     {
-        private TransactionsConfiguration config;
+        private readonly TransactionsConfiguration config;
 
-        private readonly TransactionLog log;
+        private readonly TransactionLog transactionLog;
 
         private readonly ActiveTransactionsTracker activeTransactionsTracker;
 
@@ -43,21 +43,12 @@ namespace Orleans.Transactions
 
         protected readonly Logger Logger;
 
-        protected TransactionManagerBase(TransactionsConfiguration config)
+        protected TransactionManagerBase(TransactionLog transactionLog, TransactionsConfiguration config)
         {
+            this.transactionLog = transactionLog;
             this.config = config;
 
-            if (config.LogType == TransactionsConfiguration.TransactionLogType.AzureTable)
-            {
-//                log = new AzureTransactionLog(config.DataConnectionString, "OrleansTransactions", config.ClearLogOnStartup);
-                throw new NotImplementedException("AzureTransactionLog");
-            }
-            else
-            {
-                log = new MemoryTransactionLog();
-            }
-
-            activeTransactionsTracker = new ActiveTransactionsTracker(config, log, LogManager.GetLogger);
+            activeTransactionsTracker = new ActiveTransactionsTracker(config, this.transactionLog, LogManager.GetLogger);
 
             transactionsTable = new ConcurrentDictionary<long, Transaction>(2, 1000000);
 
@@ -76,8 +67,8 @@ namespace Orleans.Transactions
 
         public async Task StartAsync()
         {
-            await log.Initialize();
-            CommitRecord record = await log.GetFirstCommitRecord();
+            await transactionLog.Initialize();
+            CommitRecord record = await transactionLog.GetFirstCommitRecord();
             long prevLSN = 0;
             while (record != null)
             {
@@ -103,11 +94,12 @@ namespace Orleans.Transactions
                 checkpointQueue.Enqueue(tx);
                 this.SignalCheckpointEnqueued();
 
-                record = await log.GetNextCommitRecord();
+                record = await transactionLog.GetNextCommitRecord();
             }
 
-            await log.EndRecovery();
-            var maxAllocatedTransactionId = await log.GetStartRecord();
+            await transactionLog.EndRecovery();
+            var maxAllocatedTransactionId = await transactionLog.GetStartRecord();
+
             activeTransactionsTracker.Start(maxAllocatedTransactionId);
 
             this.BeginDependencyCompletionLoop();
@@ -157,7 +149,7 @@ namespace Orleans.Transactions
                         AbortTransaction(waiting.Info.TransactionId, cascading);
                     }
 
-                    tx.CompletionTime = DateTime.Now.Ticks;
+                    tx.CompletionTime = DateTime.UtcNow.Ticks;
                     tx.AbortingException = reason;
                 }
             }
@@ -239,9 +231,9 @@ namespace Orleans.Transactions
             }
             else
             {
-                // Don't have a record of the transaction any more so presumably it's aborted.
-                throw new OrleansTransactionAbortedException(transactionInfo.TransactionId, "Transaction presumed to be aborted");
-            }
+            // Don't have a record of the transaction any more so presumably it's aborted.
+            throw new OrleansTransactionAbortedException(transactionInfo.TransactionId, "Transaction presumed to be aborted");
+        }
         }
 
         public TransactionStatus GetTransactionStatus(long transactionId, out OrleansTransactionAbortedException abortingException)
@@ -297,6 +289,9 @@ namespace Orleans.Transactions
             {
                 processed = true;
                 CommitRecord commitRecord = new CommitRecord();
+
+                commitRecord.TransactionId = tx.TransactionId;
+
                 foreach (var resource in tx.Info.WriteSet.Keys)
                 {
                     commitRecord.Resources.Add(resource);
@@ -352,7 +347,7 @@ namespace Orleans.Transactions
 
             try
             {
-                log.Append(records).Wait();
+                transactionLog.Append(records).Wait();
             }
             catch (Exception e)
             {
@@ -371,7 +366,7 @@ namespace Orleans.Transactions
                 {
                     transaction.State = TransactionState.Committed;
                     transaction.LSN = records[i].LSN;
-                    transaction.CompletionTime = DateTime.Now.Ticks;
+                    transaction.CompletionTime = DateTime.UtcNow.Ticks;
                 }
                 checkpointQueue.Enqueue(transaction);
                 this.SignalCheckpointEnqueued();
@@ -445,7 +440,7 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                    log.TruncateLog(checkpointedLSN - 1).Wait();
+                    transactionLog.TruncateLog(checkpointedLSN - 1).Wait();
                 }
                 catch (Exception e)
                 {
@@ -496,7 +491,7 @@ namespace Orleans.Transactions
             foreach (var txRecord in transactionsTable)
             {
                 if (txRecord.Value.State == TransactionState.Aborted &&
-                    txRecord.Value.CompletionTime + this.config.TransactionRecordPreservationDuration.Ticks < DateTime.Now.Ticks)
+                    txRecord.Value.CompletionTime + this.config.TransactionRecordPreservationDuration.Ticks < DateTime.UtcNow.Ticks)
                 {
                     Transaction temp;
                     transactionsTable.TryRemove(txRecord.Key, out temp);
@@ -506,7 +501,7 @@ namespace Orleans.Transactions
                     lock (txRecord.Value)
                     {
                         if (txRecord.Value.HighestActiveTransactionIdAtCheckpoint < activeTransactionsTracker.GetSmallestActiveTransactionId() &&
-                            txRecord.Value.CompletionTime + this.config.TransactionRecordPreservationDuration.Ticks < DateTime.Now.Ticks)
+                            txRecord.Value.CompletionTime + this.config.TransactionRecordPreservationDuration.Ticks < DateTime.UtcNow.Ticks)
                         {
                             // The oldest active transaction started after this transaction was checkpointed
                             // so no in progress transaction is going to take a dependency on this transaction

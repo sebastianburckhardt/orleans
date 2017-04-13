@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Threading;
 
 namespace Orleans.Transactions
@@ -21,7 +20,8 @@ namespace Orleans.Transactions
 
         public OrleansClientTransactionService(TransactionsConfiguration config)
         {
-            tm = new TransactionManager(config);
+            //TODO need to use DI to construct this class.
+            tm = new TransactionManager(null, config);
             proxy = new TransactionManagerProxy[config.TransactionManagerProxyCount];
 
             proxyRef = new ITransactionManagerProxy[config.TransactionManagerProxyCount];

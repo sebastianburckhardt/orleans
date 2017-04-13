@@ -12,12 +12,8 @@ namespace Orleans.Transactions.Host
     /// </summary>
     public class AzureTransactionManager
     {
-        /// <summary>
-        /// The name of the configuration key value for locating the DataConnectionString setting from the Azure configuration for this role.
-        /// Defaults to <c>DataConnectionString</c>
-        /// </summary>
-        public string DataConnectionConfigurationSettingName { get; set; }
-
+        private const string LogStorageConnectionString = "LogStorageConnectionString";
+        private const string LogStorageTableName = "LogStorageTableName";
         
         private TransactionManagerHost host;
         private readonly Logger logger;
@@ -28,8 +24,6 @@ namespace Orleans.Transactions.Host
         /// </summary>
         public AzureTransactionManager()
         {
-            DataConnectionConfigurationSettingName = AzureConstants.DataConnectionConfigurationSettingName;
-
             logger = LogManager.GetLogger("OrleansAzureTransactionManager", LoggerType.Runtime);
         }
 
@@ -76,12 +70,13 @@ namespace Orleans.Transactions.Host
                 host = new TransactionManagerHost(instanceName, config); // Use supplied config file + Initializes logger configurations
             }
 
-            var connectionString = serviceRuntimeWrapper.GetConfigurationSettingValue(DataConnectionConfigurationSettingName);
+            var connectionString = serviceRuntimeWrapper.GetConfigurationSettingValue(LogStorageConnectionString);
+            var tableName = serviceRuntimeWrapper.GetConfigurationSettingValue(LogStorageTableName);
 
             AzureClient.Initialize();
 
             // Initialise this Orleans silo instance
-            host.SetDeploymentId(deploymentId, connectionString);
+            host.SetDeploymentId(deploymentId, connectionString, tableName);
 
             host.InitializeOrleansTM();
             logger.Info("Successfully initialized Orleans TM '{0}'.", host.Name);
