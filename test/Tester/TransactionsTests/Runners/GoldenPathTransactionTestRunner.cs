@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,18 +10,19 @@ using Xunit.Abstractions;
 
 namespace Tester.TransactionsTests
 {
-    public class GoldenPathTransactionTestRunner
+    public abstract class GoldenPathTransactionTestRunner
     {
         private readonly IGrainFactory grainFactory;
         private readonly ITestOutputHelper output;
 
-        public GoldenPathTransactionTestRunner(IGrainFactory grainFactory, ITestOutputHelper output)
+        protected GoldenPathTransactionTestRunner(IGrainFactory grainFactory, ITestOutputHelper output)
         {
             this.output = output;
             this.grainFactory = grainFactory;
         }
 
-        public async Task SingleGrainReadTransaction()
+        [SkippableFact]
+        public virtual async Task SingleGrainReadTransaction()
         {
             const int expected = 0;
 
@@ -31,7 +31,8 @@ namespace Tester.TransactionsTests
             Assert.Equal(expected, actual);
         }
 
-        public async Task SingleGrainWriteTransaction()
+        [SkippableFact]
+        public virtual async Task SingleGrainWriteTransaction()
         {
             const int delta = 5;
             ITransactionTestGrain grain = this.grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid());
@@ -42,7 +43,8 @@ namespace Tester.TransactionsTests
             Assert.Equal(expected, actual);
         }
 
-        public async Task MultiGrainWriteTransaction()
+        [SkippableFact]
+        public virtual async Task MultiGrainWriteTransaction()
         {
             const int expected = 5;
             const int grainCount = TransactionTestConstants.MaxCoordinatedTransactions;
@@ -63,7 +65,8 @@ namespace Tester.TransactionsTests
             }
         }
 
-        public async Task MultiGrainReadWriteTransaction()
+        [SkippableFact]
+        public virtual async Task MultiGrainReadWriteTransaction()
         {
             const int delta = 5;
             const int grainCount = TransactionTestConstants.MaxCoordinatedTransactions;
@@ -86,7 +89,8 @@ namespace Tester.TransactionsTests
             }
         }
 
-        public async Task MultiWriteToSingleGrainTransaction()
+        [SkippableFact]
+        public virtual async Task MultiWriteToSingleGrainTransaction()
         {
             const int delta = 5;
             const int concurrentWrites = 3;
