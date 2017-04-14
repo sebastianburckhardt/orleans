@@ -289,14 +289,22 @@ namespace Orleans.Runtime
             services.AddSingleton<Func<IGrainRuntime>>(sp => () => sp.GetRequiredService<IGrainRuntime>());
             services.AddSingleton<GrainCreator>();
 
-            // transactions
+            // Transactions
+            services.AddSingleton(config.Globals.Transactions);
             services.AddSingleton<TransactionLog>();
-            //TODO: Refactor to TM config
-            services.AddSingleton<ITransactionLogStorage, MemoryTransactionLogStorage>();
-            services.AddSingleton(sp => sp.GetRequiredService<GlobalConfiguration>().Transactions);
-            services.AddSingleton<IKeyedServiceCollection<string, ITransactionServiceFactory>, TransactionServiceFactoryCollection>();
-            services.AddSingleton<ITransactionServiceFactory>(sp => sp.GetServiceByName<ITransactionServiceFactory>(sp.GetRequiredService<TransactionsConfiguration>().TransactionManagerType));
-            services.AddTransient<InClusterTransactionManager>();
+
+            ValidateTransactionTypeInterfaces(config.Globals.Transactions.LogStorageType, typeof(ITransactionLogStorage));
+            var transactionLogStorageType = config.Globals.Transactions.LogStorageType ?? typeof(MemoryTransactionLogStorage);
+            services.AddSingleton(typeof(ITransactionLogStorage), transactionLogStorageType);
+
+            ValidateTransactionTypeInterfaces(config.Globals.Transactions.TransactionManagerType, typeof(ITransactionManager));
+            var transactionManagerType = config.Globals.Transactions.TransactionManagerType ?? typeof(InClusterTransactionManager);
+            services.AddSingleton(typeof(ITransactionManager), transactionManagerType);
+
+            ValidateTransactionTypeInterfaces(config.Globals.Transactions.TransactionServiceFactoryType, typeof(ITransactionServiceFactory));
+            var transactionServiceFactoryType = config.Globals.Transactions.TransactionServiceFactoryType ?? typeof(TransactionServiceGrainFactory);
+            services.AddSingleton(typeof(ITransactionServiceFactory), transactionServiceFactoryType);
+
             services.AddTransient(typeof(ITransactionalState<>), typeof(TransactionalState<>));
             services.AddSingleton<ITransactionAgent, TransactionAgent>();
             services.AddSingleton<Lazy<ITransactionAgent>>(sp => new Lazy<ITransactionAgent>(sp.GetRequiredService<ITransactionAgent>));
@@ -401,6 +409,14 @@ namespace Orleans.Runtime
                 () => LogFormatter.PrintDate(startTime)); // this will help troubleshoot production deployment when looking at MDS logs.
 
             logger.Info(ErrorCode.SiloInitializingFinished, "-------------- Started silo {0}, ConsistentHashCode {1:X} --------------", SiloAddress.ToLongString(), SiloAddress.GetConsistentHashCode());
+        }
+
+        private static void ValidateTransactionTypeInterfaces(Type type, Type requiredInterfaceType)
+        {
+            if (!requiredInterfaceType.IsAssignableFrom(type))
+            {
+                throw new InvalidOperationException($"{type} is not a type of {requiredInterfaceType}.");
+            }
         }
 
         private void CreateSystemTargets()

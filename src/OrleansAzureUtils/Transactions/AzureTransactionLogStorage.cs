@@ -9,6 +9,8 @@ namespace Orleans.Transactions
 {
     public class AzureTransactionLogStorage : ITransactionLogStorage
     {
+        private const string DefaultTableName = "OTXLog";
+
         private const string RowKey = "RowKey";
         private const string PartitionKey = "PartitionKey";
 
@@ -21,7 +23,7 @@ namespace Orleans.Transactions
 
         //TODO: jbragg - Do not use serializationManager for persistent data!!
         private readonly SerializationManager serializationManager;
-        private readonly AzureTableTransactionLogOptions options;
+        private readonly TransactionsConfiguration configuration;
 
         // Azure Tables objects for persistent storage
         private CloudTable table;
@@ -36,20 +38,25 @@ namespace Orleans.Transactions
         private List<CommitRecord> currentRowTransactions;
         private int currentRowTransactionsIndex;
 
-        public AzureTransactionLogStorage(SerializationManager serializationManager, AzureTableTransactionLogOptions options)
+        public AzureTransactionLogStorage(SerializationManager serializationManager, TransactionsConfiguration configuration)
         {
             this.serializationManager = serializationManager;
-            this.options = options;
+            this.configuration = configuration;
         }
 
         public async Task Initialize()
         {
+            if (string.IsNullOrWhiteSpace(configuration.LogConnectionString))
+            {
+                throw new ArgumentNullException(nameof (configuration.LogConnectionString));
+            }
+
             // Retrieve the storage account from the connection string.
-            var storageAccount = CloudStorageAccount.Parse(options.ConnectionString);
+            var storageAccount = CloudStorageAccount.Parse(configuration.LogConnectionString);
 
             // Create the table client.
             var tableClient = storageAccount.CreateCloudTableClient();
-            table = tableClient.GetTableReference(options.TableName);
+            table = tableClient.GetTableReference(configuration.LogTableName ?? DefaultTableName);
             
             await table.CreateIfNotExistsAsync().ConfigureAwait(false);
 

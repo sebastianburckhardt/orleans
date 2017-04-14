@@ -207,11 +207,8 @@ namespace Orleans.Transactions.Host
         public void SetDeploymentId(string deploymentId, string connectionString, string tableName)
         {
             Config.Globals.DeploymentId = deploymentId;
-            Config.Globals.Transactions.TableBasedLogOptions = new AzureTableTransactionLogOptions
-            {
-                ConnectionString = connectionString,
-                TableName = tableName
-            };
+            Config.Globals.Transactions.LogConnectionString = connectionString;
+            Config.Globals.Transactions.LogTableName = tableName;
         }
 
         /// <summary>

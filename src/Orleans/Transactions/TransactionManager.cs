@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -59,7 +58,7 @@ namespace Orleans.Transactions
             checkpointedLSN = 0;
 
             gcTimer = new Timer(GC);
-            
+
             this.Logger = LogManager.GetLogger("TransactionManager");
         }
 
@@ -231,9 +230,9 @@ namespace Orleans.Transactions
             }
             else
             {
-            // Don't have a record of the transaction any more so presumably it's aborted.
-            throw new OrleansTransactionAbortedException(transactionInfo.TransactionId, "Transaction presumed to be aborted");
-        }
+                // Don't have a record of the transaction any more so presumably it's aborted.
+                throw new OrleansTransactionAbortedException(transactionInfo.TransactionId, "Transaction presumed to be aborted");
+            }
         }
 
         public TransactionStatus GetTransactionStatus(long transactionId, out OrleansTransactionAbortedException abortingException)
@@ -267,7 +266,7 @@ namespace Orleans.Transactions
             long readId = activeTransactionsTracker.GetSmallestActiveTransactionId();
             if (readId > 0)
             {
-                readId--; 
+                readId--;
             }
             return readId;
         }
@@ -510,7 +509,7 @@ namespace Orleans.Transactions
                             transactionsTable.TryRemove(txRecord.Key, out temp);
                         }
                     }
-                } 
+                }
             }
 
             //

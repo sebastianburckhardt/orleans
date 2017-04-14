@@ -1,10 +1,5 @@
 ﻿using Orleans.Runtime.Configuration;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Orleans.Transactions
@@ -13,50 +8,21 @@ namespace Orleans.Transactions
     public class TransactionsConfiguration
     {
         /// <summary>
-        /// Log configuration that controls the persistent storage used for the transaction log.
+        /// The LogStorageType value controls the persistent storage used for the transaction log. This value is resolved from the LogStorageTypeName attribute if XML configuration is used.
         /// </summary>
-        public enum TransactionLogType
-        {
-            /// <summary>Store transaction log in memory. 
-            /// This option is should only be used for testing because the log has to be durable.</summary>
-            Memory,
-            /// <summary>AzureTable is used to store transaction log. 
-            /// This option should be used in production.</summary>
-            AzureTable
-        }
+        public Type LogStorageType { get; set; }
 
         /// <summary>
-        /// Orleans framework supported transaction manager types
+        /// The TransactionManager value controls the type of the TransactionManager will be used. This value is resolved from the TransactionManagerTypeName attribute if XML configuration is used.
+        /// This value must be in pair with TransactionServiceFactoryType attribute.
         /// </summary>
-        public enum OrleansTransactionManagerType
-        {
-            /// <summary>
-            /// Transaction manager hosted in a grain.  Viable for test, development, and services with low transactional performance requirements
-            /// If not specificed Transaction Manager type will default to GrainBased
-            /// </summary>
-            GrainBased,
-            /// <summary>
-            /// Transaction manager hosted in an Orleans client service.
-            /// </summary>
-            ClientService,
-        }
-
-        public static readonly string DefaultOrleansTransactionManagerType = OrleansTransactionManagerType.GrainBased.ToString();
+        public Type TransactionManagerType { get; set; }
 
         /// <summary>
-        /// The LogType attribute controls the persistent storage used for the transaction log.
+        /// The TransactionServiceFactoryType value controls the type of the TransactionServiceFactoryTypeName will be used. This value is resolved from the TransactionServiceFactoryTypeName attribute if XML configuration is used.
+        /// This value must be in pair with TransactionManagerType attribute.
         /// </summary>
-        public TransactionLogType LogType { get; set; }
-
-        /// <summary>
-        /// Whether to clear the log on Transaction Service startup. Used primarily for testing purposes
-        /// </summary>
-        public bool ClearLogOnStartup { get; set; }
-
-        /// <summary>
-        /// Provides configuration options for an external transaction log provider.
-        /// </summary>
-        public AzureTableTransactionLogOptions TableBasedLogOptions { get; set; }
+        public Type TransactionServiceFactoryType { get; set; }
 
         /// <summary>
         /// The number of new Transaction Ids allocated on every write to the log.
@@ -82,15 +48,21 @@ namespace Orleans.Transactions
         /// </summary>
         public TimeSpan TransactionRecordPreservationDuration { get; set; }
 
-        public string TransactionManagerType { get; set; } = DefaultOrleansTransactionManagerType;
+        /// <summary>
+        /// Provides connection string for an external table based transaction log storage.
+        /// </summary>
+        public string LogConnectionString { get; set; }
+
+        /// <summary>
+        /// Provides name of the table for an external table based transaction log storage.
+        /// </summary>
+        public string LogTableName { get; set; }
 
         /// <summary>
         /// TransactionsConfiguration constructor.
         /// </summary>
         public TransactionsConfiguration()
         {
-            LogType = TransactionLogType.Memory;
-            ClearLogOnStartup = false;
             TransactionManagerProxyCount = 1;
             TransactionIdAllocationBatchSize = 50000;
             AvailableTransactionIdThreshold = 20000;
@@ -103,33 +75,40 @@ namespace Orleans.Transactions
         /// <param name="child"></param>
         public void Load(XmlElement child)
         {
-            if (child.HasAttribute("LogType"))
+            if (child.HasAttribute("LogStorageTypeName"))
             {
-                this.LogType = GetLogType(child.GetAttribute("LogType"));
+                var logStorageTypeName = child.GetAttribute("LogStorageTypeName");
+                this.LogStorageType = ResolveType(logStorageTypeName, nameof(logStorageTypeName));
             }
 
-            if (child.HasAttribute("ClearLogOnStartup"))
+            if (child.HasAttribute("TransactionManagerTypeName"))
             {
-                this.ClearLogOnStartup = ConfigUtilities.ParseBool(child.GetAttribute("ClearLogOnStartup"),
-                    "Invalid boolean value for the ClearLogOnStartup element");
+                var transactionManagerTypeName = child.GetAttribute("TransactionManagerTypeName");
+                this.TransactionManagerType = ResolveType(transactionManagerTypeName, nameof(transactionManagerTypeName));
+            }
+
+            if (child.HasAttribute("TransactionServiceFactoryTypeName"))
+            {
+                var transactionServiceFactoryTypeName = child.GetAttribute("TransactionServiceFactoryTypeName");
+                this.TransactionServiceFactoryType = ResolveType(transactionServiceFactoryTypeName, nameof(transactionServiceFactoryTypeName));
             }
 
             if (child.HasAttribute("TransactionIdAllocationBatchSize"))
             {
                 this.TransactionIdAllocationBatchSize = ConfigUtilities.ParseInt(child.GetAttribute("TransactionIdAllocationBatchSize"),
-                    "Invalid boolean value for the TransactionIdAllocationBatchSize element");
+                    "Invalid integer value for the TransactionIdAllocationBatchSize element");
             }
-            
+
             if (child.HasAttribute("AvailableTransactionIdThreshold"))
             {
                 this.AvailableTransactionIdThreshold = ConfigUtilities.ParseInt(child.GetAttribute("AvailableTransactionIdThreshold"),
-                    "Invalid boolean value for the AvailableTransactionIdThreshold element");
+                    "Invalid integer value for the AvailableTransactionIdThreshold element");
             }
 
             if (child.HasAttribute("TransactionManagerProxyCount"))
             {
                 this.TransactionManagerProxyCount = ConfigUtilities.ParseInt(child.GetAttribute("TransactionManagerProxyCount"),
-                    "Invalid boolean value for the TransactionManagerProxyCount element");
+                    "Invalid integer value for the TransactionManagerProxyCount element");
             }
 
             if (child.HasAttribute("TransactionRecordPreservationDuration"))
@@ -138,45 +117,38 @@ namespace Orleans.Transactions
                     "Invalid TimeSpan value for the TransactionRecordPreservationDuration element");
             }
 
-            var logConnectionString = default(string);
-            var logTableName = default(string);
-
-            if (child.HasAttribute("DataConnectionString"))
+            if (child.HasAttribute("LogConnectionString"))
             {
-                logConnectionString = child.GetAttribute("DataConnectionString");
+                this.LogConnectionString = child.GetAttribute("LogConnectionString");
             }
 
             if (child.HasAttribute("LogTableName"))
             {
-                logTableName = child.GetAttribute("LogTableName");
+                this.LogTableName = child.GetAttribute("LogTableName");
             }
 
-            TableBasedLogOptions = new AzureTableTransactionLogOptions
-            {
-                ConnectionString = logConnectionString,
-                TableName = logTableName
-            };
-
-            if (child.HasAttribute("TransactionManagerType"))
-            {
-                this.TransactionManagerType = child.GetAttribute("TransactionManagerType");
-            }
         }
 
-        private TransactionLogType GetLogType(string type)
+        private static Type ResolveType(string typeName, string configurationValueName)
         {
-            if (type.Equals("Memory", StringComparison.InvariantCultureIgnoreCase))
+            Type resolvedType = null;
+
+            if (!string.IsNullOrWhiteSpace(typeName))
             {
-                return TransactionLogType.Memory;
+                resolvedType = Type.GetType(typeName);
+
+                if (resolvedType == null)
+                {
+                    throw new InvalidOperationException($"Cannot locate the type specified in the configuration file for {configurationValueName}: '{typeName}'.");
+                }
+
+                if (!resolvedType.IsClass || resolvedType.IsAbstract)
+                {
+                    throw new InvalidOperationException($"{resolvedType} is either not a class or an abstract class.");
+                }
             }
 
-            if (type.Equals("AzureTable", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return TransactionLogType.AzureTable;
-            }
-
-            throw new FormatException(string.Format("Invalid value {0} for TransactionLogType", type));
+            return resolvedType;
         }
-
     }
 }

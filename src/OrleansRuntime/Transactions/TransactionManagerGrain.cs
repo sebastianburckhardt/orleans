@@ -1,8 +1,6 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Orleans.Concurrency;
 
 namespace Orleans.Transactions
@@ -14,7 +12,14 @@ namespace Orleans.Transactions
     [Reentrant]
     public class TransactionManagerGrain : Grain, ITransactionManagerGrain
     {
-        private ITransactionManagerService transactionManagerService;
+        private readonly ITransactionManager transactionManager;
+        private readonly ITransactionManagerService transactionManagerService;
+
+        public TransactionManagerGrain(ITransactionManager transactionManager)
+        {
+            this.transactionManager = transactionManager;
+            this.transactionManagerService = new TransactionManagerService(transactionManager);
+        }
 
         /// <summary>
         /// This method is called at the end of the process of activating a grain.
@@ -23,9 +28,7 @@ namespace Orleans.Transactions
         /// </summary>
         public override async Task OnActivateAsync()
         {
-            ITransactionManager transactionManager = this.ServiceProvider.GetRequiredService<InClusterTransactionManager>();
             await transactionManager.StartAsync();
-            transactionManagerService = new TransactionManagerService(transactionManager);
         }
 
         public Task<StartTransactionsResponse> StartTransactions(List<TimeSpan> timeouts)

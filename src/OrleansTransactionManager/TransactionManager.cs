@@ -64,13 +64,13 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                dependencyEvent.WaitOne();
-                base.CheckDependenciesCompleted();
-            }
+                    dependencyEvent.WaitOne();
+                    base.CheckDependenciesCompleted();
+                }
                 catch (Exception exception)
                 {
                     this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.DependencyCompletionLoop), exception);
-        }
+                }
             }
         }
 
@@ -80,13 +80,13 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                commitEvent.WaitOne();
-                base.GroupCommit();
-            }
+                    commitEvent.WaitOne();
+                    base.GroupCommit();
+                }
                 catch (Exception exception)
                 {
                     this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.GroupCommitLoop), exception);
-        }
+                }
             }
         }
 
@@ -98,15 +98,15 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                // Maybe impose a max per batch to decrease latency?
-                checkpointEvent.WaitOne();
-                base.Checkpoint(resources, transactions).Wait();
-            }
-                catch(Exception exception)
+                    // Maybe impose a max per batch to decrease latency?
+                    checkpointEvent.WaitOne();
+                    base.Checkpoint(resources, transactions).Wait();
+                }
+                catch (Exception exception)
                 {
                     this.Logger.Warn(ErrorCode.Transactions_TMError, "Ignoring exception in " + nameof(this.CheckpointLoop), exception);
+                }
+            }
         }
-    }
-}
     }
 }

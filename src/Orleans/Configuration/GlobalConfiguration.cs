@@ -684,6 +684,24 @@ namespace Orleans.Runtime.Configuration
             sb.AppendFormat("   Providers:").AppendLine();
             sb.Append(ProviderConfigurationUtility.PrintProviderConfigurations(ProviderConfigurations));
 
+            sb.AppendLine("   Transactions");
+            sb.AppendLine($"      LogStorageTypeName: {Transactions.LogStorageType?.AssemblyQualifiedName ?? "N/A"}");
+            sb.AppendLine($"      TransactionManagerTypeName: {Transactions.TransactionManagerType?.AssemblyQualifiedName ?? "N/A"}");
+            sb.AppendLine($"      TransactionServiceFactoryTypeName: {Transactions.TransactionServiceFactoryType?.AssemblyQualifiedName ?? "N/A"}");
+            sb.AppendLine($"      TransactionIdAllocationBatchSize: {Transactions.TransactionIdAllocationBatchSize}");
+            sb.AppendLine($"      AvailableTransactionIdThreshold: {Transactions.AvailableTransactionIdThreshold}");
+            sb.AppendLine($"      TransactionManagerProxyCount: {Transactions.TransactionManagerProxyCount}");
+            sb.AppendLine($"      TransactionRecordPreservationDuration: {Transactions.TransactionRecordPreservationDuration}");
+            if (!string.IsNullOrWhiteSpace(Transactions.LogConnectionString))
+            {
+                sb.AppendLine($"   LogConnectionString: {ConfigUtilities.RedactConnectionStringInfo(Transactions.LogConnectionString)}");
+            }
+            if (!string.IsNullOrWhiteSpace(Transactions.LogTableName))
+            {
+                sb.AppendLine($"   LogTableName: {Transactions.LogTableName}");
+            }
+            sb.AppendLine($"      TransactionManagerProxyCount: {Transactions.TransactionManagerProxyCount}");
+
             return sb.ToString();
         }
 

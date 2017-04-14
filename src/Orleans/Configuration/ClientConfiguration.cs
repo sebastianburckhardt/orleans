@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Xml;
 using Orleans.Providers;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime.Configuration
 {
@@ -65,6 +66,8 @@ namespace Orleans.Runtime.Configuration
         /// <summary>
         /// </summary>
         public GatewayProviderType GatewayProvider { get; set; }
+
+        public TransactionsConfiguration Transactions { get; private set; }
 
         /// <summary>
         /// Specifies a unique identifier of this deployment.
@@ -221,6 +224,7 @@ namespace Orleans.Runtime.Configuration
             StatisticsCollectionLevel = NodeConfiguration.DEFAULT_STATS_COLLECTION_LEVEL;
             LimitManager = new LimitManager();
             ProviderConfigurations = new Dictionary<string, ProviderCategoryConfiguration>();
+            Transactions = new TransactionsConfiguration();
         }
 
         public void Load(TextReader input)
@@ -331,6 +335,9 @@ namespace Orleans.Runtime.Configuration
                         case "Telemetry":
                             ConfigUtilities.ParseTelemetry(child);
                             break;
+                        case "Transactions":
+                            Transactions.Load(child);
+                            break;
                         default:
                             if (child.LocalName.EndsWith("Providers", StringComparison.Ordinal))
                             {
@@ -366,7 +373,6 @@ namespace Orleans.Runtime.Configuration
                 config.SourceFile = fileName;
                 return config;
             }
-            
         }
 
         /// <summary>
@@ -511,6 +517,25 @@ namespace Orleans.Runtime.Configuration
             sb.Append(ConfigUtilities.IStatisticsConfigurationToString(this));
             sb.Append(LimitManager);
             sb.AppendFormat(base.ToString());
+
+            sb.AppendLine("Transactions");
+            sb.AppendLine($"   LogStorageTypeName: {Transactions.LogStorageType?.AssemblyQualifiedName ?? "N/A"}");
+            sb.AppendLine($"   TransactionManagerTypeName: {Transactions.TransactionManagerType?.AssemblyQualifiedName ?? "N/A"}");
+            sb.AppendLine($"   TransactionServiceFactoryTypeName: {Transactions.TransactionServiceFactoryType?.AssemblyQualifiedName ?? "N/A"}");
+            sb.AppendLine($"   TransactionIdAllocationBatchSize: {Transactions.TransactionIdAllocationBatchSize}");
+            sb.AppendLine($"   AvailableTransactionIdThreshold: {Transactions.AvailableTransactionIdThreshold}");
+            sb.AppendLine($"   TransactionManagerProxyCount: {Transactions.TransactionManagerProxyCount}");
+            sb.AppendLine($"   TransactionRecordPreservationDuration: {Transactions.TransactionRecordPreservationDuration}");
+            if (!string.IsNullOrWhiteSpace(Transactions.LogConnectionString))
+            {
+                sb.AppendLine($"   LogConnectionString: {ConfigUtilities.RedactConnectionStringInfo(Transactions.LogConnectionString)}");
+            }
+            if (!string.IsNullOrWhiteSpace(Transactions.LogTableName))
+            {
+                sb.AppendLine($"   LogTableName: {Transactions.LogTableName}");
+            }
+            sb.AppendLine($"   TransactionManagerProxyCount: {Transactions.TransactionManagerProxyCount}");
+
 #if !NETSTANDARD
             sb.Append("   .NET: ").AppendLine();
             int workerThreads;
