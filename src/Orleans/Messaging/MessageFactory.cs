@@ -88,7 +88,7 @@ namespace Orleans.Runtime
             }
 
             response.CacheInvalidationHeader = request.CacheInvalidationHeader;
-            response.Expiration = request.Expiration;
+            response.TimeToLive = request.TimeToLive;
 
             var contextData = RequestContext.Export(this.serializationManager);
             if (contextData != null)

@@ -105,7 +105,7 @@ namespace Orleans.Runtime
         {
             string name;
             if (singletonSystemTargetNames.TryGetValue(id, out name)) return name;
-            if (nonSingletonSystemTargetNames.TryGetValue(id.GetTypeCode(), out name)) return name;
+            if (nonSingletonSystemTargetNames.TryGetValue(id.TypeCode, out name)) return name;
             return String.Empty;
         }
 

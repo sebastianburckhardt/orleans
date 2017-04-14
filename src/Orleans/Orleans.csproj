@@ -125,6 +125,9 @@
     <Compile Include="Core\IStatefulGrain.cs" />
     <Compile Include="GrainDirectory\MultiClusterStatus.cs" />
     <Compile Include="LogConsistency\ILogViewAdaptorHost.cs" />
+    <Compile Include="Placement\IPlacementDirector.cs" />
+    <Compile Include="Placement\IPlacementContext.cs" />
+    <Compile Include="Placement\PlacementTarget.cs" />
     <Compile Include="Providers\ProviderStateManager.cs" />
     <Compile Include="Runtime\IGrainReferenceConverter.cs" />
     <Compile Include="Runtime\IGrainTimer.cs" />
@@ -177,13 +180,14 @@
     <Compile Include="Services\IGrainService.cs" />
     <Compile Include="Serialization\RemoteNonDeserializableException.cs" />
     <Compile Include="Serialization\TypeSerializer.cs" />
+    <Compile Include="Streams\Core\IStreamSubscriptionObserver.cs" />
     <Compile Include="Streams\Core\IStreamSubscriptionManager.cs" />
     <Compile Include="Streams\Core\IStreamSubscriptionManagerAdmin.cs" />
     <Compile Include="Streams\Core\IStreamSubscriptionManagerRetriever.cs" />
     <Compile Include="Streams\Core\StreamSubscription.cs" />
     <Compile Include="Streams\Core\StreamSubscriptionManager.cs" />
     <Compile Include="Streams\Core\StreamSubscriptionManagerAdmin.cs" />
-    <Compile Include="Streams\Core\SubscriptionChangeHandler.cs" />
+    <Compile Include="Streams\Internal\StreamSubscriptionChangeHandler.cs" />
     <Compile Include="Streams\Providers\StreamProviderManagerExtensions.cs" />
     <Compile Include="Transactions\ActiveTransactionsTracker.cs" />
     <Compile Include="Transactions\ITransactionalExtension.cs" />
@@ -202,7 +206,6 @@
     <Compile Include="Transactions\TransactionManager.cs" />
     <Compile Include="Transactions\TransactionManagerService.cs" />
     <Compile Include="Transactions\TransactionLog.cs" />
-    <Compile Include="Streams\Providers\StreamProviderUtils.cs" />
     <Compile Include="Streams\PubSub\StreamSubscriptionManagerExtensions.cs" />
     <Compile Include="Utils\Factory.cs" />
     <Compile Include="Utils\IKeyedServiceCollection.cs" />
