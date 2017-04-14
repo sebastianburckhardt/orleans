@@ -7,7 +7,6 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
-using Orleans.Core;
 using Orleans.Facet;
 using Orleans.GrainDirectory;
 using Orleans.MultiCluster;
