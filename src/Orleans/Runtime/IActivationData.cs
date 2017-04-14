@@ -1,6 +1,5 @@
+
 using System;
-using System.Threading.Tasks;
-using Orleans.Storage;
 
 namespace Orleans.Runtime
 {
@@ -14,7 +13,6 @@ namespace Orleans.Runtime
         ActivationId ActivationId { get; }
         ActivationAddress Address { get; }
         void DelayDeactivation(TimeSpan timeSpan);
-        IStorageProvider StorageProvider { get; }
         void OnTimerCreated(IGrainTimer timer);
         void OnTimerDisposed(IGrainTimer timer);
     }

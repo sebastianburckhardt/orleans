@@ -10,7 +10,6 @@ namespace UnitTests.GrainInterfaces
     public interface IPersistenceTestGrain : IGrainWithGuidKey
     {
         Task<bool> CheckStateInit();
-        Task<string> CheckProviderType();
         Task DoSomething();
         Task DoWrite(int val);
         Task<int> DoRead();

@@ -7,9 +7,6 @@ using Orleans.LogConsistency;
 using Orleans.Storage;
 using Orleans.Runtime.LogConsistency;
 using Orleans.GrainDirectory;
-using Orleans.Serialization;
-using Orleans.Runtime.MultiClusterNetwork;
-using Orleans.Runtime.Configuration;
 
 namespace Orleans.Runtime
 {
@@ -26,9 +23,6 @@ namespace Orleans.Runtime
 
         private readonly ConcurrentDictionary<GrainTypeData, ObjectFactory> typeActivatorCache = new ConcurrentDictionary<GrainTypeData, ObjectFactory>(GrainTypeData.TypeComparer);
 
-        private readonly SerializationManager serializationManager;
-        private readonly IInternalGrainFactory grainFactory;
-        
         private readonly Factory<Grain, IMultiClusterRegistrationStrategy, ProtocolServices> protocolServicesFactory;
 
         /// <summary>
@@ -66,32 +60,6 @@ namespace Orleans.Runtime
             return grain;
         }
 
-        /// <summary>
-        /// Create a new instance of a grain
-        /// </summary>
-        /// <param name="grainType"></param>
-        /// <param name="identity">Identity for the new grain</param>
-        /// <param name="stateType">If the grain is a stateful grain, the type of the state it persists.</param>
-        /// <param name="storage">If the grain is a stateful grain, the storage used to persist the state.</param>
-        /// <param name="arguments">Arguments available for grain construction</param>
-        /// <returns></returns>
-        public Grain CreateGrainInstance(GrainTypeData grainType, IGrainIdentity identity, Type stateType, IStorage storage, object[] arguments)
-		{
-            //Create a new instance of the grain
-            var grain = CreateGrainInstance(grainType, identity, arguments);
-
-            var statefulGrain = grain as IStatefulGrain;
-
-            if (statefulGrain == null)
-                return grain;
-
-            //Inject state and storage data into the grain
-            statefulGrain.GrainState.State = Activator.CreateInstance(stateType);
-            statefulGrain.SetStorage(storage);
-
-            return grain;
-        }
-        
         /// <summary>
         /// Install the log-view adaptor into a log-consistent grain.
         /// </summary>

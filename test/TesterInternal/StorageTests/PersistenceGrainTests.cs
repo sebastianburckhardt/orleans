@@ -105,15 +105,6 @@ namespace UnitTests.StorageTests
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Persistence")]
-        public async Task Persistence_Grain_CheckStorageProvider()
-        {
-            Guid id = Guid.NewGuid();
-            IPersistenceTestGrain grain = this.HostedCluster.GrainFactory.GetGrain<IPersistenceTestGrain>(id);
-            string providerType = await grain.CheckProviderType();
-            Assert.Equal(typeof(MockStorageProvider).FullName, providerType); // StorageProvider provider type
-        }
-
-        [Fact, TestCategory("Functional"), TestCategory("Persistence")]
         public async Task Persistence_Grain_Init()
         {
             Guid id = Guid.NewGuid();

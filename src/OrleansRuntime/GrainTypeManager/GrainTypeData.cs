@@ -64,7 +64,7 @@ namespace Orleans.Runtime
             // TODO: shouldn't this use GrainInterfaceUtils.IsStatelessWorker?
             IsStatelessWorker = typeInfo.GetCustomAttributes(typeof(StatelessWorkerAttribute), true).Any();
             GrainClass = TypeUtils.GetFullName(typeInfo);
-            RemoteInterfaceTypes = GetRemoteInterfaces(type); ;
+            RemoteInterfaceTypes = GetRemoteInterfaces(type);
             StateObjectType = stateObjectType;
             MayInterleave = GetMayInterleavePredicate(typeInfo) ?? (_ => false);
             MultiClusterRegistrationStrategy = registrationManager?.GetMultiClusterRegistrationStrategy(type);

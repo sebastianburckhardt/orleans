@@ -2,8 +2,11 @@
 
 namespace Orleans.Core
 {
-    public interface IStorage
+    public interface IStorage<TState>
+        where TState : new()
     {
+        TState State { get; set; }
+
         /// <summary>
         /// Async method to cause the current grain state data to be cleared and reset. 
         /// This will usually mean the state record is deleted from backing store, but the specific behavior is defined by the storage provider instance configured for this grain.
@@ -22,11 +25,5 @@ namespace Orleans.Core
         /// Any previous contents of the grain state data will be overwritten.
         /// </summary>
         Task ReadStateAsync();
-    }
-
-    internal interface IStorage<out TState> : IStorage
-        where TState : class, new()
-    {
-        TState State { get; }
     }
 }

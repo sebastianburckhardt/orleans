@@ -9,14 +9,18 @@ using Orleans.Storage;
 namespace Orleans.Core
 {
     internal class StateStorageBridge<TState> : IStorage<TState>
-        where TState : class, new()
+        where TState : new()
     {
         private readonly string name;
         private readonly GrainReference grainRef;
         private readonly IStorageProvider store;
         private readonly GrainState<TState> grainState;
 
-        public TState State => grainState.State;
+        public TState State
+        {
+            get { return grainState.State; }
+            set { grainState.State = value; }
+        }
 
         public StateStorageBridge(string name, GrainReference grainRef, IStorageProvider store)
         {

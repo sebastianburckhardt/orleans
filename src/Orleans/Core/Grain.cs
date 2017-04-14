@@ -267,9 +267,8 @@ namespace Orleans
     /// <typeparam name="TGrainState">The class of the persistent state object</typeparam>
     public class Grain<TGrainState> : Grain, IStatefulGrain where TGrainState : new()
     {
-        private readonly GrainState<TGrainState> grainState;
+        private IStorage<TGrainState> storage;
 
-        private IStorage storage;
 
         /// <summary>
         /// This constructor should never be invoked. We expose it so that client code (subclasses of this class) do not have to add a constructor.
@@ -277,7 +276,6 @@ namespace Orleans
         /// </summary>
         protected Grain()
         {
-            grainState = new GrainState<TGrainState>();
         }
 
         /// <summary>
@@ -285,10 +283,9 @@ namespace Orleans
         /// This constructor is particularly useful for unit testing where test code can create a Grain and replace
         /// the IGrainIdentity, IGrainRuntime and State with test doubles (mocks/stubs).
         /// </summary>
-        protected Grain(IGrainIdentity identity, IGrainRuntime runtime, TGrainState state, IStorage storage) 
+        protected Grain(IGrainIdentity identity, IGrainRuntime runtime, IStorage<TGrainState> storage) 
             : base(identity, runtime)
         {
-            grainState = new GrainState<TGrainState>(state);
             this.storage = storage;
         }
 
@@ -297,18 +294,18 @@ namespace Orleans
         /// </summary>
         protected TGrainState State
         {
-            get { return grainState.State; }
-            set { grainState.State = value; }
+            get { return this.storage.State; }
+            set { this.storage.State = value; }
         }
         
-        void IStatefulGrain.SetStorage(IStorage storage)
+        void IStatefulGrain.SetStorageProvider(IStorageProvider storageProvider)
         {
-            this.storage = storage;
+            this.storage = new StateStorageBridge<TGrainState>(this.GetType().FullName, this.GrainReference, storageProvider);
         }
 
-        IGrainState IStatefulGrain.GrainState
+        Task IStatefulGrain.InitializeState()
         {
-            get { return grainState; }
+            return this.ReadStateAsync();
         }
 
         /// <summary>Clear the current grain state data from backing store.</summary>

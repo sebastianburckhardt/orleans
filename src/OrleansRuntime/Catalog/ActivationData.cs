@@ -285,8 +285,6 @@ namespace Orleans.Runtime
             }
         }
 
-        public IStorageProvider StorageProvider { get; set; }
-
         private Streams.StreamDirectory streamDirectory;
         internal Streams.StreamDirectory GetStreamDirectory()
         {

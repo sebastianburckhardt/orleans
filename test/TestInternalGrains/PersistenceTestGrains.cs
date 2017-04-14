@@ -81,13 +81,6 @@ namespace UnitTests.Grains
             return Task.FromResult(true);
         }
 
-        public Task<string> CheckProviderType()
-        {
-            var storageProvider = ((ActivationData) Data).StorageProvider;
-            Assert.NotNull(storageProvider);
-            return Task.FromResult(storageProvider.GetType().FullName);
-        }
-
         public Task DoSomething()
         {
             return TaskDone.Done;

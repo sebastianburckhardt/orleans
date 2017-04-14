@@ -1,11 +1,12 @@
-﻿using Orleans.Core;
+﻿
+using System.Threading.Tasks;
+using Orleans.Storage;
 
 namespace Orleans
 {
     internal interface IStatefulGrain
     {
-        IGrainState GrainState { get; }
-
-        void SetStorage(IStorage storage);
+        void SetStorageProvider(IStorageProvider storageProvider);
+        Task InitializeState();
     }
 }

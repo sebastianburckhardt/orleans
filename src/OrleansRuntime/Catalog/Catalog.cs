@@ -723,45 +723,37 @@ namespace Orleans.Runtime
 
             //Get the grain's type
             Type grainType = grainTypeData.Type;
-
-            //Gets the type for the grain's state
-            Type stateObjectType = grainTypeData.StateObjectType;
             
             lock (data)
             {
-                Grain grain;
-
                 object[] parameters = grainTypeData.ConstructorInfo.CreateConstructorParameterFacets(this.services);
-                IGrainBinder[] binders = parameters.OfType<IGrainBinder>().ToArray();
+                data.Binders = parameters.OfType<IGrainBinder>().ToArray();
 
-                if (typeof(IStatefulGrain).IsAssignableFrom(grainType))
+                Grain grain = grainCreator.CreateGrainInstance(grainTypeData, data.Identity, parameters);
+
+                data.SetGrainInstance(grain);
+                grain.Data = data;
+
+                IStorageProvider storageProvider = null;
+                IStatefulGrain statefulGrain = grain as IStatefulGrain;
+                if (statefulGrain != null)
                 {
-                    //for stateful grains, install storage bridge
-                    SetupStorageProvider(grainType, data);
-
-                    var storage = new GrainStateStorageBridge(grainType.FullName, data.StorageProvider);
-
-                    grain = grainCreator.CreateGrainInstance(grainTypeData, data.Identity, stateObjectType, storage, parameters);
-
-                    storage.SetGrain(grain);
-                }
-                else
-                {
-                    //Create a new instance of the given grain type
-                    grain = grainCreator.CreateGrainInstance(grainTypeData, data.Identity, parameters);
+                    storageProvider = GetStorageProvider(grainType);
+                    statefulGrain.SetStorageProvider(storageProvider);
                 }
 
                 if (grain is ILogConsistentGrain)
                 {
                     var consistencyProvider = SetupLogConsistencyProvider(grain, grainType, data);
+                    if (consistencyProvider.UsesStorageProvider && storageProvider == null)
+                    {
+                        storageProvider = GetStorageProvider(grainType);
+                    }
                     grainCreator.InstallLogViewAdaptor(grain, grainType,
                         grainTypeData.StateObjectType, grainTypeData.MultiClusterRegistrationStrategy ?? this.multiClusterRegistrationStrategyManager.DefaultStrategy,
-                        consistencyProvider, data.StorageProvider);
+                        consistencyProvider, storageProvider);
                 }
 
-                grain.Data = data;
-                data.SetGrainInstance(grain);
-                data.Binders = binders;
             }
 
 
@@ -770,7 +762,7 @@ namespace Orleans.Runtime
             if (logger.IsVerbose) logger.Verbose("CreateGrainInstance {0}{1}", data.Grain, data.ActivationId);
         }
 
-        private void SetupStorageProvider(Type grainType, ActivationData data)
+        private IStorageProvider GetStorageProvider(Type grainType)
         {
             var grainTypeName = grainType.FullName;
 
@@ -804,7 +796,6 @@ namespace Orleans.Runtime
                     throw new BadProviderConfigException(errMsg);
                 }
             }
-            data.StorageProvider = provider;
 
             if (logger.IsVerbose2)
             {
@@ -812,6 +803,7 @@ namespace Orleans.Runtime
                     storageProviderName, grainTypeName);
                 logger.Verbose2(ErrorCode.Provider_CatalogStorageProviderAllocated, msg);
             }
+            return provider;
         }
 
         private ILogViewAdaptorFactory SetupLogConsistencyProvider(Grain grain, Type grainType, ActivationData data)
@@ -849,11 +841,6 @@ namespace Orleans.Runtime
             if (consistencyProvider != null)
             {
                 // we found a log consistency provider in the configuration file
-
-                // if it depends on a storage provider, find that one too
-                if (consistencyProvider.UsesStorageProvider)
-                    SetupStorageProvider(grainType, data);
-
                 string msg = string.Format("Assigned log consistency provider with Name={0} to grain type {1}",
                     attr.ProviderName, grainType.FullName);
                 logger.Verbose2(ErrorCode.Provider_CatalogLogConsistencyProviderAllocated, msg);
@@ -873,10 +860,6 @@ namespace Orleans.Runtime
                 throw new BadProviderConfigException(errMsg);
             };
 
-            // if it depends on a storage provider, find that one too
-            if (defaultFactory.UsesStorageProvider)
-                SetupStorageProvider(grainType, data);
-
             return defaultFactory;
         }
        
@@ -890,39 +873,25 @@ namespace Orleans.Runtime
                     .Select( binder => scheduler.RunOrQueueTask(() => binder.BindAsync(result.GrainInstance), result.SchedulingContext)));
             }
 
+            // if stateful grain, setup storage provider
             var statefulGrain = result.GrainInstance as IStatefulGrain;
-            if (statefulGrain == null)
-            {
-                return;
-            }
-
-            var state = statefulGrain.GrainState;
-
-            if (result.StorageProvider != null && state != null)
+            if (statefulGrain != null)
             {
                 var sw = Stopwatch.StartNew();
-                var innerState = statefulGrain.GrainState.State;
-
-                // Populate state data
                 try
                 {
-                    var grainRef = result.GrainReference;
-
                     await scheduler.RunOrQueueTask(() =>
-                        result.StorageProvider.ReadStateAsync(grainType, grainRef, state),
+                        statefulGrain.InitializeState(),
                         result.SchedulingContext);
-                    
                     sw.Stop();
-                    StorageStatisticsGroup.OnStorageActivate(result.StorageProvider, grainType, result.GrainReference, sw.Elapsed);
+                    StorageStatisticsGroup.OnStorageActivate( grainType, result.GrainReference, sw.Elapsed);
                 }
                 catch (Exception ex)
                 {
-                    StorageStatisticsGroup.OnStorageActivateError(result.StorageProvider, grainType, result.GrainReference);
+                    StorageStatisticsGroup.OnStorageActivateError(grainType, result.GrainReference);
                     sw.Stop();
                     if (!(ex.GetBaseException() is KeyNotFoundException))
                         throw;
-
-                    statefulGrain.GrainState.State = innerState; // Just keep original empty state object
                 }
             }
         }
