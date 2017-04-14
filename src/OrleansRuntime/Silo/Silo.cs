@@ -293,16 +293,14 @@ namespace Orleans.Runtime
             services.AddSingleton(config.Globals.Transactions);
             services.AddSingleton<TransactionLog>();
 
-            ValidateTransactionTypeInterfaces(config.Globals.Transactions.LogStorageType, typeof(ITransactionLogStorage));
             var transactionLogStorageType = config.Globals.Transactions.LogStorageType ?? typeof(MemoryTransactionLogStorage);
+            ValidateTransactionTypeInterfaces(transactionLogStorageType, typeof(ITransactionLogStorage));
             services.AddSingleton(typeof(ITransactionLogStorage), transactionLogStorageType);
 
-            ValidateTransactionTypeInterfaces(config.Globals.Transactions.TransactionManagerType, typeof(ITransactionManager));
-            var transactionManagerType = config.Globals.Transactions.TransactionManagerType ?? typeof(InClusterTransactionManager);
-            services.AddSingleton(typeof(ITransactionManager), transactionManagerType);
+            services.AddSingleton<ITransactionManager,InClusterTransactionManager>();
 
-            ValidateTransactionTypeInterfaces(config.Globals.Transactions.TransactionServiceFactoryType, typeof(ITransactionServiceFactory));
             var transactionServiceFactoryType = config.Globals.Transactions.TransactionServiceFactoryType ?? typeof(TransactionServiceGrainFactory);
+            ValidateTransactionTypeInterfaces(transactionServiceFactoryType, typeof(ITransactionServiceFactory));
             services.AddSingleton(typeof(ITransactionServiceFactory), transactionServiceFactoryType);
 
             services.AddTransient(typeof(ITransactionalState<>), typeof(TransactionalState<>));

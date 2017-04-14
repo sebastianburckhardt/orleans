@@ -1,4 +1,4 @@
-using Orleans.Runtime.Configuration;
+﻿using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Test.TransactionsTests;
 using TestExtensions;
@@ -19,7 +19,7 @@ namespace Tester.TransactionsTests
 
                 options.ClusterConfiguration.AddAzureTableStorageProvider(TransactionTestConstants.TransactionStore, TestDefaultConfiguration.DataConnectionString);
 
-                options.ClusterConfiguration.Globals.Transactions.LogStorageType = typeof(AzureTransactionLogStorage);
+                options.ClusterConfiguration.Globals.Transactions.LogStorageTypeName = typeof(AzureTransactionLogStorage).AssemblyQualifiedName;
                 options.ClusterConfiguration.Globals.Transactions.LogConnectionString = TestDefaultConfiguration.DataConnectionString;
 
                 return new TestCluster(options);

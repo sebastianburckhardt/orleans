@@ -8,21 +8,24 @@ namespace Orleans.Transactions
     public class TransactionsConfiguration
     {
         /// <summary>
-        /// The LogStorageType value controls the persistent storage used for the transaction log. This value is resolved from the LogStorageTypeName attribute if XML configuration is used.
+        /// The LogStorageType as string.
         /// </summary>
-        public Type LogStorageType { get; set; }
+        public string LogStorageTypeName { get; set; }
 
         /// <summary>
-        /// The TransactionManager value controls the type of the TransactionManager will be used. This value is resolved from the TransactionManagerTypeName attribute if XML configuration is used.
-        /// This value must be in pair with TransactionServiceFactoryType attribute.
+        /// The LogStorageType value controls the persistent storage used for the transaction log. This value is resolved from the LogStorageTypeName attribute.
         /// </summary>
-        public Type TransactionManagerType { get; set; }
+        public Type LogStorageType => ResolveType(LogStorageTypeName, nameof(LogStorageTypeName));
 
         /// <summary>
-        /// The TransactionServiceFactoryType value controls the type of the TransactionServiceFactoryTypeName will be used. This value is resolved from the TransactionServiceFactoryTypeName attribute if XML configuration is used.
-        /// This value must be in pair with TransactionManagerType attribute.
+        /// The TransactionServiceFactoryType as string
         /// </summary>
-        public Type TransactionServiceFactoryType { get; set; }
+        public string TransactionServiceFactoryTypeName { get; set; }
+
+        /// <summary>
+        /// The TransactionServiceFactoryType value controls the type of the TransactionServiceFactoryTypeName will be used. This value is resolved from the TransactionServiceFactoryTypeName attribute.
+        /// </summary>
+        public Type TransactionServiceFactoryType => ResolveType(TransactionServiceFactoryTypeName, nameof(TransactionServiceFactoryTypeName));
 
         /// <summary>
         /// The number of new Transaction Ids allocated on every write to the log.
@@ -77,20 +80,12 @@ namespace Orleans.Transactions
         {
             if (child.HasAttribute("LogStorageTypeName"))
             {
-                var logStorageTypeName = child.GetAttribute("LogStorageTypeName");
-                this.LogStorageType = ResolveType(logStorageTypeName, nameof(logStorageTypeName));
-            }
-
-            if (child.HasAttribute("TransactionManagerTypeName"))
-            {
-                var transactionManagerTypeName = child.GetAttribute("TransactionManagerTypeName");
-                this.TransactionManagerType = ResolveType(transactionManagerTypeName, nameof(transactionManagerTypeName));
+                this.LogStorageTypeName = child.GetAttribute("LogStorageTypeName");
             }
 
             if (child.HasAttribute("TransactionServiceFactoryTypeName"))
             {
-                var transactionServiceFactoryTypeName = child.GetAttribute("TransactionServiceFactoryTypeName");
-                this.TransactionServiceFactoryType = ResolveType(transactionServiceFactoryTypeName, nameof(transactionServiceFactoryTypeName));
+                this.TransactionServiceFactoryTypeName = child.GetAttribute("TransactionServiceFactoryTypeName");
             }
 
             if (child.HasAttribute("TransactionIdAllocationBatchSize"))

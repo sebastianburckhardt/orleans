@@ -25,7 +25,7 @@ namespace Tester.TransactionsTests
                 options.ClusterConfiguration.UseStartupType<TestStartup>();
                 options.ClusterConfiguration.AddAzureTableStorageProvider(TransactionTestConstants.TransactionStore, TestDefaultConfiguration.DataConnectionString);
 
-                options.ClusterConfiguration.Globals.Transactions.LogStorageType = typeof(AzureTransactionLogStorage);
+                options.ClusterConfiguration.Globals.Transactions.LogStorageTypeName = typeof(AzureTransactionLogStorage).AssemblyQualifiedName;
                 options.ClusterConfiguration.Globals.Transactions.LogConnectionString = TestDefaultConfiguration.DataConnectionString;
 
                 return new TestCluster(options);

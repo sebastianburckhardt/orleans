@@ -686,7 +686,6 @@ namespace Orleans.Runtime.Configuration
 
             sb.AppendLine("   Transactions");
             sb.AppendLine($"      LogStorageTypeName: {Transactions.LogStorageType?.AssemblyQualifiedName ?? "N/A"}");
-            sb.AppendLine($"      TransactionManagerTypeName: {Transactions.TransactionManagerType?.AssemblyQualifiedName ?? "N/A"}");
             sb.AppendLine($"      TransactionServiceFactoryTypeName: {Transactions.TransactionServiceFactoryType?.AssemblyQualifiedName ?? "N/A"}");
             sb.AppendLine($"      TransactionIdAllocationBatchSize: {Transactions.TransactionIdAllocationBatchSize}");
             sb.AppendLine($"      AvailableTransactionIdThreshold: {Transactions.AvailableTransactionIdThreshold}");
