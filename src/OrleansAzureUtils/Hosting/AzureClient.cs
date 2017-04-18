@@ -86,6 +86,7 @@ namespace Orleans.Runtime.Host
                 DeploymentId = GetDeploymentId(),
                 DataConnectionString = GetDataConnectionString(),
             };
+            config.UseAzureTableTransactionLog();
             
             return config;
         }

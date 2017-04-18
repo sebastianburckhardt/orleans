@@ -129,6 +129,7 @@ namespace Orleans.Runtime.Host
                     throw;
                 }
             }
+            config.UseAzureTableTransactionLog();
             
             return config;
         }

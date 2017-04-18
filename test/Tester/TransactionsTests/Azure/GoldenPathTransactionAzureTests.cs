@@ -4,7 +4,6 @@ using Test.TransactionsTests;
 using TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
-using Orleans.Transactions;
 
 namespace Tester.TransactionsTests
 {
@@ -16,12 +15,8 @@ namespace Tester.TransactionsTests
             protected override TestCluster CreateTestCluster()
             {
                 var options = new TestClusterOptions();
-
                 options.ClusterConfiguration.AddAzureTableStorageProvider(TransactionTestConstants.TransactionStore, TestDefaultConfiguration.DataConnectionString);
-
-                options.ClusterConfiguration.Globals.Transactions.LogStorageTypeName = typeof(AzureTransactionLogStorage).AssemblyQualifiedName;
-                options.ClusterConfiguration.Globals.Transactions.LogConnectionString = TestDefaultConfiguration.DataConnectionString;
-
+                options.ClusterConfiguration.UseAzureTableTransactionLog(TestDefaultConfiguration.DataConnectionString);
                 return new TestCluster(options);
             }
         }

@@ -9,8 +9,6 @@ namespace Orleans.Transactions
 {
     public class AzureTransactionLogStorage : ITransactionLogStorage
     {
-        private const string DefaultTableName = "OTXLog";
-
         private const string RowKey = "RowKey";
         private const string PartitionKey = "PartitionKey";
 
@@ -56,7 +54,7 @@ namespace Orleans.Transactions
 
             // Create the table client.
             var tableClient = storageAccount.CreateCloudTableClient();
-            table = tableClient.GetTableReference(configuration.LogTableName ?? DefaultTableName);
+            table = tableClient.GetTableReference(configuration.LogTableName);
             
             await table.CreateIfNotExistsAsync().ConfigureAwait(false);
 

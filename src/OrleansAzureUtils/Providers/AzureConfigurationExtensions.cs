@@ -5,6 +5,7 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Serialization;
 using Orleans.Storage;
 using Orleans.Streams;
+using Orleans.Transactions;
 
 namespace Orleans.Runtime.Configuration
 {
@@ -242,6 +243,47 @@ namespace Orleans.Runtime.Configuration
 
             throw new ArgumentNullException(nameof(connectionString),
                 "Parameter value and fallback value are both null or empty.");
+        }
+
+
+        /// <summary>
+        /// Configures the transaction manager to use <see cref="AzureTransactionLogStorage"/>.
+        /// </summary>
+        /// <param name="config">The cluster configuration.</param>
+        /// <param name="connectionString">The azure storage connection string. If none is provided, it will use the same as in the Globals configuration.</param>
+        /// <param name="tableName">Table name to store transaction log</param>
+        public static void UseAzureTableTransactionLog(
+            this ClusterConfiguration config,
+            string connectionString = null,
+            string tableName = null)
+        {
+            connectionString = GetConnectionString(connectionString, config);
+            config.Globals.Transactions.LogStorageTypeName = typeof(AzureTransactionLogStorage).AssemblyQualifiedName;
+            config.Globals.Transactions.LogConnectionString = connectionString;
+            if (!string.IsNullOrWhiteSpace(tableName))
+            {
+                config.Globals.Transactions.LogTableName = tableName;
+            }
+        }
+
+        /// <summary>
+        /// Configures the transaction manager to use <see cref="AzureTransactionLogStorage"/>.
+        /// </summary>
+        /// <param name="config">The client configuration.</param>
+        /// <param name="connectionString">The azure storage connection string. If none is provided, it will use the same as in the client's configuration.</param>
+        /// <param name="tableName">Table name to store transaction log</param>
+        public static void UseAzureTableTransactionLog(
+            this ClientConfiguration config,
+            string connectionString = null,
+            string tableName = null)
+        {
+            connectionString = GetConnectionString(connectionString, config);
+            config.Transactions.LogStorageTypeName = typeof(AzureTransactionLogStorage).AssemblyQualifiedName;
+            config.Transactions.LogConnectionString = connectionString;
+            if (!string.IsNullOrWhiteSpace(tableName))
+            {
+                config.Transactions.LogTableName = tableName;
+            }
         }
     }
 }

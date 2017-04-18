@@ -7,6 +7,8 @@ namespace Orleans.Transactions
     [Serializable]
     public class TransactionsConfiguration
     {
+        public const string DefaultTableName = "OTXLog";
+
         /// <summary>
         /// The LogStorageType as string.
         /// </summary>
@@ -59,7 +61,7 @@ namespace Orleans.Transactions
         /// <summary>
         /// Provides name of the table for an external table based transaction log storage.
         /// </summary>
-        public string LogTableName { get; set; }
+        public string LogTableName { get; set; } = DefaultTableName;
 
         /// <summary>
         /// TransactionsConfiguration constructor.

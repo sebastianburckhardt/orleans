@@ -1,5 +1,6 @@
 ﻿using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using Orleans.Transactions;
 using Test.TransactionsTests;
 using TestExtensions;
 using Xunit;
@@ -16,6 +17,7 @@ namespace Tester.TransactionsTests
             {
                 var options = new TestClusterOptions();
                 options.ClusterConfiguration.AddMemoryStorageProvider(TransactionTestConstants.TransactionStore);
+                options.ClusterConfiguration.UseMemoryTransactionLog();
                 return new TestCluster(options);
             }
         }

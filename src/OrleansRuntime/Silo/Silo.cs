@@ -296,9 +296,8 @@ namespace Orleans.Runtime
             services.AddSingleton(config.Globals.Transactions);
             services.AddSingleton<TransactionLog>();
 
-            var transactionLogStorageType = config.Globals.Transactions.LogStorageType ?? typeof(MemoryTransactionLogStorage);
-            ValidateTransactionTypeInterfaces(transactionLogStorageType, typeof(ITransactionLogStorage));
-            services.AddSingleton(typeof(ITransactionLogStorage), transactionLogStorageType);
+            ValidateTransactionTypeInterfaces(config.Globals.Transactions.LogStorageType, typeof(ITransactionLogStorage));
+            services.AddSingleton(typeof(ITransactionLogStorage), config.Globals.Transactions.LogStorageType);
 
             services.AddSingleton<ITransactionManager,InClusterTransactionManager>();
 

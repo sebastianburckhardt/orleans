@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
+using Orleans.Transactions;
 using Test.TransactionsTests;
 using TestExtensions;
 using Xunit;
@@ -23,6 +24,7 @@ namespace Tester.TransactionsTests
                 var options = new TestClusterOptions();
                 options.ClusterConfiguration.UseStartupType<TestStartup>();
                 options.ClusterConfiguration.AddMemoryStorageProvider(TransactionTestConstants.TransactionStore);
+                options.ClusterConfiguration.UseMemoryTransactionLog();
                 return new TestCluster(options);
             }
         }

@@ -203,6 +203,7 @@
     <Compile Include="Streams\QueueBalancer\DeploymentBasedQueueBalancer.cs" />
     <Compile Include="Streams\QueueBalancer\StreamQueueBalancerFactory.cs" />
     <Compile Include="Streams\StreamProviderManagerAgent.cs" />
+    <Compile Include="Transactions\BuiltInTransactionLogExtensions.cs" />
     <Compile Include="Transactions\InClusterTransactionManager.cs" />
     <Compile Include="Transactions\TMProxyDirectoryGrain.cs" />
     <Compile Include="Transactions\TransactionAgent.cs" />
