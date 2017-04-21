@@ -207,6 +207,7 @@
     <Compile Include="Transactions\TransactionManagerService.cs" />
     <Compile Include="Transactions\TransactionLog.cs" />
     <Compile Include="Streams\PubSub\StreamSubscriptionManagerExtensions.cs" />
+    <Compile Include="Utils\CachedReadConcurrentDictionary.cs" />
     <Compile Include="Utils\Factory.cs" />
     <Compile Include="Utils\IKeyedServiceCollection.cs" />
     <Compile Include="Utils\ReferenceEqualsComparer.cs" />
@@ -326,6 +327,7 @@
     <Compile Include="Streams\Core\StreamSequenceToken.cs" />
     <Compile Include="Streams\Core\StreamSubscriptionHandle.cs" />
     <Compile Include="Timers\AsyncTaskSafeTimer.cs" />
+    <Compile Include="Utils\RuntimeTypeNameFormatter.cs" />
     <Compile Include="Utils\ServiceCollectionExtensions.cs" />
     <Compile Include="Utils\SetExtensions.cs" />
     <Compile Include="Placement\ActivationCountBasedPlacement.cs" />
