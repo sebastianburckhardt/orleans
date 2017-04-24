@@ -32,11 +32,11 @@ namespace UnitTests.Grains
             return TaskDone.Done;
         }
 
-        public Task Add(int numberToAdd)
+        public Task<int> Add(int numberToAdd)
         {
             this.data.State.Value += numberToAdd;
             this.data.Save();
-            return TaskDone.Done;
+            return Task.FromResult(data.State.Value);
         }
 
         public Task<int> Get()

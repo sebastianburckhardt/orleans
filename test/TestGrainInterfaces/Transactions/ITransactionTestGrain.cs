@@ -9,7 +9,7 @@ namespace UnitTests.GrainInterfaces
         Task Set(int newValue);
 
         [Transaction(TransactionOption.Required)]
-        Task Add(int numberToAdd);
+        Task<int> Add(int numberToAdd);
 
         [Transaction(TransactionOption.Required)]
         Task<int> Get();

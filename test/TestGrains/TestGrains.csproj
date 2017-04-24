@@ -111,6 +111,7 @@
     <Compile Include="ReentrantGrain.cs" />
     <Compile Include="ReminderTestGrain.cs" />
     <Compile Include="RequestContextTestGrain.cs" />
+    <Compile Include="SchedulerGrain.cs" />
     <Compile Include="SerializationGenerationGrain.cs" />
     <Compile Include="MessageSerializationGrain.cs" />
     <Compile Include="ServiceType.cs" />
@@ -146,6 +147,7 @@
     <Compile Include="Transactions\SingleStateDeactivatingTransactionalGrain.cs" />
     <Compile Include="Transactions\SingleStateTransactionalGrain.cs" />
     <Compile Include="Transactions\TransactionCoordinatorGrain.cs" />
+    <Compile Include="Transactions\TransactionTestScheduler.cs" />
     <Compile Include="ValueTypeTestGrain.cs" />
   </ItemGroup>
   <ItemGroup>

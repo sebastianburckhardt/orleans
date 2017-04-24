@@ -103,6 +103,7 @@
     <Compile Include="IReminderTestGrain2.cs" />
     <Compile Include="IRequestContextTestGrain.cs" />
     <Compile Include="ISampleStreamingGrain.cs" />
+    <Compile Include="ISchedulerGrain.cs" />
     <Compile Include="ISerializationGeneratorTests.cs" />
     <Compile Include="ISimpleDIGrain.cs" />
     <Compile Include="ISimpleGenericGrain.cs" />
@@ -140,6 +141,7 @@
     <Compile Include="Transactions\IDeactivatingTransactionTestGrain.cs" />
     <Compile Include="Transactions\ITransactionCoordinatorGrain.cs" />
     <Compile Include="Transactions\ITransactionTestGrain.cs" />
+    <Compile Include="Transactions\ITransactionRunner.cs" />
     <Compile Include="Transactions\TransactionTestConstants.cs" />
     <Compile Include="UnitTestGrainInterfaces.cs" />
   </ItemGroup>
