@@ -4,13 +4,13 @@ using Microsoft.Extensions.Logging;
 using Orleans.Messaging;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.MembershipService;
-using OrleansAWSUtils.Storage;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using OrleansAWSUtils.Options;
+using Orleans.Clustering.DynamoDB;
 
 namespace Orleans.Runtime.Membership
 {
@@ -24,11 +24,11 @@ namespace Orleans.Runtime.Membership
         private readonly ILoggerFactory loggerFactory;
         private readonly DynamoDBGatewayListProviderOptions options;
         private readonly TimeSpan maxStaleness;
-        public DynamoDBGatewayListProvider(ILoggerFactory loggerFactory, ClientConfiguration clientConfiguration, IOptions<DynamoDBGatewayListProviderOptions> options)
+        public DynamoDBGatewayListProvider(ILoggerFactory loggerFactory, ClientConfiguration clientConfiguration, IOptions<DynamoDBGatewayListProviderOptions> options, IOptions<ClusterClientOptions> clusterClientOptions)
         {
             this.loggerFactory = loggerFactory;
             this.options = options.Value;
-            this.clusterId = clientConfiguration.ClusterId;
+            this.clusterId = clusterClientOptions.Value.ClusterId;
             this.maxStaleness = clientConfiguration.GatewayListRefreshPeriod;
         }
 
