@@ -143,6 +143,8 @@ namespace Tests.GeoClusterTests
 
         public void StartClustersIfNeeded(int numclusters, ITestOutputHelper output)
         {
+            this.output = output;
+
             if (MultiCluster.Clusters.Count != numclusters)
             {
                 if (MultiCluster.Clusters.Count > 0)
@@ -191,6 +193,8 @@ namespace Tests.GeoClusterTests
             }
         }
 
+        private ITestOutputHelper output;
+
         public virtual void Dispose()
         {
             _hostedMultiCluster?.Dispose();
@@ -203,6 +207,16 @@ namespace Tests.GeoClusterTests
 
         private const int Xyz = 333;
 
+        private void AssertEqual<T>(T expected, T actual, string grainidentity)
+        {
+            if (! expected.Equals(actual))
+            {
+                // need to write grain identity to output so we can search for it in the trace
+                output.WriteLine($"identity of offending grain: {grainidentity}");
+                Assert.Equal(expected, actual);
+            }
+        }
+
         public async Task RunChecksOnGrainClass(string grainClass, bool may_update_in_all_clusters, int phases, ITestOutputHelper output)
         {
             var random = new SafeRandom();
@@ -214,21 +228,21 @@ namespace Tests.GeoClusterTests
                 var grainidentity = string.Format("grainref={0}", Client[0].GetGrainRef(grainClass, x));
                 // force creation of replicas
                 for (int i = 0; i < numclusters; i++) 
-                   Assert.Equal(0, Client[i].GetALocal(grainClass, x)); 
+                   AssertEqual(0, Client[i].GetALocal(grainClass, x), grainidentity); 
                 // write global on client 0
                 Client[0].SetAGlobal(grainClass, x, Xyz);
                 // read global on other clients
                 for (int i = 1; i < numclusters; i++)
                 {
                     int r = Client[i].GetAGlobal(grainClass, x);
-                    Assert.Equal(Xyz, r);
+                    AssertEqual(Xyz, r, grainidentity);
                 }
                 // check local stability
                 for (int i = 0; i < numclusters; i++)
-                    Assert.Equal(Xyz, Client[i].GetALocal(grainClass, x));
+                    AssertEqual(Xyz, Client[i].GetALocal(grainClass, x), grainidentity);
                 // check versions
                 for (int i = 0; i < numclusters; i++)
-                    Assert.Equal(1, Client[i].GetConfirmedVersion(grainClass, x));
+                    AssertEqual(1, Client[i].GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<Task> checker2 = () => Task.Run(() =>
@@ -241,11 +255,11 @@ namespace Tests.GeoClusterTests
                 for (int i = 1; i < numclusters; i++)
                 {
                     int r = Client[i].GetAGlobal(grainClass, x);
-                    Assert.Equal(1, r);
+                    AssertEqual(1, r, grainidentity);
                 }
                 // check versions
                 for (int i = 0; i < numclusters; i++)
-                    Assert.Equal(1, Client[i].GetConfirmedVersion(grainClass, x));
+                    AssertEqual(1, Client[i].GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<Task> checker2b = () => Task.Run(() =>
@@ -253,18 +267,18 @@ namespace Tests.GeoClusterTests
                 int x = GetRandom();
                 var grainidentity = string.Format("grainref={0}", Client[0].GetGrainRef(grainClass, x));
                 // force first creation on replica 1
-                Assert.Equal(0, Client[1].GetAGlobal(grainClass, x));
+                AssertEqual(0, Client[1].GetAGlobal(grainClass, x), grainidentity);
                 // increment on replica 0
                 Client[0].IncrementAGlobal(grainClass, x);
                 // expect on other replicas
                 for (int i = 1; i < numclusters; i++)
                 {
                     int r = Client[i].GetAGlobal(grainClass, x);
-                    Assert.Equal(1, r);
+                    AssertEqual(1, r, grainidentity);
                 }
                 // check versions
                 for (int i = 0; i < numclusters; i++)
-                    Assert.Equal(1, Client[i].GetConfirmedVersion(grainClass, x));
+                    AssertEqual(1, Client[i].GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<int, Task> checker3 = (int numupdates) => Task.Run(() =>
@@ -286,29 +300,30 @@ namespace Tests.GeoClusterTests
                 }
 
                 // push & get all
-                Assert.Equal(numupdates, Client[0].GetAGlobal(grainClass, x)); 
+                AssertEqual(numupdates, Client[0].GetAGlobal(grainClass, x), grainidentity); 
 
                 for (int i = 1; i < numclusters; i++)
-                    Assert.Equal(numupdates, Client[i].GetAGlobal(grainClass, x)); // get all
+                    AssertEqual(numupdates, Client[i].GetAGlobal(grainClass, x), grainidentity); // get all
 
                 // check versions
                 for (int i = 0; i < numclusters; i++)
-                    Assert.Equal(numupdates, Client[i].GetConfirmedVersion(grainClass, x));
+                    AssertEqual(numupdates, Client[i].GetConfirmedVersion(grainClass, x), grainidentity);
             });
 
             Func<Task> checker4 = () => Task.Run(() =>
             {
                 int x = GetRandom();
+                var grainidentity = string.Format("grainref={0}", Client[0].GetGrainRef(grainClass, x));
                 var t = new List<Task>();
                 for (int i = 0; i < numclusters; i++)
                 {
                     int c = i;
-                    t.Add(Task.Run(() => Assert.True(Client[c].GetALocal(grainClass, x) == 0)));
+                    t.Add(Task.Run(() => AssertEqual(true, Client[c].GetALocal(grainClass, x) == 0, grainidentity)));
                 }
                 for (int i = 0; i < numclusters; i++)
                 {
                     int c = i;
-                    t.Add(Task.Run(() => Assert.True(Client[c].GetAGlobal(grainClass, x) == 0)));
+                    t.Add(Task.Run(() => AssertEqual(true, Client[c].GetAGlobal(grainClass, x) == 0, grainidentity)));
                 }
                 return Task.WhenAll(t);
             });
@@ -316,6 +331,7 @@ namespace Tests.GeoClusterTests
             Func<Task> checker5 = () => Task.Run(() =>
             {
                 var x = GetRandom();
+                var grainidentity = string.Format("grainref={0}", Client[0].GetGrainRef(grainClass, x));
                 Task.WaitAll(
                    Task.Run(() =>
                    {
@@ -332,8 +348,8 @@ namespace Tests.GeoClusterTests
                  })
                );
                 var result = Client[0].GetReservationsGlobal(grainClass, x);
-                Assert.Single(result);
-                Assert.Equal(2, result[0]);
+                AssertEqual(1, result.Length, grainidentity);
+                AssertEqual(2, result[0], grainidentity);
             });
 
             Func<int, Task> checker6 = async (int preload) =>
@@ -386,9 +402,9 @@ namespace Tests.GeoClusterTests
                 // write conditional on client 0, should always succeed
                 {
                     var result = Client[0].SetAConditional(grainClass, x, Xyz);
-                    Assert.Equal(0, result.Item1);
-                    Assert.True(result.Item2);
-                    Assert.Equal(1, Client[0].GetConfirmedVersion(grainClass, x));
+                    AssertEqual(0, result.Item1, grainidentity);
+                    AssertEqual(true, result.Item2, grainidentity);
+                    AssertEqual(1, Client[0].GetConfirmedVersion(grainClass, x), grainidentity);
                 }
 
                 if ((variation / 4) % 2 == 1)
@@ -399,25 +415,25 @@ namespace Tests.GeoClusterTests
                     var result = Client[1].SetAConditional(grainClass, x, 444);
                     if (result.Item1 == 0) // was stale, thus failed
                     {
-                        Assert.False(result.Item2);
+                        AssertEqual(false, result.Item2, grainidentity);
                         // must have updated as a result
-                        Assert.Equal(1, Client[1].GetConfirmedVersion(grainClass, x));
+                        AssertEqual(1, Client[1].GetConfirmedVersion(grainClass, x), grainidentity);
                         // check stability
-                        Assert.Equal(Xyz, Client[0].GetALocal(grainClass, x));
-                        Assert.Equal(Xyz, Client[1].GetALocal(grainClass, x));
-                        Assert.Equal(Xyz, Client[0].GetAGlobal(grainClass, x));
-                        Assert.Equal(Xyz, Client[1].GetAGlobal(grainClass, x));
+                        AssertEqual(Xyz, Client[0].GetALocal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[1].GetALocal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[0].GetAGlobal(grainClass, x), grainidentity);
+                        AssertEqual(Xyz, Client[1].GetAGlobal(grainClass, x), grainidentity);
                     }
                     else // was up-to-date, thus succeeded
                     {
-                        Assert.True(result.Item2);
-                        Assert.Equal(1, result.Item1);
+                        AssertEqual(true, result.Item2, grainidentity);
+                        AssertEqual(1, result.Item1, grainidentity);
                         // version is now 2
-                        Assert.Equal(2, Client[1].GetConfirmedVersion(grainClass, x));
+                        AssertEqual(2, Client[1].GetConfirmedVersion(grainClass, x), grainidentity);
                         // check stability
-                        Assert.Equal(444, Client[1].GetALocal(grainClass, x));
-                        Assert.Equal(444, Client[0].GetAGlobal(grainClass, x));
-                        Assert.Equal(444, Client[1].GetAGlobal(grainClass, x));
+                        AssertEqual(444, Client[1].GetALocal(grainClass, x), grainidentity);
+                        AssertEqual(444, Client[0].GetAGlobal(grainClass, x), grainidentity);
+                        AssertEqual(444, Client[1].GetAGlobal(grainClass, x), grainidentity);
                     }
                 }
             });
