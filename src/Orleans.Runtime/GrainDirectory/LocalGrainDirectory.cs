@@ -606,6 +606,8 @@ namespace Orleans.Runtime.GrainDirectory
                 // we are the owner     
                 var registrar = this.registrarManager.GetRegistrarForGrain(address.Grain);
 
+                log.Trace($"use registrar {registrar.GetType().Name} for activation {address}");
+
                 return registrar.IsSynchronous ? registrar.Register(address, singleActivation)
                     : await registrar.RegisterAsync(address, singleActivation);
             }

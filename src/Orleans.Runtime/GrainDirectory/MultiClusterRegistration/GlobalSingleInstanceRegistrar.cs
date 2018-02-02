@@ -86,6 +86,9 @@ namespace Orleans.Runtime.GrainDirectory
 
             if (config == null || !config.Clusters.Contains(this.clusterId))
             {
+                if (logger.IsEnabled(LogLevel.Debug))
+                    logger.Debug($"GSIP: Skip {address.Grain} Act={address} mcConf={config}");
+
                 // we are not joined to the cluster yet/anymore. Go to doubtful state directly.
                 gsiActivationMaintainer.TrackDoubtfulGrain(address.Grain);
                 return directoryPartition.AddSingleActivation(address.Grain, address.Activation, address.Silo, GrainDirectoryEntryStatus.Doubtful);
