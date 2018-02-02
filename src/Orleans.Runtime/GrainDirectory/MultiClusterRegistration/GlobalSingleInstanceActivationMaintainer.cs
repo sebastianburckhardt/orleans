@@ -32,7 +32,7 @@ namespace Orleans.Runtime.GrainDirectory
         // maintainer periodically takes and processes this list.
         private List<GrainId> doubtfulGrains = new List<GrainId>();
 
-        // used for immediately
+        // used to cut short the waiting time before next run
         private CancellationTokenSource cts = new CancellationTokenSource();
 
         public GlobalSingleInstanceActivationMaintainer(
@@ -357,6 +357,12 @@ namespace Orleans.Runtime.GrainDirectory
         {
             logger.Debug($"GSIP:M MultiClusterConfiguration {next}");
             Prod();
+        }
+
+        public void Prod()
+        {
+            // cancel the waiting, to proceed immediately
+            cts.Cancel();
         }
     }
 }
