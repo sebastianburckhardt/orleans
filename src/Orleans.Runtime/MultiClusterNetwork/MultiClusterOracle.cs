@@ -120,14 +120,14 @@ namespace Orleans.Runtime.MultiClusterNetwork
             this.ScheduleTask(() => Utils.SafeExecute(() => this.PublishChanges())).Ignore();
         }
 
-        public bool SubscribeToMultiClusterConfigurationEvents(GrainReference observer)
+        public bool SubscribeToMultiClusterConfigurationEvents(IMultiClusterConfigurationListener listener)
         {
-            return localData.SubscribeToMultiClusterConfigurationEvents(observer);
+            return localData.SubscribeToMultiClusterConfigurationEvents(listener);
         }
 
-        public bool UnSubscribeFromMultiClusterConfigurationEvents(GrainReference observer)
+        public bool UnSubscribeFromMultiClusterConfigurationEvents(IMultiClusterConfigurationListener listener)
         {
-            return localData.UnSubscribeFromMultiClusterConfigurationEvents(observer);
+            return localData.UnSubscribeFromMultiClusterConfigurationEvents(listener);
         }
 
 

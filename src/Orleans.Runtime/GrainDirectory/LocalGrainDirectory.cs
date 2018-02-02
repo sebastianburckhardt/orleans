@@ -260,6 +260,10 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 maintainer.Stop();
             }
+            if (GsiActivationMaintainer != null)
+            {
+                GsiActivationMaintainer.Prod();
+            }
             DirectoryCache.Clear();
         }
 

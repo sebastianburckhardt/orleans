@@ -11,10 +11,12 @@ using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
 using OutcomeState = Orleans.Runtime.GrainDirectory.GlobalSingleInstanceResponseOutcome.OutcomeState;
 using Orleans.Runtime.MultiClusterNetwork;
+using Orleans.MultiCluster;
+using System.Threading;
 
 namespace Orleans.Runtime.GrainDirectory
 {
-    internal class GlobalSingleInstanceActivationMaintainer : AsynchAgent
+    internal class GlobalSingleInstanceActivationMaintainer : AsynchAgent, IMultiClusterConfigurationListener
     {
         private readonly object lockable = new object();
         private readonly LocalGrainDirectory router;
@@ -29,6 +31,9 @@ namespace Orleans.Runtime.GrainDirectory
         // therefore, we maintain a list of potentially doubtful activations on the side.
         // maintainer periodically takes and processes this list.
         private List<GrainId> doubtfulGrains = new List<GrainId>();
+
+        // used for immediately
+        private CancellationTokenSource cts = new CancellationTokenSource();
 
         public GlobalSingleInstanceActivationMaintainer(
             LocalGrainDirectory router,
@@ -48,6 +53,7 @@ namespace Orleans.Runtime.GrainDirectory
             this.siloDetails = siloDetails;
             this.multiClusterOptions = multiClusterOptions.Value;
             this.period = multiClusterOptions.Value.GlobalSingleInstanceRetryInterval;
+            multiClusterOracle.SubscribeToMultiClusterConfigurationEvents(this);
             logger.Debug("GSIP:M GlobalSingleInstanceActivationMaintainer Started, Period = {0}", period);
         }
 
@@ -95,10 +101,21 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 try
                 {
-                    await Task.Delay(period);
-                    if (!router.Running) break;
+                    // wait until it is time, or someone prodded us to continue immediately
+                    try
+                    {
+                        await Task.Delay(period, cts.Token);
 
-                    logger.Debug("GSIP:M running periodic check (having waited {0})", period);
+                        logger.Debug("GSIP:M running periodic check (having waited {0})", period);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        logger.Debug("GSIP:M running check");
+
+                        cts = new CancellationTokenSource(); // reset for next time
+                    }
+
+                    if (!router.Running) break;
 
                     // examine the multicluster configuration
                     var multiClusterConfig = this.multiClusterOracle.GetMultiClusterConfiguration();
@@ -336,5 +353,10 @@ namespace Orleans.Runtime.GrainDirectory
             logger.Error((int) ErrorCode.GlobalSingleInstance_ProtocolError, string.Format("GSIP:Req {0} {1}", address.Grain.ToString(), msg));
         }
 
+        public void OnMultiClusterConfigurationChange(MultiClusterConfiguration next)
+        {
+            logger.Debug($"GSIP:M MultiClusterConfiguration {next}");
+            Prod();
+        }
     }
 }
