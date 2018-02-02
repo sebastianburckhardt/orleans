@@ -142,24 +142,31 @@ namespace Orleans.Runtime.GrainDirectory
                     else
                     {
                         // we are joined to the multicluster.
-                        // go through all doubtful entries and broadcast ownership requests for each
 
-                        // take them all out of the list for processing.
-                        List<GrainId> grains;
-                        lock (lockable)
+                        List<KeyValuePair<string, SiloAddress>> remoteClusters = multiClusterConfig.Clusters
+                            .Where(id => id != myClusterId)
+                            .Select(id => new KeyValuePair<string, SiloAddress>(id, this.multiClusterOracle.GetRandomClusterGateway(id)))
+                            .ToList();
+
+                        if (!remoteClusters.Any(kvp => kvp.Value == null))
                         {
-                            grains = doubtfulGrains;
-                            doubtfulGrains = new List<GrainId>();
+                            // all clusters have at least one gateway reporting.
+                            // go through all doubtful entries and broadcast ownership requests for each
+
+                            List<GrainId> grains;
+                            lock (lockable)
+                            {
+                                grains = doubtfulGrains;
+                                doubtfulGrains = new List<GrainId>();
+                            }
+
+                            logger.Debug("GSIP:M retry {0} doubtful entries {1}", grains.Count, logger.IsEnabled(LogLevel.Trace) ? string.Join(",", grains) : "");
+
+                            await router.Scheduler.QueueTask(
+                                () => RunBatchedActivationRequests(remoteClusters, grains),
+                                router.CacheValidator.SchedulingContext
+                            );
                         }
-
-                        // filter
-                        logger.Debug("GSIP:M retry {0} doubtful entries {1}", grains.Count, logger.IsEnabled(LogLevel.Trace) ? string.Join(",", grains) : "");
-
-                        var remoteClusters = multiClusterConfig.Clusters.Where(id => id != myClusterId).ToList();
-                        await router.Scheduler.QueueTask(
-                            () => RunBatchedActivationRequests(remoteClusters, grains),
-                            router.CacheValidator.SchedulingContext
-                        );
                     }
                 }
                 catch (Exception e)
@@ -180,7 +187,7 @@ namespace Orleans.Runtime.GrainDirectory
             return Task.CompletedTask;
         }
 
-        private async Task RunBatchedActivationRequests(List<string> remoteClusters, List<GrainId> grains)
+        private async Task RunBatchedActivationRequests(List<KeyValuePair<string, SiloAddress>> remoteClusters, List<GrainId> grains)
         {
             var addresses = new List<ActivationAddress>();
 
@@ -206,14 +213,13 @@ namespace Orleans.Runtime.GrainDirectory
                 return;
 
             var batchResponses = new List<RemoteClusterActivationResponse[]>();
-
-            var tasks = remoteClusters.Select(async remotecluster =>
+                   
+            var tasks = remoteClusters.Select(async remotecluster => 
             {
                 // find gateway and send batched request
                 try
                 {
-                    var clusterGatewayAddress = this.multiClusterOracle.GetRandomClusterGateway(remotecluster);
-                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, remotecluster.Value);
                     var r = await clusterGrainDir.ProcessActivationRequestBatch(addresses.Select(a => a.Grain).ToArray(), this.siloDetails.ClusterId);
                     batchResponses.Add(r);
                 }

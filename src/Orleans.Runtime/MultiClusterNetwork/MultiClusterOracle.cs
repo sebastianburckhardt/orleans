@@ -627,6 +627,12 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     Silo = oracle.GetRandomClusterGateway(Cluster);
                 }
 
+                // if the cluster has no gateways reporting, skip
+                if (Silo == null)
+                {
+                    return;
+                }
+
                 oracle.logger.Debug("-{0} Publish to silo {1} ({2}) {3}", id, Silo, Cluster ?? "local", data);
                 try
                 {
