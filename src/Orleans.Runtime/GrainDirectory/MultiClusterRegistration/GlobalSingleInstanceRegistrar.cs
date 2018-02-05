@@ -122,7 +122,6 @@ namespace Orleans.Runtime.GrainDirectory
                 switch (outcome.State)
                 {
                     case OutcomeState.RemoteOwner:
-                    case OutcomeState.RemoteOwnerLikely:
                         {
                             directoryPartition.CacheOrUpdateRemoteClusterRegistration(address.Grain, address.Activation, outcome.RemoteOwnerAddress.Address);
                             return outcome.RemoteOwnerAddress;
@@ -136,6 +135,13 @@ namespace Orleans.Runtime.GrainDirectory
                         }
                     case OutcomeState.Inconclusive:
                         {
+                            break;
+                        }
+                    case OutcomeState.RemoteOwnerLikely:
+                        {
+                            // give prospective owner time to finish
+                            await Task.Delay(5); 
+
                             break;
                         }
                 }
