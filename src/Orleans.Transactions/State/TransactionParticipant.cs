@@ -124,7 +124,7 @@ namespace Orleans.Transactions
             if (commitQueue.Count > 0)
             {
                 var bottom = commitQueue[0];
-                var now = DateTime.UtcNow;
+                var now = systemClock.UtcNow();
 
                 switch (bottom.Role)
                 {
@@ -419,7 +419,7 @@ namespace Orleans.Transactions
                     }
 
                     // merge the current clock into the transaction time stamp
-                    record.Timestamp = MergeAndReadClock(info.TimeStamp);
+                    record.Timestamp = causalClock.MergeUtcNow(info.TimeStamp);
 
                     // link to the latest state
                     if (record.State == null)
@@ -509,7 +509,7 @@ namespace Orleans.Transactions
                      }
 
                      // merge the current clock into the transaction time stamp
-                     record.Timestamp = MergeAndReadClock(info.TimeStamp);
+                     record.Timestamp = causalClock.MergeUtcNow(info.TimeStamp);
 
                      if (record.State == null)
                      {
@@ -576,7 +576,7 @@ namespace Orleans.Transactions
             }
             else
             {
-                MergeClock(record.Timestamp);
+                causalClock.MergeUtcNow(record.Timestamp);
             }
 
             lockWorker.Notify();
@@ -591,7 +591,7 @@ namespace Orleans.Transactions
             record.Timestamp = timeStamp;
             record.Role = CommitRole.LocalCommit; // we are the TM
             record.WaitCount = totalParticipants - 1;
-            record.WaitingSince = DateTime.UtcNow;
+            record.WaitingSince = systemClock.UtcNow();
             record.WriteParticipants = writeParticipants;
             record.PromiseForTA = new TaskCompletionSource<TransactionalStatus>();
 
@@ -601,7 +601,7 @@ namespace Orleans.Transactions
             }
             else
             {
-                MergeClock(record.Timestamp);
+                causalClock.MergeUtcNow(record.Timestamp);
             }
 
             lockWorker.Notify();
@@ -623,7 +623,7 @@ namespace Orleans.Transactions
             }
             else
             {
-                MergeClock(record.Timestamp);
+                causalClock.MergeUtcNow(record.Timestamp);
             }
 
             lockWorker.Notify();
@@ -829,7 +829,7 @@ namespace Orleans.Transactions
                                 {
                                     // can send prepared message immediately after persisting prepare record
                                     record.TransactionManager.Prepared(record.TransactionId, record.Timestamp, thisParticipant, TransactionalStatus.Ok).Ignore();
-                                    record.LastSent = DateTime.UtcNow;
+                                    record.LastSent = systemClock.UtcNow();
                                 }
                             });
                             break;
@@ -852,7 +852,7 @@ namespace Orleans.Transactions
         private Task ConfirmationWork()
         {
             var sendlist = confirmationTasks.Where(r => !r.Value.LastConfirmationAttempt.HasValue
-              || r.Value.LastConfirmationAttempt + ConfirmationRetryDelay < DateTime.UtcNow).ToList();
+              || r.Value.LastConfirmationAttempt + ConfirmationRetryDelay < systemClock.UtcNow()).ToList();
 
             foreach (var kvp in sendlist)
             {
@@ -868,7 +868,7 @@ namespace Orleans.Transactions
             {
                 var tasks = new List<Task>();
 
-                record.LastConfirmationAttempt = DateTime.UtcNow;
+                record.LastConfirmationAttempt = systemClock.UtcNow();
 
                 foreach (var p in record.WriteParticipants)
                 {

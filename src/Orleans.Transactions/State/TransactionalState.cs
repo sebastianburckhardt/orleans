@@ -26,6 +26,7 @@ namespace Orleans.Transactions
         private readonly ITransactionAgent transactionAgent;
         private readonly IProviderRuntime runtime;
         private readonly ILoggerFactory loggerFactory;
+        private readonly IClock systemClock;
 
         private  ILogger logger;
 
@@ -87,7 +88,7 @@ namespace Orleans.Transactions
         // processes confirmation tasks
         private BatchWorker confirmationWorker;
 
-        private DateTime clock;
+        private readonly TransactionClock causalClock;
 
         // collection tasks
         private Dictionary<DateTime, PMessages> unprocessedPreparedMessages;
@@ -95,17 +96,6 @@ namespace Orleans.Transactions
         {
             public int Count;
             public TransactionalStatus Status;
-        }
-
-        // clock read and merge
-        private DateTime MergeAndReadClock(DateTime other)
-        {
-            return clock = new DateTime(Math.Max(Math.Max(clock.Ticks + 1, other.Ticks + 1), DateTime.UtcNow.Ticks));
-        }
-        private void MergeClock(DateTime other)
-        {
-            if (other > clock)
-                clock = other;
         }
 
         public TransactionalState(
@@ -116,7 +106,8 @@ namespace Orleans.Transactions
             IProviderRuntime runtime, 
             ILoggerFactory loggerFactory, 
             ITypeResolver typeResolver,
-            IGrainFactory grainFactory)
+            IGrainFactory grainFactory,
+            IClock systemClock)
         {
             this.config = transactionalStateConfiguration;
             this.context = context;
@@ -124,7 +115,9 @@ namespace Orleans.Transactions
             this.transactionAgent = transactionAgent;
             this.runtime = runtime;
             this.loggerFactory = loggerFactory;
+            this.systemClock = systemClock;
 
+            causalClock = new TransactionClock(systemClock);
             lockWorker = new BatchWorkerFromDelegate(LockWork);
             storageWorker = new BatchWorkerFromDelegate(StorageWork);
             confirmationWorker = new BatchWorkerFromDelegate(ConfirmationWork);
@@ -207,7 +200,7 @@ namespace Orleans.Transactions
                 logger.Debug($"Load v{stableSequenceNumber} {loadresponse.PendingStates.Count}p {storageBatch.MetaData.CommitRecords.Count}c");
 
             // ensure clock is consistent with loaded state
-            MergeClock(storageBatch.MetaData.TimeStamp);
+            causalClock.MergeUtcNow(storageBatch.MetaData.TimeStamp);
 
             // resume prepared transactions (not TM)
             foreach (var pr in loadresponse.PendingStates.OrderBy(ps => ps.TimeStamp))

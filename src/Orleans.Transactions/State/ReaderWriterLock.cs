@@ -60,7 +60,7 @@ namespace Orleans.Transactions
                         storageWorker.Notify();
                     }
 
-                    else if (currentGroup.Deadline < DateTime.UtcNow)
+                    else if (currentGroup.Deadline < systemClock.UtcNow())
                     {
                         // the lock group has timed out.
                         var txlist = string.Join(",", currentGroup.Keys.Select(g => g.ToString()));
@@ -89,7 +89,7 @@ namespace Orleans.Transactions
                         // discard expired waiters that have no chance to succeed
                         // because they have been waiting for the lock for a longer timespan than the 
                         // total transaction timeout
-                        var now = DateTime.UtcNow;
+                        var now = systemClock.UtcNow();
                         List<Guid> expiredWaiters = null;
                         foreach (var kvp in currentGroup)
                         {
@@ -189,7 +189,7 @@ namespace Orleans.Transactions
                 // update the lock deadline
                 if (group == currentGroup)
                 {
-                    group.Deadline = DateTime.UtcNow + LockTimeout;
+                    group.Deadline = systemClock.UtcNow() + LockTimeout;
                 }
 
                 // create a new record for this transaction
@@ -197,7 +197,7 @@ namespace Orleans.Transactions
                 {
                     TransactionId = transactionId,
                     Priority = priority,
-                    Deadline = DateTime.UtcNow + LockAcquireTimeout
+                    Deadline = systemClock.UtcNow() + LockAcquireTimeout
                 };
 
                 group.Add(transactionId, record);
