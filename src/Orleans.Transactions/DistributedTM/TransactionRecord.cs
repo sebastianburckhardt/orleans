@@ -148,16 +148,16 @@ namespace Orleans.Transactions
             switch (Role)
             {
                 case CommitRole.NotYetDetermined:
-                    return $"ND";
+                    return $"ND {TransactionId}";
 
                 case CommitRole.ReadOnly:
-                    return $"RE";
+                    return $"RE {TransactionId}";
 
                 case CommitRole.LocalCommit:
-                    return $"LCE wc={WaitCount} rtb={ReadyToCommit}";
+                    return $"LCE {TransactionId} wc={WaitCount} rtb={ReadyToCommit}";
 
                 case CommitRole.RemoteCommit:
-                    return $"RCE pip={PrepareIsPersisted} ls={LastSent.HasValue} ro={IsReadOnly} rtb={ReadyToCommit}";
+                    return $"RCE {TransactionId} pip={PrepareIsPersisted} ls={LastSent.HasValue} ro={IsReadOnly} rtb={ReadyToCommit}";
 
                 default:
                     throw new NotSupportedException($"{Role} is not a supported CommitRole.");
